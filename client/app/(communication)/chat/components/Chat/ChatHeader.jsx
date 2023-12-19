@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import Avatar from "../common/Avatar";
+import Avatar from "@/components/common/Avatar";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { BiSearchAlt2 } from "react-icons/bi";
 import { MdCall } from "react-icons/md";
 import { IoVideocam } from "react-icons/io5";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import ContextMenu from "../common/ContextMenu";
+import ContextMenu from "@/components/common/ContextMenu";
 
 export default function ChatHeader() {
   const [{ userInfo, currentChatUser, onlineUsers }, dispatch] =
@@ -59,11 +59,11 @@ export default function ChatHeader() {
   };
 
   return (
-    <div className="h-16 px-4 py-3 flex justify-between items-center bg-panel-header-background z-10">
+    <div className="h-16 px-4 py-3 flex justify-between items-center bg-white z-10">
       <div className="flex items-center justify-center gap-6">
         <Avatar type="sm" image={currentChatUser?.profilePicture} />
         <div className="flex flex-col">
-          <span className="text-primary-strong">{currentChatUser?.name}</span>
+          <span className="">{currentChatUser?.name}</span>
           <span className="text-secondary text-sm">
             {onlineUsers.includes(currentChatUser.id) ? "online" : "offline"}
           </span>

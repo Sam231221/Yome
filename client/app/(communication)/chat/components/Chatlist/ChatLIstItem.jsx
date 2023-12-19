@@ -1,11 +1,11 @@
 import React from "react";
-import Avatar from "../common/Avatar";
+import Avatar from "../../../../../components/common/Avatar";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import { BsCheckAll, BsCheckLg } from "react-icons/bs";
 import { FaCamera, FaMicrophone } from "react-icons/fa";
 import { calculateTime } from "@/utils/CalculateTime";
-import MessageStatus from "../common/MessageStatus";
+import MessageStatus from "../../../../../components/common/MessageStatus";
 
 export default function ChatLIstItem({ data, isContactPage = false }) {
   const [{ userInfo, currentChatUser }, dispatch] = useStateProvider();
@@ -49,7 +49,7 @@ export default function ChatLIstItem({ data, isContactPage = false }) {
       <div className="min-h-full flex flex-col justify-center mt-3 pr-2 w-full">
         <div className="flex justify-between ">
           <div>
-            <span className="text-white">{data?.name}</span>
+            <span className="font-medium text-sm">{data?.name}</span>
           </div>
           {!isContactPage && (
             <div>
@@ -58,7 +58,7 @@ export default function ChatLIstItem({ data, isContactPage = false }) {
                   !data.totalUnreadMessages > 0
                     ? "text-secondary"
                     : "text-icon-green"
-                } text-sm`}
+                } text-xs font-medium`}
               >
                 {calculateTime(data.createdAt)}
               </span>
@@ -71,15 +71,16 @@ export default function ChatLIstItem({ data, isContactPage = false }) {
               {isContactPage ? (
                 data?.about || "\u00A0"
               ) : (
+                // Send msg by different ways for images,texts...
                 <div className="flex items-center gap-1 max-w-[200px] sm:max-w-[250px] md:max-w-[300px] lg:max-w-[200px] xl:max-w-[300px]">
                   {data.senderId === userInfo.id && (
                     <MessageStatus messageStatus={data.messageStatus} />
                   )}
                   {data.type === "text" && (
-                    <span className="truncate ">{data.message}</span>
+                    <span className="truncate  text-xs">{data.message}</span>
                   )}
                   {data.type === "audio" && (
-                    <span className="flex gap-1 items-center">
+                    <span className="flex gap-1 text-xs items-center">
                       <FaMicrophone className="text-panel-header-icon" />
                       {data.senderId === userInfo.id ? (
                         <>You sent an Audio</>
@@ -89,7 +90,7 @@ export default function ChatLIstItem({ data, isContactPage = false }) {
                     </span>
                   )}
                   {data.type === "image" && (
-                    <span className="flex gap-1 items-center">
+                    <span className="flex text-xs gap-1 items-center">
                       <FaCamera className="text-panel-header-icon" />
                       {data.senderId === userInfo.id ? (
                         <>You sent an Image</>

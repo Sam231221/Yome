@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import Avatar from "../common/Avatar";
+import Avatar from "@/components/common/Avatar";
 import { BsFillChatLeftTextFill, BsThreeDotsVertical } from "react-icons/bs";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import { useRouter } from "next/navigation";
-import ContextMenu from "../common/ContextMenu";
+import ContextMenu from "@/components/common/ContextMenu";
 import { signOut } from "next-auth/react";
 export default function ChatListHeader() {
   const [{ userInfo }, dispatch] = useStateProvider();
@@ -37,12 +37,11 @@ export default function ChatListHeader() {
 
   return (
     <div className="h-16 px-4 py-3 flex justify-between items-center">
-      <div className="cursor-pointer">
+      {/* <div className="cursor-pointer">
         <Avatar type="sm" image={userInfo?.profileImage} />
-      </div>
-      <h1 className="text-lg text-panel-header-icon font-bold">
-        {userInfo?.name}
-      </h1>
+      </div> */}
+      <span>{userInfo?.name}</span>
+      <h1 className="text-2xl text-panel-header-icon font-bold">Chats</h1>
       <div className="flex gap-6 ">
         <BsFillChatLeftTextFill
           className="text-panel-header-icon cursor-pointer text-xl"

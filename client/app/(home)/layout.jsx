@@ -53,10 +53,15 @@ export default function HomeLayout({ children }) {
         } h-screen navigation fixed left-0 bg-white border-white`}
       >
         <div className="group w-full gap-1 flex items-center text-white">
-          <Link className="flex" href="/">
-            <span className="icon text-4xl py-3 px-3">
-              <FaMagento className="text-secondaryTextColor" />
-            </span>
+          <Link className="flex p-1 items-center" href="/">
+            <Image
+              src="/logos/logoBlueT.png"
+              width={40}
+              height={40}
+              alt="logo"
+              style={{ width: "40px", height: "40px" }}
+            />
+
             <span className="text-2xl text-primaryTextColor ml-2 font-bold py-3">
               Eduroclass
             </span>

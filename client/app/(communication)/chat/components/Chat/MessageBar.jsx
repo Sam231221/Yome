@@ -9,7 +9,7 @@ import axios from "axios";
 import { ADD_IMAGE_MESSAGE_ROUTE, ADD_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
 import EmojiPicker from "emoji-picker-react";
 import dynamic from "next/dynamic";
-import PhotoPicker from "../common/PhotoPicker";
+import PhotoPicker from "@/components/common/PhotoPicker";
 
 const CaptureAudio = dynamic(() => import("@/components/common/CaptureAudio"), {
   ssr: false,
@@ -131,7 +131,7 @@ export default function MessageBar() {
   }, [grabImage]);
 
   return (
-    <div className="bg-panel-header-background  h-20 px-4 flex items-center gap-6  relative">
+    <div className="bg-white  h-20 px-4 flex items-center gap-6  relative">
       {!showAudioRecorder && (
         <>
           <div className="flex gap-6">
@@ -146,7 +146,7 @@ export default function MessageBar() {
                 className="absolute bottom-24 left-16 z-40"
                 ref={emojiPickerRef}
               >
-                <EmojiPicker onEmojiClick={handleEmojiClick} theme="dark" />
+                <EmojiPicker onEmojiClick={handleEmojiClick} theme="light" />
               </div>
             )}
             <ImAttachment
@@ -159,7 +159,7 @@ export default function MessageBar() {
             <input
               type="text"
               placeholder="Type a message"
-              className="bg-input-background text-sm focus:outline-none text-white h-10 rounded-lg pl-5 pr-5 py-4 w-full"
+              className="bg-input-background text-sm focus:outline-none  h-10 rounded-lg pl-5 pr-5 py-4 w-full"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />

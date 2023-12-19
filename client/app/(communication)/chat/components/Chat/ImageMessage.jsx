@@ -3,7 +3,7 @@ import { HOST } from "@/utils/ApiRoutes";
 import { calculateTime } from "@/utils/CalculateTime";
 import Image from "next/image";
 import React from "react";
-import MessageStatus from "../common/MessageStatus";
+import MessageStatus from "@/components/common/MessageStatus";
 
 function ImageMessage({ message }) {
   const [{ currentChatUser, userInfo }] = useStateProvider();

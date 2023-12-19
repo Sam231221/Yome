@@ -3,10 +3,10 @@ import React, { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { calculateTime } from "@/utils/CalculateTime";
 import { BsCheckAll, BsCheckLg } from "react-icons/bs";
-import MessageStatus from "../common/MessageStatus";
+import MessageStatus from "@/components/common/MessageStatus";
 import ImageMessage from "./ImageMessage";
 
-const VoiceMessage = dynamic(() => import("@/components/Chat/VoiceMessage"), {
+const VoiceMessage = dynamic(() => import("./VoiceMessage"), {
   ssr: false,
 });
 
@@ -45,17 +45,33 @@ export default function ChatContainer() {
                     : "justify-end"
                 }`}
               >
+                {/* text message display */}
                 {message.type === "text" && (
                   <div
-                    className={`text-white px-2 py-[5px] text-sm rounded-md flex gap-2 items-end max-w-[45%]	 ${
-                      message.senderId === currentChatUser.id
-                        ? "bg-incoming-background"
-                        : "bg-outgoing-background"
-                    }`}
+                    className={`text-white px-2 py-[5px] text-sm rounded-lg flex gap-2  max-w-[45%]	
+                     ${
+                       message.senderId === currentChatUser.id
+                         ? "bg-incoming-background"
+                         : "bg-outgoing-background"
+                     }`}
                   >
-                    <span className="break-all">{message.message}</span>
-                    <div className="flex gap-1 items-end">
-                      <span className="text-bubble-meta text-[11px] pt-1 min-w-fit">
+                    <span
+                      className={` ${
+                        message.senderId === currentChatUser.id
+                          ? "text-black"
+                          : "bg-outgoing-background"
+                      } break-all text-sm font-medium`}
+                    >
+                      {message.message}
+                    </span>
+                    <div className="flex items-center pt-2 gap-1">
+                      <span
+                        className={` ${
+                          message.senderId === currentChatUser.id
+                            ? "text-gray-800"
+                            : "text-white"
+                        } text-[9px]  min-w-fit`}
+                      >
                         {calculateTime(message.createdAt)}
                       </span>
                       <span>
@@ -68,7 +84,9 @@ export default function ChatContainer() {
                     </div>
                   </div>
                 )}
+                {/* image message display */}
                 {message.type === "image" && <ImageMessage message={message} />}
+                {/* audio message display */}
                 {message.type === "audio" && <VoiceMessage message={message} />}
               </div>
             ))}

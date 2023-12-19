@@ -42,7 +42,7 @@ export default function ContextMenu({
   };
   return (
     <div
-      className={`bg-dropdown-background fixed py-2 z-[100]`}
+      className={`bg-white drop-shadow-lg fixed py-2 z-[100]`}
       ref={contextMenuRef}
       style={{
         boxShadow:
@@ -58,7 +58,7 @@ export default function ContextMenu({
               className="hover:bg-background-default-hover px-5 py-2 cursor-pointer"
               onClick={(e) => handleClick(e, callBack)}
             >
-              <span className="text-white">{name}</span>
+              <span className="font-medium text-sm">{name}</span>
             </li>
           </>
         ))}
