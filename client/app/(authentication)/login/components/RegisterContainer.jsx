@@ -88,66 +88,66 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
   };
 
   //Login with  Next Auth Provider
-  const loginWithNextAuthProvider = async (e) => {
-    let provider;
-    if (e.target.getAttribute("data-provider") === "facebook") {
-      provider = new FacebookAuthProvider();
-    }
-    if (e.target.getAttribute("data-provider") === "google") {
-      provider = new GoogleAuthProvider();
-    }
-    if (e.target.getAttribute("data-provider") === "github") {
-      provider = new GithubAuthProvider();
-    }
-    const {
-      user: { displayName: name, password, email, photoURL: profileImage },
-    } = await signInWithPopup(firebaseAuth, provider);
-    try {
-      console.log("pw:", password, " email:", email);
-      //check if the user with this email already exist or not?
-      if (email) {
-        const { data } = await axios.post(GET_USER_ROUTE, {
-          email,
-        });
+  // const loginWithNextAuthProvider = async (e) => {
+  //   let provider;
+  //   if (e.target.getAttribute("data-provider") === "facebook") {
+  //     provider = new FacebookAuthProvider();
+  //   }
+  //   if (e.target.getAttribute("data-provider") === "google") {
+  //     provider = new GoogleAuthProvider();
+  //   }
+  //   if (e.target.getAttribute("data-provider") === "github") {
+  //     provider = new GithubAuthProvider();
+  //   }
+  //   const {
+  //     user: { displayName: name, password, email, photoURL: profileImage },
+  //   } = await signInWithPopup(firebaseAuth, provider);
+  //   try {
+  //     console.log("pw:", password, " email:", email);
+  //     //check if the user with this email already exist or not?
+  //     if (email) {
+  //       const { data } = await axios.post(GET_USER_ROUTE, {
+  //         email,
+  //       });
 
-        // It means User with the email doesnt already exist
-        // So, set newUser to true and  userInfo from the Google Account info
-        // Finally Go to '/onboarding' route
+  //       // It means User with the email doesnt already exist
+  //       // So, set newUser to true and  userInfo from the Google Account info
+  //       // Finally Go to '/onboarding' route
 
-        if (!data.status) {
-          dispatch({ type: reducerCases.SET_NEW_USER, newUser: true });
-          dispatch({
-            type: reducerCases.SET_USER_INFO,
-            userInfo: {
-              name,
-              email,
-              profileImage,
-              status: "Available",
-            },
-          });
-          router.push("/onboarding");
-        } else {
-          // It means User with the email  already exist
-          //Instead set userInfo from the database
-          // And Go to '/' route
+  //       if (!data.status) {
+  //         dispatch({ type: reducerCases.SET_NEW_USER, newUser: true });
+  //         dispatch({
+  //           type: reducerCases.SET_USER_INFO,
+  //           userInfo: {
+  //             name,
+  //             email,
+  //             profileImage,
+  //             status: "Available",
+  //           },
+  //         });
+  //         router.push("/onboarding");
+  //       } else {
+  //         // It means User with the email  already exist
+  //         //Instead set userInfo from the database
+  //         // And Go to '/' route
 
-          dispatch({
-            type: reducerCases.SET_USER_INFO,
-            userInfo: {
-              id: data.data.id,
-              email: data.data.email,
-              name: data.data.name,
-              profileImage: data.data.profilePicture,
-              status: data.data.about,
-            },
-          });
-          router.push("/");
-        }
-      }
-    } catch (error) {
-      console.log({ error });
-    }
-  };
+  //         dispatch({
+  //           type: reducerCases.SET_USER_INFO,
+  //           userInfo: {
+  //             id: data.data.id,
+  //             email: data.data.email,
+  //             name: data.data.name,
+  //             profileImage: data.data.profilePicture,
+  //             status: data.data.about,
+  //           },
+  //         });
+  //         router.push("/");
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.log({ error });
+  //   }
+  // };
 
   //Register Users
   const handleRegisterFormSubmit = async (e) => {

@@ -15,17 +15,11 @@ export default function Login() {
   console.log(session);
   useEffect(() => {
     if (session?.user) {
-      router.push("/");
+      router.push("/home");
     } else {
       router.push("/login");
     }
   }, [session]);
-  //check if userInfo is set(then its logged in)
-  useEffect(() => {
-    //user is logged In
-    if (userInfo?.id && !newUser) router.push("/");
-  }, [userInfo, newUser, router]);
-
   //check if userInfo is set(then its logged in)
   useEffect(() => {
     //user is logged In

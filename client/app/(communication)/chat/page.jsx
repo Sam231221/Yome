@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
-
 import Chat from "./components/Chat/Chat";
 import ChatList from "./components/Chatlist/ChatList";
 import { useRouter } from "next/navigation";
@@ -10,7 +9,6 @@ import { reducerCases } from "@/context/constants";
 import axios from "axios";
 import { GET_USER_ROUTE, GET_MESSAGES_ROUTE, HOST } from "@/utils/ApiRoutes";
 import Empty from "@/components/Empty";
-import Container from "./components/Call/Container";
 import VideoCall from "./components/Call/VideoCall";
 import VoiceCall from "./components/Call/VoiceCall";
 import IncomingCall from "@/components/common/IncomingCall";
@@ -35,15 +33,9 @@ export default function Chatpage() {
   const socket = useRef();
 
   const [socketEvent, setSocketEvent] = useState(false);
-  const { data: session } = useSession({
-    required: true,
-    onUnauthenticated() {
-      router.push("/login?callbackUrl=/");
-    },
-  });
+  const { data: session } = useSession();
 
   useEffect(() => {
-    console.log("userInfo:", userInfo);
     const getUserInfo = async (e) => {
       try {
         if (session?.user) {
@@ -69,7 +61,6 @@ export default function Chatpage() {
                 status: data?.user?.about,
               },
             });
-            console.log("after dispatch..", userInfo);
           }
         }
       } catch (e) {
@@ -79,7 +70,7 @@ export default function Chatpage() {
     getUserInfo();
   }, [session]);
 
-  //start socket connection on adding user.
+  //start socket connection on adding authenticated user.
   useEffect(() => {
     if (userInfo) {
       socket.current = io(HOST);

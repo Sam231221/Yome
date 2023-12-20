@@ -16,7 +16,6 @@ export const options = {
     }),
     GitHubProvider({
       profile(profile) {
-        //console.log(profile)
         return {
           ...profile,
           role: profile.role ?? "user",
@@ -29,7 +28,6 @@ export const options = {
     }),
     GoogleProvider({
       profile(profile) {
-        console.log("Profile Google: ", profile);
         return {
           ...profile,
           role: profile.role ?? "user",

@@ -5,11 +5,13 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
 import ChatLIstItem from "./ChatLIstItem";
+import { userInfo } from "os";
 
 function ContactsList() {
   const [{}, dispatch] = useStateProvider();
   const [allContacts, setAllContacts] = useState({});
   const [searchTerm, setsearchTerm] = useState("");
+
   const [searchContacts, setSearchContacts] = useState([]);
 
   useEffect(() => {
@@ -50,14 +52,16 @@ function ContactsList() {
   return (
     <div className="h-full flex flex-col">
       <div className="h-24 flex items-end px-3 py-4">
-        <div className="flex  items-center gap-12 text-white">
+        <div className="flex  items-center gap-12 ">
           <BiArrowBack
             className=" cursor-pointer text-xl"
             onClick={() =>
               dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE })
             }
           />
-          <span className="">New Chat</span>
+          <h1 className="text-2xl text-panel-header-icon font-bold">
+            New Chat
+          </h1>
         </div>
       </div>
       <div className="bg-search-input-container-background h-full flex-auto overflow-auto custom-scrollbar">
@@ -70,7 +74,7 @@ function ContactsList() {
               <input
                 type="text"
                 placeholder="Search Contacts"
-                className="bg-transparent text-sm focus:outline-none text-white w-full"
+                className="bg-transparent text-sm focus:outline-none  w-full"
                 onChange={(e) => setsearchTerm(e.target.value)}
                 value={searchTerm}
               />
@@ -80,7 +84,9 @@ function ContactsList() {
         {Object.entries(searchContacts).map(([initialLetter, userList]) => {
           return (
             <div key={Date.now() + initialLetter}>
-              <div className="text-teal-light pl-10 py-5">{initialLetter}</div>
+              <div className="text-gray-800 text-semibold pl-10 py-5">
+                {initialLetter}
+              </div>
               {userList.map((contact) => {
                 return (
                   <ChatLIstItem data={contact} isContactPage key={contact.id} />

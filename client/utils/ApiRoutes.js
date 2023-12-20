@@ -8,6 +8,7 @@ export const GET_USER_ROUTE = `${authRoute}/get-user`;
 export const GET_ALL_CONTACTS = `${authRoute}/get-contacts`;
 export const GET_CALL_TOKEN = `${authRoute}/generate-token`;
 
+//One to One Message
 export const ADD_MESSAGE_ROUTE = `${MESSAGES_ROUTE}/add-message`;
 export const GET_MESSAGES_ROUTE = `${MESSAGES_ROUTE}/get-messages`;
 export const GET_INITIAL_CONTACTS_ROUTE = `${MESSAGES_ROUTE}/get-initial-contacts`;

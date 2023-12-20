@@ -1,10 +1,12 @@
 import { reducerCases } from "./constants";
 
 export const initialState = {
+  //object
   userInfo: undefined,
   newUser: false,
   contactsPage: false,
   messageSearch: false,
+  //object
   currentChatUser: undefined,
   socket: undefined,
   messages: [],
@@ -43,7 +45,6 @@ const reducer = (state, action) => {
     case reducerCases.CHANGE_CURRENT_CHAT_USER: {
       if (action.user) {
         if (state.contactsPage) {
-          console.log("User:", action.user);
           return {
             ...state,
             currentChatUser: action.user,

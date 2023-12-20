@@ -11,12 +11,12 @@ export default function ChatLIstItem({ data, isContactPage = false }) {
   const [{ userInfo, currentChatUser }, dispatch] = useStateProvider();
 
   const handleContactClick = () => {
-    console.log("User:", currentChatUser, data, userInfo);
-    console.log(isContactPage);
+    //here both CurrentchatUser and data are object
     if (currentChatUser?.id === data?.id) {
       return dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
     }
-    //chamge current chat user on right side on clicking the user items from the left list
+    //change current chat user on right side on clicking the user
+    //items from the left list
     if (!isContactPage) {
       dispatch({
         type: reducerCases.CHANGE_CURRENT_CHAT_USER,
@@ -29,7 +29,7 @@ export default function ChatLIstItem({ data, isContactPage = false }) {
         },
       });
     } else {
-      console.log(isContactPage);
+      console.log("Change the current chat user from contact list");
       dispatch({ type: reducerCases.CHANGE_CURRENT_CHAT_USER, user: data });
       dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
     }

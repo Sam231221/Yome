@@ -20,7 +20,7 @@ export default function MessageBar() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
   const [grabImage, setGrabImage] = useState(false);
-
+  const [{ socket, currentChatUser, userInfo }, dispatch] = useStateProvider();
   //send image message
   const photoPickerOnChange = async (e) => {
     const file = e.target.files[0];
@@ -57,10 +57,8 @@ export default function MessageBar() {
     }
   };
 
-  const [{ socket, currentChatUser, userInfo }, dispatch] = useStateProvider();
-
   //send text message
-  const sendMessage = async () => {
+  const sendTextMessage = async () => {
     try {
       setMessage("");
       const { data } = await axios.post(ADD_MESSAGE_ROUTE, {
@@ -88,10 +86,12 @@ export default function MessageBar() {
   const handleEmojiModal = () => {
     setShowEmojiPicker(!showEmojiPicker);
   };
+
   //just append emoji to text message.
   const handleEmojiClick = (emoji, event) => {
     setMessage((prevMessage) => (prevMessage += emoji.emoji));
   };
+
   // Create a ref for the emoji picker element
   const emojiPickerRef = useRef(null);
 
@@ -166,7 +166,7 @@ export default function MessageBar() {
           </div>
           <div className=" w-10 flex items-center justify-center">
             {message.length ? (
-              <button onClick={sendMessage}>
+              <button onClick={sendTextMessage}>
                 <MdSend
                   className="text-panel-header-icon cursor-pointer text-xl"
                   title="Send"

@@ -25,6 +25,8 @@ model User {
   forgotPasswordTokenExpiry DateTime?
   verifyToken String?
   verifyTokenExpiry DateTime? 
+  group Group[]
+
 }
 
 model Messages {
@@ -36,5 +38,15 @@ model Messages {
   type String @default("text")
   message String
   messageStatus String @default("sent")
+  group       Group?   @relation(fields: [groupId], references: [id])
+  groupId     Int?
   createdAt DateTime @default(now())
+}
+
+
+model Group {
+  id        Int       @id @default(autoincrement())
+  name      String
+  members   User[]
+  messages  Messages[]
 }

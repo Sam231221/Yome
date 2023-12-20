@@ -47,63 +47,20 @@ export default function LoginContainer({ activeTab }) {
   };
 
   //Login with  Next Auth Provider
-  const loginWithNextAuthProvider = async (e) => {
-    let data;
-    if (e.target.getAttribute("data-provider") === "facebook") {
-      data = await signIn("facebook", { redirect: "/" });
-    }
-    if (e.target.getAttribute("data-provider") === "google") {
-      data = await signIn("google", { redirect: true });
-    }
-    if (e.target.getAttribute("data-provider") === "github") {
-      data = await signIn("github");
-    }
-    console.log(data);
-    if (data?.error) {
-      toast.error("Credentials error!");
-    } else {
-      router.push("/");
-    }
-    //check if the user with this email already exist or not?
-    if (email) {
-      const { data } = await axios.post(GET_USER_ROUTE, {
-        email,
-      });
-
-      // It means User with the email doesnt already exist
-      // So, set newUser to true and  userInfo from the Google Account info
-      // Finally Go to '/onboarding' route
-
-      if (!data.error) {
-        dispatch({ type: reducerCases.SET_NEW_USER, newUser: true });
-        dispatch({
-          type: reducerCases.SET_USER_INFO,
-          userInfo: {
-            name,
-            email,
-            profileImage,
-            status: "Available",
-          },
-        });
-        router.push("/onboarding");
-      } else {
-        // It means User with the email  already exist
-        //Instead set userInfo from the database
-        // And Go to '/' route
-
-        dispatch({
-          type: reducerCases.SET_USER_INFO,
-          userInfo: {
-            id: data.data.id,
-            email: data.data.email,
-            name: data.data.name,
-            profileImage: data.data.profilePicture,
-            status: data.data.about,
-          },
-        });
-        router.push("/");
-      }
-    }
+  const loginWithNextAuthProvider = (e) => {
+    let provider = e.target.getAttribute("data-provider");
+    console.log("provider", provider);
+    signIn(provider, { redirect: false })
+      .then((callback) => {
+        console.log("callback:", callback);
+        if (callback?.error) {
+          toast.error("Invalid credentials!");
+        }
+        if (callback?.ok) {
+          router.push("/home");
+        }
+      })
+      .finally(() => console.log("sdsef"));
   };
 
   //Login with Credentials
