@@ -3,8 +3,10 @@ let groups = [
     id: "ec059f51-c272-4086-97b5-33a55469b475",
     name: "Js Programmers",
     about: "",
+    profilePicture: "",
     identifier: "group",
-    createdAt: "2023-12-21T03:15:25.008Z",
+    created_at: "2023-12-21T03:15:25.008Z",
+    updated_at: "2023-13-21T03:15:25.008Z",
     messages: [
       {
         id: 30,
@@ -23,8 +25,10 @@ let groups = [
     id: "641f7661-9b10-4276-9bba-6a3e7b997574",
     name: "Python Developers",
     about: "",
+    profilePicture: "",
     identifier: "group",
-    createdAt: "2023-12-21T03:16:16.819Z",
+    created_at: "2023-15-21T03:15:25.008Z",
+    updated_at: "2023-17-21T03:15:25.008Z",
     messages: [
       {
         id: 21,
@@ -43,6 +47,7 @@ let groups = [
 
 // Loop through each object in the groups array
 groups.forEach((group) => {
+  group.created_At;
   // Loop through the messages array in each group
   group.messages.forEach((message) => {
     // Copy all fields except groupId from message to messageId

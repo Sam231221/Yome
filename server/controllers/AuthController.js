@@ -102,21 +102,6 @@ export const getAllGroups = async (req, res, next) => {
   }
 };
 
-export const getAllUserOfaGroup = async (groupId) => {
-  try {
-    const prisma = getPrismaInstance();
-    const usersInGroup = await prisma.group.findUnique({
-      where: {
-        id: groupId, // Replace with the actual group ID
-      },
-    });
-
-    return usersInGroup;
-  } catch (error) {
-    console.error("Error fetching users in group:", error);
-    throw error;
-  }
-};
 export const generateToken = (req, res, next) => {
   try {
     const appID = parseInt(process.env.ZEGO_APP_ID);

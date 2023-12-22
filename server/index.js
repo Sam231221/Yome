@@ -5,7 +5,6 @@ import AuthRoutes from "./routes/AuthRoutes.js";
 import MessageRoutes from "./routes/MessageRoutes.js";
 import GroupMessageRoutes from "./routes/GroupMessageRoutes.js";
 import { Server } from "socket.io";
-import { getAllUserOfaGroup } from "./controllers/AuthController.js";
 import getPrismaInstance from "./utils/PrismaClient.js";
 
 dotenv.config();

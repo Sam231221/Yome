@@ -53,5 +53,7 @@ model Group {
   identifier String @default("group")
   members   User[]
   messages  Messages[]
-  createdAt DateTime @default(now())
+  profilePicture String @default("")
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
 }
