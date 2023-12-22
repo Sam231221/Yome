@@ -9,7 +9,6 @@ export const getUserByEmail = async (request, response, next) => {
     }
     const prisma = getPrismaInstance();
     const user = await prisma.user.findUnique({ where: { email } });
-    console.log(user);
     if (!user) {
       return response.json({ msg: "User not found", status: false });
     } else
@@ -18,7 +17,22 @@ export const getUserByEmail = async (request, response, next) => {
     next(error);
   }
 };
-
+export const getGroupById = async (request, response, next) => {
+  try {
+    const { groupId } = request.body;
+    if (!groupId) {
+      return response.json({ msg: "Email is required", status: false });
+    }
+    const prisma = getPrismaInstance();
+    const group = await prisma.group.findUnique({ where: { id: groupId } });
+    if (!group) {
+      return response.json({ msg: "Group not found", status: false });
+    } else
+      return response.json({ msg: "Group Found", status: true, group: group });
+  } catch (error) {
+    next(error);
+  }
+};
 export const onBoardUser = async (request, response, next) => {
   try {
     const prisma = getPrismaInstance();
@@ -69,43 +83,40 @@ export const getAllUsers = async (req, res, next) => {
         about: true,
       },
     });
-    //To group users by initial letter.
-    const usersGroupedByInitialLetter = {};
-    users.forEach((user) => {
-      const initialLetter = user.name.charAt(0).toUpperCase();
-      if (!usersGroupedByInitialLetter[initialLetter]) {
-        usersGroupedByInitialLetter[initialLetter] = [];
-      }
-      usersGroupedByInitialLetter[initialLetter].push(user);
-    });
-    /*
-        console.log("userGrouped By inital letter:", usersGroupedByInitialLetter);
-    userGrouped By inital letter: {
-      S: [
-        {
-          id: 3,
-          email: 'samashahi9882@gmail.com',
-          name: 'Sama Shahi',
-          profilePicture: '/avatars/5.png',
-          about: 'Registered Nurse'
-        },
-        {
-          id: 1,
-          email: 'samirshahi9882@gmail.com',
-          name: 'Sameer Shahi',
-          profilePicture: '/avatars/6.png',
-          about: 'Software Engineer'
-        }
-      ]
-}
-    */
 
-    return res.status(200).send({ users: usersGroupedByInitialLetter });
+    return res.status(200).send({ users: users });
+  } catch (error) {
+    next(error);
+  }
+};
+export const getAllGroups = async (req, res, next) => {
+  try {
+    const prisma = getPrismaInstance();
+    const groups = await prisma.group.findMany({
+      orderBy: { name: "asc" },
+    });
+
+    return res.status(200).send({ groups: groups });
   } catch (error) {
     next(error);
   }
 };
 
+export const getAllUserOfaGroup = async (groupId) => {
+  try {
+    const prisma = getPrismaInstance();
+    const usersInGroup = await prisma.group.findUnique({
+      where: {
+        id: groupId, // Replace with the actual group ID
+      },
+    });
+
+    return usersInGroup;
+  } catch (error) {
+    console.error("Error fetching users in group:", error);
+    throw error;
+  }
+};
 export const generateToken = (req, res, next) => {
   try {
     const appID = parseInt(process.env.ZEGO_APP_ID);

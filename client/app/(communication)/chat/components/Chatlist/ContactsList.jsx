@@ -1,53 +1,53 @@
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { GET_ALL_CONTACTS } from "@/utils/ApiRoutes";
+import { GET_ALL_USERS, GET_ALL_GROUPS } from "@/utils/ApiRoutes";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
 import ChatLIstItem from "./ChatLIstItem";
-import { userInfo } from "os";
 
 function ContactsList() {
-  const [{}, dispatch] = useStateProvider();
-  const [allContacts, setAllContacts] = useState({});
+  const [{ userInfo }, dispatch] = useStateProvider();
+  const [allContacts, setAllContacts] = useState([]);
   const [searchTerm, setsearchTerm] = useState("");
 
   const [searchContacts, setSearchContacts] = useState([]);
 
-  useEffect(() => {
-    if (searchTerm.length) {
-      const filteredData = {};
-
-      Object.keys(allContacts).forEach((key) => {
-        filteredData[key] = allContacts[key].filter((obj) =>
-          obj.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        if (!filteredData[key].length) {
-          delete filteredData[key];
-        }
-      });
-
-      setSearchContacts(filteredData);
-    } else {
-      setSearchContacts(allContacts);
-    }
-  }, [searchTerm]);
-
+  //Get all contacts
   useEffect(() => {
     const getContacts = async () => {
       try {
         const {
           data: { users },
-        } = await axios.get(GET_ALL_CONTACTS);
-
-        setAllContacts(users);
-        setSearchContacts(users);
+        } = await axios.get(GET_ALL_USERS);
+        const {
+          data: { groups },
+        } = await axios.get(GET_ALL_GROUPS);
+        let combinedContacts = [...users, ...groups];
+        setAllContacts(
+          combinedContacts.filter((obj) => obj.name !== userInfo.name)
+        );
+        setSearchContacts(
+          combinedContacts.filter((obj) => obj.name !== userInfo.name)
+        );
       } catch (err) {
         console.log(err);
       }
     };
     getContacts();
   }, []);
+  useEffect(() => {
+    if (searchTerm.length) {
+      let filteredData = [];
+      filteredData = allContacts.filter((obj) =>
+        obj.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      setSearchContacts(filteredData);
+    } else {
+      setSearchContacts(allContacts);
+    }
+  }, [searchTerm]);
 
   return (
     <div className="h-full flex flex-col">
@@ -81,18 +81,15 @@ function ContactsList() {
             </div>
           </div>
         </div>
-        {Object.entries(searchContacts).map(([initialLetter, userList]) => {
+        {searchContacts?.map((contact) => {
           return (
-            <div key={Date.now() + initialLetter}>
-              <div className="text-gray-800 text-semibold pl-10 py-5">
-                {initialLetter}
-              </div>
-              {userList.map((contact) => {
-                return (
-                  <ChatLIstItem data={contact} isContactPage key={contact.id} />
-                );
-              })}
-            </div>
+            <ChatLIstItem
+              id={contact.id}
+              type={contact.identifier}
+              data={contact}
+              isContactPage
+              key={contact.id}
+            />
           );
         })}
       </div>

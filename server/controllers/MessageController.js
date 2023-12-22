@@ -4,13 +4,18 @@ export const addMessage = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
 
-    const { message, from, to } = req.body;
+    const { message, from, to, chatType } = req.body;
+
+    //if the user is online but not read yet,
+    // we wanna make  messageStatus as "delivered" else "sent"
     const getUser = onlineUsers.get(to);
 
-    if (message && from && to) {
+    //create private msge
+    if (message && from && to && chatType === "user") {
       const newMessage = await prisma.messages.create({
         data: {
           message: message,
+          msgType: "user",
           sender: { connect: { id: parseInt(from) } },
           reciever: { connect: { id: parseInt(to) } },
           messageStatus: getUser ? "delivered" : "sent",
@@ -19,98 +24,153 @@ export const addMessage = async (req, res, next) => {
       });
       return res.status(201).send({ message: newMessage });
     }
+    //create group msg
+    //sender->id
+    //to->chat id
+    if (message && from && to && chatType === "group") {
+      const newMessage = await prisma.messages.create({
+        data: {
+          message: message,
+          group: { connect: { id: to } },
+          msgType: "group",
+          sender: { connect: { id: parseInt(from) } },
+          messageStatus: getUser ? "delivered" : "sent",
+        },
+        include: { sender: true, group: true },
+      });
+      return res.status(201).send({ message: newMessage });
+    }
+
     return res.status(400).send("From, to and Message is required.");
   } catch (err) {
     next(err);
   }
 };
-
+// get the user with messages whose sentMessages and  recievedMessages are not null
 export const getMessages = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
-    const { from, to } = req.params;
-    const messages = await prisma.messages.findMany({
-      where: {
-        //i want to get all messages from second person or all the messages that i sent to the second person from the chat.
-        OR: [
-          {
-            senderId: parseInt(from),
-            recieverId: parseInt(to),
-          },
-          {
-            senderId: parseInt(to),
-            recieverId: parseInt(from),
-          },
-        ],
-      },
-      orderBy: {
-        id: "asc",
-      },
-    });
+    const { from, to, chatType } = req.params;
+    if (chatType === "user") {
+      const messages = await prisma.messages.findMany({
+        where: {
+          //i want to get all messages from second person or all the messages that i sent to the second person from the chat.
+          OR: [
+            {
+              senderId: parseInt(from),
+              recieverId: parseInt(to),
+            },
+            {
+              senderId: parseInt(to),
+              recieverId: parseInt(from),
+            },
+          ],
+        },
+        orderBy: {
+          id: "asc",
+        },
+      });
 
-    const unreadMessages = [];
-    //update in the ui currently.
-    messages.forEach((message, index) => {
-      if (
-        message.messageStatus !== "read" &&
-        message.senderId === parseInt(to)
-      ) {
-        messages[index].messageStatus = "read";
-        unreadMessages.push(message.id);
-      }
-    });
-    console.log(unreadMessages);
+      const unreadMessages = [];
+      //This means at this point, the chat user is on and triggering
+      // this route so mark it as read.
+      //update in the ui currently.
+      messages.forEach((message, index) => {
+        if (
+          message.messageStatus !== "read" &&
+          message.senderId === parseInt(to)
+        ) {
+          messages[index].messageStatus = "read";
+          unreadMessages.push(message.id);
+        }
+      });
+      console.log("unReadMessages:", unreadMessages);
 
-    //update it in the database too...
-    await prisma.messages.updateMany({
-      where: {
-        id: { in: unreadMessages },
-      },
-      data: {
-        messageStatus: "read",
-      },
-    });
-    res.status(200).json({ messages });
+      //update it in the database too...
+      await prisma.messages.updateMany({
+        where: {
+          id: { in: unreadMessages },
+        },
+        data: {
+          messageStatus: "read",
+        },
+      });
+      return res.status(200).json({ messages });
+    }
+    if (chatType === "group") {
+      const messages = await prisma.messages.findMany({
+        where: {
+          groupId: to,
+        },
+        orderBy: {
+          id: "asc",
+        },
+      });
+      return res.status(200).json({ messages });
+    }
   } catch (err) {
     next(err);
   }
 };
-
+//return users with extra fields including total messages,latest msg,...
 export const getInitialContactsWithMessages = async (req, res, next) => {
   try {
     const userId = parseInt(req.params.from);
     const prisma = getPrismaInstance();
-    const user = await prisma.user.findUnique({
+
+    //get the user alng with 1to1 msgs.
+    const userWithPrivateMessages = await prisma.user.findUnique({
       where: { id: userId },
       include: {
         sentMessages: {
+          where: {
+            NOT: { recieverId: null }, // Filter non-null receiverId in receivedMessages
+          },
           include: { reciever: true, sender: true },
           orderBy: { createdAt: "desc" },
         },
         recievedMessages: {
+          where: {
+            NOT: { recieverId: null }, // Filter non-null receiverId in receivedMessages
+          },
           include: { reciever: true, sender: true },
           orderBy: { createdAt: "desc" },
         },
       },
     });
-    const messages = [...user.sentMessages, ...user.recievedMessages];
-    messages.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-    //Map ds is used
+    const messages = [
+      ...userWithPrivateMessages.sentMessages,
+      ...userWithPrivateMessages.recievedMessages,
+    ];
+
+    /*------------------------------------------------------------------------
+    //Now we will show only one latestmessages of either chat user or sender
+    //Along with unread messages on left side
+    //Showing Users/Communities
+    ------------------------------------------------------------------------------- */
+
+    //sort sentmessages and recievedmessages by createdtime on descending order
+    messages.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    //Map Ds is used
     const users = new Map();
+    //MessageStatusChange array is for making it delvered or read from "sent".
     const messageStatusChange = [];
 
     messages.forEach((msg) => {
-      //here  msg can be sent by himself/herself also, so we check this.
+      //Here  Msg can be sent by himself/herself also, so we check this.
       const isSender = msg.senderId === userId;
+      //either 2nd person or sender id.
       const calculatedId = isSender ? msg.recieverId : msg.senderId;
-      //if the message is just sent but not delivered or read yet push to the msg
-      // to messageStatusChange array for making it delvered or read.
+      //If the message is just sent but not delivered or read yet,
+      // push to the msg
       if (msg.messageStatus === "sent") {
         messageStatusChange.push(msg.id);
       }
 
-      //if calculatedId is not present in users, then create a user(which can be sender or receiver) object with second person messages.
+      //if calculatedId is not present in users,
+      //then create a user(which can be sender or receiver) object with
+      //second person messages.
       if (!users.get(calculatedId)) {
         const {
           id,
@@ -121,6 +181,10 @@ export const getInitialContactsWithMessages = async (req, res, next) => {
           senderId,
           recieverId,
         } = msg;
+
+        //defining user according to the "msg" obj
+        //each user hold the latest msg.
+        //that is to be showed on the left side as initial msg.
         let user = {
           messageId: id,
           type,
@@ -130,13 +194,14 @@ export const getInitialContactsWithMessages = async (req, res, next) => {
           senderId,
           recieverId,
         };
-
-        //if it is sender then create a user with the receiver messages setting un read messages to 0
+        //if it is sender then create a user with the receiver messages
+        // setting unread messages to 0
         if (isSender) {
           user = {
             ...user,
             ...msg.reciever,
             //since the message is sent by us we read it at the time immediately
+            //so unread message is 0.
             totalUnreadMessages: 0,
           };
           //if it is second person then create a user with the sender messages
@@ -147,9 +212,7 @@ export const getInitialContactsWithMessages = async (req, res, next) => {
             totalUnreadMessages: messageStatus !== "read" ? 1 : 0,
           };
         }
-        users.set(calculatedId, {
-          ...user,
-        });
+        users.set(calculatedId, { ...user });
       }
       // if calculatedId is already present in users then.
       //this line will be the most tiggered as we r displaying other user messages
@@ -178,7 +241,7 @@ export const getInitialContactsWithMessages = async (req, res, next) => {
 
     //passes  users and onlineUsers to the List.jsx
     return res.status(200).json({
-      users: Array.from(users.values()),
+      usersWithLatestPivateMessages: Array.from(users.values()),
       onlineUsers: Array.from(onlineUsers.keys()),
     });
   } catch (err) {

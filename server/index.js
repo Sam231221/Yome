@@ -3,7 +3,10 @@ import dotenv from "dotenv";
 import cors from "cors";
 import AuthRoutes from "./routes/AuthRoutes.js";
 import MessageRoutes from "./routes/MessageRoutes.js";
+import GroupMessageRoutes from "./routes/GroupMessageRoutes.js";
 import { Server } from "socket.io";
+import { getAllUserOfaGroup } from "./controllers/AuthController.js";
+import getPrismaInstance from "./utils/PrismaClient.js";
 
 dotenv.config();
 const app = express();
@@ -17,9 +20,9 @@ app.use("/uploads/images/", express.static("uploads/images"));
 
 app.use("/api/auth/", AuthRoutes);
 app.use("/api/messages", MessageRoutes);
-
+app.use("/api/group-messages", GroupMessageRoutes);
 const server = app.listen(process.env.PORT, () => {
-  console.log(`server started on port ${process.env.PORT}`);
+  console.log(`Server started on port ${process.env.PORT}`);
 });
 
 const io = new Server(server, {
@@ -34,11 +37,77 @@ global.onlineUsers = new Map();
 //add it to onlineUsers array.
 io.on("connection", (socket) => {
   global.chatSocket = socket;
+
+  // when the user is on chat page, add it to onlineUser
+  // let everyone be notified about it.
   socket.on("add-user", (userId) => {
     onlineUsers.set(userId, socket.id);
     socket.broadcast.emit("online-users", {
       onlineUsers: Array.from(onlineUsers.keys()),
     });
+  });
+
+  socket.on("send-msg", async (data) => {
+    console.log("Sending Message ...");
+    const sendUserSocket = onlineUsers.get(data.to);
+    const prisma = getPrismaInstance();
+    //when second person is online and u r the one thatis
+    //sending the message
+    //.then only below triggers
+    if (data.chatType === "user") {
+      if (sendUserSocket) {
+        console.log("trigger usertype");
+        socket.to(sendUserSocket).emit("privateMessageReceived", {
+          from: data.from,
+          msgType: "user",
+          message: data.message,
+        });
+      }
+    }
+    if (data.chatType === "group") {
+      const usersInGroup = await prisma.group.findUnique({
+        where: {
+          id: data.to, // Replace with the actual group ID
+        },
+        select: {
+          members: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              // Include other user fields you need
+            },
+          },
+        },
+      });
+      // Broadcast the group message to all users in the group except the sender
+      console.log("usersIn:", usersInGroup);
+      usersInGroup.members.forEach((user) => {
+        console.log("---------", user.id, "=", data.to);
+        if (user.id !== data.from) {
+          console.log("enter");
+          socket.to(user.id).emit("groupMessageReceived", {
+            from: data.from,
+            message: data.message,
+            msgType: "group",
+            room: data.room,
+          });
+        }
+      });
+
+      // socket.to(sendUserSocket).broadcast.emit("msg-recieve", {
+      //   from: data.from,
+      //   message: data.message,
+      //   msgType: "group",
+      // });
+    }
+  });
+
+  socket.on("mark-read", ({ id, recieverId }) => {
+    const sendUserSocket = onlineUsers.get(id);
+    if (sendUserSocket) {
+      socket.to(sendUserSocket).emit("mark-read-recieve", { id, recieverId });
+    }
   });
 
   socket.on("signout", (id) => {
@@ -92,22 +161,6 @@ io.on("connection", (socket) => {
     const sendUserSocket = onlineUsers.get(data.from);
     if (sendUserSocket) {
       socket.to(sendUserSocket).emit("video-call-rejected");
-    }
-  });
-
-  socket.on("send-msg", (data) => {
-    const sendUserSocket = onlineUsers.get(data.to);
-    if (sendUserSocket) {
-      socket
-        .to(sendUserSocket)
-        .emit("msg-recieve", { from: data.from, message: data.message });
-    }
-  });
-
-  socket.on("mark-read", ({ id, recieverId }) => {
-    const sendUserSocket = onlineUsers.get(id);
-    if (sendUserSocket) {
-      socket.to(sendUserSocket).emit("mark-read-recieve", { id, recieverId });
     }
   });
 });

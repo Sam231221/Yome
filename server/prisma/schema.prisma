@@ -15,6 +15,7 @@ model User {
   email String @unique
   name String @unique
   password String
+  identifier String @default("user")
   profilePicture String @default("")
   about String @default("")
   created_at    DateTime   @default(now())
@@ -31,22 +32,26 @@ model User {
 
 model Messages {
   id Int @id @default(autoincrement())
-  sender User @relation("sentMessages",fields:[senderId],references: [id])
+  sender User? @relation("sentMessages",fields:[senderId],references: [id])
   senderId Int
-  reciever User @relation("recievedMessages", fields: [recieverId],references: [id])
-  recieverId Int
+  reciever User? @relation("recievedMessages", fields: [recieverId],references: [id])
+  recieverId Int?
   type String @default("text")
   message String
+  msgType String @default("")  
   messageStatus String @default("sent")
   group       Group?   @relation(fields: [groupId], references: [id])
-  groupId     Int?
+  groupId     String?
   createdAt DateTime @default(now())
 }
 
 
 model Group {
-  id        Int       @id @default(autoincrement())
-  name      String
+  id        String       @id @default(uuid())
+  name      String       @unique
+  about String @default("")
+  identifier String @default("group")
   members   User[]
   messages  Messages[]
+  createdAt DateTime @default(now())
 }

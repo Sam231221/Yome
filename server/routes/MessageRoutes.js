@@ -14,7 +14,7 @@ const uploadImage = multer({ dest: "uploads/images/" });
 const router = Router();
 
 router.post("/add-message", addMessage);
-router.get("/get-messages/:from/:to", getMessages);
+router.get("/get-messages/:from/:to/:chatType", getMessages);
 router.get("/get-initial-contacts/:from", getInitialContactsWithMessages);
 
 router.post("/add-audio-message", upload.single("audio"), addAudioMessage);

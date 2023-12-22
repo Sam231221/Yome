@@ -7,7 +7,12 @@ import { useRouter } from "next/navigation";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import axios from "axios";
-import { GET_USER_ROUTE, GET_MESSAGES_ROUTE, HOST } from "@/utils/ApiRoutes";
+import {
+  GET_USER_ROUTE,
+  GET_MESSAGES_ROUTE,
+  HOST,
+  GET_GROUP_MESSAGES,
+} from "@/utils/ApiRoutes";
 import Empty from "@/components/Empty";
 import VideoCall from "./components/Call/VideoCall";
 import VoiceCall from "./components/Call/VoiceCall";
@@ -19,6 +24,7 @@ export default function Chatpage() {
   const [
     {
       userInfo,
+      currentChatGroup,
       currentChatUser,
       videoCall,
       voiceCall,
@@ -26,6 +32,7 @@ export default function Chatpage() {
       incomingVideoCall,
       messageSearch,
       userContacts,
+      groupContacts,
     },
     dispatch,
   ] = useStateProvider();
@@ -35,6 +42,7 @@ export default function Chatpage() {
   const [socketEvent, setSocketEvent] = useState(false);
   const { data: session } = useSession();
 
+  //get user and Set 'userInfo'
   useEffect(() => {
     const getUserInfo = async (e) => {
       try {
@@ -43,7 +51,6 @@ export default function Chatpage() {
             let { data } = await axios.post(GET_USER_ROUTE, {
               email: session?.user.email,
             });
-            console.log("d:", data);
             //check if the user object with this email is logged in
             // if not then redirect to login page.
             if (!data.status) {
@@ -57,6 +64,7 @@ export default function Chatpage() {
                 id: data?.user?.id,
                 email: data?.user?.email,
                 name: data?.user?.name,
+                identifier: data?.user?.identifier,
                 profileImage: data?.user?.profilePicture,
                 status: data?.user?.about,
               },
@@ -82,7 +90,23 @@ export default function Chatpage() {
   //add message when msg-receive is triggered
   useEffect(() => {
     if (socket.current && !socketEvent) {
-      socket.current.on("msg-recieve", (data) => {
+      // Handling incoming messages from the server
+      socket.current.on("privateMessageReceived", (data) => {
+        // Handle received private message here
+        console.log("Received private message:", data);
+        // Update UI or perform other actions with the received private message
+        dispatch({
+          type: reducerCases.ADD_MESSAGE,
+          newMessage: {
+            ...data.message,
+          },
+        });
+      });
+
+      socket.current.on("groupMessageReceived", (data) => {
+        // Handle received group message here
+        console.log("Received group message:", data);
+        // Update UI or perform other actions with the received group message
         dispatch({
           type: reducerCases.ADD_MESSAGE,
           newMessage: {
@@ -146,22 +170,29 @@ export default function Chatpage() {
     }
   }, [socket.current]);
 
+  //tiggers when current chat user is active by clicking on
+  //chatlist items
+  //getmessages for current chat user or chat group
   useEffect(() => {
     const getMessages = async () => {
       const {
         data: { messages },
       } = await axios.get(
-        `${GET_MESSAGES_ROUTE}/${userInfo.id}/${currentChatUser.id}`
+        `${GET_MESSAGES_ROUTE}/${userInfo.id}/${currentChatUser.id}/${currentChatUser.type}`
       );
       dispatch({ type: reducerCases.SET_MESSAGES, messages });
     };
+
     if (
       currentChatUser &&
-      userContacts.findIndex((contact) => contact.id === currentChatUser.id) !==
-        -1
+      [...userContacts, ...groupContacts].findIndex(
+        (contact) => contact.id === currentChatUser.id
+      ) !== -1
     ) {
+      console.log("togeered");
       getMessages();
     }
+    console.log("currentChatUser:", currentChatUser);
   }, [currentChatUser]);
 
   return (
@@ -182,9 +213,16 @@ export default function Chatpage() {
       {!videoCall && !voiceCall && (
         <div className="grid grid-cols-main h-screen w-screen max-h-screen max-w-full overflow-hidden">
           <ChatList />
+
+          {/* Initially ChatUser is undefined  so display empty component*/}
+          {/* currentchatUser is not "undefined" only when user clicks chat list item */}
+          {/* if only currentchatUser is active, display rightbar  else Empty*/}
           {currentChatUser ? (
             <div className={messageSearch ? "grid grid-cols-2" : "grid-cols-2"}>
-              <Chat />
+              <Chat
+                id={currentChatUser.id}
+                chatType={currentChatUser.identifier}
+              />
               {messageSearch && <SearchMessages />}
             </div>
           ) : (

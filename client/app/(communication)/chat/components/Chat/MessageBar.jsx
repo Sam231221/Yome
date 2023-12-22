@@ -15,7 +15,7 @@ const CaptureAudio = dynamic(() => import("@/components/common/CaptureAudio"), {
   ssr: false,
 });
 
-export default function MessageBar() {
+export default function MessageBar({ id, chatType }) {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
@@ -62,20 +62,28 @@ export default function MessageBar() {
     try {
       setMessage("");
       const { data } = await axios.post(ADD_MESSAGE_ROUTE, {
-        to: currentChatUser.id,
+        chatType: chatType,
         from: userInfo.id,
+        to: currentChatUser.id,
         message,
       });
+      console.log("created msg:", data);
+
       socket.current.emit("send-msg", {
-        to: currentChatUser.id,
+        chatType: chatType,
         from: userInfo.id,
+        room: `room-${currentChatUser.id}`,
+        to: currentChatUser.id,
         message: data.message,
       });
+      //add msg real time from sender side.
+      console.log("data here:", data);
       dispatch({
         type: reducerCases.ADD_MESSAGE,
         newMessage: {
           ...data.message,
         },
+        //it means logged in user is sender
         fromSelf: true,
       });
     } catch (err) {

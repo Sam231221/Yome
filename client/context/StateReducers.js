@@ -8,9 +8,12 @@ export const initialState = {
   messageSearch: false,
   //object
   currentChatUser: undefined,
+  currentChatGroup: undefined,
   socket: undefined,
   messages: [],
+  groupMessages: [],
   userContacts: [],
+  groupContacts: [],
   videoCall: undefined,
   voiceCall: undefined,
   incomingVoiceCall: undefined,
@@ -42,6 +45,23 @@ const reducer = (state, action) => {
         ...state,
         messageSearch: !state.messageSearch,
       };
+    case reducerCases.CHANGE_CURRENT_GROUP: {
+      if (action.group) {
+        if (state.contactsPage) {
+          return {
+            ...state,
+            currentChatGroup: action.group,
+            messages: [],
+          };
+        }
+        return {
+          ...state,
+          currentChatGroup: action.group,
+          messageSearch: false,
+          messages: [],
+        };
+      }
+    }
     case reducerCases.CHANGE_CURRENT_CHAT_USER: {
       if (action.user) {
         if (state.contactsPage) {
@@ -51,22 +71,33 @@ const reducer = (state, action) => {
             messages: [],
           };
         }
-        state.socket.current.emit("mark-read", {
-          id: action.user.id,
-          recieverId: state.userInfo.id,
-        });
-        const clonedContacts = [...state.userContacts];
-        const index = clonedContacts.findIndex(
-          (contact) => contact.id === action.user.id
-        );
-        clonedContacts[index].totalUnreadMessages = 0;
-        return {
-          ...state,
-          currentChatUser: action.user,
-          messageSearch: false,
-          messages: [],
-          userContacts: clonedContacts,
-        };
+        if (action.user.type === "user") {
+          state.socket.current.emit("mark-read", {
+            id: action.user.id,
+            recieverId: state.userInfo.id,
+          });
+          const clonedContacts = [...state.userContacts];
+          const index = clonedContacts.findIndex(
+            (contact) => contact.id === action.user.id
+          );
+          clonedContacts[index].totalUnreadMessages = 0;
+          return {
+            ...state,
+            currentChatUser: action.user,
+            messageSearch: false,
+            messages: [],
+            userContacts: clonedContacts,
+          };
+        }
+
+        if (action.user.type === "group") {
+          return {
+            ...state,
+            currentChatUser: action.user,
+            messageSearch: false,
+            messages: [],
+          };
+        }
       }
     }
     case reducerCases.SET_SOCKET:
@@ -85,7 +116,14 @@ const reducer = (state, action) => {
         });
 
         const clonedContacts = [...state.userContacts];
+        if (action.newMessage.recieverId === null) {
+          return {
+            ...state,
+            messages: [...state.messages, action.newMessage],
+          };
+        }
         if (action.newMessage.recieverId === state.userInfo.id) {
+          //get the index of User where user.id is same as senderId of newMessage
           const index = clonedContacts.findIndex(
             (contact) => contact.id === action.newMessage.senderId
           );
@@ -208,6 +246,11 @@ const reducer = (state, action) => {
         ...state,
         userContacts: action.userContacts,
       };
+    case reducerCases.SET_GROUP_CONTACTS:
+      return {
+        ...state,
+        groupContacts: action.groupContacts,
+      };
     case reducerCases.SET_VIDEO_CALL:
       return {
         ...state,
@@ -273,9 +316,17 @@ const reducer = (state, action) => {
       };
 
     case reducerCases.SET_CONTACT_SEARCH: {
-      const filteredContacts = state.userContacts.filter((contact) =>
+      const filteredUserContacts = state.userContacts.filter((contact) =>
         contact.name.toLowerCase().includes(action.contactSearch.toLowerCase())
       );
+      const filteredGroupContacts = state.groupContacts.filter((contact) =>
+        contact.name.toLowerCase().includes(action.contactSearch.toLowerCase())
+      );
+      const filteredContacts = [
+        ...filteredUserContacts,
+        ...filteredGroupContacts,
+      ];
+      console.log("filters:", filteredContacts);
       return {
         ...state,
         contactSearch: action.contactSearch,

@@ -7,52 +7,93 @@ import { FaCamera, FaMicrophone } from "react-icons/fa";
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "../../../../../components/common/MessageStatus";
 
-export default function ChatLIstItem({ data, isContactPage = false }) {
-  const [{ userInfo, currentChatUser }, dispatch] = useStateProvider();
+export default function ChatLIstItem({
+  id,
+  data,
+  type,
+  isContactPage = false,
+}) {
+  const [{ userInfo, currentChatUser, currentChatGroup }, dispatch] =
+    useStateProvider();
 
-  const handleContactClick = () => {
-    //here both CurrentchatUser and data are object
+  const handleContactClick = (e) => {
     if (currentChatUser?.id === data?.id) {
       return dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
     }
-    //change current chat user on right side on clicking the user
-    //items from the left list
+    console.log("ds:", currentChatUser);
+    //here both CurrentchatUser and data are object
+    // if (currentChatUser?.id === data?.id) {
+    //   return dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
+    // }
+
     if (!isContactPage) {
-      dispatch({
-        type: reducerCases.CHANGE_CURRENT_CHAT_USER,
-        user: {
-          name: data.name,
-          about: data.about,
-          profilePicture: data.profilePicture,
-          email: data.email,
-          id: userInfo.id === data.senderId ? data.recieverId : data.senderId,
-        },
-      });
+      if (e.target.getAttribute("name") == "group") {
+        console.log("dispatching group type");
+        dispatch({
+          type: reducerCases.CHANGE_CURRENT_CHAT_USER,
+          user: {
+            type: e.target.getAttribute("name"),
+            name: data.name,
+            about: data.about,
+            profilePicture: data.profilePicture,
+            identifier: data.identifier,
+            email: data.email,
+            id: data.id,
+          },
+        });
+      }
+      if (e.target.getAttribute("name") == "user") {
+        console.log("dispatching user type");
+        dispatch({
+          type: reducerCases.CHANGE_CURRENT_CHAT_USER,
+          user: {
+            type: e.target.getAttribute("name"),
+            name: data.name,
+            about: data.about,
+            profilePicture: data.profilePicture,
+            identifier: data.identifier,
+            email: data.email,
+            id: userInfo.id === data.senderId ? data.recieverId : data.senderId,
+          },
+        });
+      }
     } else {
-      console.log("Change the current chat user from contact list");
+      //toggle with data object
       dispatch({ type: reducerCases.CHANGE_CURRENT_CHAT_USER, user: data });
       dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
     }
   };
   return (
     <div
+      id={id}
+      name={type}
       className={`flex cursor-pointer justify-center items-center ${
         currentChatUser?.id === data.id && !isContactPage
           ? "bg-background-default-hover"
           : "hover:bg-background-default-hover"
       }`}
-      onClick={handleContactClick}
+      onClick={(e) => handleContactClick(e)}
     >
-      <div className="min-w-fit px-5 pt-3 pb-1 ">
-        <Avatar type="sm" image={data?.profilePicture} />
+      <div className="min-w-fit pointer-events-none px-5 pt-3 pb-1 ">
+        <Avatar
+          className="pointer-events-none"
+          type="sm"
+          image={`${
+            data?.profilePicture
+              ? data.profilePicture
+              : "avatars/userprofile.png"
+          }`}
+        />
       </div>
-      <div className="min-h-full flex flex-col justify-center mt-3 pr-2 w-full">
-        <div className="flex justify-between ">
+      <div className="min-h-full flex pointer-events-none flex-col justify-center mt-3 pr-2 w-full">
+        <div className="flex pointer-events-none justify-between ">
           <div>
-            <span className="font-medium text-sm">{data?.name}</span>
+            <span className="pointer-events-none font-medium text-sm">
+              {data?.name}
+            </span>
           </div>
           {!isContactPage && (
-            <div>
+            <div className="pointer-events-none">
               <span
                 className={`${
                   !data.totalUnreadMessages > 0
@@ -102,7 +143,7 @@ export default function ChatLIstItem({ data, isContactPage = false }) {
                 </div>
               )}
             </span>
-            {data.totalUnreadMessages > 0 && (
+            {type === "user" && data.totalUnreadMessages > 0 && (
               <span className="bg-icon-green px-[5px] rounded-full text-sm">
                 +{data.totalUnreadMessages}
               </span>

@@ -8,9 +8,11 @@ import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import ContextMenu from "@/components/common/ContextMenu";
 
-export default function ChatHeader() {
-  const [{ userInfo, currentChatUser, onlineUsers }, dispatch] =
-    useStateProvider();
+export default function ChatHeader({ chatType }) {
+  const [
+    { userInfo, currentChatUser, currentChatGroup, onlineUsers },
+    dispatch,
+  ] = useStateProvider();
 
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,
@@ -61,7 +63,14 @@ export default function ChatHeader() {
   return (
     <div className="h-16 px-4 py-3 flex justify-between items-center bg-white z-10">
       <div className="flex items-center justify-center gap-6">
-        <Avatar type="sm" image={currentChatUser?.profilePicture} />
+        <Avatar
+          type="sm"
+          image={`${
+            currentChatUser?.profilePicture
+              ? currentChatUser.profilePicture
+              : "avatars/userprofile.png"
+          }`}
+        />
         <div className="flex flex-col">
           <span className="">{currentChatUser?.name}</span>
           <span className="text-secondary text-sm">
