@@ -49,7 +49,6 @@ export default function LoginContainer({ activeTab }) {
     console.log("provider", provider);
     signIn(provider, { redirect: false })
       .then((callback) => {
-        console.log("callback:", callback);
         if (callback?.error) {
           toast.error("Invalid credentials!");
         }
@@ -57,7 +56,7 @@ export default function LoginContainer({ activeTab }) {
           router.push("/home");
         }
       })
-      .finally(() => console.log("sdsef"));
+      .finally(() => console.log("loggedIn"));
   };
 
   //Login with Credentials
@@ -68,12 +67,11 @@ export default function LoginContainer({ activeTab }) {
       email: values.email,
       password: values.password,
     });
-    console.log(data);
     if (data?.error) {
       toast.error("Credentials error!");
     } else {
       toast.success("Login Successfully");
-      router.push("/");
+      router.push("/home");
     }
   };
   return (

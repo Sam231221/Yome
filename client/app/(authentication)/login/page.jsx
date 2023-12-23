@@ -7,22 +7,19 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import LoginContainer from "./components/LoginContainer";
 import RegisterContainer from "./components/RegisterContainer";
+import toast from "react-hot-toast";
 export default function Login() {
   const router = useRouter();
   const [{ userInfo, newUser }, dispatch] = useStateProvider();
   const [activeTab, setActiveTab] = useState("login");
-  const { data: session } = useSession();
+  const session = useSession();
 
   useEffect(() => {
-    if (session?.user) {
+    if (session?.status === "authenticated") {
+      toast.success("You are already logged in");
       router.push("/home");
-    } else {
-      router.push("/login");
     }
-  }, [session]);
-  useEffect(() => {
-    if (userInfo?.id && !newUser) router.push("/");
-  }, [userInfo, newUser, router]);
+  }, [session?.status, router]);
 
   return (
     <div className="grid grid-cols-6">
