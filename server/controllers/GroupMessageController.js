@@ -61,6 +61,7 @@ export const getInitialGroupsWithMessages = async (req, res, next) => {
       })
       .group({
         include: {
+          members: true,
           messages: {
             orderBy: {
               createdAt: "desc", // Order messages by createdAt in descending order

@@ -58,6 +58,7 @@ export default function List() {
         });
         // dispatch({ type: reducerCases.SET_ONLINE_USERS, onlineUsers });
       };
+
       if (userInfo?.id) {
         getContacts();
         getGroups();

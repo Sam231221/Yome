@@ -4,7 +4,7 @@ export const addMessage = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
 
-    const { message, from, to, chatType } = req.body;
+    const { chatType, from, to, message } = req.body;
 
     //if the user is online but not read yet,
     // we wanna make  messageStatus as "delivered" else "sent"

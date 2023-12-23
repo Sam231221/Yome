@@ -5,7 +5,6 @@ import AuthRoutes from "./routes/AuthRoutes.js";
 import MessageRoutes from "./routes/MessageRoutes.js";
 import GroupMessageRoutes from "./routes/GroupMessageRoutes.js";
 import { Server } from "socket.io";
-import getPrismaInstance from "./utils/PrismaClient.js";
 
 dotenv.config();
 const app = express();
@@ -46,16 +45,17 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("send-msg", async (data) => {
-    console.log("Sending Message ...");
+  socket.on("join room", (room, userid) => {
+    socket.join(room);
+    console.log(`${userid} is in ${room}.`);
+  });
+  socket.on("send-msg", (data) => {
     const sendUserSocket = onlineUsers.get(data.to);
-    const prisma = getPrismaInstance();
     //when second person is online and u r the one thatis
     //sending the message
     //.then only below triggers
     if (data.chatType === "user") {
       if (sendUserSocket) {
-        console.log("trigger usertype");
         socket.to(sendUserSocket).emit("privateMessageReceived", {
           from: data.from,
           msgType: "user",
@@ -64,41 +64,13 @@ io.on("connection", (socket) => {
       }
     }
     if (data.chatType === "group") {
-      const usersInGroup = await prisma.group.findUnique({
-        where: {
-          id: data.to, // Replace with the actual group ID
-        },
-        select: {
-          members: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              // Include other user fields you need
-            },
-          },
-        },
+      socket.to(data.room).emit("msg-recieve", {
+        from: data.from,
+        message: data.message,
+        msgType: "group",
+        room: data.room,
+        groupId:data.to,
       });
-      // Broadcast the group message to all users in the group except the sender
-      console.log("usersIn:", usersInGroup);
-      usersInGroup.members.forEach((user) => {
-        console.log("---------", user.id, "=", data.to);
-        if (user.id !== data.from) {
-          console.log("enter");
-          socket.to(user.id).emit("groupMessageReceived", {
-            from: data.from,
-            message: data.message,
-            msgType: "group",
-            room: data.room,
-          });
-        }
-      });
-
-      // socket.to(sendUserSocket).broadcast.emit("msg-recieve", {
-      //   from: data.from,
-      //   message: data.message,
-      //   msgType: "group",
-      // });
     }
   });
 

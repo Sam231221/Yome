@@ -31,7 +31,7 @@ function ContactsList() {
           combinedContacts.filter((obj) => obj.name !== userInfo.name)
         );
       } catch (err) {
-        console.log(err);
+        toast.error(err.msg);
       }
     };
     getContacts();

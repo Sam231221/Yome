@@ -61,14 +61,16 @@ export default function MessageBar({ id, chatType }) {
   const sendTextMessage = async () => {
     try {
       setMessage("");
-      const { data } = await axios.post(ADD_MESSAGE_ROUTE, {
-        chatType: chatType,
-        from: userInfo.id,
-        to: currentChatUser.id,
-        message,
-      });
-      console.log("created msg:", data);
-
+      const { data } = await axios.post(
+        "http://localhost:3005/api/messages/add-message",
+        {
+          chatType: chatType,
+          from: userInfo.id,
+          to: currentChatUser.id,
+          message,
+        }
+      );
+      console.log("puti/.");
       socket.current.emit("send-msg", {
         chatType: chatType,
         from: userInfo.id,
@@ -76,16 +78,29 @@ export default function MessageBar({ id, chatType }) {
         to: currentChatUser.id,
         message: data.message,
       });
-      //add msg real time from sender side.
-      console.log("data here:", data);
-      dispatch({
-        type: reducerCases.ADD_MESSAGE,
-        newMessage: {
-          ...data.message,
-        },
-        //it means logged in user is sender
-        fromSelf: true,
-      });
+      if (chatType === "user") {
+        //add msg real time from sender side through dispatch().
+        dispatch({
+          type: reducerCases.ADD_USER_MESSAGE,
+          newMessage: {
+            ...data.message,
+          },
+          //it means logged in user is sender
+          fromSelf: true,
+        });
+      }
+      if (chatType === "group") {
+        //add msg real time from sender side through dispatch().
+        dispatch({
+          type: reducerCases.ADD_GROUP_MESSAGE,
+          newMessage: {
+            ...data.message,
+          },
+          groupId: currentChatUser.id,
+          //it means logged in user is sender
+          fromSelf: true,
+        });
+      }
     } catch (err) {
       console.log(err);
     }

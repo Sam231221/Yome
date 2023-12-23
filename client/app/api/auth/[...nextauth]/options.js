@@ -65,8 +65,6 @@ export const options = {
             data.user.password
           );
           if (match) {
-            // user["role"] = "User";
-            console.log("matched");
             return data.user;
           } else return null;
         }
@@ -88,11 +86,9 @@ export const options = {
     async session({ session, token }) {
       // if (session?.user) session.user.role = token.role;
       // return session;
-
       session.user = token;
       //dont store password in session.
       delete session.user.password;
-      console.log("session:", session);
       return session;
     },
   },

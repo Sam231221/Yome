@@ -13,14 +13,18 @@ export default function ChatLIstItem({
   type,
   isContactPage = false,
 }) {
-  const [{ userInfo, currentChatUser, currentChatGroup }, dispatch] =
+  const [{ userInfo, socket, currentChatUser, currentChatGroup }, dispatch] =
     useStateProvider();
 
   const handleContactClick = (e) => {
     if (currentChatUser?.id === data?.id) {
       return dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
     }
-    console.log("ds:", currentChatUser);
+    if (data?.identifier === "group") {
+      socket.current.emit("join room", `room-${data.id}`, userInfo.id);
+    }
+
+    console.log("currentChatUser:", currentChatUser);
     //here both CurrentchatUser and data are object
     // if (currentChatUser?.id === data?.id) {
     //   return dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
@@ -28,7 +32,6 @@ export default function ChatLIstItem({
 
     if (!isContactPage) {
       if (e.target.getAttribute("name") == "group") {
-        console.log("dispatching group type");
         dispatch({
           type: reducerCases.CHANGE_CURRENT_CHAT_USER,
           user: {
@@ -43,7 +46,6 @@ export default function ChatLIstItem({
         });
       }
       if (e.target.getAttribute("name") == "user") {
-        console.log("dispatching user type");
         dispatch({
           type: reducerCases.CHANGE_CURRENT_CHAT_USER,
           user: {

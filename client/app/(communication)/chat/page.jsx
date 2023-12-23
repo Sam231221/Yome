@@ -24,7 +24,6 @@ export default function Chatpage() {
   const [
     {
       userInfo,
-      currentChatGroup,
       currentChatUser,
       videoCall,
       voiceCall,
@@ -90,27 +89,28 @@ export default function Chatpage() {
   //add message when msg-receive is triggered
   useEffect(() => {
     if (socket.current && !socketEvent) {
+      console.log("yo");
       // Handling incoming messages from the server
       socket.current.on("privateMessageReceived", (data) => {
-        // Handle received private message here
-        console.log("Received private message:", data);
+        console.log("chat-m:", data);
         // Update UI or perform other actions with the received private message
         dispatch({
-          type: reducerCases.ADD_MESSAGE,
+          type: reducerCases.ADD_USER_MESSAGE,
           newMessage: {
             ...data.message,
           },
         });
       });
 
-      socket.current.on("groupMessageReceived", (data) => {
-        // Handle received group message here
-        console.log("Received group message:", data);
+      socket.current.on("msg-recieve", (data) => {
+        console.log("group-m:", data);
         // Update UI or perform other actions with the received group message
         dispatch({
-          type: reducerCases.ADD_MESSAGE,
+          type: reducerCases.ADD_GROUP_MESSAGE,
+
           newMessage: {
             ...data.message,
+            groupId: data.groupId,
           },
         });
       });
@@ -170,9 +170,9 @@ export default function Chatpage() {
     }
   }, [socket.current]);
 
-  //tiggers when current chat user is active by clicking on
+  //Tiggers when current chat user is active by clicking on
   //chatlist items
-  //getmessages for current chat user or chat group
+  //Changes current user/group and get messages for it.
   useEffect(() => {
     const getMessages = async () => {
       const {
@@ -189,7 +189,6 @@ export default function Chatpage() {
         (contact) => contact.id === currentChatUser.id
       ) !== -1
     ) {
-      console.log("togeered");
       getMessages();
     }
     console.log("currentChatUser:", currentChatUser);

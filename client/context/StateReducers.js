@@ -1,3 +1,4 @@
+import { userInfo } from "os";
 import { reducerCases } from "./constants";
 
 export const initialState = {
@@ -105,29 +106,33 @@ const reducer = (state, action) => {
         ...state,
         socket: action.socket,
       };
-    case reducerCases.ADD_MESSAGE: {
+    case reducerCases.ADD_USER_MESSAGE: {
+      //if the currentchat user id is the one that the message
+      //was intended to be sent to Or
+      //action.fromSelf => Currnt user sent the msg
       if (
         state.currentChatUser?.id === action.newMessage.senderId ||
         action?.fromSelf
       ) {
+        //trigger mark-read event
         state.socket.current.emit("mark-read", {
           id: action.newMessage.senderId,
           recieverId: action.newMessage.recieverId,
         });
-
+        //clonedContacts holds the user along with latest message and no of unread messages.
         const clonedContacts = [...state.userContacts];
-        if (action.newMessage.recieverId === null) {
-          return {
-            ...state,
-            messages: [...state.messages, action.newMessage],
-          };
-        }
+        //if the sender has sent the new message to the receiver
         if (action.newMessage.recieverId === state.userInfo.id) {
           //get the index of User where user.id is same as senderId of newMessage
+          //Get the very first single contacts who's id ==== new message.senderId
+          console.log("if statement");
           const index = clonedContacts.findIndex(
             (contact) => contact.id === action.newMessage.senderId
           );
+          //I
+          //if such contact exists in the array,execute this line
           if (index !== -1) {
+            //get that user contact and update it
             const data = clonedContacts[index];
             data.message = action.newMessage.message;
             data.type = action.newMessage.type;
@@ -135,7 +140,12 @@ const reducer = (state, action) => {
             data.messageStatus = action.newMessage.messageStatus;
             data.recieverId = action.newMessage.recieverId;
             data.senderId = action.newMessage.senderId;
+
+            //delete the object at the index only from the array and update the array
             clonedContacts.splice(index, 1);
+            //while add new "data" to the very first
+            //here length of the original array remains preserved.
+            //putting the object that has latest message at very first index.
             clonedContacts.unshift(data);
           }
           return {
@@ -144,19 +154,31 @@ const reducer = (state, action) => {
             userContacts: clonedContacts,
           };
         } else {
+          // Logic for handling new message that the sender just sents to reciever/group
+          //Get the very first single sender contact who has sent that new message
           const index = clonedContacts.findIndex(
             (contact) => contact.id === action.newMessage.recieverId
           );
+          console.log("index bitch:", index);
+          //if such sender exists then
           if (index !== -1) {
-            const data = clonedContacts[index];
-            data.message = action.newMessage.message;
-            data.type = action.newMessage.type;
-            data.messageId = action.newMessage.id;
-            data.messageStatus = action.newMessage.messageStatus;
-            data.recieverId = action.newMessage.recieverId;
-            data.senderId = action.newMessage.senderId;
+            //just now append the latest message details that we just sent
+            // for the object at that index(sender)
+            //this is done to show latest message in lftsidebar
+            const newUpdatedContact = clonedContacts[index];
+            newUpdatedContact.message = action.newMessage.message;
+            newUpdatedContact.type = action.newMessage.type;
+            newUpdatedContact.messageId = action.newMessage.id;
+            newUpdatedContact.createdAt = action.newMessage.createdAt;
+            newUpdatedContact.messageStatus = action.newMessage.messageStatus;
+            newUpdatedContact.recieverId = action.newMessage.recieverId;
+            newUpdatedContact.senderId = action.newMessage.senderId;
+
+            //remove that object at that index
             clonedContacts.splice(index, 1);
-            clonedContacts.unshift(data);
+            //instead add new one to the very first.
+            // in this way order is maintain of original array
+            clonedContacts.unshift(newUpdatedContact);
           } else {
             const {
               message,
@@ -189,10 +211,14 @@ const reducer = (state, action) => {
           };
         }
       } else {
+        //At real time
+        //When sender sent new message to receiver. It gets appear on reciver side.
+        //WHen reciever sends new message to sender.It appears on sender side.
         const clonedContacts = [...state.userContacts];
         const index = clonedContacts.findIndex(
           (contact) => contact.id === action.newMessage.senderId
         );
+        console.log("index:", index);
         if (index !== -1) {
           const data = clonedContacts[index];
           data.message = action.newMessage.message;
@@ -204,7 +230,9 @@ const reducer = (state, action) => {
           data.totalUnreadMessages += 1;
           clonedContacts.splice(index, 1);
           clonedContacts.unshift(data);
+          console.log("cloneedContacts:", clonedContacts);
         } else {
+          console.log("last else statement...");
           const {
             message,
             type,
@@ -227,13 +255,122 @@ const reducer = (state, action) => {
             profilePicture: action.newMessage.sender.profilePicture,
             totalUnreadMessages: action.fromSelf ? 0 : 1,
           };
+          console.log("for the very very new message.");
           clonedContacts.unshift(data);
         }
-
         return {
           ...state,
           userContacts: clonedContacts,
         };
+      }
+    }
+
+    case reducerCases.ADD_GROUP_MESSAGE: {
+      const userBelongsToGroup = state.groupContacts.some(
+        (group) =>
+          group.id === action.newMessage.groupId &&
+          group.members.some((member) => member.id === state.userInfo.id)
+      );
+
+      if (userBelongsToGroup || action?.fromSelf) {
+        console.log("entering");
+        //trigger mark-read event
+        state.socket.current.emit("mark-read", {
+          id: action.newMessage.senderId,
+          recieverId: action.newMessage.recieverId,
+        });
+
+        //clonedContacts holds the user along with latest message and no of unread messages.
+        const clonedGroupContacts = [...state.groupContacts];
+        //if the sender has sent the new message to the receiver
+        if (action.newMessage.recieverId === state.userInfo.id) {
+          //get the index of User where user.id is same as senderId of newMessage
+          //Get the very first single contacts who's id ==== new message.senderId
+          console.log("if statement");
+          const index = clonedGroupContacts.findIndex(
+            (contact) => contact.id === action.newMessage.senderId
+          );
+          //I
+          //if such contact exists in the array,execute this line
+          if (index !== -1) {
+            //get that user contact and update it
+            const data = clonedGroupContacts[index];
+            data.message = action.newMessage.message;
+            data.type = action.newMessage.type;
+            data.messageId = action.newMessage.id;
+            data.messageStatus = action.newMessage.messageStatus;
+            data.recieverId = action.newMessage.recieverId;
+            data.senderId = action.newMessage.senderId;
+
+            //delete the object at the index only from the array and update the array
+            clonedGroupContacts.splice(index, 1);
+            //while add new "data" to the very first
+            //here length of the original array remains preserved.
+            //putting the object that has latest message at very first index.
+            clonedGroupContacts.unshift(data);
+          }
+          return {
+            ...state,
+            messages: [...state.messages, action.newMessage],
+            groupContacts: clonedGroupContacts,
+          };
+        } else {
+          // Logic for handling new message that the sender just sents to group
+          //Get the very first single sender contacts who has sent that new message
+          console.log("running else");
+          const index = clonedGroupContacts.findIndex(
+            (contact) => contact.id === action.groupId
+          );
+          console.log("index:", index);
+          //if such sender exists then
+          if (index !== -1) {
+            //just now append the latest message details that we just sent
+            // for the object at that index(sender)
+            //this is done to show latest message in lftsidebar
+            // const userContact = userContacts[indexOfUser];
+
+            const newUpdatedContact = clonedGroupContacts[index];
+            console.log(newUpdatedContact);
+            newUpdatedContact.message = action.newMessage.message;
+            newUpdatedContact.type = action.newMessage.type;
+            newUpdatedContact.messageId = action.newMessage.id;
+            newUpdatedContact.createdAt = action.newMessage.createdAt;
+            newUpdatedContact.messageStatus = action.newMessage.messageStatus;
+            newUpdatedContact.recieverId = action.newMessage.recieverId;
+            newUpdatedContact.senderId = action.newMessage.senderId;
+
+            //remove that object at that index
+            clonedGroupContacts.splice(index, 1);
+            //instead add new one to the very first.
+            // in this way order is maintain of original array
+            clonedGroupContacts.unshift(newUpdatedContact);
+          } else {
+            const clonedContacts = [...state.groupContacts];
+            const index = clonedContacts.findIndex(
+              (contact) => contact.id === action.newMessage.groupId
+            );
+            console.log("Second last else index:", index);
+            if (index !== -1) {
+              const data = clonedContacts[index];
+              data.message = action.newMessage.message;
+              data.type = action.newMessage.type;
+              data.messageId = action.newMessage.id;
+              data.messageStatus = action.newMessage.messageStatus;
+              data.recieverId = action.newMessage.recieverId;
+              data.senderId = action.newMessage.senderId;
+              data.createdAt = action.newMessage.createdAt;
+              data.totalUnreadMessages += 1;
+              clonedContacts.splice(index, 1);
+              clonedContacts.unshift(data);
+              console.log("cloneedContacts:", clonedContacts);
+            }
+          }
+          return {
+            ...state,
+            messages: [...state.messages, action.newMessage],
+            groupContacts: clonedGroupContacts,
+          };
+        }
       }
     }
     case reducerCases.SET_MESSAGES:

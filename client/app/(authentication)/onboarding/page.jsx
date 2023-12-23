@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import Avatar from "@/components/common/Avatar";
 import Input from "@/components/common/Input";
@@ -8,7 +9,7 @@ import Resizer from "react-image-file-resizer";
 
 import Image from "next/image";
 import { useStateProvider } from "@/context/StateContext";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { reducerCases } from "@/context/constants";
 
 export default function OnBoarding() {
