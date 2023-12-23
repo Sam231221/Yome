@@ -2,7 +2,6 @@ import React from "react";
 import Avatar from "../../../../../components/common/Avatar";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { BsCheckAll, BsCheckLg } from "react-icons/bs";
 import { FaCamera, FaMicrophone } from "react-icons/fa";
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "../../../../../components/common/MessageStatus";
@@ -13,8 +12,7 @@ export default function ChatLIstItem({
   type,
   isContactPage = false,
 }) {
-  const [{ userInfo, socket, currentChatUser, currentChatGroup }, dispatch] =
-    useStateProvider();
+  const [{ userInfo, socket, currentChatUser }, dispatch] = useStateProvider();
 
   const handleContactClick = (e) => {
     if (currentChatUser?.id === data?.id) {

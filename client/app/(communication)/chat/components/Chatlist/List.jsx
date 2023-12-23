@@ -4,7 +4,7 @@ import { useStateProvider } from "@/context/StateContext";
 import axios from "axios";
 import {
   GET_INITIAL_CONTACTS_ROUTE,
-  GET_INITIAL_GROUPS,
+  GET_INITIAL_GROUP_MESSAGES,
 } from "@/utils/ApiRoutes";
 import { reducerCases } from "@/context/constants";
 
@@ -29,25 +29,20 @@ export default function List() {
       const getGroups = async () => {
         const {
           data: { groupsWithLatestGroupMessages },
-        } = await axios.get(
-          `http://localhost:3005/api/group-messages/get-initial-group-messages/${userInfo.id}`
-        );
+        } = await axios.get(`${GET_INITIAL_GROUP_MESSAGES}/${userInfo.id}`);
 
         groupsWithLatestGroupMessages.forEach((group) => {
-          // Loop through the messages array in each group
           group.messages.forEach((message) => {
-            // Copy all fields except groupId from message to messageId
             const { groupId, ...messageId } = message;
-            messageId.messageId = messageId.id; // Assuming you wanted to keep this unchanged
+            messageId.messageId = messageId.id;
             delete messageId.id;
-            // Replace the message object with the modified messageId object
+
             group.messages[group.messages.indexOf(message)] = messageId;
             Object.assign(group, messageId);
           });
           delete group.messages;
         });
 
-       
         dispatch({
           type: reducerCases.SET_GROUP_CONTACTS,
           groupContacts: groupsWithLatestGroupMessages,

@@ -23,6 +23,6 @@ export const GET_SINGLE_GROUP = `${GROUP_MESSAGES_ROUTE}/get-group`;
 
 export const ADD_GROUP_MESSAGE = `${GROUP_MESSAGES_ROUTE}/add-message`;
 export const GET_GROUP_MESSAGES = `${GROUP_MESSAGES_ROUTE}/get-messages`;
-export const GET_INITIAL_GROUPS = `${GROUP_MESSAGES_ROUTE}/get-initial-group-messages/:group_id`;
+export const GET_INITIAL_GROUP_MESSAGES = `${GROUP_MESSAGES_ROUTE}/get-initial-group-messages`;
 export const ADD_GROUP_AUDIO_MESSAGE = `${GROUP_MESSAGES_ROUTE}/add-audio-message`;
 export const ADD_GROUP_IMAGE_MESSAGE = `${GROUP_MESSAGES_ROUTE}/add-image-message`;

@@ -16,7 +16,6 @@ export default function ChatContainer({ chatType }) {
 
   //On Message Updates
   useEffect(() => {
-    console.log("messages:", messages);
     const container = containerRef.current;
     const lastMessage =
       container.lastElementChild.lastElementChild.lastElementChild

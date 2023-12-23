@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       backgroundImage: {
-        "chat-background": "url('/chat-bg.png')",
+        "chat-background": "url('/bgChat.jpg')",
       },
       colors: {
         secondary: "#8696a0",
