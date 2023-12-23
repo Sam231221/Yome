@@ -190,16 +190,12 @@ export const getInitialContactsWithMessages = async (req, res, next) => {
           recieverId,
         };
         //if it is sender then create a user with the receiver messages
-        // setting unread messages to 0
         if (isSender) {
           user = {
             ...user,
             ...msg.reciever,
-            //since the message is sent by us we read it at the time immediately
-            //so unread message is 0.
             totalUnreadMessages: 0,
           };
-          //if it is second person then create a user with the sender messages
         } else {
           user = {
             ...user,

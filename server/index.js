@@ -25,19 +25,15 @@ const server = app.listen(process.env.PORT, () => {
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_CLIENT_PORT,
     credentials: true,
   },
 });
 
 global.onlineUsers = new Map();
-//so whenever socket connection takes place and user is added we
-//add it to onlineUsers array.
 io.on("connection", (socket) => {
   global.chatSocket = socket;
 
-  // when the user is on chat page, add it to onlineUser
-  // let everyone be notified about it.
   socket.on("add-user", (userId) => {
     onlineUsers.set(userId, socket.id);
     socket.broadcast.emit("online-users", {
@@ -51,9 +47,6 @@ io.on("connection", (socket) => {
   });
   socket.on("send-msg", (data) => {
     const sendUserSocket = onlineUsers.get(data.to);
-    //when second person is online and u r the one thatis
-    //sending the message
-    //.then only below triggers
     if (data.chatType === "user") {
       if (sendUserSocket) {
         socket.to(sendUserSocket).emit("privateMessageReceived", {
@@ -69,7 +62,7 @@ io.on("connection", (socket) => {
         message: data.message,
         msgType: "group",
         room: data.room,
-        groupId:data.to,
+        groupId: data.to,
       });
     }
   });
