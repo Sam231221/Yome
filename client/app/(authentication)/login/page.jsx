@@ -12,7 +12,7 @@ export default function Login() {
   const [{ userInfo, newUser }, dispatch] = useStateProvider();
   const [activeTab, setActiveTab] = useState("login");
   const { data: session } = useSession();
-  console.log(session);
+
   useEffect(() => {
     if (session?.user) {
       router.push("/home");
@@ -20,9 +20,7 @@ export default function Login() {
       router.push("/login");
     }
   }, [session]);
-  //check if userInfo is set(then its logged in)
   useEffect(() => {
-    //user is logged In
     if (userInfo?.id && !newUser) router.push("/");
   }, [userInfo, newUser, router]);
 
@@ -38,7 +36,7 @@ export default function Login() {
       <div className="h-screen w-full col-span-6 xl:col-span-2 flex justify-center items-center p-10">
         <div className=" md:w-[400px] lg:w-[600px] xl:w-full flex flex-col p-3">
           <div className="xl:hidden flex mb-5 w-full justify-center">
-            <Image src={"/LogoB.png"} width={35} height={50} />
+            <Image src={"/LogoB.png"} width={35} height={50} alt="logo" />
             <h1 className="ml-2 text-4xl font-bold">Eduroclass</h1>
           </div>
 

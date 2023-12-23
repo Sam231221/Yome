@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { useStateProvider } from "@/context/StateContext";
 import dynamic from "next/dynamic";
 /*
-The Container component is imported dynamically using dynamic from @/components/Call/Container. 
+The Container component is imported dynamically 
 This allows for lazy-loading the Container component when needed.
 { ssr: false } as the second argument to dynamic indicates that this component should not be server-side rendered.
 */

@@ -8,11 +8,8 @@ import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import ContextMenu from "@/components/common/ContextMenu";
 
-export default function ChatHeader({ chatType }) {
-  const [
-    { userInfo, currentChatUser, currentChatGroup, onlineUsers },
-    dispatch,
-  ] = useStateProvider();
+export default function ChatHeader() {
+  const [{ currentChatUser, onlineUsers }, dispatch] = useStateProvider();
 
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,

@@ -56,7 +56,7 @@ export const getInitialGroupsWithMessages = async (req, res, next) => {
     const groupsWithLatestGroupMessages = await prisma.user
       .findUnique({
         where: {
-          id: userId, // Replace with the actual user ID
+          id: userId,
         },
       })
       .group({
@@ -64,7 +64,7 @@ export const getInitialGroupsWithMessages = async (req, res, next) => {
           members: true,
           messages: {
             orderBy: {
-              createdAt: "desc", // Order messages by createdAt in descending order
+              createdAt: "desc",
             },
             take: 1, // Retrieve only the latest message for each group
           },

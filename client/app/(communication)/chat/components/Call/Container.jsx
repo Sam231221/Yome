@@ -93,9 +93,7 @@ function Container({ data }) {
           );
 
           // Callback for updates on the status of ther users in the room.
-
           // Callback for updates on the status of the streams in the room.
-
           // After calling the CreateStream method, you need to wait for the ZEGOCLOUD server to return the local stream object before any further operation.
           setTimeout(async () => {
             const localStream = await zg.createStream({

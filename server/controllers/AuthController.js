@@ -96,7 +96,6 @@ export const getAllGroups = async (req, res, next) => {
     const groups = await prisma.group.findMany({
       orderBy: { name: "asc" },
     });
-    console.log("groups:", groups);
 
     return res.status(200).send({ groups: groups });
   } catch (error) {

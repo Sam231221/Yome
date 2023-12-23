@@ -87,7 +87,7 @@ export const options = {
       // if (session?.user) session.user.role = token.role;
       // return session;
       session.user = token;
-      //dont store password in session.
+      //Dont store password in session.
       delete session.user.password;
       return session;
     },

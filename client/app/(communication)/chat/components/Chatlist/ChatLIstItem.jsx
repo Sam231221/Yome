@@ -24,11 +24,10 @@ export default function ChatLIstItem({
       socket.current.emit("join room", `room-${data.id}`, userInfo.id);
     }
 
-    console.log("currentChatUser:", currentChatUser);
     //here both CurrentchatUser and data are object
-    // if (currentChatUser?.id === data?.id) {
-    //   return dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
-    // }
+    if (currentChatUser?.id === data?.id) {
+      return dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
+    }
 
     if (!isContactPage) {
       if (e.target.getAttribute("name") == "group") {

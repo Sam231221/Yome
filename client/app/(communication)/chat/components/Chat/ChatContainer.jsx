@@ -2,7 +2,6 @@ import { useStateProvider } from "@/context/StateContext";
 import React, { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { calculateTime } from "@/utils/CalculateTime";
-import { BsCheckAll, BsCheckLg } from "react-icons/bs";
 import MessageStatus from "@/components/common/MessageStatus";
 import ImageMessage from "./ImageMessage";
 
@@ -15,7 +14,7 @@ export default function ChatContainer({ chatType }) {
 
   const containerRef = useRef(null);
 
-  //on message updates
+  //On Message Updates
   useEffect(() => {
     console.log("messages:", messages);
     const container = containerRef.current;
@@ -103,7 +102,6 @@ export default function ChatContainer({ chatType }) {
                 ?.filter((message) => message.recieverId === null)
                 .filter((message) => message.groupId === currentChatUser.id)
                 .map((message, index) => (
-                  // decide whether to display the message left or right at the right sidebar of chat.
                   <div
                     key={index}
                     className={`flex ${

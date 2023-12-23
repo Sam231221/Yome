@@ -1,18 +1,15 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+
 import { signIn } from "next-auth/react";
 import { useStateProvider } from "@/context/StateContext";
 import { FaFacebook, FaGithub } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-import { reducerCases } from "@/context/constants";
-import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
 
 import FormInput from "@/components/FormInut/Form";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 export default function LoginContainer({ activeTab }) {
   const router = useRouter();
-  const [{ userInfo, newUser }, dispatch] = useStateProvider();
   const [IsFormFilled, setFormFill] = useState(false);
   const [values, setValues] = useState({
     email: "",

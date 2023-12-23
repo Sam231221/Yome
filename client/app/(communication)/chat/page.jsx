@@ -7,12 +7,7 @@ import { useRouter } from "next/navigation";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import axios from "axios";
-import {
-  GET_USER_ROUTE,
-  GET_MESSAGES_ROUTE,
-  HOST,
-  GET_GROUP_MESSAGES,
-} from "@/utils/ApiRoutes";
+import { GET_USER_ROUTE, GET_MESSAGES_ROUTE, HOST } from "@/utils/ApiRoutes";
 import Empty from "@/components/Empty";
 import VideoCall from "./components/Call/VideoCall";
 import VoiceCall from "./components/Call/VoiceCall";
@@ -41,7 +36,7 @@ export default function Chatpage() {
   const [socketEvent, setSocketEvent] = useState(false);
   const { data: session } = useSession();
 
-  //get user and Set 'userInfo'
+  //Get user from Db and set 'userInfo'
   useEffect(() => {
     const getUserInfo = async (e) => {
       try {
@@ -50,13 +45,12 @@ export default function Chatpage() {
             let { data } = await axios.post(GET_USER_ROUTE, {
               email: session?.user.email,
             });
-            //check if the user object with this email is logged in
-            // if not then redirect to login page.
+            //Check if the user object with this email is logged in
             if (!data.status) {
               router.push("/login");
             }
 
-            //get the user from database and populate useInfo state
+            //Get the user from database and populate useInfo state
             dispatch({
               type: reducerCases.SET_USER_INFO,
               userInfo: {
@@ -89,11 +83,7 @@ export default function Chatpage() {
   //add message when msg-receive is triggered
   useEffect(() => {
     if (socket.current && !socketEvent) {
-      console.log("yo");
-      // Handling incoming messages from the server
       socket.current.on("privateMessageReceived", (data) => {
-        console.log("chat-m:", data);
-        // Update UI or perform other actions with the received private message
         dispatch({
           type: reducerCases.ADD_USER_MESSAGE,
           newMessage: {
@@ -103,11 +93,8 @@ export default function Chatpage() {
       });
 
       socket.current.on("msg-recieve", (data) => {
-        console.log("group-m:", data);
-        // Update UI or perform other actions with the received group message
         dispatch({
           type: reducerCases.ADD_GROUP_MESSAGE,
-
           newMessage: {
             ...data.message,
             groupId: data.groupId,
@@ -170,8 +157,6 @@ export default function Chatpage() {
     }
   }, [socket.current]);
 
-  //Tiggers when current chat user is active by clicking on
-  //chatlist items
   //Changes current user/group and get messages for it.
   useEffect(() => {
     const getMessages = async () => {
@@ -191,7 +176,6 @@ export default function Chatpage() {
     ) {
       getMessages();
     }
-    console.log("currentChatUser:", currentChatUser);
   }, [currentChatUser]);
 
   return (
@@ -212,10 +196,6 @@ export default function Chatpage() {
       {!videoCall && !voiceCall && (
         <div className="grid grid-cols-main h-screen w-screen max-h-screen max-w-full overflow-hidden">
           <ChatList />
-
-          {/* Initially ChatUser is undefined  so display empty component*/}
-          {/* currentchatUser is not "undefined" only when user clicks chat list item */}
-          {/* if only currentchatUser is active, display rightbar  else Empty*/}
           {currentChatUser ? (
             <div className={messageSearch ? "grid grid-cols-2" : "grid-cols-2"}>
               <Chat

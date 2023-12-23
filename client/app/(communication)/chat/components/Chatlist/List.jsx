@@ -19,10 +19,6 @@ export default function List() {
         const {
           data: { usersWithLatestPivateMessages, onlineUsers },
         } = await axios.get(`${GET_INITIAL_CONTACTS_ROUTE}/${userInfo.id}`);
-        console.log(
-          "leftbar usersWithLatestPrivateMessages:",
-          usersWithLatestPivateMessages
-        );
         dispatch({
           type: reducerCases.SET_USER_CONTACTS,
           userContacts: usersWithLatestPivateMessages,
@@ -51,7 +47,7 @@ export default function List() {
           delete group.messages;
         });
 
-        console.log("GroupWithLatestMessages", groupsWithLatestGroupMessages);
+       
         dispatch({
           type: reducerCases.SET_GROUP_CONTACTS,
           groupContacts: groupsWithLatestGroupMessages,

@@ -24,25 +24,27 @@ export default function HomeLayout({ children }) {
   const toggleMenu = () => {
     setSideBarOpen(!isOpen);
   };
-  //destructuring pathname from location
-  //   const { pathname } = location;
-  //Javascript split method href get the name of the path in array
-  //   const splitLocation = pathname.split("/");
-  //   console.log("location:", splitLocation[1]);
 
   const showSidebar = () => {
-    console.log("sdcc", isOpen);
-    if (window.innerWidth <= 640) {
-      console.log(isOpen);
-      console.log(window.innerWidth);
-      setSideBarOpen(false);
+    if (typeof window !== "undefined") {
+      if (window.innerWidth <= 640) {
+        setSideBarOpen(false);
+      }
     }
   };
   useEffect(() => {
     showSidebar();
-  }, [isOpen]);
 
-  window.addEventListener("resize", showSidebar);
+    const handleResize = () => {
+      showSidebar();
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [isOpen]);
 
   return (
     <div className="relative w-full">
@@ -162,7 +164,8 @@ export default function HomeLayout({ children }) {
               height={60}
               src="/images/banner.png"
               className=" object-contain"
-              alt=""
+              alt="banner"
+              style={{ width: "auto" }}
             />
             <h1 className="text-sm font-bold leading-8">Unlimited Acess</h1>
             <p className="text-xs text-center text-gray-700 ">

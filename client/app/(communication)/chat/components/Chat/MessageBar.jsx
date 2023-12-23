@@ -6,7 +6,7 @@ import { MdSend } from "react-icons/md";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import axios from "axios";
-import { ADD_IMAGE_MESSAGE_ROUTE, ADD_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
+import { ADD_IMAGE_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
 import EmojiPicker from "emoji-picker-react";
 import dynamic from "next/dynamic";
 import PhotoPicker from "@/components/common/PhotoPicker";
@@ -37,7 +37,7 @@ export default function MessageBar({ id, chatType }) {
           to: currentChatUser.id,
         },
       });
-      //render image message at the time.
+      //Render image message at the time.
       if (response.status === 201) {
         socket.current.emit("send-msg", {
           to: currentChatUser.id,
@@ -57,7 +57,7 @@ export default function MessageBar({ id, chatType }) {
     }
   };
 
-  //send text message
+  //Send text message
   const sendTextMessage = async () => {
     try {
       setMessage("");
@@ -70,7 +70,6 @@ export default function MessageBar({ id, chatType }) {
           message,
         }
       );
-      console.log("puti/.");
       socket.current.emit("send-msg", {
         chatType: chatType,
         from: userInfo.id,
@@ -115,7 +114,6 @@ export default function MessageBar({ id, chatType }) {
     setMessage((prevMessage) => (prevMessage += emoji.emoji));
   };
 
-  // Create a ref for the emoji picker element
   const emojiPickerRef = useRef(null);
 
   useEffect(() => {
@@ -130,7 +128,7 @@ export default function MessageBar({ id, chatType }) {
       }
     };
 
-    document.addEventListener("click", handleOutsideClick); // Add the event listener
+    document.addEventListener("click", handleOutsideClick);
     // Clean up the event listener on component unmount
     return () => {
       document.removeEventListener("click", handleOutsideClick);

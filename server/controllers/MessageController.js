@@ -72,9 +72,6 @@ export const getMessages = async (req, res, next) => {
       });
 
       const unreadMessages = [];
-      //This means at this point, the chat user is on and triggering
-      // this route so mark it as read.
-      //update in the ui currently.
       messages.forEach((message, index) => {
         if (
           message.messageStatus !== "read" &&
@@ -84,7 +81,6 @@ export const getMessages = async (req, res, next) => {
           unreadMessages.push(message.id);
         }
       });
-      console.log("unReadMessages:", unreadMessages);
 
       //update it in the database too...
       await prisma.messages.updateMany({
@@ -150,11 +146,10 @@ export const getInitialContactsWithMessages = async (req, res, next) => {
     //Showing Users/Communities
     ------------------------------------------------------------------------------- */
 
-    //sort sentmessages and recievedmessages by createdtime on descending order
     messages.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    //Map Ds is used
+
     const users = new Map();
-    //MessageStatusChange array is for making it delvered or read from "sent".
+
     const messageStatusChange = [];
 
     messages.forEach((msg) => {
