@@ -35,7 +35,7 @@ const config: Config = {
         secondaryTextColor: "#4154F1",
         ternaryTextColor: "#899bbd",
         forteryTextColor: "#51678f",
-        primaryBgColor: "#EEF2FA",
+        primaryBgColor: "#F0F2F5",
         secondaryBgColor: "#f6f6fe",
         ternaryBgColor: "#F3F3F5",
       },

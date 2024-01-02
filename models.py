@@ -1,8 +1,6 @@
 # models.py
-
 from django.contrib.auth.models import BaseUserManager,AbstractBaseUser, AbstractUser, Group, Permission, BaseUserManager
 from django.db import models
-from django.contrib.auth.models import 
 from django.db.models.fields.related import ForeignKey, OneToOneField
 
 from django.contrib.gis.db import models as gismodels

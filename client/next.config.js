@@ -17,6 +17,11 @@ const nextConfig = {
         hostname: "localhost",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "scontent.fpkr1-1.fna.fbcdn.net",
+        pathname: "**",
+      },
     ],
   },
 };
