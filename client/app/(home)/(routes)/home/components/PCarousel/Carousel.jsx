@@ -47,7 +47,6 @@ export default function Carousel({ children }) {
   };
 
   const dragging = (e) => {
-    console.log("fk");
     // scrolling images/carousel to left according to mouse pointer
     if (!isDragStart) return;
     e.preventDefault();
@@ -70,7 +69,6 @@ export default function Carousel({ children }) {
     // showing and hiding prev/next icon according to carousel scroll left value
     let scrollWidth =
       carouselRef.current.scrollWidth - carouselRef.current.clientWidth; // getting max scrollable width
-    console.log(carouselRef.current.scrollLeft);
 
     // Handle left arrow visibility
     const leftArrow = document.getElementById("left-arrow");
@@ -85,19 +83,14 @@ export default function Carousel({ children }) {
       rightArrow.style.display =
         carouselRef.current.scrollLeft === scrollWidth ? "none" : "block";
     }
-
-    console.log(carouselRef.current.scrollLeft, scrollWidth);
   };
   const handleBtnClick = (e) => {
-    console.log(e.target.id);
-    console.log(carouselRef.current.firstElementChild);
     // getting first img width & adding 14 margin value
     //change this value if u change margin value in css
     let firstImgWidth = carouselRef.current.firstElementChild.clientWidth + 14;
     // if clicked icon is left, reduce width value from the carousel scroll left else add to it
     carouselRef.current.scrollLeft +=
       e.target.id == "left-arrow" ? -firstImgWidth : firstImgWidth;
-    console.log(carouselRef.current.scrollLeft);
     // calling showHideIcons after 60ms
     setTimeout(() => showHideIcons(e), 60);
   };
