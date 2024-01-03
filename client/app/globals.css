@@ -14,8 +14,16 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #ffffff3b;
 }
+.carousel.dragging {
+  cursor: grab;
+  scroll-behavior: auto;
+}
+.carousel.dragging .carousel-item {
+  pointer-events: none;
+}
+
 .section-title {
-  padding-bottom: 30px;
+  padding-bottom: 10px;
 }
 
 .section-title h2 {
@@ -37,7 +45,7 @@ body {
 
 .section-title p {
   margin: 0;
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
   text-transform: uppercase;
 }

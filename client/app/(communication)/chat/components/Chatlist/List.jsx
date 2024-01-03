@@ -3,7 +3,7 @@ import ChatLIstItem from "./ChatLIstItem";
 import { useStateProvider } from "@/context/StateContext";
 import axios from "axios";
 import {
-  GET_INITIAL_CONTACTS_ROUTE,
+  GET_INITIAL_USERS_MESSAGES,
   GET_INITIAL_GROUP_MESSAGES,
 } from "@/utils/ApiRoutes";
 import { reducerCases } from "@/context/constants";
@@ -18,7 +18,7 @@ export default function List() {
       const getContacts = async () => {
         const {
           data: { usersWithLatestPivateMessages, onlineUsers },
-        } = await axios.get(`${GET_INITIAL_CONTACTS_ROUTE}/${userInfo.id}`);
+        } = await axios.get(`${GET_INITIAL_USERS_MESSAGES}/${userInfo.id}`);
         dispatch({
           type: reducerCases.SET_USER_CONTACTS,
           userContacts: usersWithLatestPivateMessages,

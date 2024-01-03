@@ -201,7 +201,7 @@ export default function HomeLayout({ children }) {
             : "w-[calc(100%-65px)] left-[65px] "
         } transition duration-500 ease-out absolute  min-h-screen bg-primaryBgColor`}
       >
-        <div className="topbar z-10 sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
+        <div className="topbar z-10 shadow-lg sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
           <div className="flex gap-3 items-center">
             {/* Hamburger */}
             {/* <IoMenuOutline

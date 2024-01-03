@@ -1,0 +1,166 @@
+/* styles.css */
+
+.slider-container {
+  position: relative;
+  width: 80%;
+  margin: 0 auto;
+}
+
+.slider {
+  overflow: hidden;
+  position: relative;
+  a/* styles.css */
+
+  .slider-container {
+    position: relative;
+    width: 80%;
+    margin: 0 auto;
+  }
+
+  .slider {
+    overflow: hidden;
+    position: relative;
+  }
+
+  .slider-wrapper {
+    display: flex;
+    transition: transform 0.5s ease;
+  }
+
+  .item {
+    flex: 0 0 100%;
+  }
+
+  .item-enter {
+    opacity: 0;
+    transform: translateX(-50%);
+  }
+
+  .item-enter-active {
+    opacity: 1;
+    transform: translateX(0%);
+    transition: opacity 500ms, transform 500ms;
+  }
+
+  .item-exit {
+    opacity: 1;
+    transform: translateX(0%);
+  }
+
+  .item-exit-active {
+    opacity: 0;
+    transform: translateX(50%);
+    transition: opacity 500ms, transform 500ms;
+  }
+
+  .indicators {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #aaa;
+    margin: 0 5px;
+    cursor: pointer;
+  }
+
+  .indicator.active {
+    background-color: #333;
+  }
+
+  .prev,
+  .next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #333;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .prev {
+    left: 10px;
+  }
+
+  .next {
+    right: 10px;
+  }
+}
+
+.slider-wrapper {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.item {
+  flex: 0 0 100%;
+}
+
+.item-enter {
+  opacity: 0;
+  transform: translateX(-50%);
+}
+
+.item-enter-active {
+  opacity: 1;
+  transform: translateX(0%);
+  transition: opacity 500ms, transform 500ms;
+}
+
+.item-exit {
+  opacity: 1;
+  transform: translateX(0%);
+}
+
+.item-exit-active {
+  opacity: 0;
+  transform: translateX(50%);
+  transition: opacity 500ms, transform 500ms;
+}
+
+.indicators {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #aaa;
+  margin: 0 5px;
+  cursor: pointer;
+}
+
+.indicator.active {
+  background-color: #333;
+}
+
+.prev,
+.next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #333;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.prev {
+  left: 10px;
+}
+
+.next {
+  right: 10px;
+}

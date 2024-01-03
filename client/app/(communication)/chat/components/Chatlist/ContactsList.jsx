@@ -1,7 +1,11 @@
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { GET_ALL_USERS, GET_ALL_GROUPS } from "@/utils/ApiRoutes";
+import {
+  GET_ALL_CONNECTED_USERS,
+  GET_ALL_CONNECTED_GROUPS,
+} from "@/utils/ApiRoutes";
 import axios from "axios";
+import toast from "react-hot-toast";
 import React, { useEffect, useState } from "react";
 import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
 import ChatLIstItem from "./ChatLIstItem";
@@ -18,12 +22,13 @@ function ContactsList() {
     const getContacts = async () => {
       try {
         const {
-          data: { users },
-        } = await axios.get(GET_ALL_USERS);
+          data: { followedUsers },
+        } = await axios.get(`${GET_ALL_CONNECTED_USERS}/${userInfo.id}`);
         const {
           data: { groups },
-        } = await axios.get(GET_ALL_GROUPS);
-        let combinedContacts = [...users, ...groups];
+        } = await axios.get(`${GET_ALL_CONNECTED_GROUPS}/${userInfo.id}`);
+        console.log(followedUsers, groups);
+        let combinedContacts = [...followedUsers, ...groups];
         setAllContacts(
           combinedContacts.filter((obj) => obj.name !== userInfo.name)
         );
@@ -31,6 +36,7 @@ function ContactsList() {
           combinedContacts.filter((obj) => obj.name !== userInfo.name)
         );
       } catch (err) {
+        console.log(err);
         toast.error(err.msg);
       }
     };

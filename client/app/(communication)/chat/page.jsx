@@ -1,4 +1,5 @@
 "use client";
+import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import Chat from "./components/Chat/Chat";
@@ -6,7 +7,7 @@ import ChatList from "./components/Chatlist/ChatList";
 import { useRouter } from "next/navigation";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import axios from "axios";
+
 import { GET_USER_ROUTE, GET_MESSAGES_ROUTE, HOST } from "@/utils/ApiRoutes";
 import Empty from "@/components/Empty";
 import VideoCall from "./components/Call/VideoCall";
@@ -195,7 +196,10 @@ export default function Chatpage() {
       )}
       {!videoCall && !voiceCall && (
         <div className="grid grid-cols-main h-screen w-screen max-h-screen max-w-full overflow-hidden">
+          {/* Sidebar */}
           <ChatList />
+
+          {/* ChatContainer */}
           {currentChatUser ? (
             <div className={messageSearch ? "grid grid-cols-2" : "grid-cols-2"}>
               <Chat
