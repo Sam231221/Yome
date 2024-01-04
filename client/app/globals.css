@@ -49,3 +49,63 @@ body {
   font-weight: 700;
   text-transform: uppercase;
 }
+
+.from-blue-50 {
+  --tw-gradient-from: hsl(220, 55%, 10%);
+  --tw-gradient-to: hsla(0, 0%, 100%, 0);
+  --tw-gradient-stops: hsl(220, 55%, 10%), hsla(0, 0%, 100%, 0);
+}
+.to-background {
+  --tw-gradient-to: hsl(250, 24%, 9%) !important;
+}
+.bg-gradient-to-b-blue {
+  background-image: linear-gradient(
+    to bottom,
+    hsl(220, 55%, 10%),
+    hsl(250, 24%, 9%)
+  );
+}
+.bg-blue-50 {
+  background-color: hsl(220, 55%, 10%);
+}
+.border-blue-200 {
+  border-color: hsl(220, 62%, 25%);
+}
+
+.from-pink-50 {
+  --tw-gradient-from: hsl(270, 38%, 12%);
+  --tw-gradient-to: hsla(0, 0%, 100%, 0);
+  --tw-gradient-stops: hsl(270, 38%, 12%), hsl(250, 24%, 9%);
+}
+.bg-gradient-to-b-pink {
+  background-image: linear-gradient(
+    to bottom,
+    hsl(270, 38%, 12%),
+    hsl(250, 24%, 9%)
+  );
+}
+.border-pink-200 {
+  border-color: hsl(270, 45%, 24%);
+}
+.bg-pink-50 {
+  background-color: hsl(270, 38%, 12%);
+}
+
+.from-green-50 {
+  --tw-gradient-from: hsl(152, 15%, 10%);
+  --tw-gradient-to: hsla(0, 0%, 100%, 0);
+  --tw-gradient-stops: hsl(152, 15%, 10%), hsl(250, 24%, 9%);
+}
+.border-green-200 {
+  border-color: hsl(152, 32%, 16%);
+}
+.bg-gradient-to-b-green {
+  background-image: linear-gradient(
+    to bottom,
+    hsl(152, 15%, 10%),
+    hsl(250, 24%, 9%)
+  );
+}
+.bg-green-50 {
+  background-color: hsl(152, 15%, 10%);
+}
