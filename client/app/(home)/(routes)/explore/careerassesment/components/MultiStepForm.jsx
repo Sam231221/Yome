@@ -10,15 +10,16 @@ import StepFinal from "./StepFinal";
 // parent component tol control and manage steps and data
 
 const initialFormData = {
-  firstName: "",
-  lastName: "",
-  businessName: "",
-  businessCity: "",
-  businessWebsite: "",
-  businessEmail: "",
-  incomePerMonth: 0,
-  taxPercantage: 0,
-  agreeToTerms: false,
+  subjectsActivities: [],
+  hobbiesProjects: [],
+  skills: [],
+  workStyle: "",
+  workLifeBalance: "",
+  goals: [],
+  impacts: [],
+  industryPreferences: [],
+  longTermGoals: [],
+  roleModels: [],
 };
 
 const stepsArray = [
@@ -80,15 +81,15 @@ const SimpleMultiStepForm = ({ showStepNumber }) => {
   // We need a method to do final operation
   const handleSubmitFormData = () => {
     // Here You can do final Validation and then Submit Your form
-    if (!formData.agreeToTerms) {
-      alert("Error!!!!!!   You must agree to Terms of Services!!!!");
+    if (!formData) {
+      alert("Error!!!!!!");
     } else {
       setStep("Final");
     }
   };
 
   useEffect(() => {
-    console.log(formData);
+    console.log("yo:", formData);
   }, [formData]);
 
   // Section for render StepNumbers

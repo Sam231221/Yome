@@ -1,38 +1,43 @@
+import { useEffect } from "react";
+
 const StepE = ({
   formData,
-  handleChangeInput,
+
   handlePrevStep,
   handleSubmitFormData,
 }) => {
+  useEffect(() => {
+    console.log("sdsdf:", formData);
+  }, []);
   return (
-    <div className="w-full  h-full flex flex-col items-center justify-center">
-      <div className=" overflow-auto" style={{ height: "calc(100% - 120px)" }}>
+    <div className="w-full  h-full flex mt-14 flex-col items-center justify-center">
+      <div className=" overflow-auto">
         <div className="mt-3">
           <h1 className="text-gray-500 font-bold text-lg">A. Interests</h1>
-          <DataConfirmRow
+          <DataConfirmArrayRow
             label="Subjects/Activities:"
-            value={formData.firstName}
+            value={formData.subjectsActivities}
           />
-          <DataConfirmRow
+          <DataConfirmArrayRow
             label="Hobbies/Projects:"
-            value={formData.firstName}
+            value={formData.hobbiesProjects}
           />
         </div>
         <div className="mt-3">
           <h1 className="text-gray-500 font-bold text-lg">
             B. Skills ,Strengths and Work Prefreneces{" "}
           </h1>
-          <DataConfirmRow
+          <DataConfirmArrayRow
             label="Skills/Abilities:"
-            value={formData.firstName}
+            value={formData.skills}
           />
           <DataConfirmRow
             label="Working Preferences:"
-            value={formData.firstName}
+            value={formData.workStyle}
           />
           <DataConfirmRow
             label="Work-life Importance:"
-            value={formData.firstName}
+            value={formData.workLifeBalance}
           />
         </div>
 
@@ -40,14 +45,17 @@ const StepE = ({
           <h1 className="text-gray-500 font-bold text-lg">
             C. Personal Values and Motivations{" "}
           </h1>
-          <DataConfirmRow
+          <DataConfirmArrayRow
             label="Goals/Achievements:"
-            value={formData.firstName}
+            value={formData.goals}
           />
-          <DataConfirmRow label="FutureImpacts:" value={formData.firstName} />
-          <DataConfirmRow
+          <DataConfirmArrayRow
+            label="FutureImpacts:"
+            value={formData.impacts}
+          />
+          <DataConfirmArrayRow
             label="PreferedIndustries:"
-            value={formData.firstName}
+            value={formData.industryPreferences}
           />
         </div>
 
@@ -55,8 +63,14 @@ const StepE = ({
           <h1 className="text-gray-500 font-bold text-lg">
             D. Future Outlook and Interests{" "}
           </h1>
-          <DataConfirmRow label="Outlooks:" value={formData.firstName} />
-          <DataConfirmRow label="RoleModels:" value={formData.firstName} />
+          <DataConfirmArrayRow
+            label="Outlooks:"
+            value={formData.longTermGoals}
+          />
+          <DataConfirmArrayRow
+            label="RoleModels:"
+            value={formData.roleModels}
+          />
         </div>
 
         <div className="my-2 flex justify-between items-center">
@@ -81,11 +95,24 @@ const StepE = ({
 export default StepE;
 
 // A Seperate component to show data
+const DataConfirmArrayRow = ({ label, value }) => {
+  return (
+    <div className="my-3 border border-dashed border-gray-200 p-1 rounded-lg">
+      <span className="mr-4 text-slate-600">{label}</span>
+      <span className="mr-4 text-slate-500">
+        {value.map((item, i) => (
+          <>{item}, </>
+        ))}
+      </span>
+    </div>
+  );
+};
+
 const DataConfirmRow = ({ label, value }) => {
   return (
     <div className="my-3 border border-dashed border-gray-200 p-1 rounded-lg">
-      <span className="mr-4 text-slate-500">{label}</span>
-      <span className="mr-4 text-slate-900">{value}</span>
+      <span className="mr-4 text-slate-600">{label}</span>
+      <span className="mr-4 text-slate-500">{value}</span>
     </div>
   );
 };
