@@ -94,7 +94,6 @@ export default function Carousel({ children }) {
     // calling showHideIcons after 60ms
     setTimeout(() => showHideIcons(e), 60);
   };
-
   document.addEventListener("mousemove", dragging);
   document.addEventListener("mouseup", dragStop);
 

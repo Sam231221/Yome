@@ -120,18 +120,18 @@ export default function HomeLayout({ children }) {
           </li> */}
           <li
             className={`${
-              splitLocation === "/explorecareer" ? "active bg-[#EEF2FA]" : ""
+              splitLocation === "/explore" ? "active bg-[#EEF2FA]" : ""
             }  my-2 relative group w-full rounded-tl-full rounded-bl-full hover:bg-[#EEF2FA]`}
           >
             <Link
-              href="/explorecareer"
+              href="/explore"
               className="relative group flex w-full hover:text-secondaryTextColor items-center"
             >
               <span className="icon relative py-3 block px-5 text-center">
                 <SlCompass className="text-ternaryTextColor group-hover:text-secondaryTextColor text-2xl" />
               </span>
               <span className="text-primaryTextColor group-hover:text-secondaryTextColor font-semibold relative block py-3 px-2 whitespace-nowrap text-sm">
-                Career Explore
+                Explore
               </span>
             </Link>
           </li>
@@ -201,7 +201,7 @@ export default function HomeLayout({ children }) {
             : "w-[calc(100%-65px)] left-[65px] "
         } transition duration-500 ease-out absolute  min-h-screen bg-primaryBgColor`}
       >
-        <div className="topbar z-10 shadow-lg sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
+        <div className="topbar shadow-lg sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
           <div className="flex gap-3 items-center">
             {/* Hamburger */}
             {/* <IoMenuOutline

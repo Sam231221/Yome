@@ -109,3 +109,65 @@ body {
 .bg-green-50 {
   background-color: hsl(152, 15%, 10%);
 }
+
+.career-img {
+  position: relative;
+  height: 300px;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  /* background: url("./project-1.png") no-repeat; */
+  background-size: cover;
+  background-position-y: 0%;
+  transition: background 3s ease-in-out;
+  cursor: pointer;
+  overflow: hidden;
+}
+.career-img .btn-visit {
+  position: absolute;
+  bottom: -3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  text-decoration: none;
+  background-color: #343434;
+  color: #f3f3f3;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: bottom 1s ease-in-out;
+  z-index: 10;
+}
+.career-img::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 4px;
+  background: linear-gradient(to right, #fff, #343434);
+  transition: all 3s ease-in-out;
+}
+
+.career-img::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+}
+
+.career-img:hover {
+  background-position-y: 100%;
+}
+
+.career-img:hover::before {
+  width: 100%;
+}
+
+.career-img:hover::after {
+  background: linear-gradient(to bottom, transparent 70%, #3434349b);
+}
+
+.career-img:hover .btn-visit {
+  bottom: 2rem;
+}

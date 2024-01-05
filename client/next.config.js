@@ -22,6 +22,11 @@ const nextConfig = {
         hostname: "scontent.fpkr1-1.fna.fbcdn.net",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "bootstrapmade.com",
+        pathname: "**",
+      },
     ],
   },
 };
