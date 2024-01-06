@@ -4,18 +4,19 @@ export const subjectsActivities = [
   "Math",
   "Literature",
   "History",
-  "Music",
-  "Sports",
+  "Physics",
+  "Mathematics",
+  "Statistics",
+  "Computer Science",
   "Coding",
   "Art",
-  "Debate",
 ];
 export const hobbiesProjects = [
   "Painting",
   "Robotics",
+  "Data visualization",
   "Writing",
-  "Cooking",
-  "Photography",
+  "Open-source contributions",
   "Gardening",
   "Game Dev",
   "Volunteering",
@@ -25,10 +26,13 @@ export const hobbiesProjects = [
 export const skills = [
   "Problem-solving",
   "Communication",
+  "Project management",
+  "Data analysis",
+  "Programming",
   "Leadership",
   "Creativity",
   "Analytical Thinking",
-  "Organization",
+  "Engineering design",
   "Teamwork",
   "Adaptability",
 ];
@@ -49,6 +53,7 @@ export const impacts = [
   "Healthcare Accessibility",
   "Poverty Alleviation",
   "Technology Ethics",
+  "Community development",
 ];
 export const goals = [
   "Starting a business",
@@ -59,6 +64,7 @@ export const goals = [
 ];
 
 export const industryPreferences = [
+  "Construction",
   "Healthcare",
   "Tech Startups",
   "Entertainment",
@@ -81,4 +87,6 @@ export const roleModels = [
   "Marie Curie",
   "Oprah Winfrey",
   "Jeff Bezos",
+  "Jeff Hammerbacher",
+  "Emily Warren Roebling",
 ];

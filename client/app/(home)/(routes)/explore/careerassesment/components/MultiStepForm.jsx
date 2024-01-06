@@ -186,7 +186,7 @@ const SimpleMultiStepForm = ({ showStepNumber }) => {
           handleSubmitFormData={handleSubmitFormData}
         />
       ) : null}
-      {step === "Final" ? <StepFinal /> : null}
+      {step === "Final" ? <StepFinal formData={formData} /> : null}
     </div>
   );
 };
