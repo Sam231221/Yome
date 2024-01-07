@@ -99,7 +99,7 @@ export default function Avatar({ type, image, setImage }) {
           <img
             src={image === "" ? "/avatars/userprofile.png" : image}
             alt="avatar"
-            className={`h-10 w-10 rounded-full`}
+            className={`h-11 w-11 rounded-full`}
           />
         )}
         {type === "lg" && (
