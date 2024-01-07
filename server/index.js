@@ -40,6 +40,9 @@ io.on("connection", (socket) => {
 
   socket.on("add-user", (userId) => {
     onlineUsers.set(userId, socket.id);
+
+    console.log("USER ID", userId, " online");
+    console.log("onlineUsers:", onlineUsers);
     socket.broadcast.emit("online-users", {
       onlineUsers: Array.from(onlineUsers.keys()),
     });
@@ -80,6 +83,7 @@ io.on("connection", (socket) => {
 
   socket.on("signout", (id) => {
     onlineUsers.delete(id);
+    console.log("Updating..", onlineUsers);
     socket.broadcast.emit("online-users", {
       onlineUsers: Array.from(onlineUsers.keys()),
     });

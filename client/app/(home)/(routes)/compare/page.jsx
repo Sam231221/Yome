@@ -1,15 +1,38 @@
 "use client";
 import Image from "next/image";
 import axios from "axios";
-import { GoPlus } from "react-icons/go";
-import React, { useState, useEffect } from "react";
 
-const DynamicInputFields = () => {
-  // let institutionsLList = [
-  //   { name: "abc", details: "" },
-  //   { name: "def", details: "" },
-  // ];
+import { GoPlus } from "react-icons/go";
+import { RxDotsVertical } from "react-icons/rx";
+import React, { useState, useEffect } from "react";
+import { MdDeleteOutline } from "react-icons/md";
+
+const ComparePage = () => {
   const [institutions, setInstitutions] = useState([]);
+  const [contextMenuCordinates, setContextMenuCordinates] = useState({
+    x: 0,
+    y: 0,
+  });
+  const [isContextMenuVisible, setIsContextMenuVisible] = useState(false);
+
+  const showContextMenu = (e) => {
+    e.preventDefault();
+    console.log(e);
+    console.log(e.pageX, e.pageY);
+    setContextMenuCordinates({ x: 34, y: 33 });
+    setIsContextMenuVisible(true);
+  };
+
+  const contextMenuOptions = [
+    {
+      name: "Remove",
+      icon: "IoCloseOutline",
+      callBack: async () => {
+        signOut();
+      },
+    },
+  ];
+
   const [inputs, setInputs] = useState([
     {
       id: 1,
@@ -34,7 +57,7 @@ const DynamicInputFields = () => {
     };
     getEIs();
   }, []);
-  console.log(institutions);
+
   const handleInputChange = (id, value, filterField) => {
     const updatedInputs = inputs.map((input) => {
       if (input.id === id) {
@@ -113,50 +136,61 @@ const DynamicInputFields = () => {
         } gap-4`}
       >
         {inputs.map((input) => (
-          <div key={input.id}>
-            <input
-              className="w-full font-medium text-lg focus:outline-none text-gray-700 border rounded-md px-4 py-5"
-              type="text"
-              placeholder="Search for Educational Institution..."
-              value={input.value}
-              onChange={(e) =>
-                handleInputChange(input.id, e.target.value, "name")
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  let searchInstitution = institutions.find(
-                    (item) => item.name === e.target.value
-                  );
-
-                  if (searchInstitution === undefined) {
-                    handleCountrySelect(input.id, {
-                      name: input.value,
-                      notFound: true,
-                    });
-                  } else {
-                    handleCountrySelect(input.id, {
-                      name: input.value,
-                      notFound: false,
-                    });
-                  }
+          <div className="relative" key={input.id}>
+            <div className="w-full relative flex items-center bg-white rounded-md px-4 py-5 border">
+              <input
+                className="w-full font-medium text-lg focus:outline-none text-gray-700  "
+                type="text"
+                placeholder="Search for Educational Institution..."
+                value={input.value}
+                onChange={(e) =>
+                  handleInputChange(input.id, e.target.value, "name")
                 }
-              }}
-            />
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    let searchInstitution = institutions.find(
+                      (item) => item.name === e.target.value
+                    );
+
+                    if (searchInstitution === undefined) {
+                      handleCountrySelect(input.id, {
+                        name: input.value,
+                        notFound: true,
+                      });
+                    } else {
+                      handleCountrySelect(input.id, {
+                        name: input.value,
+                        notFound: false,
+                      });
+                    }
+                  }
+                }}
+              />
+              <RxDotsVertical className="cursor-pointer" />
+              {/* {isContextMenuVisible && (
+                <ContextMenu
+                  options={contextMenuOptions}
+                  cordinates={contextMenuCordinates}
+                  contextMenu={isContextMenuVisible}
+                  setContextMenu={setIsContextMenuVisible}
+                />
+              )} */}
+            </div>
             {input.filteredInstitutions.length > 0 &&
               !input.searchPerformed && (
-                <ul>
+                <ul className="w-full absolute top-20 bg-white rounded-lg shadow-lg">
                   {input.filteredInstitutions.map((institution, index) => (
-                    <li key={index}>
-                      <button
-                        onClick={() =>
-                          handleCountrySelect(input.id, {
-                            ...institution,
-                            notFound: false,
-                          })
-                        }
-                      >
-                        {institution.name}
-                      </button>
+                    <li
+                      onClick={() =>
+                        handleCountrySelect(input.id, {
+                          ...institution,
+                          notFound: false,
+                        })
+                      }
+                      className=" cursor-pointer px-2 py-3 hover:bg-gray-200 text-gray-500"
+                      key={index}
+                    >
+                      {institution.name}
                     </li>
                   ))}
                 </ul>
@@ -209,7 +243,13 @@ const DynamicInputFields = () => {
             )}
 
             {input.searchPerformed && (
-              <button onClick={() => removeInput(input.id)}>Remove</button>
+              <div
+                onClick={() => removeInput(input.id)}
+                className=" flex gap-2 justify-center items-center bg-red-600 w-full mt-2 hover:bg-red-500 py-3 px-2 rounded-lg text-white"
+              >
+                <MdDeleteOutline size={25} />
+                <span>Remove</span>
+              </div>
             )}
           </div>
         ))}
@@ -237,4 +277,4 @@ const DynamicInputFields = () => {
   );
 };
 
-export default DynamicInputFields;
+export default ComparePage;

@@ -282,3 +282,59 @@ body {
     stroke-dashoffset: -120px;
   }
 }
+
+figure {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  flex-direction: column;
+}
+figure figcaption {
+  position: absolute;
+  text-indent: -100vw;
+  white-space: nowrap;
+}
+figure figcaption:before {
+  position: absolute;
+  z-index: 1;
+  outline: solid 4px white;
+  outline-offset: -3px;
+  content: "";
+  border-radius: 50%;
+  text-indent: 0;
+  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.25);
+  transition: all ease 250ms;
+}
+figure figcaption[data-status="online"] + picture > img {
+  filter: contrast(150%);
+}
+figure figcaption[data-status="online"]:before {
+  background: green;
+}
+figure figcaption[data-status="away"] + picture > img {
+  filter: opacity(75%);
+}
+figure figcaption[data-status="away"]:before {
+  background: maroon;
+}
+figure figcaption[data-status="offline"] + picture > img {
+  filter: grayscale(100%);
+}
+figure figcaption[data-status="offline"]:before {
+  background: gray;
+}
+figure picture {
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.25);
+}
+figure picture img {
+  outline: solid 2px white;
+  outline-offset: -2px;
+  border-radius: 50%;
+  width: 100%;
+}

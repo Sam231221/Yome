@@ -1,19 +1,24 @@
 import React, { useEffect, useRef } from "react";
-
+import { BsBoxArrowRight } from "react-icons/bs";
+import { IoCloseOutline } from "react-icons/io5";
 export default function ContextMenu({
   options,
   cordinates,
   contextMenu,
   setContextMenu,
 }) {
-  const contextMenuRef = useRef(null); // Create a ref for the context menu element
+  const contextMenuRef = useRef(null);
 
+  const iconComponents = {
+    IoCloseOutline: <IoCloseOutline size={25} />,
+    BsBoxArrowRight: <BsBoxArrowRight size={20} />,
+  };
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (event.target.id !== "context-opener") {
         if (
-          contextMenuRef.current && // Check if the context menu ref exists
-          !contextMenuRef.current.contains(event.target) // Check if the click is outside of the context menu
+          contextMenuRef.current &&
+          !contextMenuRef.current.contains(event.target)
         ) {
           setContextMenu(false); // Close the context menu
         }
@@ -42,26 +47,31 @@ export default function ContextMenu({
   };
   return (
     <div
-      className={`bg-white drop-shadow-lg fixed py-2 z-[100]`}
+      className={`bg-white drop-shadow-lg absolute py-2 z-[100]`}
       ref={contextMenuRef}
       style={{
         boxShadow:
           "0 2px 5px 0 rgba(var(11,20,26),.26),0 2px 10px 0 rgba(11,20,26;),.16)",
-        top: cordinates.y,
-        left: cordinates.x,
+        top: cordinates.x,
+        right: cordinates.y,
       }}
     >
       <ul>
-        {options.map(({ name, callBack }) => (
-          <>
-            <li
-              className="hover:bg-background-default-hover px-5 py-2 cursor-pointer"
-              onClick={(e) => handleClick(e, callBack)}
-            >
-              <span className="font-medium text-sm">{name}</span>
-            </li>
-          </>
-        ))}
+        {options.map(({ name, icon, callBack }) => {
+          const IconComponent = iconComponents[icon];
+
+          return (
+            <div className="flex px-2 hover:bg-background-default-hover items-center ">
+              {icon !== "" ? IconComponent : ""}
+              <li
+                className=" px-3 py-2 cursor-pointer"
+                onClick={(e) => handleClick(e, callBack)}
+              >
+                <span className="font-medium text-sm">{name}</span>
+              </li>
+            </div>
+          );
+        })}
       </ul>
     </div>
   );

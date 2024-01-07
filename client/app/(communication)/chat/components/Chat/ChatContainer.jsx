@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
 import ImageMessage from "./ImageMessage";
+import Avatar from "@/components/common/Avatar";
 
 const VoiceMessage = dynamic(() => import("./VoiceMessage"), {
   ssr: false,
@@ -24,6 +25,7 @@ export default function ChatContainer({ chatType }) {
     if (lastMessage) {
       lastMessage.scrollIntoView({ behavior: "smooth" });
     }
+    console.log("messages:", messages);
   }, [messages]);
 
   return (
@@ -111,40 +113,50 @@ export default function ChatContainer({ chatType }) {
                   >
                     {/* text message display */}
                     {message.type === "text" && (
-                      <div
-                        className={`text-white px-2 py-[5px] text-sm rounded-lg flex gap-2  max-w-[45%]	
+                      <div className="flex gap-2">
+                        <Avatar
+                          type="sm"
+                          image={`${
+                            message.sender.profilePicture
+                              ? message.sender.profilePicture
+                              : "avatars/userprofile.png"
+                          }`}
+                        />
+                        <div
+                          className={`text-white px-2 py-[5px] text-sm rounded-lg flex gap-2  max-w-[85%]	
                      ${
                        message.senderId !== userInfo.id
                          ? "bg-incoming-background"
                          : "bg-outgoing-background"
                      }`}
-                      >
-                        <span
-                          className={` ${
-                            message.senderId !== userInfo.id
-                              ? "text-black"
-                              : "bg-outgoing-background"
-                          } break-all text-sm font-medium`}
                         >
-                          {message.message}
-                        </span>
-                        <div className="flex items-center pt-2 gap-1">
                           <span
                             className={` ${
                               message.senderId !== userInfo.id
-                                ? "text-gray-800"
-                                : "text-white"
-                            } text-[9px]  min-w-fit`}
+                                ? "text-black"
+                                : "bg-outgoing-background"
+                            } break-all text-sm font-medium`}
                           >
-                            {calculateTime(message.createdAt)}
+                            {message.message}
                           </span>
-                          <span>
-                            {message.senderId !== userInfo.id && (
-                              <MessageStatus
-                                messageStatus={message.messageStatus}
-                              />
-                            )}
-                          </span>
+                          <div className="flex items-center pt-2 gap-1">
+                            <span
+                              className={` ${
+                                message.senderId !== userInfo.id
+                                  ? "text-gray-800"
+                                  : "text-white"
+                              } text-[9px]  min-w-fit`}
+                            >
+                              {calculateTime(message.createdAt)}
+                            </span>
+                            <span>
+                              {message.senderId !== userInfo.id && (
+                                <MessageStatus
+                                  messageStatus={message.messageStatus}
+                                />
+                              )}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     )}

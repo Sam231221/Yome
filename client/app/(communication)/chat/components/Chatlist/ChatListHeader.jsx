@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Avatar from "@/components/common/Avatar";
 import { BsFillChatLeftTextFill, BsThreeDotsVertical } from "react-icons/bs";
 import { useStateProvider } from "@/context/StateContext";
@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import ContextMenu from "@/components/common/ContextMenu";
 import { signOut } from "next-auth/react";
 export default function ChatListHeader() {
-  const [{ userInfo }, dispatch] = useStateProvider();
+  const [{ userInfo, socket }, dispatch] = useStateProvider();
   const router = useRouter();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,
@@ -17,31 +17,39 @@ export default function ChatListHeader() {
 
   const showContextMenu = (e) => {
     e.preventDefault();
-    setContextMenuCordinates({ x: e.pageX, y: e.pageY });
+    setContextMenuCordinates({ x: 22, y: 25 });
     setIsContextMenuVisible(true);
   };
 
   const contextMenuOptions = [
     {
       name: "Logout",
+      icon: "BsBoxArrowRight",
       callBack: async () => {
         signOut();
+        socket.current.emit("signout", userInfo.id);
         router.push("/login");
       },
     },
   ];
+  // useEffect(() => {
 
+  // }, [socket]);
   const handleAllContactsPage = () => {
     dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
   };
 
   return (
     <div className="h-16 px-4 py-3 flex justify-between items-center">
-      {/* <div className="cursor-pointer">
-        <Avatar type="sm" image={userInfo?.profileImage} />
-      </div> */}
-      <span>{userInfo?.name}</span>
-      <h1 className="text-2xl text-panel-header-icon font-bold">Chats</h1>
+      <div className="flex gap-3 items-center">
+        <div className="cursor-pointer">
+          <Avatar type="sm" image={userInfo?.profileImage} />
+        </div>
+        <span className="text-lg font-semibold text-gray-700">
+          {userInfo?.name}
+        </span>
+      </div>
+
       <div className="flex gap-6 ">
         <BsFillChatLeftTextFill
           className="text-panel-header-icon cursor-pointer text-xl"

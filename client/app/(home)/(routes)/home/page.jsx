@@ -196,17 +196,20 @@ const Dashboard = () => {
 
                   <div className="my-2 p-2 leading-tight">
                     <Link href="/school">
-                      <h2 className="text-sm text-gray-700 font-semibold">
+                      <h2 className="text-[16px] text-gray-700 font-semibold">
                         {ei.name}
                       </h2>
                     </Link>
-                    <p className="text-sm  text-gray-600 ">
-                      {ei.description.substring(0, 50)}...
-                    </p>
-                    <div className="flex text-gray-500 gap-1">
-                      {" "}
-                      <CiLocationOn />
-                      <p className="text-xs ">{ei.address}</p>
+                    <hr />
+                    <div className="">
+                      <p className="text-sm  text-gray-600 ">
+                        {ei.description.substring(0, 50)}...
+                      </p>
+                      <div className="flex text-gray-500 gap-1">
+                        {" "}
+                        <CiLocationOn />
+                        <p className="text-xs ">{ei.address}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
