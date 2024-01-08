@@ -1,19 +1,18 @@
 import React from "react";
-import Avatar from "../../../../../components/common/Avatar";
+import Avatar from "@/components/common/Avatar";
+import AvatarWithStatus from "@/components/common/AvatarWithStatus";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { BsCheckAll, BsCheckLg } from "react-icons/bs";
 import { FaCamera, FaMicrophone } from "react-icons/fa";
 import { calculateTime } from "@/utils/CalculateTime";
-import MessageStatus from "../../../../../components/common/MessageStatus";
-
+import MessageStatus from "@/components/common/MessageStatus";
 export default function ChatLIstItem({
   id,
   data,
   type,
   isContactPage = false,
 }) {
-  const [{ userInfo, socket, currentChatUser, currentChatGroup }, dispatch] =
+  const [{ userInfo, socket, onlineUsers, currentChatUser }, dispatch] =
     useStateProvider();
 
   const handleContactClick = (e) => {
@@ -76,15 +75,28 @@ export default function ChatLIstItem({
       onClick={(e) => handleContactClick(e)}
     >
       <div className="min-w-fit pointer-events-none px-5 pt-3 pb-1 ">
-        <Avatar
-          className="pointer-events-none"
-          type="sm"
-          image={`${
-            data?.profilePicture
-              ? data.profilePicture
-              : "avatars/userprofile.png"
-          }`}
-        />
+        {type === "group" ? (
+          <Avatar
+            className="pointer-events-none"
+            type="sm"
+            image={`${
+              data?.profilePicture
+                ? data.profilePicture
+                : "avatars/userprofile.png"
+            }`}
+          />
+        ) : (
+          <AvatarWithStatus
+            className="pointer-events-none"
+            status={`${onlineUsers.includes(data?.id) ? "online" : "offline"}`}
+            type="sm"
+            image={`${
+              data?.profilePicture
+                ? data.profilePicture
+                : "avatars/userprofile.png"
+            }`}
+          />
+        )}
       </div>
       <div className="min-h-full flex pointer-events-none flex-col justify-center mt-3 pr-2 w-full">
         <div className="flex pointer-events-none justify-between ">

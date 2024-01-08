@@ -14,3 +14,327 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #ffffff3b;
 }
+.carousel.dragging {
+  cursor: grab;
+  scroll-behavior: auto;
+}
+.carousel.dragging .carousel-item {
+  pointer-events: none;
+}
+
+.section-title {
+  padding-bottom: 10px;
+}
+
+.section-title h2 {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0;
+  line-height: 1px;
+  margin: 0 0 5px 0;
+}
+
+.section-title h2:after {
+  content: "";
+  width: 120px;
+  height: 1px;
+  display: inline-block;
+  background: #0596eb;
+  margin: 4px 10px;
+}
+
+.section-title p {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.from-blue-50 {
+  --tw-gradient-from: hsl(220, 55%, 10%);
+  --tw-gradient-to: hsla(0, 0%, 100%, 0);
+  --tw-gradient-stops: hsl(220, 55%, 10%), hsla(0, 0%, 100%, 0);
+}
+.to-background {
+  --tw-gradient-to: hsl(250, 24%, 9%) !important;
+}
+.bg-gradient-to-b-blue {
+  background-image: linear-gradient(
+    to bottom,
+    hsl(220, 55%, 10%),
+    hsl(250, 24%, 9%)
+  );
+}
+.bg-blue-50 {
+  background-color: hsl(220, 55%, 10%);
+}
+.border-blue-200 {
+  border-color: hsl(220, 62%, 25%);
+}
+
+.from-pink-50 {
+  --tw-gradient-from: hsl(270, 38%, 12%);
+  --tw-gradient-to: hsla(0, 0%, 100%, 0);
+  --tw-gradient-stops: hsl(270, 38%, 12%), hsl(250, 24%, 9%);
+}
+.bg-gradient-to-b-pink {
+  background-image: linear-gradient(
+    to bottom,
+    hsl(270, 38%, 12%),
+    hsl(250, 24%, 9%)
+  );
+}
+.border-pink-200 {
+  border-color: hsl(270, 45%, 24%);
+}
+.bg-pink-50 {
+  background-color: hsl(270, 38%, 12%);
+}
+
+.from-green-50 {
+  --tw-gradient-from: hsl(152, 15%, 10%);
+  --tw-gradient-to: hsla(0, 0%, 100%, 0);
+  --tw-gradient-stops: hsl(152, 15%, 10%), hsl(250, 24%, 9%);
+}
+.border-green-200 {
+  border-color: hsl(152, 32%, 16%);
+}
+.bg-gradient-to-b-green {
+  background-image: linear-gradient(
+    to bottom,
+    hsl(152, 15%, 10%),
+    hsl(250, 24%, 9%)
+  );
+}
+.bg-green-50 {
+  background-color: hsl(152, 15%, 10%);
+}
+
+.career-img {
+  position: relative;
+  height: 300px;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  /* background: url("./project-1.png") no-repeat; */
+  background-size: cover;
+  background-position-y: 0%;
+  transition: background 3s ease-in-out;
+  cursor: pointer;
+  overflow: hidden;
+}
+.career-img .btn-visit {
+  position: absolute;
+  bottom: -3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  text-decoration: none;
+  background-color: #343434;
+  color: #f3f3f3;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: bottom 1s ease-in-out;
+  z-index: 10;
+}
+.career-img::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 4px;
+  background: linear-gradient(to right, #fff, #343434);
+  transition: all 3s ease-in-out;
+}
+
+.career-img::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+}
+
+.career-img:hover {
+  background-position-y: 100%;
+}
+
+.career-img:hover::before {
+  width: 100%;
+}
+
+.career-img:hover::after {
+  background: linear-gradient(to bottom, transparent 70%, #3434349b);
+}
+
+.career-img:hover .btn-visit {
+  bottom: 2rem;
+}
+
+.spinner svg {
+  -webkit-animation: loading-rotate 2s linear infinite;
+  -moz-animation: loading-rotate 2s linear infinite;
+  -o-animation: loading-rotate 2s linear infinite;
+  animation: loading-rotate 2s linear infinite;
+  height: 42px;
+  width: 42px;
+}
+
+.spinner .path {
+  stroke-dasharray: 90, 150;
+  stroke-dashoffset: 0;
+  stroke-width: 2;
+  stroke: #409eff;
+  stroke-linecap: round;
+  -webkit-animation: loading-dash 1.5s ease-in-out infinite;
+  -moz-animation: loading-dash 1.5s ease-in-out infinite;
+  -o-animation: loading-dash 1.5s ease-in-out infinite;
+  animation: loading-dash 1.5s ease-in-out infinite;
+}
+
+@-webkit-keyframes loading-rotate {
+  to {
+    -webkit-transform: rotate(1turn);
+    transform: rotate(1turn);
+  }
+}
+
+@-moz-keyframes loading-rotate {
+  to {
+    -moz-transform: rotate(1turn);
+    transform: rotate(1turn);
+  }
+}
+
+@-o-keyframes loading-rotate {
+  to {
+    -o-transform: rotate(1turn);
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes loading-rotate {
+  to {
+    -webkit-transform: rotate(1turn);
+    -moz-transform: rotate(1turn);
+    -o-transform: rotate(1turn);
+    transform: rotate(1turn);
+  }
+}
+
+@-webkit-keyframes loading-dash {
+  0% {
+    stroke-dasharray: 1, 200;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -40px;
+  }
+  to {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -120px;
+  }
+}
+
+@-moz-keyframes loading-dash {
+  0% {
+    stroke-dasharray: 1, 200;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -40px;
+  }
+  to {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -120px;
+  }
+}
+
+@-o-keyframes loading-dash {
+  0% {
+    stroke-dasharray: 1, 200;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -40px;
+  }
+  to {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -120px;
+  }
+}
+
+@keyframes loading-dash {
+  0% {
+    stroke-dasharray: 1, 200;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -40px;
+  }
+  to {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -120px;
+  }
+}
+
+figure {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  flex-direction: column;
+}
+figure figcaption {
+  position: absolute;
+  text-indent: -100vw;
+  white-space: nowrap;
+}
+figure figcaption:before {
+  position: absolute;
+  z-index: 1;
+  outline: solid 4px white;
+  outline-offset: -3px;
+  content: "";
+  border-radius: 50%;
+  text-indent: 0;
+  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.25);
+  transition: all ease 250ms;
+}
+figure figcaption[data-status="online"] + picture > img {
+  filter: contrast(150%);
+}
+figure figcaption[data-status="online"]:before {
+  background: green;
+}
+figure figcaption[data-status="away"] + picture > img {
+  filter: opacity(75%);
+}
+figure figcaption[data-status="away"]:before {
+  background: maroon;
+}
+figure figcaption[data-status="offline"] + picture > img {
+  filter: grayscale(100%);
+}
+figure figcaption[data-status="offline"]:before {
+  background: gray;
+}
+figure picture {
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.25);
+}
+figure picture img {
+  outline: solid 2px white;
+  outline-offset: -2px;
+  border-radius: 50%;
+  width: 100%;
+}

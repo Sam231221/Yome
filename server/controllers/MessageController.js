@@ -66,6 +66,9 @@ export const getMessages = async (req, res, next) => {
             },
           ],
         },
+        include: {
+          sender: true,
+        },
         orderBy: {
           id: "asc",
         },
@@ -97,6 +100,9 @@ export const getMessages = async (req, res, next) => {
       const messages = await prisma.messages.findMany({
         where: {
           groupId: to,
+        },
+        include: {
+          sender: true,
         },
         orderBy: {
           id: "asc",

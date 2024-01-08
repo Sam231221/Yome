@@ -53,27 +53,31 @@ export const getInitialGroupsWithMessages = async (req, res, next) => {
   try {
     const userId = parseInt(req.params.group_id);
     const prisma = getPrismaInstance();
-    const groupsWithLatestGroupMessages = await prisma.user
-      .findUnique({
-        where: {
-          id: userId,
+    // Retrieve groups with the latest message (sent by any user in the group)
+    const groupsWithLatestMessages = await prisma.group.findMany({
+      where: {
+        AND: [
+          {
+            OR: [
+              { members: { some: { id: userId } } },
+              { admins: { some: { id: userId } } },
+            ],
+          }, // User is a member or admin
+          { messages: { some: { groupId: { not: null } } } }, // Group has at least one message
+        ],
+      },
+      include: {
+        messages: {
+          where: { groupId: { not: null } },
+          take: 1,
+          orderBy: { createdAt: "desc" }, // Get the latest message
         },
-      })
-      .group({
-        include: {
-          members: true,
-          messages: {
-            orderBy: {
-              createdAt: "desc",
-            },
-            take: 1, // Retrieve only the latest message for each group
-          },
-        },
-      });
+      },
+    });
 
     //passes  users and onlineUsers to the List.jsx
     return res.status(200).json({
-      groupsWithLatestGroupMessages: groupsWithLatestGroupMessages,
+      groupsWithLatestGroupMessages: groupsWithLatestMessages,
       // onlineUsers: Array.from(onlineUsers.keys()),
     });
   } catch (err) {

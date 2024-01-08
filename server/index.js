@@ -1,9 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import getPrismaInstance from "./utils/PrismaClient.js";
 import AuthRoutes from "./routes/AuthRoutes.js";
 import MessageRoutes from "./routes/MessageRoutes.js";
 import GroupMessageRoutes from "./routes/GroupMessageRoutes.js";
+import DbRoutes from "./routes/DbRoutes.js";
+import EIRoutes from "./routes/EIRoutes.js";
 import { Server } from "socket.io";
 
 dotenv.config();
@@ -19,6 +22,8 @@ app.use("/uploads/images/", express.static("uploads/images"));
 app.use("/api/auth/", AuthRoutes);
 app.use("/api/messages", MessageRoutes);
 app.use("/api/group-messages", GroupMessageRoutes);
+app.use("/api/ei", EIRoutes);
+app.use("/api/db", DbRoutes);
 const server = app.listen(process.env.PORT, () => {
   console.log(`Server started on port ${process.env.PORT}`);
 });
@@ -35,7 +40,10 @@ io.on("connection", (socket) => {
   global.chatSocket = socket;
 
   socket.on("add-user", (userId) => {
+    //imp
+    socket.join(userId);
     onlineUsers.set(userId, socket.id);
+
     socket.broadcast.emit("online-users", {
       onlineUsers: Array.from(onlineUsers.keys()),
     });
@@ -43,9 +51,8 @@ io.on("connection", (socket) => {
 
   socket.on("join room", (room, userid) => {
     socket.join(room);
-    console.log(`${userid} is in ${room}.`);
   });
-  socket.on("send-msg", (data) => {
+  socket.on("send-msg", async (data) => {
     const sendUserSocket = onlineUsers.get(data.to);
     if (data.chatType === "user") {
       if (sendUserSocket) {
@@ -57,18 +64,27 @@ io.on("connection", (socket) => {
       }
     }
     if (data.chatType === "group") {
-      socket.to(data.room).emit("msg-recieve", {
-        from: data.from,
-        message: data.message,
-        msgType: "group",
-        room: data.room,
-        groupId: data.to,
+      const prisma = getPrismaInstance();
+      const group = await prisma.group.findUnique({
+        where: { id: data.to },
+        include: { members: true },
+      });
+      group.members.forEach((user) => {
+        if (user.id == data.from) return;
+        socket.to(user.id).emit("msg-recieve", {
+          from: data.from,
+          message: data.message,
+          msgType: "group",
+          room: data.room,
+          groupId: data.to,
+        });
       });
     }
   });
 
   socket.on("mark-read", ({ id, recieverId }) => {
     const sendUserSocket = onlineUsers.get(id);
+    //if the sender is online, mark read recieve
     if (sendUserSocket) {
       socket.to(sendUserSocket).emit("mark-read-recieve", { id, recieverId });
     }
@@ -76,6 +92,7 @@ io.on("connection", (socket) => {
 
   socket.on("signout", (id) => {
     onlineUsers.delete(id);
+    socket.leave(id);
     socket.broadcast.emit("online-users", {
       onlineUsers: Array.from(onlineUsers.keys()),
     });

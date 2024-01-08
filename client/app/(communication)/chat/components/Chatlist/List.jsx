@@ -3,8 +3,8 @@ import ChatLIstItem from "./ChatLIstItem";
 import { useStateProvider } from "@/context/StateContext";
 import axios from "axios";
 import {
-  GET_INITIAL_CONTACTS_ROUTE,
-  GET_INITIAL_GROUPS,
+  GET_INITIAL_USERS_MESSAGES,
+  GET_INITIAL_GROUP_MESSAGES,
 } from "@/utils/ApiRoutes";
 import { reducerCases } from "@/context/constants";
 
@@ -18,7 +18,8 @@ export default function List() {
       const getContacts = async () => {
         const {
           data: { usersWithLatestPivateMessages, onlineUsers },
-        } = await axios.get(`${GET_INITIAL_CONTACTS_ROUTE}/${userInfo.id}`);
+        } = await axios.get(`${GET_INITIAL_USERS_MESSAGES}/${userInfo.id}`);
+        console.log(usersWithLatestPivateMessages);
         dispatch({
           type: reducerCases.SET_USER_CONTACTS,
           userContacts: usersWithLatestPivateMessages,
@@ -29,25 +30,20 @@ export default function List() {
       const getGroups = async () => {
         const {
           data: { groupsWithLatestGroupMessages },
-        } = await axios.get(
-          `http://localhost:3005/api/group-messages/get-initial-group-messages/${userInfo.id}`
-        );
+        } = await axios.get(`${GET_INITIAL_GROUP_MESSAGES}/${userInfo.id}`);
 
         groupsWithLatestGroupMessages.forEach((group) => {
-          // Loop through the messages array in each group
           group.messages.forEach((message) => {
-            // Copy all fields except groupId from message to messageId
             const { groupId, ...messageId } = message;
-            messageId.messageId = messageId.id; // Assuming you wanted to keep this unchanged
+            messageId.messageId = messageId.id;
             delete messageId.id;
-            // Replace the message object with the modified messageId object
+
             group.messages[group.messages.indexOf(message)] = messageId;
             Object.assign(group, messageId);
           });
           delete group.messages;
         });
-
-       
+        console.log(groupsWithLatestGroupMessages);
         dispatch({
           type: reducerCases.SET_GROUP_CONTACTS,
           groupContacts: groupsWithLatestGroupMessages,
@@ -76,16 +72,22 @@ export default function List() {
               />
             );
           })
-        : [...userContacts, ...groupContacts].map((contact) => {
-            return (
-              <ChatLIstItem
-                id={contact.id}
-                type={contact.identifier}
-                data={contact}
-                key={contact.id}
-              />
-            );
-          })}
+        : [...userContacts, ...groupContacts]
+            .sort((a, b) => {
+              const dateA = new Date(a.createdAt);
+              const dateB = new Date(b.createdAt);
+              return dateB - dateA;
+            })
+            .map((contact) => {
+              return (
+                <ChatLIstItem
+                  id={contact.id}
+                  type={contact.identifier}
+                  data={contact}
+                  key={contact.id}
+                />
+              );
+            })}
     </div>
   );
 }

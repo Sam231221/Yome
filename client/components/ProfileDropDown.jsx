@@ -8,7 +8,9 @@ import {
 } from "react-icons/bs";
 
 import Image from "next/image";
+import { useStateProvider } from "@/context/StateContext";
 export const ProfileDropDown = () => {
+  const [{ userInfo }, dispatch] = useStateProvider();
   const [open, setOpen] = useState(false);
   let ProfileDivRef = useRef();
 
@@ -40,7 +42,7 @@ export const ProfileDropDown = () => {
           alt="userprofile"
         />
         <span className="ml-2 font-semibold hidden md:block text-primaryTextColor cursor-pointer text-xs">
-          Mr. Shahi
+          Mr {userInfo?.name}
         </span>
         <RxTriangleDown className="text-secondaryTextColor" />
       </div>
@@ -54,8 +56,8 @@ export const ProfileDropDown = () => {
                            top-14 right-[2px] bg-white drop-shadow-lg w-[220px] p-2`}
       >
         <div className="text-center mb-2">
-          <h2 className="text-md">Sameer Shahi</h2>
-          <p className="text-xs text-gray-600">Web Developer</p>
+          <h2 className="text-md">{userInfo?.name}</h2>
+          <p className="text-xs text-gray-600">{userInfo?.email}</p>
         </div>
         <hr />
         <ul>

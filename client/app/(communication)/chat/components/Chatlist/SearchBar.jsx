@@ -1,6 +1,5 @@
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { useState } from "react";
 import { BiFilter, BiSearchAlt2, BiArrowBack } from "react-icons/bi";
 
 export default function SearchBar() {
