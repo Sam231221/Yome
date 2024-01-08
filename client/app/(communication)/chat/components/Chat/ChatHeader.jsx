@@ -20,7 +20,7 @@ export default function ChatHeader({ chatType }) {
 
   const showContextMenu = (e) => {
     e.preventDefault();
-    setContextMenuCordinates({ x: e.pageX - 50, y: e.pageY + 20 });
+    setContextMenuCordinates({ x: 22, y: 20 });
     setIsContextMenuVisible(true);
   };
 
@@ -92,7 +92,7 @@ export default function ChatHeader({ chatType }) {
           </span>
         </div>
       </div>
-      <div className="flex gap-6 ">
+      <div className="flex gap-6 relative">
         <MdCall
           className="text-panel-header-icon cursor-pointer text-xl"
           onClick={handleVoiceCall}

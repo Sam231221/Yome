@@ -24,13 +24,16 @@ export const getGroupById = async (request, response, next) => {
       return response.json({ msg: "Email is required", status: false });
     }
     const prisma = getPrismaInstance();
-    const group = await prisma.group.findUnique({ where: { id: groupId } });
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      include: { members: true },
+    });
     if (!group) {
       return response.json({ msg: "Group not found", status: false });
     } else
       return response.json({ msg: "Group Found", status: true, group: group });
   } catch (error) {
-    next(error);
+    console.log(error);
   }
 };
 export const onBoardUser = async (request, response, next) => {

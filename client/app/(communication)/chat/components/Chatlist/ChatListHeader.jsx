@@ -50,7 +50,7 @@ export default function ChatListHeader() {
         </span>
       </div>
 
-      <div className="flex gap-6 ">
+      <div className="flex gap-6 relative ">
         <BsFillChatLeftTextFill
           className="text-panel-header-icon cursor-pointer text-xl"
           title="New chat"

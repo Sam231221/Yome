@@ -19,6 +19,7 @@ export default function List() {
         const {
           data: { usersWithLatestPivateMessages, onlineUsers },
         } = await axios.get(`${GET_INITIAL_USERS_MESSAGES}/${userInfo.id}`);
+        console.log(usersWithLatestPivateMessages);
         dispatch({
           type: reducerCases.SET_USER_CONTACTS,
           userContacts: usersWithLatestPivateMessages,
@@ -42,7 +43,7 @@ export default function List() {
           });
           delete group.messages;
         });
-
+        console.log(groupsWithLatestGroupMessages);
         dispatch({
           type: reducerCases.SET_GROUP_CONTACTS,
           groupContacts: groupsWithLatestGroupMessages,
@@ -71,16 +72,22 @@ export default function List() {
               />
             );
           })
-        : [...userContacts, ...groupContacts].map((contact) => {
-            return (
-              <ChatLIstItem
-                id={contact.id}
-                type={contact.identifier}
-                data={contact}
-                key={contact.id}
-              />
-            );
-          })}
+        : [...userContacts, ...groupContacts]
+            .sort((a, b) => {
+              const dateA = new Date(a.createdAt);
+              const dateB = new Date(b.createdAt);
+              return dateB - dateA;
+            })
+            .map((contact) => {
+              return (
+                <ChatLIstItem
+                  id={contact.id}
+                  type={contact.identifier}
+                  data={contact}
+                  key={contact.id}
+                />
+              );
+            })}
     </div>
   );
 }
