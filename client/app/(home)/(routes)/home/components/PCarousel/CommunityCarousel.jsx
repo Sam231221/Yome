@@ -24,7 +24,6 @@ const CommunityCarousel = ({ communities }) => {
         loggedInUserId: userInfo.id,
         groupIdToJoin: id,
       });
-      console.log(data);
       if (data.status === 200) {
         setItems((prevItems) =>
           prevItems.map((item) => {
@@ -34,7 +33,7 @@ const CommunityCarousel = ({ communities }) => {
         toast.success("You Joined the group.");
       }
     } catch (e) {
-      console.log(e);
+      toast.error(e);
     }
   };
   useEffect(() => {
@@ -66,8 +65,9 @@ const CommunityCarousel = ({ communities }) => {
                   <Image
                     src="https://scontent.fpkr1-1.fna.fbcdn.net/v/t39.30808-6/275467566_5092411194143979_3051949811765245018_n.jpg?stp=c0.38.1200.514a_dst-jpg_s350x350&_nc_cat=1&ccb=1-7&_nc_sid=aae68a&_nc_ohc=2c35mm8wNnYAX_G59j3&_nc_ht=scontent.fpkr1-1.fna&oh=00_AfCbMUI-WaYlQlAvqR5AP851YbGBQkqB0KtQ3-zk-meFAA&oe=6597021E"
                     alt="item"
-                    width={150}
+                    width={250}
                     height={500}
+                    loading="lazy"
                     style={{
                       width: "100%",
                       height: "100%",

@@ -66,8 +66,9 @@ const MentorCarousel = ({ mentors }) => {
                 <Image
                   src="https://scontent.fpkr1-1.fna.fbcdn.net/v/t39.30808-1/263409073_296290029023432_2548299892588902878_n.jpg?stp=c20.0.160.160a_dst-jpg_p160x160&_nc_cat=106&ccb=1-7&_nc_sid=5740b7&_nc_ohc=LzOuaZf2i2AAX9LKAvR&_nc_ht=scontent.fpkr1-1.fna&oh=00_AfCPmAQPmlVQzZhin-QQUY2ulEiFTCpDZy7ayGT2ZPFyHA&oe=65965DCA"
                   alt="person"
-                  width={150}
+                  width={250}
                   height={500}
+                  loading="lazy"
                   style={{
                     width: "100%",
                     height: "100%",

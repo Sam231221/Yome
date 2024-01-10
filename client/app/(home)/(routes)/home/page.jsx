@@ -92,7 +92,7 @@ const Dashboard = () => {
       );
       setMentors(data.mentorsNotFollowed);
     } catch (e) {
-      console.log(e);
+      toast.error(e);
     }
   };
   const getGroups = async (e) => {
@@ -100,7 +100,6 @@ const Dashboard = () => {
       let { data } = await axios.get(
         `${GET_UNASSOCIATED_GROUPS}/${userInfo.id}`
       );
-      console.log(data);
       setCommunities(data.unassociatedGroups);
     } catch (e) {
       toast.error(e);
@@ -190,6 +189,7 @@ const Dashboard = () => {
                       alt="educational institution"
                       width={250}
                       height={500}
+                      priority="true"
                       style={{
                         width: "100%",
                         height: "100%",
