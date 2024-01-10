@@ -97,7 +97,6 @@ export default function Chatpage() {
       });
 
       socket.current.on("msg-recieve", (data) => {
-        console.log("recieved data:", data);
         dispatch({
           type: reducerCases.ADD_GROUP_MESSAGE,
           newMessage: {

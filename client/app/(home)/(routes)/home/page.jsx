@@ -18,7 +18,7 @@ import { useStateProvider } from "@/context/StateContext";
 import CommunityCarousel from "./components/PCarousel/CommunityCarousel";
 import MentorCarousel from "./components/PCarousel/MentorCarousel";
 import toast from "react-hot-toast";
-import { totalmem } from "os";
+
 const Dashboard = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
   const [mentors, setMentors] = useState([]);

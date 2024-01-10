@@ -19,7 +19,7 @@ export default function List() {
         const {
           data: { usersWithLatestPivateMessages, onlineUsers },
         } = await axios.get(`${GET_INITIAL_USERS_MESSAGES}/${userInfo.id}`);
-        console.log(usersWithLatestPivateMessages);
+
         dispatch({
           type: reducerCases.SET_USER_CONTACTS,
           userContacts: usersWithLatestPivateMessages,
@@ -43,7 +43,7 @@ export default function List() {
           });
           delete group.messages;
         });
-        console.log(groupsWithLatestGroupMessages);
+
         dispatch({
           type: reducerCases.SET_GROUP_CONTACTS,
           groupContacts: groupsWithLatestGroupMessages,
@@ -56,7 +56,7 @@ export default function List() {
         getGroups();
       }
     } catch (err) {
-      console.error(err);
+      toast.error(err);
     }
   }, [userInfo]);
   return (

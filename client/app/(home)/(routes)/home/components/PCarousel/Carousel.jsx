@@ -2,6 +2,18 @@
 import React, { useEffect, useRef } from "react";
 
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa"; // Importing specific icons
+//ReactIcons cant have access to forwardRef so...
+const FaAngleLeftIcon = React.forwardRef((props, ref) => (
+  <div ref={ref}>
+    <FaAngleLeft {...props} />
+  </div>
+));
+
+const FaAngleRightIcon = React.forwardRef((props, ref) => (
+  <div ref={ref}>
+    <FaAngleRight {...props} />
+  </div>
+));
 
 export default function Carousel({ children }) {
   const carouselRef = useRef(null);
@@ -106,7 +118,7 @@ export default function Carousel({ children }) {
   return (
     <div className="flex  wrapper max-w-[1200px] relative">
       {/* Left arrow */}
-      <FaAngleLeft
+      <FaAngleLeftIcon
         ref={leftArrorwBtnRef}
         id="left-arrow"
         onClick={(e) => handleBtnClick(e)}
@@ -126,7 +138,7 @@ export default function Carousel({ children }) {
       </div>
 
       {/* Right arrow */}
-      <FaAngleRight
+      <FaAngleRightIcon
         id="right-arrow"
         ref={rightArrowBtnRef}
         onClick={(e) => handleBtnClick(e)}
