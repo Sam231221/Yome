@@ -42,7 +42,7 @@ export const ProfileDropDown = () => {
           alt="userprofile"
         />
         <span className="ml-2 font-semibold hidden md:block text-primaryTextColor cursor-pointer text-xs">
-          Mr {userInfo?.name}
+          Mr {userInfo?.lastname}
         </span>
         <RxTriangleDown className="text-secondaryTextColor" />
       </div>
@@ -55,9 +55,16 @@ export const ProfileDropDown = () => {
                             before:bg-white before:rotate-[45deg] border
                            top-14 right-[2px] bg-white drop-shadow-lg w-[220px] p-2`}
       >
-        <div className="text-center mb-2">
-          <h2 className="text-md">{userInfo?.name}</h2>
-          <p className="text-xs text-gray-600">{userInfo?.email}</p>
+        <div className=" mb-2">
+          <div className="flex gap-2">
+            <h2 className="text-lg text-gray-800 font-medium">
+              {userInfo?.firstname}
+            </h2>
+            <span className=" px-3 py-1 text-gray-600 rounded-3xl border-2 border-sky-600 font-medium text-xs bg-sky-300 bg-opacity-30">
+              {userInfo?.role}
+            </span>
+          </div>
+          <p className="text-xs mt-1 text-gray-600">{userInfo?.email}</p>
         </div>
         <hr />
         <ul>

@@ -56,8 +56,11 @@ export default function Chatpage() {
               type: reducerCases.SET_USER_INFO,
               userInfo: {
                 id: data?.user?.id,
+                role: data?.user?.role,
                 email: data?.user?.email,
-                name: data?.user?.name,
+                username: data?.user?.username,
+                firstname: data?.user?.firstname,
+                lastname: data?.user?.lastname,
                 identifier: data?.user?.identifier,
                 profileImage: data?.user?.profilePicture,
                 status: data?.user?.about,

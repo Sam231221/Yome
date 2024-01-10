@@ -27,6 +27,7 @@ export const institutionsData = [
     principal_email: "emily@bloomfieldhigh.edu",
     principal_phone_number: "+987654321",
     files: "https://bloomfieldhigh.edu/documents/admission_form.pdf",
+    ownerId: 2,
   },
   {
     name: "Global Arts Institute",

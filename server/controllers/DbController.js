@@ -23,8 +23,11 @@ export const createMultipleUsersWithProfiles = async (req, res) => {
       const newUser = await prisma.user.create({
         data: {
           email: userData.email,
-          name: userData.name,
+          firstname: userData.firstname,
+          lastname: userData.lastname,
+          username: userData.username,
           password: userData.password,
+          role: userData.role,
           // Add other user-related data here as needed
         },
       });
