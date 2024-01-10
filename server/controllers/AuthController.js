@@ -1,6 +1,10 @@
+import { SubscriptionPlans } from "../config/subscriptions.js";
 import getPrismaInstance from "../utils/PrismaClient.js";
 import { generateToken04 } from "../utils/TokenGenerator.js";
 import bcryptjs from "bcryptjs";
+import { stripe } from "../lib/stripe.js";
+import { absoluteUrl } from "../lib/utils.js";
+import { userInfo } from "os";
 export const getUserByEmail = async (request, response, next) => {
   try {
     const { email } = request.body;
@@ -71,6 +75,187 @@ export const onBoardUser = async (request, response, next) => {
   } catch (error) {
     next(error);
   }
+};
+/**-----------------------
+ Subscription
+ --------------------------*/
+
+export const getUserSubscriptionPlan = async (request, response, next) => {
+  try {
+    const { userId } = request.body;
+    const prisma = getPrismaInstance();
+    const user = await prisma.user.findUnique({
+      where: {
+        id: parseInt(userId),
+      },
+    });
+
+    if (!user) {
+      throw new Error("User not found.");
+    }
+
+    const isSubscribed =
+      user.stripePriceId &&
+      user.stripeCurrentPeriodEnd &&
+      user.stripeCurrentPeriodEnd.getTime() + 86_400_000 > Date.now();
+
+    const plan = isSubscribed
+      ? SubscriptionPlans.find(
+          (plan) => plan.stripePriceId === user.stripePriceId
+        )
+      : null;
+
+    let isCanceled = false;
+    if (isSubscribed && user.stripeSubscriptionId) {
+      const stripePlan = await stripe.subscriptions.retrieve(
+        user.stripeSubscriptionId
+      );
+      isCanceled = stripePlan.cancel_at_period_end;
+    }
+
+    return response.status(200).send({
+      ...plan,
+      stripeSubscriptionId: user.stripeSubscriptionId,
+      stripeCurrentPeriodEnd: user.stripeCurrentPeriodEnd,
+      stripeCustomerId: user.stripeCustomerId,
+      isSubscribed,
+      isCanceled,
+    });
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+export const updateUserSubscriptionPlanById = async (
+  request,
+  response,
+  next
+) => {
+  try {
+    const {
+      userId,
+      stripeSubscriptionId,
+      stripeCustomerId,
+      stripePriceId,
+      stripeCurrentPeriodEnd,
+    } = request.body;
+    console.log(
+      userId,
+      stripeSubscriptionId,
+      stripeCustomerId,
+      stripePriceId,
+      stripeCurrentPeriodEnd
+    );
+    const prisma = getPrismaInstance();
+    const user = await prisma.user.findUnique({
+      where: {
+        id: parseInt(userId),
+      },
+    });
+
+    if (!user) {
+      throw new Error("User not found.");
+    }
+
+    await prisma.user.update({
+      where: {
+        id: parseInt(userId),
+      },
+      data: {
+        stripeSubscriptionId: stripeSubscriptionId,
+        stripeCustomerId: stripeCustomerId,
+        stripePriceId: stripePriceId,
+        stripeCurrentPeriodEnd: stripeCurrentPeriodEnd,
+      },
+    });
+
+    return response
+      .status(200)
+      .send({ status: "200", msg: "updated successfully" });
+  } catch (e) {
+    console.log(e);
+    next(e);
+  }
+};
+
+export const updateUserSubscriptionPlanBySubscriptionId = async (
+  request,
+  response,
+  next
+) => {
+  try {
+    const { stripeSubscriptionId, stripePriceId, stripeCurrentPeriodEnd } =
+      request.body;
+    console.log(stripeSubscriptionId, stripePriceId, stripeCurrentPeriodEnd);
+    const prisma = getPrismaInstance();
+
+    await prisma.user.update({
+      where: {
+        stripeSubscriptionId: stripeSubscriptionId,
+      },
+      data: {
+        stripePriceId: stripePriceId,
+        stripeCurrentPeriodEnd: stripeCurrentPeriodEnd,
+      },
+    });
+    return response
+      .status(200)
+      .send({ status: "200", msg: "updated successfully" });
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+export const manageStripeSubscriptionAction = async (
+  request,
+  response,
+  next
+) => {
+  const billingUrl = absoluteUrl("/pricing");
+  const {
+    isSubscribed,
+    stripeCustomerId,
+    isCurrentPlan,
+    stripePriceId,
+    email,
+    userId,
+  } = request.body;
+  console.log(
+    isSubscribed,
+    stripeCustomerId,
+    isCurrentPlan,
+    stripePriceId,
+    email,
+    userId
+  );
+  if (isSubscribed && stripeCustomerId && isCurrentPlan) {
+    const stripeSession = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: billingUrl,
+    });
+
+    return response.status(200).send({ url: stripeSession.url });
+  }
+
+  const stripeSession = await stripe.checkout.sessions.create({
+    success_url: billingUrl,
+    cancel_url: billingUrl,
+    payment_method_types: ["card"],
+    mode: "subscription",
+    billing_address_collection: "auto",
+    customer_email: email,
+    line_items: [
+      {
+        price: stripePriceId,
+        quantity: 1,
+      },
+    ],
+    metadata: {
+      userId: userId,
+    },
+  });
+  console.log("uyooo");
+  return response.status(200).send({ url: stripeSession.url });
 };
 
 export const getAllUsers = async (req, res, next) => {

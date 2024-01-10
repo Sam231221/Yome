@@ -11,11 +11,29 @@ import {
   getUnassociatedGroupsForUser,
   followUnfollowedUser,
   joinUnjoinedGroups,
+  getUserSubscriptionPlan,
+  manageStripeSubscriptionAction,
+  updateUserSubscriptionPlanById,
+  updateUserSubscriptionPlanBySubscriptionId,
 } from "../controllers/AuthController.js";
 
 const router = Router();
 
 router.post("/get-user", getUserByEmail);
+router.post("/get-user-subscription-plan", getUserSubscriptionPlan);
+router.post(
+  "/manage-stripe-subscription-action",
+  manageStripeSubscriptionAction
+);
+router.post(
+  "/update-user-subscription-plan-by-id",
+  updateUserSubscriptionPlanById
+);
+router.post(
+  "/update-user-subscription-plan-by-subscriptionid",
+  updateUserSubscriptionPlanBySubscriptionId
+);
+
 router.post("/onBoardUser", onBoardUser);
 router.get("/get-all-users", getAllUsers);
 router.get("/get-all-groups", getAllGroups);

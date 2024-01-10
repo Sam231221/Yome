@@ -6,7 +6,6 @@ import { CiLocationOn } from "react-icons/ci";
 
 import { useEffect, useState } from "react";
 import { reducerCases } from "@/context/constants";
-import Carousel from "./components/PCarousel/Carousel";
 import { useSession } from "next-auth/react";
 
 import axios from "axios";

@@ -1,17 +1,79 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
+import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
+import { reducerCases } from "@/context/constants";
+import { SubscriptionPlans } from "./SubscriptionPlans";
+import { ManageUserSubscriptionButton } from "./UserSubsrciptionButton";
+import { useStateProvider } from "@/context/StateContext";
+import { useSession } from "next-auth/react";
 
+import axios from "axios";
 export default function PricingPage() {
+  const [{ userInfo }, dispatch] = useStateProvider();
+  const { data: session } = useSession();
+  const [userSubscriptionPlan, setUserSubscriptionPlan] = useState();
+
+  useEffect(() => {
+    const getUserInfo = async (e) => {
+      try {
+        if (session?.user) {
+          if (!userInfo) {
+            let { data } = await axios.post(GET_USER_ROUTE, {
+              email: session?.user.email,
+            });
+            //Check if the user object with this email is logged in
+            if (!data.status) {
+              router.push("/login");
+            }
+
+            //Get the user from database and populate useInfo state
+            dispatch({
+              type: reducerCases.SET_USER_INFO,
+              userInfo: {
+                id: data?.user?.id,
+                email: data?.user?.email,
+                name: data?.user?.name,
+                identifier: data?.user?.identifier,
+                profileImage: data?.user?.profilePicture,
+                status: data?.user?.about,
+              },
+            });
+          }
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
+    getUserInfo();
+  }, [session]);
+
+  useEffect(() => {
+    if (userInfo) {
+      getUserSubscriptionPlan();
+    }
+  }, [userInfo]);
+  const getUserSubscriptionPlan = async () => {
+    console.log(userInfo);
+    const { data } = await axios.post(
+      "http://localhost:3005/api/auth/get-user-subscription-plan",
+      { userId: userInfo.id }
+    );
+    console.log("data:", data);
+    setUserSubscriptionPlan(data);
+  };
+
   return (
     <div className="relative bg-[#0D0225]  z-10 min-w-full  md:min-h-header md:h-header  border-b border-transparent">
-      <header class="grid grid-flow-col lg:auto-cols-fr items-center py-4 md:py-0 md:h-header md:min-h-header mx-auto max-w-container">
-        <div class="flex space-x-1 items-center md:w-auto md:min-w-0 flex-none">
+      <header className="grid grid-flow-col lg:auto-cols-fr items-center py-4 md:py-0 md:h-header md:min-h-header mx-auto max-w-container">
+        <div className="flex space-x-1 items-center md:w-auto md:min-w-0 flex-none">
           <a
             title="Dashboard"
-            class="focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-700 flex items-center mr-4"
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-700 flex items-center mr-4"
             href="/dashboard"
           >
             <svg
-              class="rounded-full logo w-6 h-6 md:w-8 md:h-8"
+              className="rounded-full logo w-6 h-6 md:w-8 md:h-8"
               aria-label="Railway Logo"
               width="1024"
               height="1024"
@@ -27,653 +89,319 @@ export default function PricingPage() {
                 fill="#000"
               ></path>
             </svg>
-            <span class="ml-4 text-xl font-bold hidden">Railway</span>
+            <span className="ml-4 text-xl font-bold hidden">Railway</span>
           </a>
         </div>
         <button
-          class="group/button flex items-center justify-center border transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 bg-transparent border-transparent text-foreground hover:bg-gray-100 hover:border-gray-100 disabled:bg-transparent disabled:border-transparent focus-visible:ring-gray-600 focus-visible:bg-gray-100 h-[34px] py-1.5 rounded-md text-sm leading-5 space-x-2 w-[34px] px-0 ml-auto"
+          className="group/button flex items-center justify-center border transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 bg-transparent border-transparent text-foreground hover:bg-gray-100 hover:border-gray-100 disabled:bg-transparent disabled:border-transparent focus-visible:ring-gray-600 focus-visible:bg-gray-100 h-[34px] py-1.5 rounded-md text-sm leading-5 space-x-2 w-[34px] px-0 ml-auto"
           title="Open mobile navigation"
         >
           <div
-            class="text-current icon-container icon-md  w-6 !h-6"
+            className="text-current icon-container icon-md  w-6 !h-6"
             aria-hidden="true"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path
                 d="M4.5 9h15m-15 6h15"
                 stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
+                strokeWidth="1.5"
+                strokeLinecap="round"
               ></path>
             </svg>
           </div>
         </button>
       </header>
       <div className="flex flex-col ">
-        <header class="text-center mb-16">
-          <h1 class="text-jumbo font-bold text-white text-5xl mt-8 md:mt-20 mb-2">
+        <header className="text-center mb-16">
+          <h1 className="text-jumbo font-bold text-white text-5xl mt-8 md:mt-20 mb-2">
             Pricing
           </h1>
-          <h2 class="text-base text-gray-500">
+          <h2 className="text-base text-gray-500">
             Plans that empower you and your team to ship without friction.
           </h2>
         </header>
-        <div class="mb-16 flex flex-col items-center mx-auto">
-          <div class="grid grid-cols-1 gap-4 lg:grid-cols-3 items-center lg:justify-evenly lg:items-end xl:w-[1280px]">
+        <div className="mb-16 flex flex-col items-center mx-auto">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-center lg:justify-evenly lg:items-end xl:w-[1190px]">
             {/* hobby */}
-            <div class="flex flex-col space-y-8 p-8 rounded-xl border border-opacity-40 w-full drop-shadow-[0_17px_17px_rgba(40,97,230,0.07)] border-blue-200 bg-gradient-to-b-blue from-blue-50 to-background">
+            <div className="flex flex-col space-y-8 p-8 rounded-xl border border-opacity-40 w-full drop-shadow-[0_17px_17px_rgba(40,97,230,0.07)] border-blue-200 bg-gradient-to-b-blue from-blue-50 to-background">
               <div>
-                <div class="text-[24px] font-bold leading-10 text-blue-700">
-                  Hobby
+                <div className="text-[24px] font-bold leading-10 text-blue-700">
+                  {SubscriptionPlans[0].plan}
                 </div>
-                <p class="leading-7 font-normal text-blue-400 dark:text-blue-800">
-                  The best $5 of compute money can buy on the Internet.
+                <p className="leading-7 font-normal text-blue-400 dark:text-blue-800">
+                  {SubscriptionPlans[0].description}
                 </p>
               </div>
-              <div class="flex-col gap-[2px] flex text-blue-600">
-                <div class="h-12 gap-[12px] justify-start items-center inline-flex pb-2">
-                  <span class="text-[24px] leading-10">$</span>
-                  <span class="text-[56px] font-semibold leading-10">5</span>
-                  <span class="text-[32px] font-normal leading-10">/mo</span>
+              <div className="flex-col gap-[2px] flex text-blue-600">
+                <div className="h-12 gap-[12px] justify-start items-center inline-flex pb-2">
+                  <span className="text-[24px] leading-10">$</span>
+                  <span className="text-[56px] font-semibold leading-10">
+                    {SubscriptionPlans[0].price}
+                  </span>
+                  <span className="text-[32px] font-normal leading-10">
+                    /mo
+                  </span>
                 </div>
-                <div class="items-center gap-[12px] inline-flex text-[14px] font-semibold uppercase leading-normal">
+                <div className="items-center gap-[12px] inline-flex text-[14px] font-semibold uppercase leading-normal">
                   <svg
-                    class="w-4"
+                    className="w-4"
                     width="24"
                     height="24"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
                     <path d="M12 5v14m-7-7h14"></path>
                   </svg>
                   Resource usage
                 </div>
               </div>
-              <div class="justify-center items-center inline-flex my-4">
-                <div class="w-full h-[1px] bg-gray-100 bg-opacity-5"></div>
+              <div className="justify-center items-center inline-flex my-4">
+                <div className="w-full h-[1px] bg-gray-100 bg-opacity-5"></div>
               </div>
-              <div class="flex flex-col space-y-4">
-                <div class="justify-start items-center gap-3 inline-flex">
+              <div className="flex flex-col space-y-4">
+                <div className="justify-start items-center gap-3 inline-flex">
                   <svg
-                    class="w-5 h-5 justify-center items-center flex text-blue-700"
+                    className="w-5 h-5 justify-center items-center flex text-blue-700"
                     width="24"
                     height="24"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
                     <path d="M20 12v10H4V12M2 7h20v5H2zm10 15V7m0 0H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zm0 0h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
                   </svg>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-blue-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      <span class="font-semibold">
+                  <div className="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-blue-600">
+                    <div className="self-stretch text-4 leading-normal">
+                      <span className="font-semibold">
                         Includes $5 of usage monthly
                       </span>
                     </div>
                   </div>
                 </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-blue-50 border-blue-200">
-                    <svg
-                      class="text-blue-700"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-blue-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      8 GB RAM / 8 vCPU per Service
+                {SubscriptionPlans[0].features.map((item, i) => (
+                  <div
+                    key={i}
+                    className="justify-start items-center gap-3 inline-flex"
+                  >
+                    <div className="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-blue-50 border-blue-200">
+                      <svg
+                        className="text-blue-700"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 6 9 17l-5-5"></path>
+                      </svg>
+                    </div>
+                    <div className="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-blue-600">
+                      <div className="self-stretch text-4 leading-normal">
+                        {item}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-blue-50 border-blue-200">
-                    <svg
-                      class="text-blue-700"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-blue-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      PR deploys and monorepo support
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-blue-50 border-blue-200">
-                    <svg
-                      class="text-blue-700"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-blue-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Automagic builds and deploys
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-blue-50 border-blue-200">
-                    <svg
-                      class="text-blue-700"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-blue-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      7 day log history
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-blue-50 border-blue-200">
-                    <svg
-                      class="text-blue-700"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-blue-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Domains with included SSL
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
-              <a
-                class="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
-                href="/account/upgrade"
-              >
-                <span class="inline-block">Deploy with Hobby</span>
-              </a>
+              <ManageUserSubscriptionButton
+                classes={`group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full`}
+                userId={userInfo?.id}
+                email={userInfo?.email}
+                stripePriceId={SubscriptionPlans[0].stripePriceId}
+                stripeCustomerId={userSubscriptionPlan?.stripeCustomerId}
+                isSubscribed={!!userSubscriptionPlan?.isSubscribed}
+                isCurrentPlan={
+                  userSubscriptionPlan?.plan === SubscriptionPlans[0].plan
+                }
+              />
             </div>
 
             {/* pto */}
-            <div class="flex flex-col space-y-8 p-8 rounded-xl border border-opacity-40 w-full drop-shadow-[0_17px_17px_rgba(113,65,225,0.17)] border-pink-200 bg-gradient-to-b-pink from-pink-50 to-background">
+            <div className="flex flex-col space-y-8 p-8 rounded-xl border border-opacity-40 w-full drop-shadow-[0_17px_17px_rgba(113,65,225,0.17)] border-pink-200 bg-gradient-to-b-pink from-pink-50 to-background">
               <div>
-                <div class="text-[24px] font-bold leading-10 text-pink-700">
-                  Pro
+                <div className="text-[24px] font-bold leading-10 text-pink-700">
+                  {SubscriptionPlans[1].plan}
                 </div>
-                <p class="leading-7 font-normal text-pink-400 dark:text-pink-800">
-                  For professional developers and teams shipping to production.
+                <p className="leading-7 font-normal text-pink-400 dark:text-pink-800">
+                  {SubscriptionPlans[1].description}
                 </p>
               </div>
-              <div class="flex-col gap-[2px] flex text-pink-600">
-                <div class="h-12 gap-[12px] justify-start items-center inline-flex pb-2">
-                  <span class="text-[24px] leading-10">$</span>
-                  <span class="text-[56px] font-semibold leading-10">20</span>
-                  <span class="text-[32px] font-normal leading-10">
+              <div className="flex-col gap-[2px] flex text-pink-600">
+                <div className="h-12 gap-[12px] justify-start items-center inline-flex pb-2">
+                  <span className="text-[24px] leading-10">$</span>
+                  <span className="text-[56px] font-semibold leading-10">
+                    {SubscriptionPlans[1].price}
+                  </span>
+                  <span className="text-[32px] font-normal leading-10">
                     /mo/seat
                   </span>
                 </div>
-                <div class="items-center gap-[12px] inline-flex text-[14px] font-semibold uppercase leading-normal">
+                <div className="items-center gap-[12px] inline-flex text-[14px] font-semibold uppercase leading-normal">
                   <svg
-                    class="w-4"
+                    className="w-4"
                     width="24"
                     height="24"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
                     <path d="M12 5v14m-7-7h14"></path>
                   </svg>
                   Resource usage
                 </div>
               </div>
-              <div class="justify-center items-center inline-flex my-4">
-                <div class="w-full h-[1px] bg-gray-100 bg-opacity-5"></div>
+              <div className="justify-center items-center inline-flex my-4">
+                <div className="w-full h-[1px] bg-gray-100 bg-opacity-5"></div>
               </div>
-              <div class="flex flex-col space-y-4">
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-pink-50 border-pink-200">
+              <div className="flex flex-col space-y-4">
+                <div className="justify-start items-center gap-3 inline-flex">
+                  <div className="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-pink-50 border-pink-200">
                     <svg
-                      class="text-pink-900"
+                      className="text-pink-900"
                       width="24"
                       height="24"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     >
                       <path d="M20 6 9 17l-5-5"></path>
                     </svg>
                   </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-pink-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      <span class="font-semibold">
-                        All Hobby plan features and:
+                  <div className="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-pink-600">
+                    <div className="self-stretch text-4 leading-normal">
+                      <span className="font-semibold">
+                        All Standard plan features and:
                       </span>
                     </div>
                   </div>
                 </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-pink-50 border-pink-200">
-                    <svg
-                      class="text-pink-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-pink-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      32 GB RAM / 32 vCPU per Service
+                {SubscriptionPlans[1].features.map((item, i) => (
+                  <div
+                    key={i}
+                    className="justify-start items-center gap-3 inline-flex"
+                  >
+                    <div className="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-pink-50 border-pink-200">
+                      <svg
+                        className="text-pink-900"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 6 9 17l-5-5"></path>
+                      </svg>
+                    </div>
+                    <div className="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-pink-600">
+                      <div className="self-stretch text-4 leading-normal">
+                        {item}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-pink-50 border-pink-200">
-                    <svg
-                      class="text-pink-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-pink-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Shared workspace access for teams
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-pink-50 border-pink-200">
-                    <svg
-                      class="text-pink-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-pink-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Unlimited concurrent builds
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-pink-50 border-pink-200">
-                    <svg
-                      class="text-pink-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-pink-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Horizontal Scaling
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-pink-50 border-pink-200">
-                    <svg
-                      class="text-pink-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-pink-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Email support
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-pink-50 border-pink-200">
-                    <svg
-                      class="text-pink-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-pink-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Private networks
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-pink-50 border-pink-200">
-                    <svg
-                      class="text-pink-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-pink-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      30 day log history
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-pink-50 border-pink-200">
-                    <svg
-                      class="text-pink-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-pink-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Regions
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
-              <a
-                class="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-pink-500 hover:bg-pink-700 text-white font-semibold border-0 w-full"
-                href="/new/team"
-              >
-                <span class="inline-block">Deploy with Pro</span>
-              </a>
+              <ManageUserSubscriptionButton
+                classes={`group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-pink-500 hover:bg-pink-700 text-white font-semibold border-0 w-full`}
+                userId={userInfo?.id}
+                email={userInfo?.email}
+                stripePriceId={SubscriptionPlans[1].stripePriceId}
+                stripeCustomerId={userSubscriptionPlan?.stripeCustomerId}
+                isSubscribed={!!userSubscriptionPlan?.isSubscribed}
+                isCurrentPlan={
+                  userSubscriptionPlan?.plan === SubscriptionPlans[1].plan
+                }
+              />
             </div>
-            {/* enterprise */}
-            <div class="flex flex-col space-y-8 p-8 rounded-xl border border-opacity-40 w-full drop-shadow-[0_17px_17px_rgba(0,0,0,0.07)] border-green-200 bg-gradient-to-b-green from-green-50 to-background">
+            {/* Enterprise */}
+            <div className="flex flex-col space-y-8 p-8 rounded-xl border border-opacity-40 w-full drop-shadow-[0_17px_17px_rgba(0,0,0,0.07)] border-green-200 bg-gradient-to-b-green from-green-50 to-background">
               <div>
-                <div class="text-[24px] font-bold leading-10 text-green-700">
-                  Enterprise
+                <div className="text-[24px] font-bold leading-10 text-green-700">
+                  {SubscriptionPlans[2].plan}
                 </div>
-                <p class="leading-7 font-normal text-green-400 dark:text-green-800">
+                <p className="leading-7 font-normal text-green-400 dark:text-green-800">
                   Unrivaled levels of support and scale for your company.
                 </p>
               </div>
-              <div class="flex-col gap-[2px] flex text-green-600">
-                <div class="h-12 gap-[12px] justify-start items-center inline-flex pb-2">
-                  <span class="text-[32px] font-normal leading-10">
-                    Custom Pricing
-                  </span>
-                </div>
-                <div class="items-center gap-[12px] inline-flex text-[14px] font-semibold uppercase leading-normal">
-                  ALL-IN-ONE PACKAGE
-                </div>
-              </div>
-              <div class="justify-center items-center inline-flex my-4">
-                <div class="w-full h-[1px] bg-gray-100 bg-opacity-5"></div>
-              </div>
-              <div class="flex flex-col space-y-4">
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-green-50 border-green-200">
-                    <svg
-                      class="text-green-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
+              <div className="h-12 gap-[12px] text-green-600 justify-start items-center inline-flex pb-2">
+                <div className="flex flex-col">
+                  <div className="flex pb-3 gap-2">
+                    <span className="text-[24px] leading-10">$</span>
+                    <span className="text-[56px] font-semibold leading-10">
+                      {SubscriptionPlans[2].price}
+                    </span>
+                    <span className="text-[32px] font-normal leading-10">
+                      /mo/seat
+                    </span>
                   </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-green-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      <span class="font-semibold">
-                        All features in Hobby, Pro and:
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-green-50 border-green-200">
-                    <svg
-                      class="text-green-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-green-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Custom instance sizing
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-green-50 border-green-200">
-                    <svg
-                      class="text-green-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-green-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      IdP integrations
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-green-50 border-green-200">
-                    <svg
-                      class="text-green-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-green-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Concierge onboarding
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-green-50 border-green-200">
-                    <svg
-                      class="text-green-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-green-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Support SLAs
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-green-50 border-green-200">
-                    <svg
-                      class="text-green-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-green-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Log history up to 90 days
-                    </div>
-                  </div>
-                </div>
-                <div class="justify-start items-center gap-3 inline-flex">
-                  <div class="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-green-50 border-green-200">
-                    <svg
-                      class="text-green-900"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                  </div>
-                  <div class="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-green-600">
-                    <div class="self-stretch text-4 leading-normal">
-                      Certifications and compliance
-                    </div>
+                  <div className="items-center gap-[12px] inline-flex text-[14px] font-semibold uppercase leading-normal">
+                    ALL-IN-ONE PACKAGE
                   </div>
                 </div>
               </div>
-              <a
-                href="https://cal.com/team/railway/demonew"
-                target="_blank"
-                rel="noreferrer"
-                class="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-green-500 hover:bg-green-700 text-white font-semibold border-0 w-full"
-              >
-                <span class="inline-block">Contact Us</span>
-              </a>
+
+              <div className="justify-center items-center inline-flex my-4">
+                <div className="w-full h-[1px] bg-gray-100 bg-opacity-5"></div>
+              </div>
+              <div className="flex flex-col space-y-4">
+                {SubscriptionPlans[2].features.map((item, i) => (
+                  <div
+                    key={i}
+                    className="justify-start items-center gap-3 inline-flex"
+                  >
+                    <div className="w-5 h-5 p-1 rounded-xl border justify-center items-center flex bg-green-50 border-green-200">
+                      <svg
+                        className="text-green-900"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 6 9 17l-5-5"></path>
+                      </svg>
+                    </div>
+                    <div className="grow shrink basis-0 p-0 flex-col justify-start items-start inline-flex text-green-600">
+                      <div className="self-stretch text-4 leading-normal">
+                        {item}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <ManageUserSubscriptionButton
+                classes={`group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-green-500 hover:bg-green-700 text-white font-semibold border-0 w-full`}
+                userId={userInfo?.id}
+                email={userInfo?.email}
+                stripePriceId={SubscriptionPlans[2].stripePriceId}
+                stripeCustomerId={userSubscriptionPlan?.stripeCustomerId}
+                isSubscribed={!!userSubscriptionPlan?.isSubscribed}
+                isCurrentPlan={
+                  userSubscriptionPlan?.plan === SubscriptionPlans[2].plan
+                }
+              />
             </div>
           </div>
         </div>

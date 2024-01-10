@@ -62,7 +62,7 @@ export const getInitialGroupsWithMessages = async (req, res, next) => {
               { members: { some: { id: userId } } },
               { admins: { some: { id: userId } } },
             ],
-          }, // User is a member or admin
+          },
           { messages: { some: { groupId: { not: null } } } }, // Group has at least one message
         ],
       },
