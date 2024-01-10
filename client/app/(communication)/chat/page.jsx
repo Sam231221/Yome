@@ -46,10 +46,6 @@ export default function Chatpage() {
             let { data } = await axios.post(GET_USER_ROUTE, {
               email: session?.user.email,
             });
-            //Check if the user object with this email is logged in
-            if (!data.status) {
-              router.push("/login");
-            }
 
             //Get the user from database and populate useInfo state
             dispatch({
@@ -58,11 +54,13 @@ export default function Chatpage() {
                 id: data?.user?.id,
                 role: data?.user?.role,
                 email: data?.user?.email,
+                name: data?.user?.name,
                 username: data?.user?.username,
                 firstname: data?.user?.firstname,
                 lastname: data?.user?.lastname,
+                userProfile: data?.user?.userProfile,
                 identifier: data?.user?.identifier,
-                profileImage: data?.user?.profilePicture,
+                profilePicture: data?.user?.profilePicture,
                 status: data?.user?.about,
               },
             });

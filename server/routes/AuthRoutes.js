@@ -4,7 +4,6 @@ import {
   generateToken,
   getAllUsers,
   getAllGroups,
-  onBoardUser,
   getAllGroupsForUser,
   getFollowedUsersByUser,
   getUnfollowedMentors,
@@ -15,6 +14,7 @@ import {
   manageStripeSubscriptionAction,
   updateUserSubscriptionPlanById,
   updateUserSubscriptionPlanBySubscriptionId,
+  registerUser,
 } from "../controllers/AuthController.js";
 
 const router = Router();
@@ -34,7 +34,7 @@ router.post(
   updateUserSubscriptionPlanBySubscriptionId
 );
 
-router.post("/onBoardUser", onBoardUser);
+router.post("/register-user", registerUser);
 router.get("/get-all-users", getAllUsers);
 router.get("/get-all-groups", getAllGroups);
 router.post("/connect-user-to-mentor", followUnfollowedUser);

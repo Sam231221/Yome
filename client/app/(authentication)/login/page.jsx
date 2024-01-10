@@ -2,7 +2,6 @@
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 
-import { useStateProvider } from "@/context/StateContext";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import LoginContainer from "./components/LoginContainer";

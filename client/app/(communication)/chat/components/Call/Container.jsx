@@ -163,7 +163,7 @@ function Container({ data }) {
             src={`${
               data.profilePicture == ""
                 ? "/avatars/userprofile.png"
-                : data.profileImage
+                : data.profilePicture
             }`}
             alt="avatar"
             height={200}

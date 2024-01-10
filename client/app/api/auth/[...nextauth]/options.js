@@ -30,7 +30,7 @@ export const options = {
       profile(profile) {
         return {
           ...profile,
-          role: profile.role ?? "user",
+          role: profile.role ?? "USER",
           id: profile.sub,
         };
       },

@@ -96,18 +96,22 @@ export default function Avatar({ type, image, setImage }) {
     <>
       <div className="flex items-center justify-center">
         {type === "sm" && (
-          <img
-            src={image === "" ? "/avatars/userprofile.png" : image}
-            alt="avatar"
-            className={`h-11 w-11 rounded-full`}
-          />
+          <div className="h-11 w-11 bg-white rounded-full">
+            <img
+              src={image === "" ? "/avatars/userprofile.png" : image}
+              alt="avatar"
+              className={`w-full h-full object-contain rounded-full`}
+            />
+          </div>
         )}
         {type === "lg" && (
-          <img
-            src={image === "" ? "/avatars/userprofile.png" : image}
-            alt="avatar"
-            className={`h-14 w-14 rounded-full`}
-          />
+          <div className="h-14 w-14 bg-white rounded-full">
+            <img
+              src={image === "" ? "/avatars/userprofile.png" : image}
+              alt="avatar"
+              className={`w-full h-full object-contain rounded-full`}
+            />
+          </div>
         )}
         {type === "xl" && (
           <div

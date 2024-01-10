@@ -27,6 +27,11 @@ const nextConfig = {
         hostname: "bootstrapmade.com",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "th.bing.com",
+        pathname: "**",
+      },
     ],
   },
 };

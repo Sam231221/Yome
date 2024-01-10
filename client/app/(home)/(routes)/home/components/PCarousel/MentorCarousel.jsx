@@ -23,11 +23,10 @@ const MentorCarousel = ({ mentors }) => {
         loggedInUserId: userInfo.id,
         mentorId: id,
       });
-      console.log(data);
+
       if (data.status === 200) {
         setItems((prevPeople) =>
           prevPeople.map((person) => {
-            console.log(person.id, id);
             return person.id === id ? { ...person, removed: true } : person;
           })
         );

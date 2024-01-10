@@ -10,14 +10,21 @@ import {
 
 import Image from "next/image";
 import { useStateProvider } from "@/context/StateContext";
+import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 export const ProfileDropDown = () => {
-  const [{ userInfo }, dispatch] = useStateProvider();
+  const router = useRouter();
+  const [{ userInfo, socket }, dispatch] = useStateProvider();
   const [open, setOpen] = useState(false);
-  let ProfileDivRef = useRef();
+  let ProfileHeadRef = useRef();
+  let ProfileBodyRef = useRef();
 
   useEffect(() => {
     let handler = (e) => {
-      if (!ProfileDivRef.current.contains(e.target)) {
+      if (
+        !ProfileHeadRef.current.contains(e.target) &&
+        !ProfileBodyRef.current.contains(e.target)
+      ) {
         setOpen(false);
       }
     };
@@ -26,22 +33,33 @@ export const ProfileDropDown = () => {
       document.removeEventListener("mousedown", handler);
     };
   });
+  const handleSignOut = () => {
+    signOut();
+    socket.current.emit("signout", userInfo.id);
+    router.push("/login");
+  };
   return (
     <>
       <div
         className="flex items-center relative"
-        ref={ProfileDivRef}
+        ref={ProfileHeadRef}
         onClick={() => {
           setOpen(!open);
         }}
       >
-        <Image
-          width={28}
-          height={28}
-          src="/avatars/userprofile.png"
-          className="rounded-full  object-cover"
-          alt="userprofile"
-        />
+        <div className="w-9 h-9 bg-white border shadow-lg rounded-full">
+          <Image
+            width={28}
+            height={28}
+            src={`${
+              userInfo?.profilePicture === undefined
+                ? "/avatars/userprofile.png"
+                : userInfo?.profilePicture
+            }`}
+            className="rounded-full w-full h-full object-contain"
+            alt="userprofile"
+          />
+        </div>
         <span className="ml-2 font-semibold hidden md:block text-primaryTextColor cursor-pointer text-xs">
           Mr {userInfo?.lastname}
         </span>
@@ -49,14 +67,15 @@ export const ProfileDropDown = () => {
       </div>
 
       <div
+        ref={ProfileBodyRef}
         className={` ${
           open ? "absolute" : "hidden"
         } before:content-[""] before:border-bg-[#eaedf1] before:border-t-[1px] 
                             before:border-l-[1px] before:absolute before:top-[-10px] before:right-5 before:h-5 before:w-5
                             before:bg-white before:rotate-[45deg] border
-                           top-14 right-[2px] bg-white drop-shadow-lg w-[220px] p-2`}
+                           top-14 right-[2px] bg-white drop-shadow-lg w-[220px] p-3`}
       >
-        <div className=" mb-2">
+        <div className="mt-1  mx-2">
           <div className="flex gap-2">
             <h2 className="text-lg text-gray-800 font-medium">
               {userInfo?.firstname}
@@ -72,7 +91,7 @@ export const ProfileDropDown = () => {
           <li>
             <a
               className="px-3 py-2 bg-none hover:bg-secondaryBgColor transition-all duration-500 ease-out flex items-center gap-2 text-xs"
-              href=""
+              href="/userProfile"
             >
               <BsPerson /> My profile
             </a>
@@ -80,7 +99,7 @@ export const ProfileDropDown = () => {
           <li>
             <a
               className="px-3 py-2 bg-none hover:bg-secondaryBgColor transition-all duration-500 ease-out flex items-center gap-2 text-xs"
-              href=""
+              href="/settings"
             >
               <BsGear /> Acccount Setting
             </a>
@@ -90,7 +109,7 @@ export const ProfileDropDown = () => {
             <li>
               <a
                 className="px-3 py-2 bg-none hover:bg-secondaryBgColor transition-all duration-500 ease-out flex items-center gap-2 text-xs"
-                href=""
+                href="/dashboard"
               >
                 <BsCardText /> Go to Dashboard
               </a>
@@ -99,19 +118,16 @@ export const ProfileDropDown = () => {
           <li>
             <a
               className="px-3 py-2 bg-none hover:bg-secondaryBgColor transition-all duration-500 ease-out flex items-center gap-2 text-xs"
-              href=""
+              href="/help"
             >
               <BsQuestionCircle /> Need Help?
             </a>
           </li>
-          <li>
-            <a
-              className="px-3 py-2 bg-none hover:bg-secondaryBgColor transition-all duration-500 ease-out flex items-center gap-2 text-xs"
-              href=""
-            >
+          <li className="cursor-pointer" onClick={() => handleSignOut()}>
+            <span className="px-3 py-2 bg-none hover:bg-secondaryBgColor transition-all duration-500 ease-out flex items-center gap-2 text-xs">
               {" "}
               <BsBoxArrowRight /> Sign Out
-            </a>
+            </span>
           </li>
         </ul>
         <label

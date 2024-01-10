@@ -49,7 +49,6 @@ export const createMultipleUsersWithProfiles = async (req, res) => {
 
     return res.status(201).json({ createdUsers });
   } catch (error) {
-    console.log("Error creating users and profiles:", error);
     res.status(500).json({ error: "Unable to create users and profiles" });
   }
 };

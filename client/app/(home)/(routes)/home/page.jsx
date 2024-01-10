@@ -19,7 +19,7 @@ import CommunityCarousel from "./components/PCarousel/CommunityCarousel";
 import MentorCarousel from "./components/PCarousel/MentorCarousel";
 import toast from "react-hot-toast";
 
-const Dashboard = () => {
+const Home = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
   const [mentors, setMentors] = useState([]);
   const [communities, setCommunities] = useState([]);
@@ -37,11 +37,6 @@ const Dashboard = () => {
             let { data } = await axios.post(GET_USER_ROUTE, {
               email: session?.user.email,
             });
-            //Check if the user object with this email is logged in
-            if (!data.status) {
-              router.push("/login");
-            }
-
             //Get the user from database and populate useInfo state
             dispatch({
               type: reducerCases.SET_USER_INFO,
@@ -49,11 +44,13 @@ const Dashboard = () => {
                 id: data?.user?.id,
                 role: data?.user?.role,
                 email: data?.user?.email,
+                name: data?.user?.name,
                 username: data?.user?.username,
                 firstname: data?.user?.firstname,
                 lastname: data?.user?.lastname,
+                userProfile: data?.user?.userProfile,
                 identifier: data?.user?.identifier,
-                profileImage: data?.user?.profilePicture,
+                profilePicture: data?.user?.profilePicture,
                 status: data?.user?.about,
               },
             });
@@ -251,4 +248,4 @@ const Dashboard = () => {
     </div>
   );
 };
-export default Dashboard;
+export default Home;

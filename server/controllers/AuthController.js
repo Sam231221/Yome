@@ -4,7 +4,7 @@ import { generateToken04 } from "../utils/TokenGenerator.js";
 import bcryptjs from "bcryptjs";
 import { stripe } from "../lib/stripe.js";
 import { absoluteUrl } from "../lib/utils.js";
-import { userInfo } from "os";
+
 export const getUserByEmail = async (request, response, next) => {
   try {
     const { email } = request.body;
@@ -12,7 +12,12 @@ export const getUserByEmail = async (request, response, next) => {
       return response.json({ msg: "Email is required", status: false });
     }
     const prisma = getPrismaInstance();
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        userProfile: true,
+      },
+    });
     if (!user) {
       return response.json({ msg: "User not found", status: false });
     } else
@@ -40,10 +45,10 @@ export const getGroupById = async (request, response, next) => {
     console.log(error);
   }
 };
-export const onBoardUser = async (request, response, next) => {
+export const registerUser = async (request, response, next) => {
   try {
     const prisma = getPrismaInstance();
-    const { email, username, password } = request.body;
+    const { email, username, lastname, firstname, password } = request.body;
     if (!email || !username || !password) {
       return response.json({
         msg: "Email, Name and Password are required",
@@ -54,17 +59,34 @@ export const onBoardUser = async (request, response, next) => {
       where: { email: email },
     });
     const existingUserbyName = await prisma.user.findUnique({
-      where: { name: username },
+      where: { username: username },
     });
     if (existingUserbyName || existingUserbyEmail) {
       return response.json({ msg: "User already exists", status: 409 });
     } else {
-      //hash password
       const salt = await bcryptjs.genSalt(10);
       const hashedPassword = await bcryptjs.hash(password, salt);
 
       const user = await prisma.user.create({
-        data: { email, name: username, password: hashedPassword },
+        data: {
+          email,
+          firstname,
+          lastname,
+          name: firstname + " " + lastname,
+          username: username,
+          password: hashedPassword,
+        },
+      });
+      await prisma.userProfile.create({
+        data: {
+          bio: "Bio for " + firstname,
+          address: "Address for " + firstname,
+          user: {
+            connect: {
+              id: user.id,
+            },
+          },
+        },
       });
       return response.json({
         msg: "User Created Successfully",
@@ -76,6 +98,33 @@ export const onBoardUser = async (request, response, next) => {
     next(error);
   }
 };
+export const getAllUsers = async (req, res, next) => {
+  try {
+    const prisma = getPrismaInstance();
+    const users = await prisma.user.findMany({
+      orderBy: { firstname: "asc" },
+      select: {
+        id: true,
+        email: true,
+        firstname: true,
+        lastname: true,
+        name: true,
+        username: true,
+        role: true,
+        identifier: true,
+        profilePicture: true,
+      },
+      include: {
+        userProfile: true,
+      },
+    });
+
+    return res.status(200).send({ users: users });
+  } catch (error) {
+    next(error);
+  }
+};
+
 /**-----------------------
  Subscription
  --------------------------*/
@@ -254,29 +303,13 @@ export const manageStripeSubscriptionAction = async (
       userId: userId,
     },
   });
-  console.log("uyooo");
+
   return response.status(200).send({ url: stripeSession.url });
 };
 
-export const getAllUsers = async (req, res, next) => {
-  try {
-    const prisma = getPrismaInstance();
-    const users = await prisma.user.findMany({
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        identifier: true,
-        profilePicture: true,
-      },
-    });
-
-    return res.status(200).send({ users: users });
-  } catch (error) {
-    next(error);
-  }
-};
+/**-----------------------
+Connections
+ --------------------------*/
 
 export const getFollowedUsersByUser = async (req, res, next) => {
   try {
@@ -285,7 +318,11 @@ export const getFollowedUsersByUser = async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
       where: { id: loggedInUserId },
-      include: { following: true },
+      include: {
+        following: {
+          include: { userProfile: true },
+        },
+      },
     });
 
     // Extract the users followed by the logged-in user

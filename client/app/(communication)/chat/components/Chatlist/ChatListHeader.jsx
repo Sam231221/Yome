@@ -43,10 +43,10 @@ export default function ChatListHeader() {
     <div className="h-16 px-4 py-3 flex justify-between items-center">
       <div className="flex gap-3 items-center">
         <div className="cursor-pointer">
-          <Avatar type="sm" image={userInfo?.profileImage} />
+          <Avatar type="sm" image={userInfo?.profilePicture} />
         </div>
         <span className="text-lg font-semibold text-gray-700">
-          {userInfo?.name}
+          {userInfo?.firstname}
         </span>
       </div>
 

@@ -4,7 +4,7 @@ const authRoute = `${HOST}/api/auth`;
 const MESSAGES_ROUTE = `${HOST}/api/messages`;
 const GROUP_MESSAGES_ROUTE = `${HOST}/api/group-messages`;
 
-export const onBoardUserRoute = `${authRoute}/onboarduser`;
+export const REGISTER_USER = `${authRoute}/register-user`;
 export const GET_USER_ROUTE = `${authRoute}/get-user`;
 export const GET_GROUP_ROUTE = `${authRoute}/get-group`;
 export const GET_ALL_USERS = `${authRoute}/get-all-users`;

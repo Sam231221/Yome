@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from "react";
 
 import { signIn } from "next-auth/react";
-import { useStateProvider } from "@/context/StateContext";
 import { FaFacebook, FaGithub } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 
 import FormInput from "@/components/FormInut/Form";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 export default function LoginContainer({ activeTab }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const callbackUrl = searchParams.get("callbackUrl");
+
   const [IsFormFilled, setFormFill] = useState(false);
   const [values, setValues] = useState({
     email: "",
@@ -46,17 +49,21 @@ export default function LoginContainer({ activeTab }) {
   //Login with  Next Auth Provider
   const loginWithNextAuthProvider = (e) => {
     let provider = e.target.getAttribute("data-provider");
-    console.log("provider", provider);
+
     signIn(provider, { redirect: false })
       .then((callback) => {
         if (callback?.error) {
           toast.error("Invalid credentials!");
         }
         if (callback?.ok) {
-          router.push("/home");
+          if (callbackUrl === null) {
+            router.push("/home");
+          } else {
+            window.location.href = callbackUrl;
+          }
         }
       })
-      .finally(() => console.log("loggedIn"));
+      .finally(() => toast.success("Login Successfully"));
   };
 
   //Login with Credentials
@@ -71,7 +78,11 @@ export default function LoginContainer({ activeTab }) {
       toast.error("Credentials error!");
     } else {
       toast.success("Login Successfully");
-      router.push("/home");
+      if (callbackUrl === null) {
+        router.push("/home");
+      } else {
+        window.location.href = callbackUrl;
+      }
     }
   };
   return (

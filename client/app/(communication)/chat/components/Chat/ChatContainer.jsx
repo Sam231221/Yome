@@ -25,7 +25,6 @@ export default function ChatContainer({ chatType }) {
     if (lastMessage) {
       lastMessage.scrollIntoView({ behavior: "smooth" });
     }
-    console.log("messages:", messages);
   }, [messages]);
 
   return (

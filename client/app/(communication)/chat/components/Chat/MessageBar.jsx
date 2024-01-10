@@ -6,7 +6,7 @@ import { MdSend } from "react-icons/md";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import axios from "axios";
-import { ADD_IMAGE_MESSAGE_ROUTE ,ADD_MESSAGE_ROUTE} from "@/utils/ApiRoutes";
+import { ADD_IMAGE_MESSAGE_ROUTE, ADD_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
 import EmojiPicker from "emoji-picker-react";
 import dynamic from "next/dynamic";
 import PhotoPicker from "@/components/common/PhotoPicker";
@@ -53,7 +53,7 @@ export default function MessageBar({ id, chatType }) {
         });
       }
     } catch (err) {
-      console.log(err);
+      toast.error(err);
     }
   };
 
@@ -61,15 +61,12 @@ export default function MessageBar({ id, chatType }) {
   const sendTextMessage = async () => {
     try {
       setMessage("");
-      const { data } = await axios.post(
-        ADD_MESSAGE_ROUTE,
-        {
-          chatType: chatType,
-          from: userInfo.id,
-          to: currentChatUser.id,
-          message,
-        }
-      );
+      const { data } = await axios.post(ADD_MESSAGE_ROUTE, {
+        chatType: chatType,
+        from: userInfo.id,
+        to: currentChatUser.id,
+        message,
+      });
       socket.current.emit("send-msg", {
         chatType: chatType,
         from: userInfo.id,
@@ -101,7 +98,7 @@ export default function MessageBar({ id, chatType }) {
         });
       }
     } catch (err) {
-      console.log(err);
+      toast.error(err);
     }
   };
 

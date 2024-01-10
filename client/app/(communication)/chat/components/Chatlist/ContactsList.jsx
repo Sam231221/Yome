@@ -24,30 +24,47 @@ function ContactsList() {
         const {
           data: { followedUsers },
         } = await axios.get(`${GET_ALL_CONNECTED_USERS}/${userInfo.id}`);
+
         const {
           data: { groups },
         } = await axios.get(`${GET_ALL_CONNECTED_GROUPS}/${userInfo.id}`);
-        console.log(followedUsers, groups);
+
         let combinedContacts = [...followedUsers, ...groups];
         setAllContacts(
-          combinedContacts.filter((obj) => obj.name !== userInfo.name)
+          combinedContacts.filter((obj) => {
+            if (obj.type === "group") {
+              return obj.name !== userInfo.name;
+            } else {
+              return obj.firstname !== userInfo.firstname;
+            }
+          })
         );
         setSearchContacts(
-          combinedContacts.filter((obj) => obj.name !== userInfo.name)
+          combinedContacts.filter((obj) => {
+            if (obj.type === "group") {
+              return obj.name !== userInfo.name;
+            } else {
+              return obj.firstname !== userInfo.firstname;
+            }
+          })
         );
       } catch (err) {
-        console.log(err);
-        toast.error(err.msg);
+        toast.error(err?.msg);
       }
     };
     getContacts();
   }, []);
+
   useEffect(() => {
     if (searchTerm.length) {
       let filteredData = [];
-      filteredData = allContacts.filter((obj) =>
-        obj.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filteredData = allContacts.filter((obj) => {
+        if (obj.type === "group") {
+          obj.name.toLowerCase().includes(searchTerm.toLowerCase());
+        } else {
+          obj.firstname.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+      });
 
       setSearchContacts(filteredData);
     } else {

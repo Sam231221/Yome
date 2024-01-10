@@ -105,6 +105,7 @@ export default function ChatLIstItem({
               {data?.name}
             </span>
           </div>
+
           {!isContactPage && (
             <div className="pointer-events-none">
               <span
@@ -123,7 +124,13 @@ export default function ChatLIstItem({
           <div className="flex justify-between w-full">
             <span className="text-secondary line-clamp-1 text-sm ">
               {isContactPage ? (
-                data?.about || "\u00A0"
+                <>
+                  {type === "group" ? (
+                    <> {data?.about || "\u00A0"}</>
+                  ) : (
+                    <>{data?.userProfile?.bio || "\u00A0"}</>
+                  )}
+                </>
               ) : (
                 // Send msg by different ways for images,texts...
                 <div className="flex items-center gap-1 max-w-[200px] sm:max-w-[250px] md:max-w-[300px] lg:max-w-[200px] xl:max-w-[300px]">

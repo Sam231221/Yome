@@ -3,7 +3,7 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import { FaFacebook, FaGithub } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-import { onBoardUserRoute } from "@/utils/ApiRoutes";
+import { REGISTER_USER } from "@/utils/ApiRoutes";
 import FormInput from "@/components/FormInut/Form";
 
 export default function RegisterContainer({ activeTab, setActiveTab }) {
@@ -11,6 +11,8 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
   const [isChecked, setIsChecked] = useState(false);
   const [values, setValues] = useState({
     username: "",
+    firstname: "",
+    lastname: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -18,6 +20,26 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
   const inputs = [
     {
       id: 1,
+      name: "firstname",
+      type: "text",
+      placeholder: "Your Firstname",
+      errorMessage:
+        "Firstname should be 3-16 characters and shouldn't include any special character!",
+      pattern: "^[A-Za-z0-9]{3,16}$",
+      required: true,
+    },
+    {
+      id: 2,
+      name: "lastname",
+      type: "text",
+      placeholder: "Your Lastname",
+      errorMessage:
+        "Lastname should be 3-16 characters and shouldn't include any special character!",
+      pattern: "^[A-Za-z0-9]{3,16}$",
+      required: true,
+    },
+    {
+      id: 3,
       name: "username",
       type: "text",
       placeholder: "Username",
@@ -27,7 +49,7 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
       required: true,
     },
     {
-      id: 2,
+      id: 4,
       name: "email",
       type: "email",
       placeholder: "Email",
@@ -35,7 +57,7 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
       required: true,
     },
     {
-      id: 3,
+      id: 5,
       name: "password",
       type: "password",
       placeholder: "Password",
@@ -45,7 +67,7 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
       required: true,
     },
     {
-      id: 4,
+      id: 6,
       name: "confirmPassword",
       type: "password",
       placeholder: "Confirm Password",
@@ -59,6 +81,8 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
   };
   useEffect(() => {
     if (
+      values.firstname !== "" &&
+      values.lastname !== "" &&
       values.email !== "" &&
       values.username !== "" &&
       values.password !== "" &&
@@ -77,12 +101,16 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
   //Register Users
   const handleRegisterFormSubmit = async (e) => {
     e.preventDefault();
-    const { data } = await axios.post(onBoardUserRoute, {
+    const { data } = await axios.post(REGISTER_USER, {
       email: values.email,
+      firstname: values.firstname,
+      lastname: values.lastname,
       username: values.username,
       password: values.password,
     });
     setValues({
+      firstname: "",
+      lastname: "",
       username: "",
       email: "",
       password: "",
