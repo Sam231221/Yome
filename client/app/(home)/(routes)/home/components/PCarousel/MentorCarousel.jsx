@@ -77,7 +77,7 @@ const MentorCarousel = ({ mentors }) => {
 
                 <Link href="/chool">
                   <h2 className="text-sm mt-2 px-2 text-gray-700 font-semibold">
-                    {mentor.name}
+                    {mentor.firstname} {mentor.lastname}
                   </h2>
                 </Link>
                 <div className="flex mt-2 px-2 text-gray-500 font-medium gap-1">

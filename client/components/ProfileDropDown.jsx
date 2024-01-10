@@ -5,6 +5,7 @@ import {
   BsGear,
   BsPerson,
   BsQuestionCircle,
+  BsCardText,
 } from "react-icons/bs";
 
 import Image from "next/image";
@@ -84,6 +85,17 @@ export const ProfileDropDown = () => {
               <BsGear /> Acccount Setting
             </a>
           </li>
+
+          {userInfo?.role === "AGENT" && (
+            <li>
+              <a
+                className="px-3 py-2 bg-none hover:bg-secondaryBgColor transition-all duration-500 ease-out flex items-center gap-2 text-xs"
+                href=""
+              >
+                <BsCardText /> Go to Dashboard
+              </a>
+            </li>
+          )}
           <li>
             <a
               className="px-3 py-2 bg-none hover:bg-secondaryBgColor transition-all duration-500 ease-out flex items-center gap-2 text-xs"

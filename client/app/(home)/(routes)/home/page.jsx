@@ -17,6 +17,8 @@ import {
 import { useStateProvider } from "@/context/StateContext";
 import CommunityCarousel from "./components/PCarousel/CommunityCarousel";
 import MentorCarousel from "./components/PCarousel/MentorCarousel";
+import toast from "react-hot-toast";
+import { totalmem } from "os";
 const Dashboard = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
   const [mentors, setMentors] = useState([]);
@@ -45,7 +47,7 @@ const Dashboard = () => {
               type: reducerCases.SET_USER_INFO,
               userInfo: {
                 id: data?.user?.id,
-                role:data?.user?.role,
+                role: data?.user?.role,
                 email: data?.user?.email,
                 username: data?.user?.username,
                 firstname: data?.user?.firstname,
@@ -58,7 +60,7 @@ const Dashboard = () => {
           }
         }
       } catch (e) {
-        console.log(e);
+        toast.error(e);
       }
     };
 
@@ -67,43 +69,43 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (userInfo) {
-      const getEIs = async (e) => {
-        try {
-          let { data } = await axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_API}/api/ei/getAll`
-          );
-          setInstitutions(data.institutions);
-          setFilteredInstitutions(data.institutions);
-        } catch (e) {
-          console.log(e);
-        }
-      };
-      const getMentors = async (e) => {
-        try {
-          let { data } = await axios.get(
-            `${GET_UNFOLLOWED_MENTORS}/${userInfo.id}`
-          );
-          setMentors(data.mentorsNotFollowed);
-        } catch (e) {
-          console.log(e);
-        }
-      };
-      const getGroups = async (e) => {
-        try {
-          let { data } = await axios.get(
-            `${GET_UNASSOCIATED_GROUPS}/${userInfo.id}`
-          );
-          console.log(data);
-          setCommunities(data.unassociatedGroups);
-        } catch (e) {
-          console.log(e);
-        }
-      };
       getEIs();
       getGroups();
       getMentors();
     }
   }, [userInfo]);
+  const getEIs = async (e) => {
+    try {
+      let { data } = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/api/ei/getAll`
+      );
+      setInstitutions(data.institutions);
+      setFilteredInstitutions(data.institutions);
+    } catch (e) {
+      toast.error(e);
+    }
+  };
+  const getMentors = async (e) => {
+    try {
+      let { data } = await axios.get(
+        `${GET_UNFOLLOWED_MENTORS}/${userInfo.id}`
+      );
+      setMentors(data.mentorsNotFollowed);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+  const getGroups = async (e) => {
+    try {
+      let { data } = await axios.get(
+        `${GET_UNASSOCIATED_GROUPS}/${userInfo.id}`
+      );
+      console.log(data);
+      setCommunities(data.unassociatedGroups);
+    } catch (e) {
+      toast.error(e);
+    }
+  };
   const handleTab = (type) => {
     setActiveTab(type);
     if (type === "All") {
