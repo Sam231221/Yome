@@ -14,7 +14,7 @@ import {
 import { MdSend } from "react-icons/md";
 import WaveSurfer from "wavesurfer.js";
 
-const AudioRecorder = ({ hide }) => {
+const AudioRecorder = ({ hide, chatType }) => {
   const [{ userInfo, currentChatUser, socket }, dispatch] = useStateProvider();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -171,23 +171,42 @@ const AudioRecorder = ({ hide }) => {
           "Content-Type": "multipart/form-data",
         },
         params: {
+          chatType: chatType,
           from: userInfo.id,
           to: currentChatUser.id,
         },
       });
       if (response.status === 201) {
         socket.current.emit("send-msg", {
+          chatType: chatType,
+          room: `room-${currentChatUser.id}`,
           to: currentChatUser.id,
           from: userInfo.id,
           message: response.data.message,
         });
-        dispatch({
-          type: reducerCases.ADD_MESSAGE,
-          newMessage: {
-            ...response.data.message,
-          },
-          fromSelf: true,
-        });
+
+        if (chatType === "user") {
+          dispatch({
+            type: reducerCases.ADD_USER_MESSAGE,
+            newMessage: {
+              ...response.data.message,
+            },
+
+            fromSelf: true,
+          });
+        }
+        if (chatType === "group") {
+          dispatch({
+            type: reducerCases.ADD_GROUP_MESSAGE,
+            newMessage: {
+              ...response.data.message,
+            },
+            groupId: currentChatUser.id,
+
+            fromSelf: true,
+          });
+        }
+
         hide();
       }
     } catch (err) {

@@ -290,6 +290,7 @@ export const addImageMessage = async (req, res, next) => {
             type: "image",
           },
         });
+
         return res.status(201).json({ message });
       }
       return res.status(400).send("From, to is required.");

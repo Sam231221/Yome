@@ -33,24 +33,42 @@ export default function MessageBar({ id, chatType }) {
           "Content-Type": "multipart/form-data",
         },
         params: {
+          chatType: chatType,
           from: userInfo.id,
           to: currentChatUser.id,
         },
       });
-      //Render image message at the time.
+
       if (response.status === 201) {
         socket.current.emit("send-msg", {
+          chatType: chatType,
+          room: `room-${currentChatUser.id}`,
           to: currentChatUser.id,
           from: userInfo.id,
           message: response.data.message,
         });
-        dispatch({
-          type: reducerCases.ADD_MESSAGE,
-          newMessage: {
-            ...response.data.message,
-          },
-          fromSelf: true,
-        });
+
+        if (chatType === "user") {
+          dispatch({
+            type: reducerCases.ADD_USER_MESSAGE,
+            newMessage: {
+              ...response.data.message,
+            },
+
+            fromSelf: true,
+          });
+        }
+        if (chatType === "group") {
+          dispatch({
+            type: reducerCases.ADD_GROUP_MESSAGE,
+            newMessage: {
+              ...response.data.message,
+            },
+            groupId: currentChatUser.id,
+
+            fromSelf: true,
+          });
+        }
       }
     } catch (err) {
       toast.error(err);
@@ -75,25 +93,23 @@ export default function MessageBar({ id, chatType }) {
         message: data.message,
       });
       if (chatType === "user") {
-        //add msg real time from sender side through dispatch().
         dispatch({
           type: reducerCases.ADD_USER_MESSAGE,
           newMessage: {
             ...data.message,
           },
-          //it means logged in user is sender
+
           fromSelf: true,
         });
       }
       if (chatType === "group") {
-        //add msg real time from sender side through dispatch().
         dispatch({
           type: reducerCases.ADD_GROUP_MESSAGE,
           newMessage: {
             ...data.message,
           },
           groupId: currentChatUser.id,
-          //it means logged in user is sender
+
           fromSelf: true,
         });
       }
@@ -200,7 +216,9 @@ export default function MessageBar({ id, chatType }) {
           </div>
         </>
       )}
-      {showAudioRecorder && <CaptureAudio hide={setShowAudioRecorder} />}
+      {showAudioRecorder && (
+        <CaptureAudio chatType={chatType} hide={setShowAudioRecorder} />
+      )}
       {grabImage && <PhotoPicker onChange={photoPickerOnChange} />}
     </div>
   );
