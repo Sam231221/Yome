@@ -2,8 +2,10 @@
 import { useState, useEffect } from "react";
 import { RxDashboard } from "react-icons/rx";
 import { SlCompass } from "react-icons/sl";
+import { CiBoxList } from "react-icons/ci";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import {
+  IoMenuOutline,
   IoBookmarksOutline,
   IoSearchOutline,
   IoStatsChartOutline,
@@ -29,25 +31,14 @@ export default function HomeLayout({ children }) {
       }
     }
   };
-  useEffect(() => {
-    showSidebar();
-
-    const handleResize = () => {
-      showSidebar();
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [isOpen]);
 
   return (
     <div className="relative w-full">
       {/* Sidebar */}
       <div
-        className={`w-[65px] h-screen navigation fixed left-0 bg-white border-white`}
+        className={
+          "hidden w-0 sm:block sm:w-[65px] h-screen navigation fixed left-0 bg-white border-white"
+        }
       >
         <div className="group mt-2 w-full gap-1 flex items-center text-white">
           <Link className="flex p-1 items-center" href="/home">
@@ -151,12 +142,36 @@ export default function HomeLayout({ children }) {
             </Link>
           </li>
         </ul>
+
+        {/* MOdal */}
+        <div className={`${isOpen ? " mt-5 p-5" : "hidden"}`}>
+          <div className="bg-white border rounded drop-shadow-lg px-2 py-4 flex flex-col items-center justify-end">
+            <Image
+              width={60}
+              height={60}
+              src="/images/banner.png"
+              className=" object-contain"
+              alt="banner"
+              style={{ width: "auto" }}
+            />
+            <h1 className="text-sm font-bold leading-8">Unlimited Acess</h1>
+            <p className="text-xs text-center text-gray-700 ">
+              Upgrage href plan href get unlimited reports
+            </p>
+            <button className="bg-none border-[1px] border-primaryTextColor py-2 px-3 text-xs hover:bg-secondaryTextColor hover:border-none hover:text-white mt-5">
+              Upgrade
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Main */}
       <div
-        className={`w-[calc(100%-65px)] left-[65px] transition duration-500 ease-out absolute  min-h-screen bg-primaryBgColor`}
+        className={
+          "w-full block sm:absolute  sm:w-[calc(100%-65px)] left-[65px]  transition duration-500 ease-out  h-full bg-primaryBgColor"
+        }
       >
+        {/*Topbar */}
         <div className="topbar z-[3] shadow-lg sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
           <div className="flex gap-3 items-center">
             {/* Hamburger */}
@@ -164,20 +179,9 @@ export default function HomeLayout({ children }) {
               onClick={toggleMenu}
               className="w-[30px] h-[30px] cursor-pointer hidden sm:block"
             /> */}
-
-            {/* SearchBar */}
-            <div className="border-[1px] ml-5 min-w-[300px] border-ternaryTextColor hidden lg:flex focus:border-secondaryTextColor items-center">
-              <input
-                className="border-none w-full py-2 px-4 outline-none text-primaryTextColor text-sm"
-                type="text"
-                placeholder="Search for ..."
-              />
-              <IoSearchOutline className="w-[40px] h-[40px] py-2 px-2 cursor-pointer text-primaryTextColor" />
-            </div>
           </div>
 
           <div className="flex gap-4 pr-4">
-            <IoSearchOutline className="w-[25px] h-[25px] lg:hidden cursor-pointer text-primaryTextColor" />
             <NotificationDropdown />
             <MessagesDropDown />
             <ProfileDropDown />

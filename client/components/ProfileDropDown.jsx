@@ -91,7 +91,7 @@ export const ProfileDropDown = () => {
           <li>
             <a
               className="px-3 py-2 bg-none hover:bg-secondaryBgColor transition-all duration-500 ease-out flex items-center gap-2 text-xs"
-              href="/userProfile"
+              href="/account"
             >
               <BsPerson /> My profile
             </a>

@@ -1,5 +1,8 @@
 import { useState } from "react";
 import "./FormInput.css";
+function capitalizeFirstLetter(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 function FormInput(props) {
   const [focused, setFocused] = useState(false);
   const { label, errorMessage, enableErrorMsg, onChange, id, ...inputProps } =
@@ -15,7 +18,11 @@ function FormInput(props) {
         enableErrorMsg ? "enable-errorMsg" : ""
       } flex flex-col w-full`}
     >
-      {label != "" && <label className="font-medium">{label}</label>}
+      {label !== "" && (
+        <label className="text-gray-600 font-medium">
+          {capitalizeFirstLetter(label)}
+        </label>
+      )}
       <input
         className="w-full  py-3 px-2 mb-2 text-sm bg-white
         focus:border-[#0e24a0]
