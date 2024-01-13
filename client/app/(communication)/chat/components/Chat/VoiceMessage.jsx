@@ -38,7 +38,7 @@ function VoiceMessage({ message }) {
   }, []);
 
   useEffect(() => {
-    const audioURL = `${HOST}/${message.message}`;
+    const audioURL = `${message.message}`;
     const audio = new Audio(audioURL);
     setAudioMessage(audio);
     setWaveformReady(true);
@@ -95,7 +95,14 @@ function VoiceMessage({ message }) {
        }`}
     >
       <div>
-        <Avatar type="lg" image={currentChatUser?.profilePicture} />
+        <Avatar
+          type="sm"
+          image={
+            message.senderId === currentChatUser.id
+              ? currentChatUser?.profilePicture || "/avatars/userprofile.png"
+              : userInfo?.profilePicture || "/avatars/userprofile.png"
+          }
+        />
       </div>
       <div className="cursor-pointer text-xl">
         {!isPlaying ? (

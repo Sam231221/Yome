@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+      {isModalOpen && (
+        <div className="w-full h-full flex items-center justify-center absolute top-0 right-0 bg-black bg-opacity-30">
+          <div className="w-[300px] sm:w-[500px] md:w-[400px] flex flex-col p-3 items-center justify-center bg-white rounded-lg">
+            <div className="w-16 h-16">
+              <Image
+                className="w-full h-full cursor-pointer object-cover rounded-full"
+                width={100}
+                height={100}
+                src={photo !== undefined ? photo : "/avatars/userprofile.png"}
+                alt=""
+              />
+            </div>
+            <ul className="w-full text-center mt-3">
+              <li className="border-t py-2 hover:bg-gray-100 border-gray-300 font-medium text-gray-800 cursor-pointer w-full">
+                Take Photo
+              </li>
+              <li className="border-t py-2 hover:bg-gray-100 border-gray-300 font-medium text-gray-800 cursor-pointer w-full">
+                Choose from library
+              </li>
+              <li
+                onClick={() => handleUploadPhotoBtn()}
+                className="border-t py-2 hover:bg-gray-100 border-gray-300 font-medium text-sky-500 cursor-pointer w-full"
+              >
+                Upload Photo
+              </li>
+              <li className="border-t py-2 hover:bg-gray-100 border-gray-300 font-medium text-red-600 cursor-pointer w-full">
+                Remove Current Photo
+              </li>
+              <li
+                onClick={() => setModalOpen(false)}
+                className="border-t py-2 hover:bg-gray-100 border-gray-300 font-medium text-gray-800 cursor-pointer w-full"
+              >
+                Cancel
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}

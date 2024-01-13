@@ -1,4 +1,5 @@
 import { Router } from "express";
+import multer from "multer";
 import {
   addAudioMessage,
   addImageMessage,
@@ -6,18 +7,18 @@ import {
   getInitialContactsWithMessages,
   getMessages,
 } from "../controllers/MessageController.js";
-import multer from "multer";
-
-const upload = multer({ dest: "uploads/recordings/" });
-const uploadImage = multer({ dest: "uploads/images/" });
 
 const router = Router();
+
+const storage = multer.memoryStorage();
+const uploadAudio = multer({ storage: storage });
+const uploadImage = multer({ storage: storage });
 
 router.post("/add-message", addMessage);
 router.get("/get-messages/:from/:to/:chatType", getMessages);
 router.get("/get-initial-contacts/:from", getInitialContactsWithMessages);
 
-router.post("/add-audio-message", upload.single("audio"), addAudioMessage);
+router.post("/add-audio-message", uploadAudio.single("audio"), addAudioMessage);
 router.post("/add-image-message", uploadImage.single("image"), addImageMessage);
 
 export default router;

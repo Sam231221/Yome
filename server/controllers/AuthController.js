@@ -4,7 +4,11 @@ import { generateToken04 } from "../utils/TokenGenerator.js";
 import bcryptjs from "bcryptjs";
 import { stripe } from "../lib/stripe.js";
 import { absoluteUrl } from "../lib/utils.js";
+import { v2 as cloudinary } from "cloudinary";
 
+/**-----------------------
+USER
+ --------------------------*/
 export const getUserByEmail = async (request, response, next) => {
   try {
     const { email } = request.body;
@@ -26,25 +30,7 @@ export const getUserByEmail = async (request, response, next) => {
     next(error);
   }
 };
-export const getGroupById = async (request, response, next) => {
-  try {
-    const { groupId } = request.body;
-    if (!groupId) {
-      return response.json({ msg: "Email is required", status: false });
-    }
-    const prisma = getPrismaInstance();
-    const group = await prisma.group.findUnique({
-      where: { id: groupId },
-      include: { members: true },
-    });
-    if (!group) {
-      return response.json({ msg: "Group not found", status: false });
-    } else
-      return response.json({ msg: "Group Found", status: true, group: group });
-  } catch (error) {
-    console.log(error);
-  }
-};
+
 export const registerUser = async (request, response, next) => {
   try {
     const prisma = getPrismaInstance();
@@ -98,6 +84,88 @@ export const registerUser = async (request, response, next) => {
     next(error);
   }
 };
+
+export const updateUser = async (request, response) => {
+  try {
+    const prisma = getPrismaInstance();
+    const { userId } = request.query;
+    const { email, bio, lastname, firstname, address } = request.body;
+
+    const image = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          { folder: "Eduroclass/Uploads/Profiles/" },
+          (error, result) => {
+            if (error) {
+              reject("Failed to upload profile picture");
+            } else {
+              resolve(result);
+            }
+          }
+        )
+        .end(request.file.buffer);
+    });
+
+    const existingUserbyId = await prisma.user.findUnique({
+      where: { id: parseInt(userId) },
+      include: {
+        userProfile: true,
+      },
+    });
+
+    if (existingUserbyId.email !== email) {
+      // Check if the provided email is already taken by other users
+      const existingUserWithThatEmail = await prisma.user.findFirst({
+        where: {
+          email,
+          NOT: { id: parseInt(userId) },
+        },
+      });
+      if (existingUserWithThatEmail) {
+        return response.json({
+          msg: "Sorry!, This email is already taken.",
+          status: 400,
+        });
+      }
+    }
+
+    const user = await prisma.user.update({
+      where: {
+        id: parseInt(userId),
+      },
+      data: {
+        username: firstname + " " + lastname,
+        firstname: firstname,
+        lastname: lastname,
+        email: email,
+        profilePicture: image.secure_url,
+      },
+    });
+
+    const userProfile = await prisma.userProfile.update({
+      where: { id: existingUserbyId.userProfile.id },
+
+      data: {
+        bio: bio,
+        address: address,
+      },
+    });
+
+    return response.status(200).send({
+      status: 200,
+      user: { ...user, userProfile },
+      msg: "updated successfully",
+    });
+  } catch (error) {
+    //dont use next(error)
+    console.log(error);
+    return response.send({
+      status: 500,
+      msg: "Internal Server Error",
+    });
+  }
+};
+
 export const getAllUsers = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
@@ -310,6 +378,25 @@ export const manageStripeSubscriptionAction = async (
 /**-----------------------
 Connections
  --------------------------*/
+export const getGroupById = async (request, response, next) => {
+  try {
+    const { groupId } = request.body;
+    if (!groupId) {
+      return response.json({ msg: "Email is required", status: false });
+    }
+    const prisma = getPrismaInstance();
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      include: { members: true },
+    });
+    if (!group) {
+      return response.json({ msg: "Group not found", status: false });
+    } else
+      return response.json({ msg: "Group Found", status: true, group: group });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 export const getFollowedUsersByUser = async (req, res, next) => {
   try {

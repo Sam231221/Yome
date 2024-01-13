@@ -10,6 +10,7 @@ import { ADD_IMAGE_MESSAGE_ROUTE, ADD_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
 import EmojiPicker from "emoji-picker-react";
 import dynamic from "next/dynamic";
 import PhotoPicker from "@/components/common/PhotoPicker";
+import toast from "react-hot-toast";
 
 const CaptureAudio = dynamic(() => import("@/components/common/CaptureAudio"), {
   ssr: false,
@@ -28,6 +29,7 @@ export default function MessageBar({ id, chatType }) {
     try {
       const formData = new FormData();
       formData.append("image", file);
+      console.log("d:", formData);
       const response = await axios.post(ADD_IMAGE_MESSAGE_ROUTE, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -71,7 +73,7 @@ export default function MessageBar({ id, chatType }) {
         }
       }
     } catch (err) {
-      toast.error(err);
+      console.log(err);
     }
   };
 

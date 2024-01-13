@@ -11,7 +11,7 @@ export default function AvatarWithStatus({ type, image, status }) {
           >
             32teeth
           </figcaption>
-          <picture className="w-[55px] h-[55px]">
+          <picture className="w-[50px] h-[50px]">
             <img src={image} />
           </picture>
         </figure>

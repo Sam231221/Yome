@@ -53,6 +53,7 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
       name: "email",
       type: "email",
       placeholder: "Email",
+      pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$",
       errorMessage: "It should be a valid email address!",
       required: true,
     },

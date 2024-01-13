@@ -116,9 +116,8 @@ export default function ChatContainer({ chatType }) {
                         <Avatar
                           type="sm"
                           image={`${
-                            message.sender.profilePicture
-                              ? message.sender.profilePicture
-                              : "avatars/userprofile.png"
+                            message?.sender.profilePicture ||
+                            "/avatars/userprofile.png"
                           }`}
                         />
                         <div

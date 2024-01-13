@@ -3,8 +3,15 @@ import "./FormInput.css";
 
 function FormInput(props) {
   const [focused, setFocused] = useState(false);
-  const { label, errorMessage, enableErrorMsg, onChange, id, ...inputProps } =
-    props;
+  const {
+    label,
+    errorMessage,
+    readOnly,
+    enableErrorMsg,
+    onChange,
+    id,
+    ...inputProps
+  } = props;
 
   const handleFocus = (e) => {
     setFocused(true);
@@ -22,9 +29,14 @@ function FormInput(props) {
         </label>
       )}
       <input
-        className="w-full  py-3 px-2 mb-2 text-sm bg-white
-        focus:border-[#0e24a0]
-        focus:outline-none border border-gray-200 font-medium"
+        readOnly={readOnly}
+        className={`${
+          readOnly === true
+            ? "bg-gray-300 text-gray-500 rounded-lg"
+            : `bg-white
+        focus:border-[#0e24a0]`
+        } w-full  py-3 px-2 mb-2 text-sm 
+        focus:outline-none border border-gray-200 font-medium`}
         {...inputProps}
         onChange={onChange}
         onBlur={handleFocus}

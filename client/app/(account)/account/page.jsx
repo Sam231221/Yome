@@ -8,61 +8,27 @@ import { IoSettingsOutline } from "react-icons/io5";
 import { IoKeyOutline } from "react-icons/io5";
 import { LuClipboard } from "react-icons/lu";
 import axios from "axios";
-import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
+import { GET_USER_ROUTE, HOST, UPDATE_USER } from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
 import FormInput from "@/components/FormInut/Form";
 import { accountInputs, securityInputs } from "./inputs";
 import toast from "react-hot-toast";
-
+import ProfileAvatar from "@/components/common/ProfileAvatar/ProfileAvatar";
+import { backendAbsoluteUrl } from "@/lib/utils";
 const Account = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
-  const [IsFormFilled, setFormFill] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
+  const [updatedDetails, setUpdatedDetails] = useState(false);
   const { data: session } = useSession();
+  const [pic, setPic] = useState(null);
   const [activeTab, setActiveTab] = useState("general");
   const [values, setValues] = useState({
-    username: userInfo?.username,
-    profilePicture: userInfo?.profilePicture,
-    bio: userInfo?.bio,
-    address: userInfo?.address,
-    firstname: userInfo?.firstname,
-    lastname: userInfo?.lastname,
-    email: userInfo?.email,
+    email: "",
+    bio: "",
+    firstname: "",
+    lastname: "",
+    address: "",
   });
-  const onChangeFormInputs = (e) => {
-    setValues({ ...values, [e.target.name]: e.target.value });
-  };
-  const handleAccountUpdate = async (e) => {
-    e.preventDefault();
-    // const { data } = await axios.post(REGISTER_USER, {
-    //   email: values.email,
-    //   firstname: values.firstname,
-    //   lastname: values.lastname,
-    //   username: values.username,
-    //   password: values.password,
-    // });
-    // setValues({
-    //   profilePicture: "",
-    //   firstname: "",
-    //   lastname: "",
-    //   username: "",
-    //   email: "",
-    //   password: "",
-    //   confirmPassword: "",
-    // });
-    // if (data.status === 200) {
-    //   toast.success(data.msg);
-    //   // setTimeout(() => {
-    //   //   toast.success("Check your email for further verification");
-    //   // }, 3000);
-    //   setActiveTab("login");
-    // }
-    // if (data.status === 400 || data.status === 409) {
-    //   toast.error(data.msg);
-    // }
-  };
 
-  //Get user from Db and set 'userInfo'
   useEffect(() => {
     const getUserInfo = async (e) => {
       try {
@@ -77,36 +43,108 @@ const Account = () => {
               userInfo: {
                 id: data?.user?.id,
                 role: data?.user?.role,
+                name: data?.user?.name,
+                identifier: data?.user?.identifier,
+                status: data?.user?.about,
+                profilePicture: data?.user?.profilePicture,
+                username: data?.user?.username,
                 email: data?.user?.email,
                 bio: data?.user?.userProfile?.bio,
-                name: data?.user?.name,
-                username: data?.user?.username,
                 firstname: data?.user?.firstname,
                 lastname: data?.user?.lastname,
-                userProfile: data?.user?.userProfile,
-                identifier: data?.user?.identifier,
-                profilePicture: data?.user?.profilePicture,
-                status: data?.user?.about,
+                address: data?.user?.userProfile?.address,
               },
             });
           }
         }
       } catch (e) {
-        toast.error(e);
+        console.log(e);
       }
     };
 
     getUserInfo();
   }, [session]);
 
-  useEffect(() => {}, [userInfo]);
+  useEffect(() => {
+    setValues({
+      ...values,
+      email: userInfo?.email || "",
+      bio: userInfo?.bio || "",
+      firstname: userInfo?.firstname || "",
+      lastname: userInfo?.lastname || "",
+      address: userInfo?.address || "",
+    });
+  }, [userInfo]);
 
+  const onChangeFormInputs = (e) => {
+    setValues({ ...values, [e.target.name]: e.target.value });
+    if (
+      //compare userpfi
+      values.bio !== userInfo.bio ||
+      values.address !== userInfo.address ||
+      values.firstname !== userInfo.firstname ||
+      values.lastname !== userInfo.lastname ||
+      values.email !== userInfo.email
+    ) {
+      setUpdatedDetails(true);
+    }
+  };
+
+  useEffect(() => {
+    setPic(pic);
+  }, [pic]);
   const handleTab = (type) => {
     setActiveTab(type);
   };
+  const handleAccountUpdate = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("avatar", pic);
+      formData.append("email", values.email);
+      formData.append("bio", values.bio);
+      formData.append("firstname", values.firstname);
+      formData.append("lastname", values.lastname);
+      formData.append("address", values.address);
+      const { data } = await axios.post(UPDATE_USER, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        params: { userId: userInfo?.id },
+        //cant be sent and catch
+        // data: { product: "sam" },
+        // body: { product2: "sam2" },
+      });
 
+      if (data.status === 200) {
+        dispatch({
+          type: reducerCases.SET_USER_INFO,
+          userInfo: {
+            id: data.user.id,
+            role: data.user.role,
+            profilePicture: data.user.profilePicture,
+            username: data.user.username,
+            email: data.user.email,
+            bio: data.user.userProfile.bio,
+            firstname: data.user.firstname,
+            lastname: data.user.lastname,
+            address: data.user.userProfile.address,
+            name: data.user.name,
+            identifier: data.user.identifier,
+            status: data.user.about,
+          },
+        });
+        toast.success(data.msg);
+        setUpdatedDetails(false);
+      }
+      if (data.status === 400 || data.status === 409 || data.status === 500) {
+        toast.error(data.msg);
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+    }
+  };
   return (
-    <div className="p-2 sm:p-5 ">
+    <div className="p-2 sm:p-5 relative">
       <div className="bg-white rounded-lg">
         <div className="flex">
           {/* Sidebar */}
@@ -174,68 +212,52 @@ const Account = () => {
                 <h2 className="text-lg sm:text-2xl font-semibold text-gray-700">
                   General Settings
                 </h2>
+
                 <hr />
 
                 <div className="p-3 w-full flex flex-col items-center  ">
                   <div className="w-[200px] mt-3 sm:w-[400px] md:w-[500px] lg:w-[700px]">
                     {/* Avatar */}
-                    <div className="flex flex-col sm:flex-row mb-2 bg-gray-100 py-4 px-3 rounded-lg justify-between items-center">
-                      <div className="flex gap-2 p">
-                        <div className="w-10 h-10 rounded-full">
-                          <Image
-                            className="w-full h-full rounded-full"
-                            width={100}
-                            height={100}
-                            src="/images/banner.png"
-                            alt=""
-                          />
-                        </div>
-                        <div className="flex flex-col">
-                          <h1 className="text-sm font-semibold text-gray-800">
-                            sameershai123
-                          </h1>
-                          <p className="text-xs text-gray-400">Sameer Shahi</p>
-                        </div>
-                      </div>
-                      <div>
-                        <button className="bg-sky-500 text-sm rounded-lg px-3 py-2 text-white  ">
-                          Change photo
-                        </button>
-                      </div>
-                    </div>
-                    <form onSubmit={handleAccountUpdate} method="POST">
+                    <ProfileAvatar
+                      pic={`${
+                        userInfo?.profilePicture || "/avatars/userprofile.png"
+                      }`}
+                      setPic={setPic}
+                    />
+
+                    <form method="POST">
                       <div className="grid grid-cols-1   gap-3">
                         {accountInputs.slice(0, 2).map((input) => (
                           <FormInput
                             label={input.name}
+                            readOnly={false}
                             key={input.id}
                             {...input}
                             value={values[input.name]}
-                            onChange={onChangeFormInputs}
+                            onChange={(e) => onChangeFormInputs(e)}
                           />
                         ))}
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2  gap-3">
-                        {accountInputs.slice(2, 7).map((input) => (
+                        {accountInputs.slice(2, 5).map((input) => (
                           <FormInput
+                            readOnly={false}
                             label={input.name}
                             key={input.id}
                             {...input}
                             value={values[input.name]}
-                            onChange={onChangeFormInputs}
+                            onChange={(e) => onChangeFormInputs(e)}
                           />
                         ))}
                       </div>
 
                       <button
-                        type="submit"
-                        disabled={IsFormFilled && isChecked ? false : true}
+                        onClick={() => handleAccountUpdate()}
+                        disabled={updatedDetails ? false : true}
                         className={`${
-                          IsFormFilled && isChecked
-                            ? "bg-[#0e24a0]"
-                            : "bg-[#b6b6b6]"
-                        } font-medium text-sm text-white py-3 px-2`}
+                          updatedDetails ? "bg-sky-500" : "bg-slate-400"
+                        }  rounded-lg font-medium text-sm text-white py-3 px-2`}
                       >
                         Update
                       </button>

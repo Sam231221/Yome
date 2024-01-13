@@ -77,24 +77,18 @@ export default function ChatLIstItem({
       <div className="min-w-fit pointer-events-none px-5 pt-3 pb-1 ">
         {type === "group" ? (
           <Avatar
+            chatType="group"
             className="pointer-events-none"
             type="sm"
-            image={`${
-              data?.profilePicture
-                ? data.profilePicture
-                : "avatars/userprofile.png"
-            }`}
+            image={`${data?.profilePicture || "/avatars/groupprofile.png"}`}
           />
         ) : (
           <AvatarWithStatus
+            chatType="user"
             className="pointer-events-none"
             status={`${onlineUsers.includes(data?.id) ? "online" : "offline"}`}
             type="sm"
-            image={`${
-              data?.profilePicture
-                ? data.profilePicture
-                : "avatars/userprofile.png"
-            }`}
+            image={`${data?.profilePicture || "/avatars/userprofile.png"}`}
           />
         )}
       </div>

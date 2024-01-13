@@ -66,9 +66,7 @@ export default function ChatHeader({ chatType }) {
             <Avatar
               type="lg"
               image={`${
-                currentChatUser?.profilePicture
-                  ? currentChatUser.profilePicture
-                  : "avatars/userprofile.png"
+                currentChatUser?.profilePicture || "/avatars/groupprofile.png"
               }`}
             />
           ) : (
@@ -78,9 +76,7 @@ export default function ChatHeader({ chatType }) {
               }`}
               type="lg"
               image={`${
-                currentChatUser?.profilePicture
-                  ? currentChatUser.profilePicture
-                  : "avatars/userprofile.png"
+                currentChatUser?.profilePicture || "/avatars/userprofile.png"
               }`}
             />
           )}

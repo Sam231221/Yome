@@ -1,27 +1,27 @@
 export const accountInputs = [
   {
-    id: 6,
+    id: 0,
     name: "email",
     type: "email",
     placeholder: "Email",
     errorMessage:
       "Email should be 3-16 characters and shouldn't include any special character!",
-    pattern: "^[A-Za-z0-9]{3,16}$",
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$",
     required: true,
   },
   {
-    id: 2,
+    id: 1,
     name: "bio",
     type: "text",
     placeholder: "bio",
     errorMessage:
       "Bioshould be 3-16 characters and shouldn't include any special character!",
-    pattern: "^[A-Za-z0-9]{3,16}$",
+    pattern: "^[A-Za-z0-9]{3,100}$",
     required: true,
   },
 
   {
-    id: 3,
+    id: 2,
     name: "firstname",
     type: "text",
     placeholder: "Your Firstname",
@@ -31,7 +31,7 @@ export const accountInputs = [
     required: true,
   },
   {
-    id: 4,
+    id: 3,
     name: "lastname",
     type: "text",
     placeholder: "Your Lastname",
@@ -40,23 +40,12 @@ export const accountInputs = [
     pattern: "^[A-Za-z0-9]{3,16}$",
     required: true,
   },
-  ,
   {
-    id: 5,
+    id: 4,
     name: "address",
     type: "text",
     placeholder: "address",
     errorMessage: "It should be a valid email address!",
-    required: true,
-  },
-  {
-    id: 1,
-    name: "username",
-    type: "text",
-    placeholder: "Username",
-    errorMessage:
-      "Username should be 3-16 characters and shouldn't include any special character!",
-    pattern: "^[A-Za-z0-9]{3,16}$",
     required: true,
   },
 ];

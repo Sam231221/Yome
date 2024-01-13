@@ -1,5 +1,6 @@
 import { renameSync } from "fs";
 import getPrismaInstance from "../utils/PrismaClient.js";
+import { v2 as cloudinary } from "cloudinary";
 export const addMessage = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
@@ -249,15 +250,31 @@ export const getInitialContactsWithMessages = async (req, res, next) => {
 export const addAudioMessage = async (req, res, next) => {
   try {
     if (req.file) {
-      const date = Date.now();
-      let fileName = "uploads/recordings/" + date + req.file.originalname;
-      renameSync(req.file.path, fileName);
+      const audio = await new Promise((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream(
+            {
+              folder: "Eduroclass/Uploads/Messages/AudioMessages/",
+              secure: true,
+              resource_type: "video",
+            },
+            (error, result) => {
+              if (error) {
+                console.log(error);
+                reject("Failed to create image message record");
+              } else {
+                resolve(result);
+              }
+            }
+          )
+          .end(req.file.buffer);
+      });
       const prisma = getPrismaInstance();
       const { from, to } = req.query;
       if (from && to) {
         const message = await prisma.messages.create({
           data: {
-            message: fileName,
+            message: audio.secure_url,
             sender: { connect: { id: parseInt(from) } },
             reciever: { connect: { id: parseInt(to) } },
             type: "audio",
@@ -269,22 +286,35 @@ export const addAudioMessage = async (req, res, next) => {
     }
     return res.status(400).send("Audio is required.");
   } catch (err) {
-    next(err);
+    console.log(err);
   }
 };
 
 export const addImageMessage = async (req, res, next) => {
   try {
     if (req.file) {
-      const date = Date.now();
-      let fileName = "uploads/images/" + date + req.file.originalname;
-      renameSync(req.file.path, fileName);
+      const image = await new Promise((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream(
+            { folder: "Eduroclass/Uploads/Messages/ImageMessages/" },
+            (error, result) => {
+              if (error) {
+                reject("Failed to create image message record");
+              } else {
+                resolve(result);
+              }
+            }
+          )
+          .end(req.file.buffer);
+      });
+
       const prisma = getPrismaInstance();
       const { from, to } = req.query;
+
       if (from && to) {
         const message = await prisma.messages.create({
           data: {
-            message: fileName,
+            message: image.secure_url,
             sender: { connect: { id: parseInt(from) } },
             reciever: { connect: { id: parseInt(to) } },
             type: "image",

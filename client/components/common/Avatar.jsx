@@ -5,6 +5,7 @@ import ContextMenu from "./ContextMenu";
 import PhotoPicker from "./PhotoPicker";
 import PhotoLibrary from "./PhotoLibrary";
 import CapturePhoto from "./CapturePhoto";
+import Image from "next/image";
 
 export default function Avatar({ type, image, setImage }) {
   const [hover, setHover] = useState(false);
@@ -97,28 +98,36 @@ export default function Avatar({ type, image, setImage }) {
       <div className="flex items-center justify-center">
         {type === "sm" && (
           <div className="h-11 w-11 bg-white rounded-full">
-            <img
-              src={image === "" ? "/avatars/userprofile.png" : image}
+            <Image
+              width={44}
+              height={44}
+              src={image}
+              loading="lazy"
               alt="avatar"
-              className={`w-full h-full object-contain rounded-full`}
+              className={`w-full h-full object-cover rounded-full`}
             />
           </div>
         )}
         {type === "lg" && (
           <div className="h-14 w-14 bg-white rounded-full">
-            <img
-              src={image === "" ? "/avatars/userprofile.png" : image}
+            <Image
+              width={56}
+              height={56}
+              src={image}
+              loading="lazy"
               alt="avatar"
-              className={`w-full h-full object-contain rounded-full`}
+              className={`w-full h-full object-cover rounded-full`}
             />
           </div>
         )}
         {type === "xl" && (
+          // avatar with text on hover
           <div
             className="relative cursor-pointer z-0"
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
           >
+            {/* Hover effect txt */}
             <div
               className={`bg-photopicker-overlay-background h-60 w-60 absolute top-0 left-0 rounded-full flex items-center justify-center flex-col text-center gap-2 ${
                 hover ? "visible" : "hidden"
@@ -140,8 +149,10 @@ export default function Avatar({ type, image, setImage }) {
               </span>
             </div>
             <div className="flex items-center justify-center">
-              <img
-                src={image === "" ? "/avatars/userprofile.png" : image}
+              <Image
+                width={240}
+                height={240}
+                src={image}
                 alt="avatar"
                 className={`h-60 w-60 rounded-full object-cover `}
               />

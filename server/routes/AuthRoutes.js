@@ -15,11 +15,28 @@ import {
   updateUserSubscriptionPlanById,
   updateUserSubscriptionPlanBySubscriptionId,
   registerUser,
+  updateUser,
 } from "../controllers/AuthController.js";
+import multer from "multer";
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// const uploadImage = multer({ dest: "uploads/images/" });
 
 const router = Router();
 
+/*-------------------------------------
+User
+---------------------------------------*/
 router.post("/get-user", getUserByEmail);
+router.post("/register-user", registerUser);
+router.post("/update-user", upload.single("avatar"), updateUser);
+router.get("/get-all-users", getAllUsers);
+
+/*-------------------------------------
+Subscriptions
+---------------------------------------*/
 router.post("/get-user-subscription-plan", getUserSubscriptionPlan);
 router.post(
   "/manage-stripe-subscription-action",
@@ -34,8 +51,9 @@ router.post(
   updateUserSubscriptionPlanBySubscriptionId
 );
 
-router.post("/register-user", registerUser);
-router.get("/get-all-users", getAllUsers);
+/*-------------------------------------
+Connections
+---------------------------------------*/
 router.get("/get-all-groups", getAllGroups);
 router.post("/connect-user-to-mentor", followUnfollowedUser);
 router.post("/connect-user-to-group", joinUnjoinedGroups);

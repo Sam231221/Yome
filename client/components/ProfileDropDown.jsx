@@ -47,16 +47,13 @@ export const ProfileDropDown = () => {
           setOpen(!open);
         }}
       >
-        <div className="w-9 h-9 bg-white border shadow-lg rounded-full">
+        <div className="w-11 h-11 bg-white shadow-lg rounded-full">
           <Image
             width={28}
             height={28}
-            src={`${
-              userInfo?.profilePicture === undefined
-                ? "/avatars/userprofile.png"
-                : userInfo?.profilePicture
-            }`}
-            className="rounded-full w-full h-full object-contain"
+            loading="lazy"
+            src={`${userInfo?.profilePicture || "/avatars/userprofile.png"}`}
+            className="rounded-full w-full h-full object-cover"
             alt="userprofile"
           />
         </div>
