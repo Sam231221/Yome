@@ -1,5 +1,5 @@
 export interface SubscriptionPlan {
-  id: number;
+  id: string;
   plan: string;
   description: string;
   features: string[];
@@ -9,7 +9,7 @@ export interface SubscriptionPlan {
 
 export const SubscriptionPlans: SubscriptionPlan[] = [
   {
-    id: 1,
+    id: "stprdt_lmlbvnknia212w",
     plan: "Standard",
     description:
       "Ideal for schools needing essential tools like student management, attendance tracking, basic gradebook, limited communication features, and standard reporting.",
@@ -24,7 +24,7 @@ export const SubscriptionPlans: SubscriptionPlan[] = [
     price: 50,
   },
   {
-    id: 23,
+    id: "stprdt_q23qowd37002",
     plan: "Pro",
     description:
       "Tailored for schools requiring more advanced features such as enhanced student management, automated attendance, comprehensive gradebook, improved communication tools, priority support, and detailed reporting.",
@@ -40,7 +40,7 @@ export const SubscriptionPlans: SubscriptionPlan[] = [
     price: 100,
   },
   {
-    id: 45,
+    id: "stprdt_q5ewqwghk6",
     plan: "Enterprise",
     description:
       "Designed for institutions seeking top-tier functionalities including unlimited student management, customizable modules, AI-driven insights, integrated Learning Management System (LMS), dedicated parent portal, 24/7 support, and robust data security.",

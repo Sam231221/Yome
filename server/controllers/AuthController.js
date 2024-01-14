@@ -20,6 +20,7 @@ export const getUserByEmail = async (request, response, next) => {
       where: { email },
       include: {
         userProfile: true,
+        eiOwner: true,
       },
     });
     if (!user) {
@@ -240,6 +241,10 @@ export const getUserSubscriptionPlan = async (request, response, next) => {
     });
   } catch (e) {
     console.log(e);
+    return response.status(500).send({
+      status: 500,
+      msg: "Internal server error",
+    });
   }
 };
 
@@ -256,13 +261,7 @@ export const updateUserSubscriptionPlanById = async (
       stripePriceId,
       stripeCurrentPeriodEnd,
     } = request.body;
-    console.log(
-      userId,
-      stripeSubscriptionId,
-      stripeCustomerId,
-      stripePriceId,
-      stripeCurrentPeriodEnd
-    );
+
     const prisma = getPrismaInstance();
     const user = await prisma.user.findUnique({
       where: {
@@ -274,7 +273,7 @@ export const updateUserSubscriptionPlanById = async (
       throw new Error("User not found.");
     }
 
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: {
         id: parseInt(userId),
       },
@@ -288,10 +287,9 @@ export const updateUserSubscriptionPlanById = async (
 
     return response
       .status(200)
-      .send({ status: "200", msg: "updated successfully" });
+      .send({ status: "200", msg: "SUbscribed the plan" });
   } catch (e) {
     console.log(e);
-    next(e);
   }
 };
 
@@ -315,9 +313,10 @@ export const updateUserSubscriptionPlanBySubscriptionId = async (
         stripeCurrentPeriodEnd: stripeCurrentPeriodEnd,
       },
     });
-    return response
-      .status(200)
-      .send({ status: "200", msg: "updated successfully" });
+    return response.status(200).send({
+      status: "200",
+      msg: "You have subscribe for the plan successfully.",
+    });
   } catch (e) {
     console.log(e);
   }
@@ -328,7 +327,7 @@ export const manageStripeSubscriptionAction = async (
   response,
   next
 ) => {
-  const billingUrl = absoluteUrl("/pricing");
+  const billingUrl = absoluteUrl("/account");
   const {
     isSubscribed,
     stripeCustomerId,
@@ -337,6 +336,7 @@ export const manageStripeSubscriptionAction = async (
     email,
     userId,
   } = request.body;
+
   console.log(
     isSubscribed,
     stripeCustomerId,
@@ -368,7 +368,7 @@ export const manageStripeSubscriptionAction = async (
       },
     ],
     metadata: {
-      userId: userId,
+      userId: parseInt(userId),
     },
   });
 

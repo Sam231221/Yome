@@ -22,8 +22,6 @@ import multer from "multer";
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// const uploadImage = multer({ dest: "uploads/images/" });
-
 const router = Router();
 
 /*-------------------------------------

@@ -1,70 +1,94 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
+import { GET_USER_ROUTE, GET_USER_SUBSCRIPTION_PLAN } from "@/utils/ApiRoutes";
 import { reducerCases } from "@/context/constants";
 import { SubscriptionPlans } from "./SubscriptionPlans";
-import { ManageUserSubscriptionButton } from "./UserSubsrciptionButton";
+
 import { useStateProvider } from "@/context/StateContext";
 import { useSession } from "next-auth/react";
 
 import axios from "axios";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 export default function PricingPage() {
+  const router = useRouter();
+  const [userSubscriptionPlan, setUserSubscriptionPlan] = useState({});
+  const [btnText, setBtnText] = useState("");
   const [{ userInfo }, dispatch] = useStateProvider();
   const { data: session } = useSession();
-  const [userSubscriptionPlan, setUserSubscriptionPlan] = useState();
-
-  useEffect(() => {
-    const getUserInfo = async (e) => {
-      try {
-        if (session?.user) {
-          if (!userInfo) {
-            let { data } = await axios.post(GET_USER_ROUTE, {
-              email: session?.user.email,
-            });
-            //Check if the user object with this email is logged in
-            if (!data.status) {
-              router.push("/login");
-            }
-
-            //Get the user from database and populate useInfo state
-            dispatch({
-              type: reducerCases.SET_USER_INFO,
-              userInfo: {
-                id: data?.user?.id,
-                email: data?.user?.email,
-                name: data?.user?.name,
-                identifier: data?.user?.identifier,
-                profileImage: data?.user?.profilePicture,
-                status: data?.user?.about,
-              },
-            });
+  const getUserInfo = async (e) => {
+    try {
+      if (session?.user) {
+        if (!userInfo) {
+          let { data } = await axios.post(GET_USER_ROUTE, {
+            email: session?.user.email,
+          });
+          //Check if the user object with this email is logged in
+          if (!data.status) {
+            router.push("/login");
           }
-        }
-      } catch (e) {
-        console.log(e);
-      }
-    };
 
-    getUserInfo();
-  }, [session]);
+          //Get the user from database and populate useInfo state
+          dispatch({
+            type: reducerCases.SET_USER_INFO,
+            userInfo: {
+              id: data?.user?.id,
+              role: data?.user?.role,
+              email: data?.user?.email,
+              name: data?.user?.name,
+              username: data?.user?.username,
+              eiOwner: data?.user?.eiOwner,
+              firstname: data?.user?.firstname,
+              lastname: data?.user?.lastname,
+              userProfile: data?.user?.userProfile,
+              identifier: data?.user?.identifier,
+              profilePicture: data?.user?.profilePicture,
+              status: data?.user?.about,
+            },
+          });
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   useEffect(() => {
-    if (userInfo) {
-      getUserSubscriptionPlan();
+    if (!session?.user) {
+      setBtnText("Sign Up to Continue");
+    } else {
+      getUserInfo();
+
+      setBtnText("Subscribe");
     }
-  }, [userInfo]);
+  });
+
+  useEffect(() => {
+    getUserSubscriptionPlan();
+  }, [session?.user]);
   const getUserSubscriptionPlan = async () => {
-    console.log(userInfo);
-    const { data } = await axios.post(
-      "http://localhost:3005/api/auth/get-user-subscription-plan",
-      { userId: userInfo.id }
-    );
-    console.log("data:", data);
+    const { data } = await axios.post(GET_USER_SUBSCRIPTION_PLAN, {
+      userId: userInfo?.id,
+    });
     setUserSubscriptionPlan(data);
   };
 
+  const handleBtnClick = (planId) => {
+    if (!session?.user) {
+      router.push("/login?callbackUrl=http%3A%2F%2Flocalhost%3A3000%2Fpricing");
+    } else {
+      getUserInfo();
+
+      if (!userInfo?.eiOwner) {
+        router.push(`/createEducationalInstitution/${planId}`);
+      } else {
+        router.push("/account");
+      }
+    }
+  };
   return (
     <div className="relative bg-[#0D0225]  z-10 min-w-full  md:min-h-header md:h-header  border-b border-transparent">
+      {/* Header */}
       <header className="grid grid-flow-col lg:auto-cols-fr items-center py-4 md:py-0 md:h-header md:min-h-header mx-auto max-w-container">
         <div className="flex space-x-1 items-center md:w-auto md:min-w-0 flex-none">
           <a
@@ -111,13 +135,15 @@ export default function PricingPage() {
           </div>
         </button>
       </header>
+
+      {/* Pricing */}
       <div className="flex flex-col ">
         <header className="text-center mb-16">
           <h1 className="text-jumbo font-bold text-white text-5xl mt-8 md:mt-20 mb-2">
             Pricing
           </h1>
           <h2 className="text-base text-gray-500">
-            Plans that empower you and your team to ship without friction.
+            Plans that empower you and your team to work without friction.
           </h2>
         </header>
         <div className="mb-16 flex flex-col items-center mx-auto">
@@ -213,17 +239,33 @@ export default function PricingPage() {
                   </div>
                 ))}
               </div>
-              <ManageUserSubscriptionButton
-                classes={`group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full`}
-                userId={userInfo?.id}
-                email={userInfo?.email}
-                stripePriceId={SubscriptionPlans[0].stripePriceId}
-                stripeCustomerId={userSubscriptionPlan?.stripeCustomerId}
-                isSubscribed={!!userSubscriptionPlan?.isSubscribed}
-                isCurrentPlan={
-                  userSubscriptionPlan?.plan === SubscriptionPlans[0].plan
-                }
-              />
+              {session?.user ? (
+                <>
+                  {userInfo?.eiOwner &&
+                  userSubscriptionPlan?.plan === SubscriptionPlans[0].plan ? (
+                    <Link
+                      href="/account"
+                      className="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
+                    >
+                      Go to My Plans
+                    </Link>
+                  ) : (
+                    <button
+                      className="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
+                      onClick={() => handleBtnClick(SubscriptionPlans[0].id)}
+                    >
+                      Subscribe
+                    </button>
+                  )}
+                </>
+              ) : (
+                <button
+                  className="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
+                  onClick={() => handleBtnClick(SubscriptionPlans[0].id)}
+                >
+                  {btnText}
+                </button>
+              )}
             </div>
 
             {/* pto */}
@@ -319,17 +361,33 @@ export default function PricingPage() {
                   </div>
                 ))}
               </div>
-              <ManageUserSubscriptionButton
-                classes={`group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-pink-500 hover:bg-pink-700 text-white font-semibold border-0 w-full`}
-                userId={userInfo?.id}
-                email={userInfo?.email}
-                stripePriceId={SubscriptionPlans[1].stripePriceId}
-                stripeCustomerId={userSubscriptionPlan?.stripeCustomerId}
-                isSubscribed={!!userSubscriptionPlan?.isSubscribed}
-                isCurrentPlan={
-                  userSubscriptionPlan?.plan === SubscriptionPlans[1].plan
-                }
-              />
+              {session?.user ? (
+                <>
+                  {userInfo?.eiOwner &&
+                  userSubscriptionPlan?.plan === SubscriptionPlans[1].plan ? (
+                    <Link
+                      href="/account"
+                      className="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
+                    >
+                      Go to My Plans
+                    </Link>
+                  ) : (
+                    <button
+                      className="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
+                      onClick={() => handleBtnClick(SubscriptionPlans[1].id)}
+                    >
+                      Subscribe
+                    </button>
+                  )}
+                </>
+              ) : (
+                <button
+                  className="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
+                  onClick={() => handleBtnClick(SubscriptionPlans[1].id)}
+                >
+                  {btnText}
+                </button>
+              )}
             </div>
             {/* Enterprise */}
             <div className="flex flex-col space-y-8 p-8 rounded-xl border border-opacity-40 w-full drop-shadow-[0_17px_17px_rgba(0,0,0,0.07)] border-green-200 bg-gradient-to-b-green from-green-50 to-background">
@@ -391,17 +449,33 @@ export default function PricingPage() {
                 ))}
               </div>
 
-              <ManageUserSubscriptionButton
-                classes={`group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-green-500 hover:bg-green-700 text-white font-semibold border-0 w-full`}
-                userId={userInfo?.id}
-                email={userInfo?.email}
-                stripePriceId={SubscriptionPlans[2].stripePriceId}
-                stripeCustomerId={userSubscriptionPlan?.stripeCustomerId}
-                isSubscribed={!!userSubscriptionPlan?.isSubscribed}
-                isCurrentPlan={
-                  userSubscriptionPlan?.plan === SubscriptionPlans[2].plan
-                }
-              />
+              {session?.user ? (
+                <>
+                  {userInfo?.eiOwner &&
+                  userSubscriptionPlan?.plan === SubscriptionPlans[2].plan ? (
+                    <Link
+                      href="/account"
+                      className="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
+                    >
+                      Go to My Plans
+                    </Link>
+                  ) : (
+                    <button
+                      className="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
+                      onClick={() => handleBtnClick(SubscriptionPlans[2].id)}
+                    >
+                      Subscribe
+                    </button>
+                  )}
+                </>
+              ) : (
+                <button
+                  className="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
+                  onClick={() => handleBtnClick(SubscriptionPlans[2].id)}
+                >
+                  {btnText}
+                </button>
+              )}
             </div>
           </div>
         </div>

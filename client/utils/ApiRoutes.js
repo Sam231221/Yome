@@ -1,12 +1,21 @@
 export const HOST = process.env.NEXT_PUBLIC_BACKEND_API;
 
 const authRoute = `${HOST}/api/auth`;
+const eiRoute = `${HOST}/api/ei`;
 const MESSAGES_ROUTE = `${HOST}/api/messages`;
 const GROUP_MESSAGES_ROUTE = `${HOST}/api/group-messages`;
+
+export const CREATE_EDUCATIONAL_INSTITUTION = `${eiRoute}/create-educational-institution`;
 
 export const REGISTER_USER = `${authRoute}/register-user`;
 export const UPDATE_USER = `${authRoute}/update-user`;
 export const GET_USER_ROUTE = `${authRoute}/get-user`;
+
+export const GET_USER_SUBSCRIPTION_PLAN = `${authRoute}/get-user-subscription-plan`;
+export const UPDATE_USER_SUBSCRIPTION_PLAN_BY_ID = `${authRoute}/update-user-subscription-plan-by-id`;
+export const UPDATE_USER_SUBSCRIPTION_PLAN_BY_SUBSCRIPTIONID = `${authRoute}/update-user-subscription-plan-by-subscriptionid`;
+export const MANAGE_STRIPE_SUBSCRIPTION_ACTION = `${authRoute}/manage-stripe-subscription-action`;
+
 export const GET_GROUP_ROUTE = `${authRoute}/get-group`;
 export const GET_ALL_USERS = `${authRoute}/get-all-users`;
 export const GET_ALL_CONNECTED_USERS = `${authRoute}/get-connected-users`;
