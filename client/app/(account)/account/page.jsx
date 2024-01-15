@@ -8,16 +8,23 @@ import { IoSettingsOutline } from "react-icons/io5";
 import { IoKeyOutline } from "react-icons/io5";
 import { LuClipboard } from "react-icons/lu";
 import axios from "axios";
-import { GET_USER_ROUTE, HOST, UPDATE_USER } from "@/utils/ApiRoutes";
+import {
+  GET_USER_ROUTE,
+  GET_USER_SUBSCRIPTION_PLAN,
+  UPDATE_USER,
+} from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
 import FormInput from "@/components/FormInut/Form";
 import { accountInputs, securityInputs } from "./inputs";
 import toast from "react-hot-toast";
+
 import ProfileAvatar from "@/components/common/ProfileAvatar/ProfileAvatar";
-import { backendAbsoluteUrl } from "@/lib/utils";
+
 const Account = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
+  const [userSubscriptionPlan, setUserSubscriptionPlan] = useState({});
   const [updatedDetails, setUpdatedDetails] = useState(false);
+  const [IsFormFilled, setIsFormFilled] = useState(false);
   const { data: session } = useSession();
   const [pic, setPic] = useState(null);
   const [activeTab, setActiveTab] = useState("general");
@@ -28,42 +35,49 @@ const Account = () => {
     lastname: "",
     address: "",
   });
-
-  useEffect(() => {
-    const getUserInfo = async (e) => {
-      try {
-        if (session?.user) {
-          if (!userInfo) {
-            let { data } = await axios.post(GET_USER_ROUTE, {
-              email: session?.user.email,
-            });
-            //Get the user from database and populate useInfo state
-            dispatch({
-              type: reducerCases.SET_USER_INFO,
-              userInfo: {
-                id: data?.user?.id,
-                role: data?.user?.role,
-                name: data?.user?.name,
-                identifier: data?.user?.identifier,
-                status: data?.user?.about,
-                profilePicture: data?.user?.profilePicture,
-                username: data?.user?.username,
-                email: data?.user?.email,
-                bio: data?.user?.userProfile?.bio,
-                firstname: data?.user?.firstname,
-                lastname: data?.user?.lastname,
-                address: data?.user?.userProfile?.address,
-              },
-            });
-          }
+  const getUserInfo = async (e) => {
+    try {
+      if (session?.user) {
+        if (!userInfo) {
+          let { data } = await axios.post(GET_USER_ROUTE, {
+            email: session?.user.email,
+          });
+          //Get the user from database and populate useInfo state
+          dispatch({
+            type: reducerCases.SET_USER_INFO,
+            userInfo: {
+              id: data?.user?.id,
+              role: data?.user?.role,
+              name: data?.user?.name,
+              identifier: data?.user?.identifier,
+              status: data?.user?.about,
+              profilePicture: data?.user?.profilePicture,
+              username: data?.user?.username,
+              email: data?.user?.email,
+              bio: data?.user?.userProfile?.bio,
+              firstname: data?.user?.firstname,
+              lastname: data?.user?.lastname,
+              address: data?.user?.userProfile?.address,
+            },
+          });
         }
-      } catch (e) {
-        console.log(e);
       }
-    };
-
+    } catch (e) {
+      console.log(e);
+    }
+  };
+  const getUserSubscriptionPlan = async () => {
+    if (userInfo) {
+      const { data } = await axios.post(GET_USER_SUBSCRIPTION_PLAN, {
+        userId: userInfo.id,
+      });
+      setUserSubscriptionPlan(data);
+    }
+  };
+  useEffect(() => {
+    getUserSubscriptionPlan();
     getUserInfo();
-  }, [session]);
+  }, [session?.user]);
 
   useEffect(() => {
     setValues({
@@ -253,6 +267,7 @@ const Account = () => {
                       </div>
 
                       <button
+                        type="button"
                         onClick={() => handleAccountUpdate()}
                         disabled={updatedDetails ? false : true}
                         className={`${
@@ -274,8 +289,56 @@ const Account = () => {
                 </h2>
                 <hr />
 
-                <div className="p-3 w-full flex flex-col items-center  ">
-                  <div className="w-[200px] mt-3 sm:w-[400px] md:w-[500px] lg:w-[700px]"></div>
+                <div className="p-3  w-full flex flex-col items-center justify-center ">
+                  <div className="w-[200px] h-[200px] mt-3 p-3 sm:w-[400px] sm:h-[400px] md:w-[400px] md:h-[400px] lg:w-[600px] lg:h-[500px] bg-white shadow-lg flex flex-col items-center justify-center border border-sky-500 rounded-lg">
+                    <div className="w-20 h-20 border-4 border-sky-700 rounded-full ">
+                      <Image
+                        className="w-full h-full object-cover rounded-full"
+                        src={
+                          userInfo?.profilePicture || "/avatars/userprofile.png"
+                        }
+                        width={200}
+                        height={200}
+                        loading="lazy"
+                      />
+                    </div>
+                    {/* Header */}
+
+                    <div className="text-center">
+                      <h2 className="text-2xl font-semibold text-gray-700">
+                        You're on the {userSubscriptionPlan?.plan} Plan
+                      </h2>
+                      <p className="text-sm font-medium text-gray-500">
+                        Thanks for subscribing to the{" "}
+                        {userSubscriptionPlan?.plan} Plan. As a part of this
+                        plan, you have access to:
+                      </p>
+                    </div>
+                    <ul className="grid grid-cols-2 gap-2 mt-3">
+                      {userSubscriptionPlan.features.map((feature, i) => (
+                        <div
+                          class="icon-container flex gap-2 text-sm icon-md text-blue-600"
+                          aria-hidden="true"
+                        >
+                          <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="feather feather-check-circle"
+                          >
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <path d="M22 4 12 14.01l-3-3"></path>
+                          </svg>
+                          <li className="text-medium">{feature}</li>
+                        </div>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </>
             )}
@@ -304,12 +367,10 @@ const Account = () => {
 
                       <button
                         type="submit"
-                        disabled={IsFormFilled && isChecked ? false : true}
+                        disabled={IsFormFilled ? false : true}
                         className={`${
-                          IsFormFilled && isChecked
-                            ? "bg-[#0e24a0]"
-                            : "bg-[#b6b6b6]"
-                        } font-medium text-sm text-white py-3 px-2`}
+                          IsFormFilled ? "bg-[#0e24a0]" : "bg-[#b6b6b6]"
+                        } rounded-lg font-medium text-sm text-white py-3 px-2`}
                       >
                         Update
                       </button>

@@ -273,7 +273,7 @@ export const updateUserSubscriptionPlanById = async (
       throw new Error("User not found.");
     }
 
-    const updatedUser = await prisma.user.update({
+    await prisma.user.update({
       where: {
         id: parseInt(userId),
       },

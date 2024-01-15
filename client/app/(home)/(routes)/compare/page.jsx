@@ -9,29 +9,6 @@ import { MdDeleteOutline } from "react-icons/md";
 
 const ComparePage = () => {
   const [institutions, setInstitutions] = useState([]);
-  const [contextMenuCordinates, setContextMenuCordinates] = useState({
-    x: 0,
-    y: 0,
-  });
-  const [isContextMenuVisible, setIsContextMenuVisible] = useState(false);
-
-  const showContextMenu = (e) => {
-    e.preventDefault();
-    console.log(e);
-    console.log(e.pageX, e.pageY);
-    setContextMenuCordinates({ x: 34, y: 33 });
-    setIsContextMenuVisible(true);
-  };
-
-  const contextMenuOptions = [
-    {
-      name: "Remove",
-      icon: "IoCloseOutline",
-      callBack: async () => {
-        signOut();
-      },
-    },
-  ];
 
   const [inputs, setInputs] = useState([
     {
@@ -167,14 +144,6 @@ const ComparePage = () => {
                 }}
               />
               <RxDotsVertical className="cursor-pointer" />
-              {/* {isContextMenuVisible && (
-                <ContextMenu
-                  options={contextMenuOptions}
-                  cordinates={contextMenuCordinates}
-                  contextMenu={isContextMenuVisible}
-                  setContextMenu={setIsContextMenuVisible}
-                />
-              )} */}
             </div>
             {input.filteredInstitutions.length > 0 &&
               !input.searchPerformed && (
@@ -199,11 +168,21 @@ const ComparePage = () => {
               <>
                 {input.selectedInstitution && (
                   <div className="border bg-white rounded-sm shadow-lg p-4 mt-4">
-                    <div>
+                    <div
+                      className={`w-full ${
+                        inputs.length === 1
+                          ? "h-[500px]"
+                          : inputs.length === 2
+                          ? "h-[250px]"
+                          : inputs.length === 3
+                          ? "h-[200px]"
+                          : "h-[300px]"
+                      }`}
+                    >
                       <Image
                         src={input.selectedInstitution.thumbnail}
                         alt={input.selectedInstitution.name}
-                        width={250}
+                        width={700}
                         height={500}
                         style={{
                           width: "100%",

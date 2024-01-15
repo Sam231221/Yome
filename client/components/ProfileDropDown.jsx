@@ -49,8 +49,8 @@ export const ProfileDropDown = () => {
       >
         <div className="w-11 h-11 bg-white shadow-lg rounded-full">
           <Image
-            width={28}
-            height={28}
+            width={100}
+            height={100}
             loading="lazy"
             src={`${userInfo?.profilePicture || "/avatars/userprofile.png"}`}
             className="rounded-full w-full h-full object-cover"
