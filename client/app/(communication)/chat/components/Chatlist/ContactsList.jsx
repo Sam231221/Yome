@@ -19,50 +19,49 @@ function ContactsList() {
 
   //Get all contacts
   useEffect(() => {
-    const getContacts = async () => {
-      try {
-        const {
-          data: { followedUsers },
-        } = await axios.get(`${GET_ALL_CONNECTED_USERS}/${userInfo.id}`);
-
-        const {
-          data: { groups },
-        } = await axios.get(`${GET_ALL_CONNECTED_GROUPS}/${userInfo.id}`);
-
-        let combinedContacts = [...followedUsers, ...groups];
-        setAllContacts(
-          combinedContacts.filter((obj) => {
-            if (obj.type === "group") {
-              return obj.name !== userInfo.name;
-            } else {
-              return obj.firstname !== userInfo.firstname;
-            }
-          })
-        );
-        setSearchContacts(
-          combinedContacts.filter((obj) => {
-            if (obj.type === "group") {
-              return obj.name !== userInfo.name;
-            } else {
-              return obj.firstname !== userInfo.firstname;
-            }
-          })
-        );
-      } catch (err) {
-        toast.error(err?.msg);
-      }
-    };
     getContacts();
   }, []);
+  const getContacts = async () => {
+    try {
+      const {
+        data: { followedUsers },
+      } = await axios.get(`${GET_ALL_CONNECTED_USERS}/${userInfo.id}`);
 
+      const {
+        data: { groups },
+      } = await axios.get(`${GET_ALL_CONNECTED_GROUPS}/${userInfo.id}`);
+
+      let combinedContacts = [...followedUsers, ...groups];
+      setAllContacts(
+        combinedContacts.filter((obj) => {
+          if (obj.type === "group") {
+            return obj.name !== userInfo.name;
+          } else {
+            return obj.firstname !== userInfo.firstname;
+          }
+        })
+      );
+      setSearchContacts(
+        combinedContacts.filter((obj) => {
+          if (obj.type === "group") {
+            return obj.name !== userInfo.name;
+          } else {
+            return obj.firstname !== userInfo.firstname;
+          }
+        })
+      );
+    } catch (err) {
+      toast.error(err?.msg);
+    }
+  };
   useEffect(() => {
     if (searchTerm.length) {
       let filteredData = [];
       filteredData = allContacts.filter((obj) => {
         if (obj.type === "group") {
-          obj.name.toLowerCase().includes(searchTerm.toLowerCase());
+          return obj.name.toLowerCase().includes(searchTerm.toLowerCase());
         } else {
-          obj.firstname.toLowerCase().includes(searchTerm.toLowerCase());
+          return obj.firstname.toLowerCase().includes(searchTerm.toLowerCase());
         }
       });
 

@@ -14,7 +14,6 @@ const uploadImage = multer({ dest: "uploads/images/" });
 const router = Router();
 
 router.post("/add-message", addGroupMessage);
-router.get("/get-messages/:group_id", getGroupMessages);
 router.get(
   "/get-initial-group-messages/:group_id",
   getInitialGroupsWithMessages

@@ -14,10 +14,11 @@ const storage = multer.memoryStorage();
 const uploadAudio = multer({ storage: storage });
 const uploadImage = multer({ storage: storage });
 
-router.post("/add-message", addMessage);
+//both user and group messages
 router.get("/get-messages/:from/:to/:chatType", getMessages);
-router.get("/get-initial-contacts/:from", getInitialContactsWithMessages);
 
+router.post("/add-message", addMessage);
+router.get("/get-initial-contacts/:from", getInitialContactsWithMessages);
 router.post("/add-audio-message", uploadAudio.single("audio"), addAudioMessage);
 router.post("/add-image-message", uploadImage.single("image"), addImageMessage);
 

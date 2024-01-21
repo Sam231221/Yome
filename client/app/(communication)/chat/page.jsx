@@ -39,39 +39,40 @@ export default function Chatpage() {
 
   //Get user from Db and set 'userInfo'
   useEffect(() => {
-    const getUserInfo = async (e) => {
-      try {
-        if (session?.user) {
-          if (!userInfo) {
-            let { data } = await axios.post(GET_USER_ROUTE, {
-              email: session?.user.email,
-            });
-
-            //Get the user from database and populate useInfo state
-            dispatch({
-              type: reducerCases.SET_USER_INFO,
-              userInfo: {
-                id: data?.user?.id,
-                role: data?.user?.role,
-                email: data?.user?.email,
-                name: data?.user?.name,
-                username: data?.user?.username,
-                firstname: data?.user?.firstname,
-                lastname: data?.user?.lastname,
-                userProfile: data?.user?.userProfile,
-                identifier: data?.user?.identifier,
-                profilePicture: data?.user?.profilePicture,
-                status: data?.user?.about,
-              },
-            });
-          }
-        }
-      } catch (e) {
-        console.log(e);
-      }
-    };
     getUserInfo();
   }, [session]);
+
+  const getUserInfo = async (e) => {
+    try {
+      if (session?.user) {
+        if (!userInfo) {
+          let { data } = await axios.post(GET_USER_ROUTE, {
+            email: session?.user.email,
+          });
+
+          //Get the user from database and populate useInfo state
+          dispatch({
+            type: reducerCases.SET_USER_INFO,
+            userInfo: {
+              id: data?.user?.id,
+              role: data?.user?.role,
+              email: data?.user?.email,
+              name: data?.user?.name,
+              username: data?.user?.username,
+              firstname: data?.user?.firstname,
+              lastname: data?.user?.lastname,
+              userProfile: data?.user?.userProfile,
+              identifier: data?.user?.identifier,
+              profilePicture: data?.user?.profilePicture,
+              status: data?.user?.about,
+            },
+          });
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   //start socket connection on adding authenticated user.
   useEffect(() => {
