@@ -1,24 +1,23 @@
-"use client";
+import React, { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import axios from "axios";
+import { CiLocationOn } from "react-icons/ci";
+import { reducerCases } from "@/context/constants";
+import { useStateProvider } from "@/context/StateContext";
+import toast from "react-hot-toast";
+
 import Image from "next/image";
 import Link from "next/link";
 
-import { CiLocationOn } from "react-icons/ci";
-
-import { useEffect, useState } from "react";
-import { reducerCases } from "@/context/constants";
-import { useSession } from "next-auth/react";
-
-import axios from "axios";
 import {
   GET_USER_ROUTE,
   GET_UNASSOCIATED_GROUPS,
   GET_UNFOLLOWED_MENTORS,
   GET_ALL_EDUCATIONAL_INSTITUTIONS,
 } from "@/utils/ApiRoutes";
-import { useStateProvider } from "@/context/StateContext";
+
 import CommunityCarousel from "./components/PCarousel/CommunityCarousel";
 import MentorCarousel from "./components/PCarousel/MentorCarousel";
-import toast from "react-hot-toast";
 
 const Home = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
