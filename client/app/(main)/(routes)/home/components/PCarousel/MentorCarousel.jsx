@@ -59,21 +59,23 @@ const MentorCarousel = ({ mentors }) => {
               key={mentor.id}
               timeout={500}
               classNames="item"
-              className={`carousel-item w-1/3 ml-[14px] p-3 inline-block first:ml-0 object-cover select-none `}
+              className={`carousel-item w-1/4 ml-[14px] p-3 inline-block first:ml-0 object-cover select-none `}
             >
               <div className="flex flex-col border shadow-lg">
-                <Image
-                  src="https://scontent.fpkr1-1.fna.fbcdn.net/v/t39.30808-1/263409073_296290029023432_2548299892588902878_n.jpg?stp=c20.0.160.160a_dst-jpg_p160x160&_nc_cat=106&ccb=1-7&_nc_sid=5740b7&_nc_ohc=LzOuaZf2i2AAX9LKAvR&_nc_ht=scontent.fpkr1-1.fna&oh=00_AfCPmAQPmlVQzZhin-QQUY2ulEiFTCpDZy7ayGT2ZPFyHA&oe=65965DCA"
-                  alt="person"
-                  width={250}
-                  height={500}
-                  loading="lazy"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
+                <div className="w-full h-[200px]">
+                  <Image
+                    src={mentor.profilePicture || "/avatars/avatarbg.png"}
+                    alt="person"
+                    width={500}
+                    height={500}
+                    loading="lazy"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
 
                 <Link href="/chool">
                   <h2 className="text-sm mt-2 px-2 text-gray-700 font-semibold">

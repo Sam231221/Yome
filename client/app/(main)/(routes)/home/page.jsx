@@ -184,7 +184,7 @@ const Home = () => {
                       className="transform transition ease-in-out duration-300 hover:scale-110"
                       src={ei.thumbnail}
                       alt="educational institution"
-                      width={250}
+                      width={400}
                       height={500}
                       priority="true"
                       style={{
