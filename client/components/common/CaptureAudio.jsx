@@ -2,7 +2,7 @@ import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import { ADD_AUDIO_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
 import axios from "axios";
-import { setPersistence } from "firebase/auth";
+
 import React, { useState, useRef, useEffect } from "react";
 import {
   FaMicrophone,

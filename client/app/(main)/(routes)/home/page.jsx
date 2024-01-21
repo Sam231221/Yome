@@ -178,7 +178,7 @@ const Home = () => {
             <>
               {filteredInstitutions.map((ei, index) => (
                 <div key={index} className="flex flex-col border shadow-lg">
-                  <div className="relative  overflow-hidden">
+                  <div className="relative w-full h-40 overflow-hidden">
                     <Image
                       className="transform transition ease-in-out duration-300 hover:scale-110"
                       src={ei.thumbnail}
