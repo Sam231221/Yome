@@ -8,6 +8,7 @@ const GROUP_MESSAGES_ROUTE = `${HOST}/api/group-messages`;
 export const REGISTER_USER = `${AUTH_ROUTE}/register-user`;
 export const UPDATE_USER = `${AUTH_ROUTE}/update-user`;
 export const GET_USER_ROUTE = `${AUTH_ROUTE}/get-user`;
+export const GET_ALL_USERS = `${AUTH_ROUTE}/get-all-users`;
 
 //Educational Institutions
 export const GET_ALL_EDUCATIONAL_INSTITUTIONS = `${EI_ROUTE}/get-all-educational-institutions`;
@@ -21,13 +22,11 @@ export const MANAGE_STRIPE_SUBSCRIPTION_ACTION = `${AUTH_ROUTE}/manage-stripe-su
 
 //Group Connections
 export const GET_ALL_GROUPS = `${AUTH_ROUTE}/get-all-groups`;
-export const GET_GROUP_ROUTE = `${AUTH_ROUTE}/get-group`;
 export const GET_ALL_CONNECTED_GROUPS = `${AUTH_ROUTE}/get-connected-groups`;
 export const CONNECT_USER_TO_GROUP = `${AUTH_ROUTE}/connect-user-to-group`;
 export const GET_UNASSOCIATED_GROUPS = `${AUTH_ROUTE}/get-unassociated-groups`;
 
 //User Connections
-export const GET_ALL_USERS = `${AUTH_ROUTE}/get-all-users`;
 export const GET_ALL_CONNECTED_USERS = `${AUTH_ROUTE}/get-connected-users`;
 export const GET_UNFOLLOWED_MENTORS = `${AUTH_ROUTE}/get-unfollowed-mentors`;
 export const CONNECT_USER_TO_MENTOR = `${AUTH_ROUTE}/connect-user-to-mentor`;
