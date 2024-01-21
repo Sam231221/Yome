@@ -17,31 +17,6 @@ import Image from "next/image";
 import Link from "next/link";
 export default function HomeLayout({ children }) {
   const splitLocation = usePathname();
-  const [isOpen, setSideBarOpen] = useState(false);
-  const toggleMenu = () => {
-    setSideBarOpen(!isOpen);
-  };
-
-  const showSidebar = () => {
-    if (typeof window !== "undefined") {
-      if (window.innerWidth <= 640) {
-        setSideBarOpen(false);
-      }
-    }
-  };
-  useEffect(() => {
-    showSidebar();
-
-    const handleResize = () => {
-      showSidebar();
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [isOpen]);
 
   return (
     <div className="relative w-full">
@@ -159,12 +134,6 @@ export default function HomeLayout({ children }) {
       >
         <div className="topbar z-[3] shadow-lg sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
           <div className="flex gap-3 items-center">
-            {/* Hamburger */}
-            {/* <IoMenuOutline
-              onClick={toggleMenu}
-              className="w-[30px] h-[30px] cursor-pointer hidden sm:block"
-            /> */}
-
             {/* SearchBar */}
             <div className="border-[1px] ml-5 min-w-[300px] border-ternaryTextColor hidden lg:flex focus:border-secondaryTextColor items-center">
               <input

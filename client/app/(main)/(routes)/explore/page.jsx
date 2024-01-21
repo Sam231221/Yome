@@ -1,8 +1,50 @@
 "use client";
 
 import Link from "next/link";
-
+import { useEffect, useState } from "react";
+import { reducerCases } from "@/context/constants";
+import { useSession } from "next-auth/react";
+import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
+import { useStateProvider } from "@/context/StateContext";
+import axios from "axios";
 const ExploreCareers = () => {
+  const [{ userInfo }, dispatch] = useStateProvider();
+  const { data: session } = useSession();
+
+  useEffect(() => {
+    const getUserInfo = async (e) => {
+      try {
+        if (session?.user) {
+          if (!userInfo) {
+            let { data } = await axios.post(GET_USER_ROUTE, {
+              email: session?.user.email,
+            });
+
+            dispatch({
+              type: reducerCases.SET_USER_INFO,
+              userInfo: {
+                id: data?.user?.id,
+                role: data?.user?.role,
+                email: data?.user?.email,
+                name: data?.user?.name,
+                username: data?.user?.username,
+                firstname: data?.user?.firstname,
+                lastname: data?.user?.lastname,
+                userProfile: data?.user?.userProfile,
+                identifier: data?.user?.identifier,
+                profilePicture: data?.user?.profilePicture,
+                status: data?.user?.about,
+              },
+            });
+          }
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
+    getUserInfo();
+  }, [session]);
   return (
     <div className="p-8">
       <div className="section-title">

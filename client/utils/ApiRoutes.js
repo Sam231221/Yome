@@ -5,6 +5,7 @@ const eiRoute = `${HOST}/api/ei`;
 const MESSAGES_ROUTE = `${HOST}/api/messages`;
 const GROUP_MESSAGES_ROUTE = `${HOST}/api/group-messages`;
 
+export const GET_ALL_EDUCATIONAL_INSTITUTIONS = `${eiRoute}/get-all-educational-institutions`;
 export const CREATE_EDUCATIONAL_INSTITUTION = `${eiRoute}/create-educational-institution`;
 
 export const REGISTER_USER = `${authRoute}/register-user`;
@@ -38,7 +39,6 @@ export const ADD_IMAGE_MESSAGE_ROUTE = `${MESSAGES_ROUTE}/add-image-message`;
 
 //GROUP Message
 export const GET_SINGLE_GROUP = `${GROUP_MESSAGES_ROUTE}/get-group`;
-
 export const ADD_GROUP_MESSAGE = `${GROUP_MESSAGES_ROUTE}/add-message`;
 export const GET_GROUP_MESSAGES = `${GROUP_MESSAGES_ROUTE}/get-messages`;
 export const GET_INITIAL_GROUP_MESSAGES = `${GROUP_MESSAGES_ROUTE}/get-initial-group-messages`;

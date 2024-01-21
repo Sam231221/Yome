@@ -35,7 +35,9 @@ export const ProfileDropDown = () => {
   });
   const handleSignOut = () => {
     signOut();
-    socket.current.emit("signout", userInfo.id);
+    if (socket.current) {
+      socket.current.emit("signout", userInfo.id);
+    }
     router.push("/login");
   };
   return (
@@ -47,10 +49,10 @@ export const ProfileDropDown = () => {
           setOpen(!open);
         }}
       >
-        <div className="w-11 h-11 bg-white shadow-lg rounded-full">
+        <div className="w-9 h-9 bg-white shadow-lg rounded-full">
           <Image
-            width={100}
-            height={100}
+            width={300}
+            height={300}
             loading="lazy"
             src={`${userInfo?.profilePicture || "/avatars/userprofile.png"}`}
             className="rounded-full w-full h-full object-cover"

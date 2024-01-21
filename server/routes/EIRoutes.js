@@ -8,7 +8,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 const router = Router();
 
-router.get("/getAll", getAllEducationalInstitutions);
+router.get("/get-all-educational-institutions", getAllEducationalInstitutions);
 router.post(
   "/create-educational-institution",
   upload.single("thumbnail"),

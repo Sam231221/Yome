@@ -13,6 +13,7 @@ import {
   GET_USER_ROUTE,
   GET_UNASSOCIATED_GROUPS,
   GET_UNFOLLOWED_MENTORS,
+  GET_ALL_EDUCATIONAL_INSTITUTIONS,
 } from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
 import CommunityCarousel from "./components/PCarousel/CommunityCarousel";
@@ -73,9 +74,7 @@ const Home = () => {
   }, [userInfo]);
   const getEIs = async (e) => {
     try {
-      let { data } = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/api/ei/getAll`
-      );
+      let { data } = await axios.get(GET_ALL_EDUCATIONAL_INSTITUTIONS);
       setInstitutions(data.institutions);
       setFilteredInstitutions(data.institutions);
     } catch (e) {

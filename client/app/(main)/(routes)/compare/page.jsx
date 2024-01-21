@@ -7,9 +7,12 @@ import { RxDotsVertical } from "react-icons/rx";
 import React, { useState, useEffect } from "react";
 import { MdDeleteOutline } from "react-icons/md";
 
+import { reducerCases } from "@/context/constants";
+import { useSession } from "next-auth/react";
+import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
+import { useStateProvider } from "@/context/StateContext";
 const ComparePage = () => {
   const [institutions, setInstitutions] = useState([]);
-
   const [inputs, setInputs] = useState([
     {
       id: 1,
@@ -20,21 +23,57 @@ const ComparePage = () => {
       notFound: false,
     }, // Initial input
   ]);
+  const [{ userInfo }, dispatch] = useStateProvider();
+  const { data: session } = useSession();
 
   useEffect(() => {
-    const getEIs = async (e) => {
+    const getUserInfo = async (e) => {
       try {
-        let { data } = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/api/ei/getAll`
-        );
-        setInstitutions(data.institutions);
+        if (session?.user) {
+          if (!userInfo) {
+            let { data } = await axios.post(GET_USER_ROUTE, {
+              email: session?.user.email,
+            });
+
+            dispatch({
+              type: reducerCases.SET_USER_INFO,
+              userInfo: {
+                id: data?.user?.id,
+                role: data?.user?.role,
+                email: data?.user?.email,
+                name: data?.user?.name,
+                username: data?.user?.username,
+                firstname: data?.user?.firstname,
+                lastname: data?.user?.lastname,
+                userProfile: data?.user?.userProfile,
+                identifier: data?.user?.identifier,
+                profilePicture: data?.user?.profilePicture,
+                status: data?.user?.about,
+              },
+            });
+          }
+        }
       } catch (e) {
-        console.log(e);
+        toast.error(e);
       }
     };
+
+    getUserInfo();
+  }, [session]);
+
+  useEffect(() => {
     getEIs();
   }, []);
-
+  const getEIs = async (e) => {
+    try {
+      let { data } = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_API}/api/ei/getAll`
+      );
+      setInstitutions(data.institutions);
+    } catch (e) {
+      console.log(e);
+    }
+  };
   const handleInputChange = (id, value, filterField) => {
     const updatedInputs = inputs.map((input) => {
       if (input.id === id) {
