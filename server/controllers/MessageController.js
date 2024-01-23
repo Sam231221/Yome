@@ -1,52 +1,7 @@
 import { renameSync } from "fs";
 import getPrismaInstance from "../utils/PrismaClient.js";
 import { v2 as cloudinary } from "cloudinary";
-export const addMessage = async (req, res, next) => {
-  try {
-    const prisma = getPrismaInstance();
 
-    const { chatType, from, to, message } = req.body;
-
-    //if the user is online but not read yet,
-    // we wanna make  messageStatus as "delivered" else "sent"
-    const getUser = onlineUsers.get(to);
-
-    //create private msge
-    if (message && from && to && chatType === "user") {
-      const newMessage = await prisma.messages.create({
-        data: {
-          message: message,
-          msgType: "user",
-          sender: { connect: { id: parseInt(from) } },
-          reciever: { connect: { id: parseInt(to) } },
-          messageStatus: getUser ? "delivered" : "sent",
-        },
-        include: { sender: true, reciever: true },
-      });
-      return res.status(201).send({ message: newMessage });
-    }
-    //create group msg
-    //sender->id
-    //to->chat id
-    if (message && from && to && chatType === "group") {
-      const newMessage = await prisma.messages.create({
-        data: {
-          message: message,
-          group: { connect: { id: to } },
-          msgType: "group",
-          sender: { connect: { id: parseInt(from) } },
-          messageStatus: getUser ? "delivered" : "sent",
-        },
-        include: { sender: true, group: true },
-      });
-      return res.status(201).send({ message: newMessage });
-    }
-
-    return res.status(400).send("From, to and Message is required.");
-  } catch (err) {
-    next(err);
-  }
-};
 // get the user with messages whose sentMessages and  recievedMessages are not null
 export const getMessages = async (req, res, next) => {
   try {
@@ -116,7 +71,7 @@ export const getMessages = async (req, res, next) => {
   }
 };
 //return users with extra fields including total messages,latest msg,...
-export const getInitialContactsWithMessages = async (req, res, next) => {
+export const getInitialUsersWithMessages = async (req, res, next) => {
   try {
     const userId = parseInt(req.params.from);
     const prisma = getPrismaInstance();
@@ -247,6 +202,89 @@ export const getInitialContactsWithMessages = async (req, res, next) => {
   }
 };
 
+export const getInitialGroupsWithMessages = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.params.group_id);
+    const prisma = getPrismaInstance();
+    // Retrieve groups with the latest message (sent by any user in the group)
+    const groupsWithLatestMessages = await prisma.group.findMany({
+      where: {
+        AND: [
+          {
+            OR: [
+              { members: { some: { id: userId } } },
+              { admins: { some: { id: userId } } },
+            ],
+          },
+          { messages: { some: { groupId: { not: null } } } }, // Group has at least one message
+        ],
+      },
+      include: {
+        messages: {
+          where: { groupId: { not: null } },
+          take: 1,
+          orderBy: { createdAt: "desc" }, // Get the latest message
+        },
+      },
+    });
+
+    //passes  users and onlineUsers to the List.jsx
+    return res.status(200).json({
+      groupsWithLatestGroupMessages: groupsWithLatestMessages,
+      // onlineUsers: Array.from(onlineUsers.keys()),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const addMessage = async (req, res, next) => {
+  try {
+    const prisma = getPrismaInstance();
+
+    const { chatType, from, to, message } = req.body;
+
+    //if the user is online but not read yet,
+    // we wanna make  messageStatus as "delivered" else "sent"
+    const getUser = onlineUsers.get(to);
+
+    //create private msge
+    if (message && from && to && chatType === "user") {
+      const newMessage = await prisma.messages.create({
+        data: {
+          message: message,
+          msgType: "user",
+          sender: { connect: { id: parseInt(from) } },
+          reciever: { connect: { id: parseInt(to) } },
+          messageStatus: getUser ? "delivered" : "sent",
+        },
+        include: { sender: true, reciever: true },
+      });
+      return res.status(201).send({ message: newMessage });
+    }
+    //create group msg
+    //sender->id
+    //to->chat id
+    if (message && from && to && chatType === "group") {
+      const newMessage = await prisma.messages.create({
+        data: {
+          message: message,
+          group: { connect: { id: to } },
+          msgType: "group",
+          sender: { connect: { id: parseInt(from) } },
+          messageStatus: getUser ? "delivered" : "sent",
+        },
+        include: { sender: true, group: true },
+      });
+      return res.status(201).send({ message: newMessage });
+    }
+
+    return res.status(400).send("From, to and Message is required.");
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const addAudioMessage = async (req, res, next) => {
   try {
     if (req.file) {
@@ -270,10 +308,12 @@ export const addAudioMessage = async (req, res, next) => {
           .end(req.file.buffer);
       });
       const prisma = getPrismaInstance();
-      const { from, to } = req.query;
-      if (from && to) {
+      const { from, to, chatType } = req.query;
+      const getUser = onlineUsers.get(to);
+      if (chatType === "user") {
         const message = await prisma.messages.create({
           data: {
+            messageStatus: getUser ? "delivered" : "sent",
             message: audio.secure_url,
             sender: { connect: { id: parseInt(from) } },
             reciever: { connect: { id: parseInt(to) } },
@@ -282,7 +322,19 @@ export const addAudioMessage = async (req, res, next) => {
         });
         return res.status(201).json({ message });
       }
-      return res.status(400).send("From, to is required.");
+      if (chatType === "group") {
+        const message = await prisma.messages.create({
+          data: {
+            group: { connect: { id: to } },
+            msgType: "group",
+            messageStatus: getUser ? "delivered" : "sent",
+            message: audio.secure_url,
+            sender: { connect: { id: parseInt(from) } },
+            type: "audio",
+          },
+        });
+        return res.status(201).json({ message });
+      }
     }
     return res.status(400).send("Audio is required.");
   } catch (err) {
@@ -309,21 +361,33 @@ export const addImageMessage = async (req, res, next) => {
       });
 
       const prisma = getPrismaInstance();
-      const { from, to } = req.query;
-
-      if (from && to) {
+      const { from, to, chatType } = req.query;
+      const getUser = onlineUsers.get(to);
+      if (chatType === "user") {
         const message = await prisma.messages.create({
           data: {
+            messageStatus: getUser ? "delivered" : "sent",
             message: image.secure_url,
             sender: { connect: { id: parseInt(from) } },
             reciever: { connect: { id: parseInt(to) } },
             type: "image",
           },
         });
-
         return res.status(201).json({ message });
       }
-      return res.status(400).send("From, to is required.");
+      if (chatType === "group") {
+        const message = await prisma.messages.create({
+          data: {
+            group: { connect: { id: to } },
+            msgType: "group",
+            messageStatus: getUser ? "delivered" : "sent",
+            message: image.secure_url,
+            sender: { connect: { id: parseInt(from) } },
+            type: "image",
+          },
+        });
+        return res.status(201).json({ message });
+      }
     }
     return res.status(400).send("Image is required.");
   } catch (err) {

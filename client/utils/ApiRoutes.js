@@ -37,12 +37,7 @@ export const GET_MESSAGES_ROUTE = `${MESSAGES_ROUTE}/get-messages`;
 
 //One to One Message
 export const ADD_MESSAGE_ROUTE = `${MESSAGES_ROUTE}/add-message`;
+export const GET_INITIAL_GROUP_MESSAGES = `${MESSAGES_ROUTE}/get-initial-group-messages`;
 export const GET_INITIAL_USERS_MESSAGES = `${MESSAGES_ROUTE}/get-initial-contacts`;
 export const ADD_AUDIO_MESSAGE_ROUTE = `${MESSAGES_ROUTE}/add-audio-message`;
 export const ADD_IMAGE_MESSAGE_ROUTE = `${MESSAGES_ROUTE}/add-image-message`;
-
-//GROUP Message
-export const ADD_GROUP_MESSAGE = `${GROUP_MESSAGES_ROUTE}/add-message`;
-export const GET_INITIAL_GROUP_MESSAGES = `${GROUP_MESSAGES_ROUTE}/get-initial-group-messages`;
-export const ADD_GROUP_AUDIO_MESSAGE = `${GROUP_MESSAGES_ROUTE}/add-audio-message`;
-export const ADD_GROUP_IMAGE_MESSAGE = `${GROUP_MESSAGES_ROUTE}/add-image-message`;

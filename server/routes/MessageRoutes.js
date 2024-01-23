@@ -4,7 +4,8 @@ import {
   addAudioMessage,
   addImageMessage,
   addMessage,
-  getInitialContactsWithMessages,
+  getInitialUsersWithMessages,
+  getInitialGroupsWithMessages,
   getMessages,
 } from "../controllers/MessageController.js";
 
@@ -18,7 +19,12 @@ const uploadImage = multer({ storage: storage });
 router.get("/get-messages/:from/:to/:chatType", getMessages);
 
 router.post("/add-message", addMessage);
-router.get("/get-initial-contacts/:from", getInitialContactsWithMessages);
+router.get(
+  "/get-initial-group-messages/:group_id",
+  getInitialGroupsWithMessages
+);
+
+router.get("/get-initial-contacts/:from", getInitialUsersWithMessages);
 router.post("/add-audio-message", uploadAudio.single("audio"), addAudioMessage);
 router.post("/add-image-message", uploadImage.single("image"), addImageMessage);
 

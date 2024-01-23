@@ -4,7 +4,7 @@ import cors from "cors";
 import getPrismaInstance from "./utils/PrismaClient.js";
 import AuthRoutes from "./routes/AuthRoutes.js";
 import MessageRoutes from "./routes/MessageRoutes.js";
-import GroupMessageRoutes from "./routes/GroupMessageRoutes.js";
+
 import DbRoutes from "./routes/DbRoutes.js";
 import EIRoutes from "./routes/EIRoutes.js";
 import { Server } from "socket.io";
@@ -29,7 +29,7 @@ app.use("/uploads/images/", express.static("uploads/images"));
 
 app.use("/api/auth/", AuthRoutes);
 app.use("/api/messages", MessageRoutes);
-app.use("/api/group-messages", GroupMessageRoutes);
+
 app.use("/api/ei", EIRoutes);
 app.use("/api/db", DbRoutes);
 const server = app.listen(process.env.PORT, () => {
