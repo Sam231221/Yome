@@ -303,41 +303,48 @@ const Account = () => {
                       />
                     </div>
                     {/* Header */}
-
-                    <div className="text-center">
+                    {userInfo.role === "USER" ? (
                       <h2 className="text-2xl font-semibold text-gray-700">
-                        You're on the {userSubscriptionPlan?.plan} Plan
+                        You haven't subscribed for any plans yet.
                       </h2>
-                      <p className="text-sm font-medium text-gray-500">
-                        Thanks for subscribing to the{" "}
-                        {userSubscriptionPlan?.plan} Plan. As a part of this
-                        plan, you have access to:
-                      </p>
-                    </div>
-                    <ul className="grid grid-cols-2 gap-2 mt-3">
-                      {userSubscriptionPlan.features.map((feature, i) => (
-                        <div
-                          class="icon-container flex gap-2 text-sm icon-md text-blue-600"
-                          aria-hidden="true"
-                        >
-                          <svg
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class="feather feather-check-circle"
-                          >
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                            <path d="M22 4 12 14.01l-3-3"></path>
-                          </svg>
-                          <li className="text-medium">{feature}</li>
+                    ) : (
+                      <>
+                        <div className="text-center">
+                          <h2 className="text-2xl font-semibold text-gray-700">
+                            You're on the {userSubscriptionPlan?.plan} Plan
+                          </h2>
+                          <p className="text-sm font-medium text-gray-500">
+                            Thanks for subscribing to the{" "}
+                            {userSubscriptionPlan?.plan} Plan. As a part of this
+                            plan, you have access to:
+                          </p>
                         </div>
-                      ))}
-                    </ul>
+                        <ul className="grid grid-cols-2 gap-2 mt-3">
+                          {userSubscriptionPlan?.features?.map((feature, i) => (
+                            <div
+                              class="icon-container flex gap-2 text-sm icon-md text-blue-600"
+                              aria-hidden="true"
+                            >
+                              <svg
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="feather feather-check-circle"
+                              >
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <path d="M22 4 12 14.01l-3-3"></path>
+                              </svg>
+                              <li className="text-medium">{feature}</li>
+                            </div>
+                          ))}
+                        </ul>
+                      </>
+                    )}
                   </div>
                 </div>
               </>

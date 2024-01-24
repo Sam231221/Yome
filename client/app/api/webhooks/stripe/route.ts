@@ -44,6 +44,11 @@ export async function POST(request: Request) {
       stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
     });
   }
+  if (event.type === "customer.subscription.updated") {
+    console.log("event triggered");
+
+    // Now you can access details such as billing address, name, etc. from `billingInfo`
+  }
 
   //Successful Subscription Renewal or Trial Period End:
   if (event.type === "invoice.payment_succeeded") {

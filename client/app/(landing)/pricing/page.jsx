@@ -13,7 +13,7 @@ import Link from "next/link";
 export default function PricingPage() {
   const router = useRouter();
   const [userSubscriptionPlan, setUserSubscriptionPlan] = useState({});
-  const [btnText, setBtnText] = useState("");
+
   const [{ userInfo }, dispatch] = useStateProvider();
   const { data: session } = useSession();
   const getUserInfo = async (e) => {
@@ -54,18 +54,16 @@ export default function PricingPage() {
   };
 
   useEffect(() => {
-    if (!session?.user) {
-      setBtnText("Sign Up to Continue");
-    } else {
+    if (session?.user) {
       getUserInfo();
-
-      setBtnText("Subscribe");
     }
-  });
+  }, [session?.user]);
 
   useEffect(() => {
-    getUserSubscriptionPlan();
-  }, [session?.user]);
+    if (userInfo) {
+      getUserSubscriptionPlan();
+    }
+  }, [userInfo]);
   const getUserSubscriptionPlan = async () => {
     const { data } = await axios.post(GET_USER_SUBSCRIPTION_PLAN, {
       userId: userInfo?.id,
@@ -263,7 +261,7 @@ export default function PricingPage() {
                   className="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
                   onClick={() => handleBtnClick(SubscriptionPlans[0].id)}
                 >
-                  {btnText}
+                  Sign Up to Continue
                 </button>
               )}
             </div>
@@ -385,7 +383,7 @@ export default function PricingPage() {
                   className="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
                   onClick={() => handleBtnClick(SubscriptionPlans[1].id)}
                 >
-                  {btnText}
+                  Sign Up to Continue
                 </button>
               )}
             </div>
@@ -473,7 +471,7 @@ export default function PricingPage() {
                   className="group/button flex items-center justify-center transform transition-transform duration-50 active:scale-95 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 border-pink-500 hover:border-pink-600 disabled:bg-pink-500 disabled:border-pink-500 focus-visible:ring-pink-600 h-[42px] py-2 px-3 rounded-md text-base leading-6 space-x-3 bg-blue-500 hover:bg-blue-700 text-white font-semibold border-0 w-full"
                   onClick={() => handleBtnClick(SubscriptionPlans[2].id)}
                 >
-                  {btnText}
+                  Sign Up to Continue
                 </button>
               )}
             </div>

@@ -3,7 +3,6 @@ export const HOST = process.env.NEXT_PUBLIC_BACKEND_API;
 const AUTH_ROUTE = `${HOST}/api/auth`;
 const EI_ROUTE = `${HOST}/api/ei`;
 const MESSAGES_ROUTE = `${HOST}/api/messages`;
-const GROUP_MESSAGES_ROUTE = `${HOST}/api/group-messages`;
 
 export const REGISTER_USER = `${AUTH_ROUTE}/register-user`;
 export const UPDATE_USER = `${AUTH_ROUTE}/update-user`;
