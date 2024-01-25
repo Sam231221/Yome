@@ -4,9 +4,9 @@ import { usePathname } from "next/navigation";
 
 export default function HomeLayout({ children }) {
   return (
-    <>
+    <div className="relative">
       <Header />
       {children}
-    </>
+    </div>
   );
 }

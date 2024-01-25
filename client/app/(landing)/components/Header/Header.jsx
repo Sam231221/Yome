@@ -1,4 +1,5 @@
 "use client";
+import { IoMdClose } from "react-icons/io";
 import React, { useState, useRef, useEffect } from "react";
 import { FaDiscord, FaGithub } from "react-icons/fa";
 import { RxHamburgerMenu } from "react-icons/rx";
@@ -7,6 +8,7 @@ import { signOut, useSession } from "next-auth/react";
 import PropTypes from "prop-types";
 import Image from "next/image";
 import Link from "next/link";
+import { useModalContext } from "@/context/ModalContextProvider";
 
 const navLinks = [
   {
@@ -73,6 +75,8 @@ const Header = () => {
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
   const dropdownRef = useRef();
   const session = useSession();
+  const [IsActiveMenu, setActiveMenu] = useState(false);
+  const { isModalOpen, setModalOpen } = useModalContext();
   const splitLocation = usePathname();
   useEffect(() => {
     const handleMouseEnter = () => {
@@ -95,7 +99,28 @@ const Header = () => {
       }
     };
   }, []);
+  const handleClick = () => {
+    setModalOpen(!IsActiveMenu);
+    setActiveMenu(!IsActiveMenu);
+  };
+  const showMobileMenu = () => {
+    if (typeof window !== "undefined" && IsActiveMenu) {
+      if (window.innerWidth <= 768) {
+        setActiveMenu(!IsActiveMenu);
+        setModalOpen(true);
+      } else {
+        setActiveMenu(!IsActiveMenu);
+        setModalOpen(false);
+      }
+    }
+  };
+  useEffect(() => {
+    showMobileMenu();
+  }, []);
 
+  if (typeof window !== "undefined") {
+    window.addEventListener("resize", showMobileMenu);
+  }
   const handleDiscordSignIn = () => {};
 
   const handleGitHubSignIn = () => {};
@@ -123,58 +148,161 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-[#0d0225]">
-      <div className="container mx-auto py-4">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="logo flex gap-2 ml-3 items-center">
-            <div className="w-10 h-10">
-              <Image
-                className="w-full h-full object-contain"
-                src="/logos/LogoWhiteT.png"
-                width={100}
-                height={100}
-              />
-            </div>
-            <h2 className="flex sm:text-xl lg:text-2xl font-bold items-center gap-1 text-white">
-              <i className="ri-pantone-line"></i> EduroClass.
-            </h2>
-          </Link>
+    <>
+      <header className="bg-[#0d0225]">
+        <div className="container mx-auto py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="logo flex gap-2 ml-3 items-center">
+              <div className="w-10 h-10">
+                <Image
+                  className="w-full h-full object-contain"
+                  src="/logos/LogoWhiteT.png"
+                  width={100}
+                  height={100}
+                />
+              </div>
+              <h2 className="flex sm:text-xl lg:text-2xl font-bold items-center gap-1 text-white">
+                <i className="ri-pantone-line"></i> EduroClass.
+              </h2>
+            </Link>
 
-          <div className="nav hidden md:flex ml-6 mt-3">
-            <ul className="flex space-x-6">
-              {navLinks.map((item, index) => (
-                <li key={index} className="nav__item">
-                  {item.display === "Product" ? (
-                    <div ref={dropdownRef} className="relative">
-                      <button
-                        className="text-gray-500 hover:text-white transition duration-300 text-lg font-semibold mb-2 no-underline flex items-center"
-                        onClick={() =>
-                          setIsProductDropdownOpen(!isProductDropdownOpen)
-                        }
+            <div className="nav hidden md:flex ml-6 mt-3">
+              <ul className="flex space-x-6">
+                {navLinks.map((item, index) => (
+                  <li key={index} className="nav__item">
+                    {item.display === "Product" ? (
+                      <div ref={dropdownRef} className="relative">
+                        <button
+                          className="text-gray-500 hover:text-white transition duration-300 text-lg font-semibold mb-2 no-underline flex items-center"
+                          onClick={() =>
+                            setIsProductDropdownOpen(!isProductDropdownOpen)
+                          }
+                        >
+                          {item.display}
+                          <span className="ml-1">&#9662;</span>
+                        </button>
+                        {isProductDropdownOpen && (
+                          <ProductDropdown
+                            types={[
+                              "Session Replay",
+                              "Error Monitoring",
+                              "Logging",
+                              "Integration",
+                            ]}
+                            onSelect={handleProductTypeSelect}
+                          />
+                        )}
+                      </div>
+                    ) : (
+                      <Link
+                        href={item.url}
+                        className={`${
+                          splitLocation === item.url
+                            ? "text-white"
+                            : "text-gray-500"
+                        }  hover:text-white transition duration-300 text-lg font-semibold mb-2 no-underline`}
                       >
                         {item.display}
-                        <span className="ml-1">&#9662;</span>
-                      </button>
-                      {isProductDropdownOpen && (
-                        <ProductDropdown
-                          types={[
-                            "Session Replay",
-                            "Error Monitoring",
-                            "Logging",
-                            "Integration",
-                          ]}
-                          onSelect={handleProductTypeSelect}
-                        />
-                      )}
-                    </div>
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {/* Hamburger */}
+            <div
+              onClick={() => handleClick()}
+              className="ml-32 md:hidden cursor-pointer text-white"
+            >
+              <RxHamburgerMenu size={25} />
+            </div>
+
+            <div className="sign-in-buttons text-lg hidden md:flex lg:flex  items-center gap-3">
+              {session?.status === "authenticated" ? (
+                <button
+                  onClick={() => signOut()}
+                  className="signin-button text-gray-500 sm:px-3 sm:py-2 lg:px-4 lg:py-2 rounded transition duration-300 hover:bg-aqua hover:text-white border-1 border-aqua"
+                >
+                  Sign out
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  className="signup-button text-gray-500 sm:px-3 sm:py-2 lg:px-4 lg:py-2 rounded transition duration-300 hover:bg-aqua hover:text-white border-1 border-aqua"
+                >
+                  Sign in
+                </Link>
+              )}
+
+              <div className="sign-in-buttons hidden sm:flex lg:flex items-center space-x-0">
+                <div className="flex">
+                  <button
+                    className="discord-button text-gray-500 px-2 py-2 rounded-l transition duration-300 hover:bg-aqua hover:text-black border-1 border-aqua"
+                    onClick={handleDiscordSignIn}
+                  >
+                    <FaDiscord
+                      className="icon "
+                      style={{ fontSize: "1.5em" }}
+                    />
+                  </button>
+
+                  <button
+                    className="github-button text-gray-500 px-2 py-2 rounded-r transition duration-300 hover:bg-aqua hover:text-black border-1 border-aqua"
+                    onClick={handleGitHubSignIn}
+                  >
+                    <FaGithub className="icon" style={{ fontSize: "1.5em" }} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mobile__menu cursor-pointer md:hidden">
+              <span
+                onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
+              >
+                <i className="ri-menu-line text-white text-3xl"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+      {isModalOpen && (
+        <div className="fixed z-[100] top-0 left-0 w-full h-screen  flex flex-col sm:flex-row mb-2 bg-[#6C37F4] py-4 px-3 ">
+          <div className="flex flex-col w-full">
+            <div className="flex justify-between items-center border-b border-gray-300">
+              <Link
+                href="/"
+                className="logo flex gap-2 ml-3 my-2 mb-3 items-center"
+              >
+                <div className="w-10 h-10">
+                  <Image
+                    className="w-full h-full object-contain"
+                    src="/logos/LogoWhiteT.png"
+                    width={100}
+                    height={100}
+                  />
+                </div>
+                <h2 className="flex text-2xl font-bold items-center gap-1 text-white">
+                  <i className="ri-pantone-line"></i> EduroClass.
+                </h2>
+              </Link>
+              <div
+                onClick={() => handleClick()}
+                className="ml-32 md:hidden cursor-pointer text-white"
+              >
+                <IoMdClose size={25} />
+              </div>
+            </div>
+
+            <ul className="flex gap-3 flex-col mt-3 px-6">
+              {navLinks.map((item, index) => (
+                <li key={index}>
+                  {item.display === "Product" ? (
+                    <></>
                   ) : (
                     <Link
                       href={item.url}
-                      className={`${
-                        splitLocation === item.url
-                          ? "text-white"
-                          : "text-gray-500"
-                      }  hover:text-white transition duration-300 text-lg font-semibold mb-2 no-underline`}
+                      className={`text-white hover:text-white transition duration-300 text-[16px] font-semibold mb-2 no-underline`}
                     >
                       {item.display}
                     </Link>
@@ -182,57 +310,48 @@ const Header = () => {
                 </li>
               ))}
             </ul>
-          </div>
-          <div className="ml-32 md:hidden cursor-pointer text-white">
-            <RxHamburgerMenu size={25} />
-          </div>
-
-          <div className="sign-in-buttons text-lg hidden sm:flex lg:flex  items-center gap-3">
-            {session?.status === "authenticated" ? (
-              <button
-                onClick={() => signOut()}
-                className="signin-button text-gray-500 sm:px-3 sm:py-2 lg:px-4 lg:py-2 rounded transition duration-300 hover:bg-aqua hover:text-white border-1 border-aqua"
-              >
-                Sign out
-              </button>
-            ) : (
-              <Link
-                href="/login"
-                className="signup-button text-gray-500 sm:px-3 sm:py-2 lg:px-4 lg:py-2 rounded transition duration-300 hover:bg-aqua hover:text-white border-1 border-aqua"
-              >
-                Sign in
-              </Link>
-            )}
-
-            <div className="sign-in-buttons hidden sm:flex lg:flex items-center space-x-0">
-              <div className="flex">
+            <div className="sign-in-buttons text-lg flex flex-col items-center gap-3">
+              {session?.status === "authenticated" ? (
                 <button
-                  className="discord-button text-gray-500 px-2 py-2 rounded-l transition duration-300 hover:bg-aqua hover:text-black border-1 border-aqua"
-                  onClick={handleDiscordSignIn}
+                  onClick={() => signOut()}
+                  className="w-full my-3 font-semibold text-white text-center bg-[#23e2d8] hover:bg-[#23B6E2] px-3 py-2 rounded transition duration-300 hover:bg-aqua  border-1 border-aqua"
                 >
-                  <FaDiscord className="icon " style={{ fontSize: "1.5em" }} />
+                  Sign out
                 </button>
+              ) : (
+                <Link
+                  href="/login"
+                  className="w-full my-3 font-semibold text-white text-center bg-[#23e2d8] hover:bg-[#23B6E2] px-3 py-2 rounded transition duration-300 hover:bg-aqua  border-1 border-aqua"
+                >
+                  Sign in
+                </Link>
+              )}
 
-                <button
-                  className="github-button text-gray-500 px-2 py-2 rounded-r transition duration-300 hover:bg-aqua hover:text-black border-1 border-aqua"
-                  onClick={handleGitHubSignIn}
-                >
-                  <FaGithub className="icon" style={{ fontSize: "1.5em" }} />
-                </button>
+              <div className="flex  items-center space-x-0">
+                <div className="flex">
+                  <button
+                    className="discord-button text-white px-2 py-2 rounded-l transition duration-300 hover:bg-aqua hover:text-black border-1 border-aqua"
+                    onClick={handleDiscordSignIn}
+                  >
+                    <FaDiscord
+                      className="icon "
+                      style={{ fontSize: "1.5em" }}
+                    />
+                  </button>
+
+                  <button
+                    className="github-button text-white px-2 py-2 rounded-r transition duration-300 hover:bg-aqua hover:text-black border-1 border-aqua"
+                    onClick={handleGitHubSignIn}
+                  >
+                    <FaGithub className="icon" style={{ fontSize: "1.5em" }} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-
-          <div className="mobile__menu cursor-pointer md:hidden">
-            <span
-              onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
-            >
-              <i className="ri-menu-line text-white text-3xl"></i>
-            </span>
-          </div>
         </div>
-      </div>
-    </header>
+      )}
+    </>
   );
 };
 
