@@ -17,10 +17,10 @@ import { useStateProvider } from "@/context/StateContext";
 import { useEffect, useState } from "react";
 
 import Image from "next/image";
-import { SubscriptionPlans } from "../../pricing/SubscriptionPlans";
+import { SubscriptionPlans } from "../../../../(landing)/pricing/SubscriptionPlans";
 import FormInput from "@/components/FormInut/Form";
 import { institutionsInputs } from "./inputs";
-import { ManageUserSubscriptionButton } from "../../pricing/UserSubsrciptionButton";
+import { ManageUserSubscriptionButton } from "../../../../(landing)/pricing/UserSubsrciptionButton";
 import DropZoneUploader from "@/components/common/DropZoneUploader";
 
 export default function Page() {
