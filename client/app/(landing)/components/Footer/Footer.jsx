@@ -81,7 +81,7 @@ const Footer = () => {
               </h2>
             </div>
 
-            <div className="follows mt-3 sm:mt-0">
+            <div className="follows mt-3 ">
               <div className="flex gap-2 items-center">
                 <a href="https://www.facebook.com">
                   <FaFacebookF size={25} />

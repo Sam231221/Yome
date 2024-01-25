@@ -2,8 +2,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaDiscord, FaGithub } from "react-icons/fa";
 import { RxHamburgerMenu } from "react-icons/rx";
+import { usePathname } from "next/navigation";
 import PropTypes from "prop-types";
 import Image from "next/image";
+import Link from "next/link";
 
 const navLinks = [
   {
@@ -69,7 +71,7 @@ ProductDropdown.propTypes = {
 const Header = () => {
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
   const dropdownRef = useRef();
-
+  const splitLocation = usePathname();
   useEffect(() => {
     const handleMouseEnter = () => {
       setIsProductDropdownOpen(true);
@@ -130,7 +132,7 @@ const Header = () => {
     <header className="bg-[#0d0225]">
       <div className="container mx-auto py-4">
         <div className="flex items-center justify-between">
-          <div className="logo flex gap-2 ml-3 items-center">
+          <Link href="/" className="logo flex gap-2 ml-3 items-center">
             <div className="w-10 h-10">
               <Image
                 className="w-full h-full object-contain"
@@ -142,7 +144,7 @@ const Header = () => {
             <h2 className="flex sm:text-xl lg:text-2xl font-bold items-center gap-1 text-white">
               <i className="ri-pantone-line"></i> EduroClass.
             </h2>
-          </div>
+          </Link>
 
           <div className="nav hidden md:flex ml-6 mt-3">
             <ul className="flex space-x-6">
@@ -172,12 +174,16 @@ const Header = () => {
                       )}
                     </div>
                   ) : (
-                    <a
+                    <Link
                       href={item.url}
-                      className="text-gray-500 hover:text-white transition duration-300 text-lg font-semibold mb-2 no-underline"
+                      className={`${
+                        splitLocation === item.url
+                          ? "text-white"
+                          : "text-gray-500"
+                      }  hover:text-white transition duration-300 text-lg font-semibold mb-2 no-underline`}
                     >
                       {item.display}
-                    </a>
+                    </Link>
                   )}
                 </li>
               ))}
