@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaDiscord, FaGithub } from "react-icons/fa";
 import { RxHamburgerMenu } from "react-icons/rx";
 import { usePathname } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 import PropTypes from "prop-types";
 import Image from "next/image";
 import Link from "next/link";
@@ -71,6 +72,7 @@ ProductDropdown.propTypes = {
 const Header = () => {
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
   const dropdownRef = useRef();
+  const session = useSession();
   const splitLocation = usePathname();
   useEffect(() => {
     const handleMouseEnter = () => {
@@ -93,14 +95,6 @@ const Header = () => {
       }
     };
   }, []);
-
-  const handleSignIn = () => {
-    console.log("Sign In clicked");
-  };
-
-  const handleSignUp = () => {
-    console.log("Sign Up clicked");
-  };
 
   const handleDiscordSignIn = () => {};
 
@@ -194,19 +188,21 @@ const Header = () => {
           </div>
 
           <div className="sign-in-buttons text-lg hidden sm:flex lg:flex  items-center gap-3">
-            <button
-              className="signin-button text-gray-500 sm:px-3 sm:py-2 lg:px-4 lg:py-2 rounded transition duration-300 hover:bg-aqua hover:text-black border-1 border-aqua"
-              onClick={handleSignIn}
-            >
-              Sign In
-            </button>
-
-            <button
-              className="signup-button text-gray-500 sm:px-3 sm:py-2 lg:px-4 lg:py-2 rounded transition duration-300 hover:bg-aqua hover:text-black border-1 border-aqua"
-              onClick={handleSignUp}
-            >
-              Sign Up
-            </button>
+            {session?.status === "authenticated" ? (
+              <button
+                onClick={() => signOut()}
+                className="signin-button text-gray-500 sm:px-3 sm:py-2 lg:px-4 lg:py-2 rounded transition duration-300 hover:bg-aqua hover:text-white border-1 border-aqua"
+              >
+                Sign out
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="signup-button text-gray-500 sm:px-3 sm:py-2 lg:px-4 lg:py-2 rounded transition duration-300 hover:bg-aqua hover:text-white border-1 border-aqua"
+              >
+                Sign in
+              </Link>
+            )}
 
             <div className="sign-in-buttons hidden sm:flex lg:flex items-center space-x-0">
               <div className="flex">
