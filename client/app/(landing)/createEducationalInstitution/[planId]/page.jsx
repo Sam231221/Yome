@@ -15,7 +15,7 @@ import {
 } from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+
 import Image from "next/image";
 import { SubscriptionPlans } from "../../pricing/SubscriptionPlans";
 import FormInput from "@/components/FormInut/Form";
