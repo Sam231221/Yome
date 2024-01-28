@@ -72,7 +72,7 @@ export const ProfileDropDown = () => {
         } before:content-[""] before:border-bg-[#eaedf1] before:border-t-[1px] 
                             before:border-l-[1px] before:absolute before:top-[-10px] before:right-5 before:h-5 before:w-5
                             before:bg-white before:rotate-[45deg] border
-                           top-14 right-[2px] bg-white drop-shadow-lg w-[220px] p-3`}
+                           xs:top-20 sm:top-14 right-[2px] bg-white drop-shadow-lg w-[220px] p-3`}
       >
         <div className="mt-1  mx-2">
           <div className="flex gap-2">

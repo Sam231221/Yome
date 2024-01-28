@@ -9,7 +9,10 @@ import { MdDeleteOutline } from "react-icons/md";
 
 import { reducerCases } from "@/context/constants";
 import { useSession } from "next-auth/react";
-import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
+import {
+  GET_ALL_EDUCATIONAL_INSTITUTIONS,
+  GET_USER_ROUTE,
+} from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
 const ComparePage = () => {
   const [institutions, setInstitutions] = useState([]);
@@ -66,9 +69,7 @@ const ComparePage = () => {
   }, []);
   const getEIs = async (e) => {
     try {
-      let { data } = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/api/ei/getAll`
-      );
+      let { data } = await axios.get(GET_ALL_EDUCATIONAL_INSTITUTIONS);
       setInstitutions(data.institutions);
     } catch (e) {
       console.log(e);
@@ -145,10 +146,10 @@ const ComparePage = () => {
           inputs.length === 1
             ? "grid-cols-1"
             : inputs.length === 2
-            ? "grid-cols-2"
+            ? "xs:grid-cols-1 sm:grid-cols-2 lg:grid-cols-2"
             : inputs.length === 3
-            ? "grid-cols-3"
-            : "grid-cols-3"
+            ? "xs:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+            : "xs:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
         } gap-4`}
       >
         {inputs.map((input) => (
@@ -210,12 +211,12 @@ const ComparePage = () => {
                     <div
                       className={`w-full ${
                         inputs.length === 1
-                          ? "h-[500px]"
+                          ? "xs:h-[200px] lg:h-[500px]"
                           : inputs.length === 2
-                          ? "h-[250px]"
+                          ? "xs:h-[200px]  h-[250px]"
                           : inputs.length === 3
-                          ? "h-[200px]"
-                          : "h-[300px]"
+                          ? "xs:h-[200px]  h-[200px]"
+                          : "xs:h-[200px]  h-[300px]"
                       }`}
                     >
                       <Image
@@ -284,7 +285,7 @@ const ComparePage = () => {
             <h2 className="text-gray-800 text-lg font-semibold">
               Start Typing...
             </h2>
-            <p className="text-gray-600 ">
+            <p className="text-gray-600 p-4">
               You can search for a Educational Institution and start comparing
               it with multiple educational institutions.{" "}
             </p>

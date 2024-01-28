@@ -51,9 +51,9 @@ const ExploreCareers = () => {
         <h2 className="text-ternaryTextColor">Explore</h2>
         <p className="text-primaryTextColor">Career Paths</p>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid xs:grid-cols-1 sm:grid-cols-2 gap-4">
         <Link href={"/explore/careerassesment"}>
-          <div className="col-span-1 cursor-pointer relative p-5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-pink-500">
+          <div className="col-span-1 rounded-lg cursor-pointer relative p-5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-pink-500">
             <div className="h-[250px] flex justify-center items-center text-center">
               <div className="z-[2]">
                 <h2 className="text-white text-xl font-semibold">
@@ -65,7 +65,7 @@ const ExploreCareers = () => {
                   with their profile
                 </p>
               </div>
-              <h1 className="absolute z-[1] font-bold right-2 top-[25%]  text-gray-600 text-[120px]">
+              <h1 className="absolute z-[1] font-bold right-2 top-[25%]  text-[#cccccc] text-[120px]">
                 1
               </h1>
             </div>
@@ -73,7 +73,7 @@ const ExploreCareers = () => {
         </Link>
 
         <Link href={"/explore/successstories"}>
-          <div className="col-span-1 cursor-pointer relative p-5 bg-gradient-to-r from-indigo-400 to-teal-500 hover:from-emerald-400 hover:to-cyan-400">
+          <div className="col-span-1  rounded-lg cursor-pointer relative p-5 bg-gradient-to-r from-indigo-400 to-teal-500 hover:from-emerald-400 hover:to-cyan-400">
             <div className="h-[250px] flex justify-center items-center text-center">
               <div className="z-[2]">
                 <h2 className="text-white text-xl font-semibold">
@@ -84,15 +84,15 @@ const ExploreCareers = () => {
                   unconventional or unique career paths
                 </p>
               </div>
-              <h1 className="absolute z-[1] font-bold right-2 top-[25%]  text-gray-600 text-[120px]">
+              <h1 className="absolute z-[1] font-bold right-2 top-[25%]  text-[#cccccc] text-[120px]">
                 2
               </h1>
             </div>
           </div>
         </Link>
 
-        <div className="col-span-2 cursor-pointer relative p-5 text-center flex justify-center ">
-          <div className="w-3/4 rounded-lg bg-gradient-to-r from-pink-500 to-rose-500 hover:from-rose-400 hover:to-red-500  p-4">
+        <div className="sm:col-span-2 cursor-pointer relative xs:p-0 sm:p-5 text-center flex justify-center ">
+          <div className="w-full sm:w-3/4 rounded-lg bg-gradient-to-r from-pink-500 to-rose-500 hover:from-rose-400 hover:to-red-500  p-4">
             <Link href="/explore/careervisualization">
               <div className="h-[250px] relative flex justify-center items-center text-center">
                 <div className="z-[2]">
@@ -104,7 +104,7 @@ const ExploreCareers = () => {
                     career pathways within specific industries or fields.
                   </p>
                 </div>
-                <h1 className="absolute z-[1] font-bold right-2 top-[25%]  text-gray-600 text-[120px]">
+                <h1 className="absolute z-[1] font-bold right-2 top-[25%]  text-[#cccccc] text-[120px]">
                   3
                 </h1>
               </div>

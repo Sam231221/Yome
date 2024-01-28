@@ -59,7 +59,7 @@ const MentorCarousel = ({ mentors }) => {
               key={mentor.id}
               timeout={500}
               classNames="item"
-              className={`carousel-item w-1/4 ml-[14px] p-3 inline-block first:ml-0 object-cover select-none `}
+              className={`carousel-item xs:w-full sm:w-1/3 lg:w-1/4 ml-[14px] p-3 inline-block first:ml-0 object-cover select-none `}
             >
               <div className="flex flex-col border shadow-lg">
                 <div className="w-full h-[200px]">

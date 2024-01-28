@@ -22,7 +22,7 @@ export default function HomeLayout({ children }) {
     <div className="relative w-full">
       {/* Sidebar */}
       <div
-        className={`w-[65px] h-screen navigation fixed left-0 bg-white border-white`}
+        className={`w-16 h-screen navigation fixed left-0 bg-white border-white`}
       >
         <div className="group mt-2 w-full gap-1 flex items-center text-white">
           <Link className="flex p-1 items-center" href="/home">
@@ -130,7 +130,7 @@ export default function HomeLayout({ children }) {
 
       {/* Main */}
       <div
-        className={`w-[calc(100%-65px)] left-[65px] transition duration-500 ease-out absolute  min-h-screen bg-primaryBgColor`}
+        className={`w-[calc(100%-4rem)] left-16 transition duration-500 ease-out absolute  min-h-screen bg-primaryBgColor`}
       >
         <div className="topbar z-[3] shadow-lg sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
           <div className="flex gap-3 items-center">

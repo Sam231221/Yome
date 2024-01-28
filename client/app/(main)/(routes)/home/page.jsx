@@ -121,7 +121,7 @@ const Home = () => {
         </div>
 
         {/* Cateogories */}
-        <ul className="flex gap-3 p-2  mb-3 ">
+        <ul className="flex flex-wrap gap-3 p-2  mb-3 ">
           <li
             onClick={() => handleTab("All")}
             className={`${
@@ -173,7 +173,7 @@ const Home = () => {
             Educational Consultancy
           </li>
         </ul>
-        <div className="bg-white grid grid-cols-3 gap-3">
+        <div className="bg-white grid xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {filteredInstitutions.length > 0 ? (
             <>
               {filteredInstitutions.map((ei, index) => (
