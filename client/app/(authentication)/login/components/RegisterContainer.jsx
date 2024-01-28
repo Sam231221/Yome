@@ -119,9 +119,6 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
     });
     if (data.status === 200) {
       toast.success(data.msg);
-      // setTimeout(() => {
-      //   toast.success("Check your email for further verification");
-      // }, 3000);
       setActiveTab("login");
     }
     if (data.status === 400 || data.status === 409) {
@@ -197,7 +194,7 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
           disabled={IsFormFilled && isChecked ? false : true}
           className={`${
             IsFormFilled && isChecked ? "bg-[#0e24a0]" : "bg-[#b6b6b6]"
-          } w-full font-medium text-sm text-white py-3 px-2`}
+          } hover:bg-blue-700 w-full font-medium text-sm text-white py-3 px-2`}
         >
           Continue{" >"}
         </button>
