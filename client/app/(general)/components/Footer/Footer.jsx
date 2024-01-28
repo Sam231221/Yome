@@ -125,9 +125,9 @@ const Footer = () => {
           <div>
             <h6 className="font-bold">Get in Touch</h6>
             <ul className="list-none text-gray-300">
-              <p>Address: birauta, Pokhara</p>
-              <p>Phone: 9806676702</p>
-              <p>Email: example@gmail.com</p>
+              <p>Address: Pokhara, Nepal</p>
+              <p>Phone: 9867743856</p>
+              <p>Email: eduroclass@gmail.com</p>
             </ul>
           </div>
         </div>

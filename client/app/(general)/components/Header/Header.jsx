@@ -151,7 +151,7 @@ const Header = () => {
     <>
       <header className="bg-[#0d0225]">
         <div className="container mx-auto py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex  items-center justify-between">
             <Link href="/" className="logo flex gap-2 ml-3 items-center">
               <div className="w-10 h-10">
                 <Image
@@ -170,41 +170,16 @@ const Header = () => {
               <ul className="flex space-x-6">
                 {navLinks.map((item, index) => (
                   <li key={index} className="nav__item">
-                    {item.display === "Product" ? (
-                      <div ref={dropdownRef} className="relative">
-                        <button
-                          className="text-gray-500 hover:text-white transition duration-300 text-lg font-semibold mb-2 no-underline flex items-center"
-                          onClick={() =>
-                            setIsProductDropdownOpen(!isProductDropdownOpen)
-                          }
-                        >
-                          {item.display}
-                          <span className="ml-1">&#9662;</span>
-                        </button>
-                        {isProductDropdownOpen && (
-                          <ProductDropdown
-                            types={[
-                              "Session Replay",
-                              "Error Monitoring",
-                              "Logging",
-                              "Integration",
-                            ]}
-                            onSelect={handleProductTypeSelect}
-                          />
-                        )}
-                      </div>
-                    ) : (
-                      <Link
-                        href={item.url}
-                        className={`${
-                          splitLocation === item.url
-                            ? "text-white"
-                            : "text-gray-500"
-                        }  hover:text-white transition duration-300 text-lg font-semibold mb-2 no-underline`}
-                      >
-                        {item.display}
-                      </Link>
-                    )}
+                    <Link
+                      href={item.url}
+                      className={`${
+                        splitLocation === item.url
+                          ? "text-white"
+                          : "text-gray-500"
+                      }  hover:text-white transition duration-300 text-lg font-semibold mb-2 no-underline`}
+                    >
+                      {item.display}
+                    </Link>
                   </li>
                 ))}
               </ul>

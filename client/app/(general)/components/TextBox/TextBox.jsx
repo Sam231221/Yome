@@ -8,7 +8,7 @@ const TextBox = () => {
         Web Application
         <br /> Monitoring for{" "}
         <span className="text-[#EBFF5E] opacity-80 font-bold">
-          Today's <br /> Developer
+          Today's <br /> Education System
         </span>
       </h2>
     </div>

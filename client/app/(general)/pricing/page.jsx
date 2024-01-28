@@ -145,7 +145,7 @@ export default function PricingPage() {
               Plans that empower you and your team to work without friction.
             </h2>
           </header>
-          <div className="mb-16 flex flex-col items-center mx-auto">
+          <div className="mb-16 flex flex-col items-center p-2 mx-auto">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-center lg:justify-evenly lg:items-end xl:w-[1190px]">
               {/* hobby */}
               <div className="flex flex-col space-y-8 p-8 rounded-xl border border-opacity-40 w-full drop-shadow-[0_17px_17px_rgba(40,97,230,0.07)] border-blue-200 bg-gradient-to-b-blue from-blue-50 to-background">
@@ -284,7 +284,7 @@ export default function PricingPage() {
                       {SubscriptionPlans[1].price}
                     </span>
                     <span className="text-[32px] font-normal leading-10">
-                      /mo/seat
+                      /mo
                     </span>
                   </div>
                   <div className="items-center gap-[12px] inline-flex text-[14px] font-semibold uppercase leading-normal">
@@ -406,7 +406,7 @@ export default function PricingPage() {
                         {SubscriptionPlans[2].price}
                       </span>
                       <span className="text-[32px] font-normal leading-10">
-                        /mo/seat
+                        /mo
                       </span>
                     </div>
                     <div className="items-center gap-[12px] inline-flex text-[14px] font-semibold uppercase leading-normal">

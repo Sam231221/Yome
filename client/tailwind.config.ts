@@ -8,6 +8,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      screens: {
+        xs: "340px",
+      },
       backgroundImage: {
         "chat-background": "url('/bgChat.jpg')",
       },
