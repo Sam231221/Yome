@@ -29,7 +29,7 @@ export default function ChatContainer({ chatType }) {
 
   return (
     <div
-      className="h-[80vh] w-full relative flex-grow overflow-auto custom-scrollbar "
+      className="h-[80vh] w-full relative flex-grow overflow-auto"
       ref={containerRef}
     >
       <div className="bg-chat-background bg-fixed h-full w-full opacity-5 fixed left-0 top-0 z-0"></div>

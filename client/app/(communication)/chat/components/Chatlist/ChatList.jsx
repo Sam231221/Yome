@@ -17,7 +17,7 @@ export default function ChatList() {
   }, [contactsPage]);
 
   return (
-    <div className="bg-white flex flex-col max-h-screen z-20 ">
+    <div className="bg-white flex flex-col h-screen z-20 ">
       {pageType === "default" && (
         <>
           <ChatListHeader />

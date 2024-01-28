@@ -16,14 +16,15 @@ function ImageMessage({ message }) {
       }`}
     >
       <div className="relative">
-        <Image
-          src={message.message}
-          className="rounded-lg"
-          alt="asset"
-          height={300}
-          width={300}
-          style={{ width: "auto" }}
-        />
+        <div className=" h-40 sm:h-72 lg:w-80 lg:h-60">
+          <Image
+            src={message.message}
+            className="rounded-lg w-full h-full object-cover"
+            alt="asset"
+            height={800}
+            width={800}
+          />
+        </div>
         <div className="absolute bottom-1 right-1 flex items-end gap-1">
           <span className="text-bubble-meta text-[11px] pt-1 min-w-fit">
             {calculateTime(message.createdAt)}

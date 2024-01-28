@@ -87,7 +87,7 @@ function VoiceMessage({ message }) {
 
   return (
     <div
-      className={`flex items-center gap-5 text-gray-800 px-4 pr-2 py-4 text-sm rounded-md   
+      className={`flex items-center gap-5 text-gray-800  px-4 pr-2 py-4 text-sm rounded-md   
        ${
          message.senderId === currentChatUser.id
            ? "bg-incoming-background"
@@ -126,7 +126,7 @@ function VoiceMessage({ message }) {
         )}
       </div>
       <div className="relative">
-        <div className="w-60" ref={waveformRef} />
+        <div className="w-32 xs:w-40 sm:w-40 lg:w-60" ref={waveformRef} />
         <div className="text-gray-800 text-[11px] pt-1  flex justify-between absolute bottom-[-22px] w-full ">
           <span
             className={` ${

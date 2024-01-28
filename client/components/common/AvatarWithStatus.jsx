@@ -6,12 +6,12 @@ export default function AvatarWithStatus({ type, image, status }) {
       {type == "lg" && (
         <figure>
           <figcaption
-            className="w-[25px] h-[25px] before:w-[18px] before:h-[18px] before:top-[22px] before:left-[25px]"
+            className="w-6 h-6 before:w-4 before:h-4 before:top-5 before:left-6"
             data-status={status}
           >
             32teeth
           </figcaption>
-          <picture className="w-[50px] h-[50px]">
+          <picture className="w-12 h-12">
             <img src={image} />
           </picture>
         </figure>
@@ -19,12 +19,12 @@ export default function AvatarWithStatus({ type, image, status }) {
       {type == "sm" && (
         <figure>
           <figcaption
-            className="w-[20px] h-[20px]  before:w-[14px] before:h-[14px] before:top-[17px] before:left-[17px]"
+            className="w-5 h-5  before:w-[12px] before:h-[12px] before:top-[15px] before:left-[12px]"
             data-status={status}
           >
             32teeth
           </figcaption>
-          <picture className="w-[45px] h-[45px]">
+          <picture className="w-11 h-11">
             <img src={image} />
           </picture>
         </figure>

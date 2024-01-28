@@ -17,6 +17,7 @@ import IncomingVideoCall from "@/components/common/IncomingVideoCall";
 import SearchMessages from "./components/Chat/SearchMessages";
 import { useSession } from "next-auth/react";
 export default function Chatpage() {
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [
     {
       userInfo,
@@ -31,7 +32,20 @@ export default function Chatpage() {
     },
     dispatch,
   ] = useStateProvider();
-  const router = useRouter();
+
+  const handleResize = () => {
+    setWindowWidth(window.innerWidth);
+  };
+
+  useEffect(() => {
+    setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   const socket = useRef();
 
   const [socketEvent, setSocketEvent] = useState(false);
@@ -180,7 +194,7 @@ export default function Chatpage() {
       getMessages();
     }
   }, [currentChatUser]);
-
+  const isMobileView = windowWidth < 720;
   return (
     <>
       {incomingVoiceCall && <IncomingCall />}
@@ -197,7 +211,7 @@ export default function Chatpage() {
         </div>
       )}
       {!videoCall && !voiceCall && (
-        <div className="grid grid-cols-main h-screen w-screen max-h-screen max-w-full overflow-hidden">
+        <div className="grid xs:grid-cols-1 sm:grid-cols-main h-screen w-screen max-h-screen max-w-full overflow-hidden">
           {/* Sidebar */}
           <ChatList />
 
@@ -211,7 +225,7 @@ export default function Chatpage() {
               {messageSearch && <SearchMessages />}
             </div>
           ) : (
-            <Empty />
+            <>{isMobileView ? <></> : <Empty />}</>
           )}
         </div>
       )}
