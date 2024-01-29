@@ -4,7 +4,7 @@ const HeroSection = () => {
   return (
     <section className="hero-section bg-[#0d0225] flex flex-col items-center justify-center text-center w-full h-screen">
       <div className=" text-center">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight  text-white">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold leading-tight  text-white">
           <span className="whitespace-nowrap">A Saas Platform for</span>{" "}
           <span className="whitespace-nowrap  text-yellow-500">
             Centrailizing Education

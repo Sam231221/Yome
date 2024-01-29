@@ -172,7 +172,7 @@ export default function HomeLayout({ children }) {
         }
       >
         {/*Topbar */}
-        <div className="topbar z-[3] shadow-lg sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
+        <div className="topbar z-[3]  sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
           <div className="flex gap-3 items-center">
             {/* Hamburger */}
             {/* <IoMenuOutline
