@@ -17,7 +17,9 @@ import IncomingVideoCall from "@/components/common/IncomingVideoCall";
 import SearchMessages from "./components/Chat/SearchMessages";
 import { useSession } from "next-auth/react";
 export default function Chatpage() {
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 0
+  );
   const [
     {
       userInfo,
