@@ -17,10 +17,10 @@ import { useStateProvider } from "@/context/StateContext";
 import { useEffect, useState } from "react";
 
 import Image from "next/image";
-import { SubscriptionPlans } from "../../../../(landing)/pricing/SubscriptionPlans";
+import { SubscriptionPlans } from "../../../../(general)/pricing/SubscriptionPlans";
 import FormInput from "@/components/FormInut/Form";
 import { institutionsInputs } from "./inputs";
-import { ManageUserSubscriptionButton } from "../../../../(landing)/pricing/UserSubsrciptionButton";
+import { ManageUserSubscriptionButton } from "../../../../(general)/pricing/UserSubsrciptionButton";
 import DropZoneUploader from "@/components/common/DropZoneUploader";
 
 export default function Page() {
@@ -171,38 +171,6 @@ export default function Page() {
   };
   return (
     <div className="relative w-full">
-      {/* Topbar */}
-      <div className="topbar z-[3] shadow-lg sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
-        <div className="flex gap-2 ml-3 items-center">
-          <div className="w-10 h-10">
-            <Image
-              width={40}
-              height={40}
-              loading="lazy"
-              className="w-full h-full"
-              src="/logos/LogoBlueT.png"
-            />
-          </div>
-          <h1 className="text-gray-700 text-lg font-bold">Eduroclass</h1>
-        </div>
-
-        <div className="flex gap-4 pr-4">
-          {/* SearchBar */}
-          <div className="border-[1px] ml-5 min-w-[300px] border-ternaryTextColor flex focus:border-secondaryTextColor items-center">
-            <input
-              className="border-none w-full py-2 px-4 outline-none text-primaryTextColor text-sm"
-              type="text"
-              placeholder="Search for ..."
-            />
-            <IoSearchOutline className="w-[40px] h-[40px] py-2 px-2 cursor-pointer text-primaryTextColor" />
-          </div>
-
-          <NotificationDropdown />
-          <MessagesDropDown />
-          <ProfileDropDown />
-        </div>
-      </div>
-
       <div className="p-5 w-full h-full flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-xl p-5 w-[400px] sm:w-[700px] lg:w-[800px]">
           <h1 className="text-gray-700 text-3xl font-semibold">

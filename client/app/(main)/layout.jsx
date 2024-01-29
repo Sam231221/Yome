@@ -24,7 +24,7 @@ export default function HomeLayout({ children }) {
       <div
         className={`w-16 h-screen navigation fixed left-0 bg-white border-white`}
       >
-        <div className="group mt-2 w-full gap-1 flex items-center text-white">
+        <div className="group md:hidden mt-2 w-full gap-1 flex items-center text-white">
           <Link className="flex p-1 items-center" href="/home">
             <Image
               src="/logos/logoBlueT.png"
@@ -35,7 +35,7 @@ export default function HomeLayout({ children }) {
             />
           </Link>
         </div>
-        <ul className="w-full mt-5 md:active:w-[244px]">
+        <ul className="w-full mt-20 md:active:w-[244px]">
           <li
             className={`${
               splitLocation === "/home" ? "active bg-[#EEF2FA]" : ""
@@ -132,7 +132,20 @@ export default function HomeLayout({ children }) {
       <div
         className={`w-[calc(100%-4rem)] left-16 transition duration-500 ease-out absolute  min-h-screen bg-primaryBgColor`}
       >
-        <div className="topbar z-[3] shadow-lg sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
+        <div className="topbar z-[3]  sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
+          <div className="hidden md:flex gap-2 ml-3 items-center">
+            <div className="w-10 h-10">
+              <Image
+                width={40}
+                height={40}
+                loading="lazy"
+                className="w-full h-full"
+                src="/logos/LogoBlueT.png"
+              />
+            </div>
+            <h1 className="text-gray-700 text-lg font-bold">Eduroclass</h1>
+          </div>
+
           <div className="flex gap-3 items-center">
             {/* SearchBar */}
             <div className="border-[1px] ml-5 min-w-[300px] border-ternaryTextColor hidden lg:flex focus:border-secondaryTextColor items-center">
