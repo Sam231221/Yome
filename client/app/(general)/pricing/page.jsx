@@ -52,7 +52,7 @@ export default function PricingPage() {
       console.log(e);
     }
   };
-
+ 
   useEffect(() => {
     if (session?.user) {
       getUserInfo();

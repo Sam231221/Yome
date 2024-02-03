@@ -7,6 +7,7 @@ const MESSAGES_ROUTE = `${HOST}/api/messages`;
 export const REGISTER_USER = `${AUTH_ROUTE}/register-user`;
 export const UPDATE_USER = `${AUTH_ROUTE}/update-user`;
 export const GET_USER_ROUTE = `${AUTH_ROUTE}/get-user`;
+export const GET_USER_BY_ID_ROUTE = `${AUTH_ROUTE}/get-user-by-id`;
 export const GET_ALL_USERS = `${AUTH_ROUTE}/get-all-users`;
 
 //Educational Institutions
