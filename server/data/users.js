@@ -52,7 +52,7 @@ export const usersData = [
   },
   {
     email: "sarah@gmail.com",
-    firstname: "Sarah Johnson",
+    firstname: "Sarah",
     lastname: "Johnson",
     username: "johnson@307",
     password: "coder123",
@@ -62,7 +62,7 @@ export const usersData = [
   },
   {
     email: "michael@gmail.com",
-    firstname: "Michael Brown",
+    firstname: "Michael",
     lastname: "Brown",
     username: "Michael",
     password: "coder123",
@@ -72,7 +72,7 @@ export const usersData = [
   },
   {
     email: "olivia@gmail.com",
-    firstname: "Olivia Smith",
+    firstname: "Olivia",
     lastname: "Smith",
     username: "Olivia@465",
     password: "coder123",
@@ -82,7 +82,7 @@ export const usersData = [
   },
   {
     email: "william@gmail.com",
-    firstname: "William Garcia",
+    firstname: "William",
     lastname: "Garcia",
     username: "CoderWilliam",
     password: "coder123",
@@ -92,7 +92,7 @@ export const usersData = [
   },
   {
     email: "ava@gmail.com",
-    firstname: "Ava Martinez",
+    firstname: "Ava",
     lastname: "Martine",
     username: "Ava@688",
     password: "coder123",
@@ -112,7 +112,7 @@ export const usersData = [
   },
   {
     email: "emily@gmail.com",
-    firstname: "Emily Anderson",
+    firstname: "Emily",
     lastname: "Anderson",
     username: "Emily@123",
     password: "coder123",

@@ -1,7 +1,10 @@
 import getPrismaInstance from "../utils/PrismaClient.js";
 import { usersData } from "../data/users.js";
 import { groupData } from "../data/groups.js";
-import { institutionsData } from "../data/educationalInstitutions.js";
+import {
+  institutionsData,
+  institutionsUtils,
+} from "../data/educationalInstitutions.js";
 import bcryptjs from "bcryptjs";
 
 export const createMultipleUsersWithProfiles = async (req, res) => {
@@ -80,18 +83,96 @@ export const createEducationGroups = async (req, res) => {
   }
 };
 
+export const createEducationalUtils = async (req, res) => {
+  try {
+    const prisma = getPrismaInstance();
+
+    const {
+      albums,
+      infrastructure,
+      programs,
+      faculty,
+      extraActivities,
+      cost,
+      alumniSuccess,
+    } = institutionsUtils;
+
+    await prisma.album.createMany({
+      data: albums,
+    });
+
+    await prisma.infrastructure.createMany({
+      data: infrastructure,
+    });
+
+    await prisma.program.createMany({
+      data: programs,
+    });
+
+    await prisma.faculty.createMany({
+      data: faculty,
+    });
+
+    await prisma.extracurricularActivity.createMany({
+      data: extraActivities,
+    });
+
+    await prisma.cost.createMany({
+      data: cost,
+    });
+
+    await prisma.alumniSuccess.createMany({
+      data: alumniSuccess,
+    });
+
+    res.status(201).json({ msg: "successfull" });
+  } catch (error) {
+    console.error("Error creating educational utils:", error);
+    res.status(500).json({ error: "Unable to create educational utils" });
+  }
+};
+
 export const createEducationalInstitutions = async (req, res) => {
   try {
     const prisma = getPrismaInstance();
+
+    if (!prisma) {
+      throw new Error("Prisma instance is undefined.");
+    }
+
     const createdInstitutions = await Promise.all(
       institutionsData.map(async (data) => {
-        const { ownerId, ...institutionData } = data;
+        const {
+          ownerId,
+          albumIds,
+          insfrastructureIds,
+          programsIds,
+          facultyIds,
+          extraActivitiesIds,
+          costIds,
+          alumniSuccessIds,
+          ...institutionData
+        } = data;
+
         const owner = ownerId ? { connect: { id: ownerId } } : undefined;
 
         return await prisma.educationalInstitution.create({
           data: {
             ...institutionData,
             owner,
+            albums: { connect: albumIds.map((id) => ({ id: id })) },
+            infrastructure: {
+              connect: insfrastructureIds.map((id) => ({ id: id })),
+            },
+            programs: { connect: programsIds.map((id) => ({ id: id })) },
+            faculty: { connect: facultyIds.map((id) => ({ id: id })) },
+            extraActivities: {
+              connect: extraActivitiesIds.map((id) => ({ id: id })),
+            },
+            cost: { connect: costIds.map((id) => ({ id: id })) },
+            alumniSuccess: {
+              connect: alumniSuccessIds.map((id) => ({ id: id })),
+            },
           },
         });
       })

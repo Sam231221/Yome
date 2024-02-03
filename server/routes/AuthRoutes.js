@@ -16,6 +16,7 @@ import {
   updateUserSubscriptionPlanBySubscriptionId,
   registerUser,
   updateUser,
+  getUserById,
 } from "../controllers/AuthController.js";
 import multer from "multer";
 
@@ -28,6 +29,7 @@ const router = Router();
 User
 ---------------------------------------*/
 router.post("/get-user", getUserByEmail);
+router.post("/get-user-by-id", getUserById);
 router.post("/register-user", registerUser);
 router.post("/update-user", upload.single("avatar"), updateUser);
 router.get("/get-all-users", getAllUsers);

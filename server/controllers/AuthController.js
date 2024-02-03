@@ -5,6 +5,7 @@ import bcryptjs from "bcryptjs";
 import { stripe } from "../lib/stripe.js";
 import { absoluteUrl } from "../lib/utils.js";
 import { v2 as cloudinary } from "cloudinary";
+import { parse } from "path";
 
 /**-----------------------
 USER
@@ -23,6 +24,51 @@ export const getUserByEmail = async (request, response, next) => {
         eiOwner: true,
       },
     });
+    if (!user) {
+      return response.json({ msg: "User not found", status: false });
+    } else
+      return response.json({ msg: "User Found", status: true, user: user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+export const getUserById = async (request, response, next) => {
+  try {
+    console.log("enter")
+    const { userId } = request.body;
+    if (!userId) {
+      return response.json({ msg: "Id is required", status: false });
+    }
+    const prisma = getPrismaInstance();
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) },
+      select: {
+        id: true,
+        email: true,
+        firstname: true,
+        lastname: true,
+        name: true,
+        username: true,
+        role: true,
+        profilePicture: true,
+        password: true,
+        eiId: true,
+        stripeCustomerId: true,
+        stripeSubscriptionId: true,
+        stripePriceId: true,
+        stripeCurrentPeriodEnd: true,
+        userProfile: {
+          select: {
+            bio: true,
+            address: true,
+          },
+        },
+      },
+    });
+
     if (!user) {
       return response.json({ msg: "User not found", status: false });
     } else
@@ -368,6 +414,7 @@ export const manageStripeSubscriptionAction = async (
       },
     ],
     metadata: {
+      email:email,
       userId: parseInt(userId),
     },
   });
