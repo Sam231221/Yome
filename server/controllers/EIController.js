@@ -5,7 +5,17 @@ export const getAllEducationalInstitutions = async (req, res, next) => {
   try {
     const prisma = getPrismaInstance();
     // Retrieve all educational institutions using Prisma's findMany method
-    const institutions = await prisma.educationalInstitution.findMany();
+    const institutions = await prisma.educationalInstitution.findMany({
+      include: {
+        albums: true,
+        infrastructure: true,
+        programs: true,
+        faculty: true,
+        extraActivities: true,
+        cost: true,
+        alumniSuccess: true,
+      },
+    });
 
     return res.status(200).json({ institutions });
   } catch (error) {
