@@ -1,0 +1,87 @@
+{% extends 'pbase.html'%} 
+{% load static %} 
+{% block title %} 
+Edit Room
+{% endblock title %} 
+{% block main %}
+<div class="content container-fluid">
+
+<div class="page-header">
+<div class="row align-items-center">
+<div class="col">
+<h3 class="page-title">Edit Rooms</h3>
+<ul class="breadcrumb">
+<li class="breadcrumb-item"><a href="hostel.html">Hostel</a></li>
+<li class="breadcrumb-item active">Edit Rooms</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-sm-12">
+<div class="card">
+<div class="card-body">
+<form>
+<div class="row">
+<div class="col-12">
+<h5 class="form-title"><span>Room Information</span></h5>
+</div>
+<div class="col-12 col-sm-4">
+<div class="form-group local-forms">
+<label>Block <span class="login-danger">*</span></label>
+<input type="text" class="form-control" value="A Block">
+</div>
+</div>
+<div class="col-12 col-sm-4">
+<div class="form-group local-forms">
+<label>Room No <span class="login-danger">*</span></label>
+<input type="text" class="form-control" value="101">
+</div>
+</div>
+<div class="col-12 col-sm-4">
+<div class="form-group local-forms">
+<label>Room Type <span class="login-danger">*</span></label>
+<select class="form-control select">
+<option>Normal</option>
+<option>Normal</option>
+<option>AC</option>
+<option>Suite</option>
+</select>
+</div>
+</div>
+<div class="col-12 col-sm-4">
+<div class="form-group local-forms">
+<label>No of Beds <span class="login-danger">*</span></label>
+<input type="text" class="form-control" value="5">
+</div>
+</div>
+<div class="col-12 col-sm-4">
+<div class="form-group local-forms">
+<label>Cose per Bed <span class="login-danger">*</span></label>
+<input type="text" class="form-control" value="$25">
+</div>
+</div>
+<div class="col-12 col-sm-4">
+<div class="form-group local-forms">
+<label>Availability <span class="login-danger">*</span></label>
+<select class="form-control select">
+<option>Available</option>
+<option>Available</option>
+<option>Not Available</option>
+</select>
+</div>
+</div>
+<div class="col-12">
+<div class="student-submit">
+<button type="submit" class="btn btn-primary">Submit</button>
+</div>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</div>  
+{% endblock main %}
