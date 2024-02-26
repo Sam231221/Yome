@@ -179,7 +179,7 @@ class LoginView(View):
             messages.error(request, "Invalid login")
             context["has_error"] = True
 
-        if not user.is_superuser and user.is_email_verified:
+        if user is not None and (not user.is_superuser or user.is_email_verified):
             messages.error(request, "Email Verification failed!")
             context["has_error"] = True
 

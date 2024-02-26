@@ -16,14 +16,14 @@
           <ul>
             {%if user.is_superuser%}
             <li class="active">
-              <a href="{% url 'MEhub:home-view' %}">Admin Dashboard</a>
+              <a href="{% url 'MEhub:admin-dashboard' %}">Admin Dashboard</a>
             </li>
             {%endif%}
             <li>
-              <a href="{% url 'MEhub:home-view' %}">Teacher Dashboard</a>
+              <a href="{% url 'MEhub:teacher-dashboard' %}">Teacher Dashboard</a>
             </li>
             <li>
-              <a href="{% url 'MEhub:home-view' %}">Student Dashboard</a>
+              <a href="{% url 'MEhub:student-dashboard' %}">Student Dashboard</a>
             </li>
           </ul>
         </li>

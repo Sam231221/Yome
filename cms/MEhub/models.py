@@ -98,6 +98,7 @@ class Student(AbstractUser):
 
     def save(self, *args, **kwargs):
         self.full_clean()  # Run full validation before saving
+        StudentsManager().create_user(email=self.email, password=kwargs.get('password'))
         super().save(*args, **kwargs)
 
     def get_blood_group_display(self):

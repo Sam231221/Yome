@@ -8,18 +8,21 @@ app_name = "MEhub"
 
 urlpatterns = [
     path("", login_required(views.HomeView.as_view()), name="home-view"),  
+    path("student-dashboard/", login_required(views.StudentDashboardView.as_view()), name="student-dashboard"),  
+    path("admin-dashboard/", login_required(views.AdminDashboardView.as_view()), name="admin-dashboard"),  
+    path("teacher-dashboard/", login_required(views.TeacherDashboardView.as_view()), name="teacher-dashboard"),  
     
     path("students/", views.StudentListView.as_view(), name="student-list-view"),
-    path("student/add", views.StudentCreateView.as_view(), name="student-add-view"),
-    path("student/<int:pk>/edit", views.StudentUpdateView.as_view(), name="student-edit-view"),
-    path("student/<int:pk>/delete",views.StudentDeleteView.as_view() , name="student-delete-view"),  
+    path("student/add", login_required(views.StudentCreateView.as_view()), name="student-add-view"),
+    path("student/<int:pk>/edit", login_required(views.StudentUpdateView.as_view()), name="student-edit-view"),
+    path("student/<int:pk>/delete",login_required(views.StudentDeleteView.as_view()) , name="student-delete-view"),  
     path("student/<int:pk>", views.StudentDetailView.as_view(), name="student-detail-view"),
 
     path("teachers", views.TeacherListView.as_view(), name="teacher-list-view"),  
-    path("teacher/add",views.TeacherAddView.as_view() , name="teacher-add-view"),  
-    path("teacher/<int:pk>", views.TeacherDetailView.as_view(), name="teacher-detail-view"),
-    path("teacher/<int:pk>/edit", views.TeacherEditView.as_view(), name="teacher-edit-view"),  
-    path("teacher/<int:pk>/delete",views.TeacherDeleteView.as_view() , name="teacher-delete-view"),  
+    path("teacher/add",login_required(views.TeacherAddView.as_view()) , name="teacher-add-view"),  
+    path("teacher/<int:pk>", login_required(views.TeacherDetailView.as_view()), name="teacher-detail-view"),
+    path("teacher/<int:pk>/edit", login_required(views.TeacherEditView.as_view()), name="teacher-edit-view"),  
+    path("teacher/<int:pk>/delete",login_required(views.TeacherDeleteView.as_view()) , name="teacher-delete-view"),  
    
     path("subjects", views.SubjectListView.as_view(), name="subject-list-view"),  
     path("subjects/1", views.SubjectEditView.as_view(), name="subject-edit-view"),  
