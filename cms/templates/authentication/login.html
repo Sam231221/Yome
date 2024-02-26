@@ -1,0 +1,55 @@
+{% extends 'plaintemplate.html'%} {% load static %}
+
+
+{% block body %}
+
+
+<div class="container">
+    <div class="row flex justify-content-center">
+            <div class="col-lg-4 mt-sm-2 form-wrapper">
+
+
+            <div class="form p-3">
+                <span style="font-size:24px;" class="title"> <strong>
+                        Login
+                    </strong>
+                </span>
+
+                <form novalidate method="post" autocomplete="off">
+                    {% csrf_token %}
+                    <div class="input-field">
+                        {{loginform.username}}
+                        <i class="uil uil-envelope icon"></i>
+                    </div>
+                    <div class="input-field">
+                        {{loginform.password}}
+                        <i class="uil uil-lock icon"></i>
+                        <i class="uil uil-eye-slash showHidePw"></i>
+                    </div>
+
+                    <div class="checkbox-text">
+
+
+                    </div>
+                    <a href="{% url 'Account:request-reset-email-view' %}" class="text">Forgot password?</a>
+                    <div class="input-field button">
+                        <input type="submit" value="Login Now" />
+                    </div>
+                </form>
+
+                <div class="login-signup">
+                    <span class="text">Not a Agent?
+                        <a href="https://eduroclass.vercel.app/pricing" target="__blank" class="text signup-link">Click Here</a>
+                    </span>
+                </div>
+            </div>
+
+        </div>
+
+</div>
+</div>
+ 
+
+
+
+{% endblock %}
