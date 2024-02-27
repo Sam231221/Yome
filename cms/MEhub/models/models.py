@@ -4,6 +4,7 @@ from django.core.validators import FileExtensionValidator
 from MAuthentication.models import User
 from .students import Student
 from .teachers import Teacher
+from .attendance import StudentAttendance, TeacherAttendance
 import uuid
 
 

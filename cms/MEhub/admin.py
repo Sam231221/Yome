@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models.models import Student,Teacher, EducationalInstitution
+from .models.models import Student,Teacher, EducationalInstitution, StudentAttendance, TeacherAttendance
 
 
 # Register your models here.
@@ -29,6 +29,12 @@ class TeacherAdmin(admin.ModelAdmin):
     search_fields = ('first_name', 'last_name', 'email')
     list_editable = ('is_active',)
 
+
+@admin.register(TeacherAttendance)
+class TeacherAttendanceAdmin(admin.ModelAdmin):
+    list_display = ['id', 'teacher', 'attendance_status',
+                    'date', '__per__']
+    list_filter = ['id', 'teacher', 'attendance_status', 'date']
     # Add custom validation for the password field
  
 

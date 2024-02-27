@@ -8,6 +8,7 @@ from .student import StudentCreateView, StudentDeleteView, StudentDetailView, St
 from .subject import SubjectAddView, SubjectDeleteView, SubjectListView, SubjectEditView
 from .invoice import InvoiceAddView, InvoiceDeleteView, InvoiceEditView, InvoiceListView
 from .teacher import TeacherAddView, TeacherDeleteView, TeacherEditView, TeacherDetailView, TeacherListView
+from .attendance import *
 
 
 class HomeView(View, LoginRequiredMixin):

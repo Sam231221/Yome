@@ -24,6 +24,13 @@ urlpatterns = [
     path("teacher/<int:pk>/edit", login_required(views.TeacherEditView.as_view()), name="teacher-edit-view"),  
     path("teacher/<int:pk>/delete",login_required(views.TeacherDeleteView.as_view()) , name="teacher-delete-view"),  
    
+    path("teacher/attendances", views.TeacherAttendanceListView.as_view(), name="teacher-attendance-list-view"),  
+    path("teacher/attendance/add",login_required(views.TeacherAttendanceCreateView.as_view()) , name="teacher-attendance-add-view"),  
+    path("teacher/attendance/<int:pk>", login_required(views.TeacherAttendanceDetailView.as_view()), name="teacher-attendance-detail-view"),
+    path("teacher/attendance/<int:pk>/edit", login_required(views.TeacherAttendanceUpdateView.as_view()), name="teacher-attendance-edit-view"),  
+    path("teacher/attendance/<int:pk>/delete",login_required(views.TeacherAttendanceDeleteView.as_view()) , name="teacher-attendance-delete-view"),  
+
+
     path("subjects", views.SubjectListView.as_view(), name="subject-list-view"),  
     path("subjects/1", views.SubjectEditView.as_view(), name="subject-edit-view"),  
     path("subjects/add",views.SubjectAddView.as_view() , name="subject-add-view"),  
