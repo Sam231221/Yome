@@ -26,7 +26,7 @@ class TeacherAttendanceCreateView(CreateView):
 
     def get_success_url(self):
         messages.success(self.request, 'Teacher Attendance Added Successfully')
-        return reverse_lazy('MEhub:home-view')
+        return reverse_lazy('MEhub:teacher-attendance-list-view')
 
 
 class TeacherAttendanceUpdateView(UpdateView):
@@ -56,27 +56,31 @@ class TeacherAttendanceDeleteView(DeleteView):
 
 class StudentAttendanceListView(ListView):
     model = StudentAttendance
-    template_name = 'attendance/student_attendance_list.html'
+    template_name = '1.main/attendance/student_attendance_list.html'
+    context_object_name = 'attendances'
 
+class StudentAttendanceDetailView(DetailView):
+    model = StudentAttendance
+    template_name = '1.main/attendance/student_attendance_detail.html'
 
 class StudentAttendanceCreateView(CreateView):
     model = StudentAttendance
-    fields = ['date', 'student', 'attendance_status']
-    template_name = 'attendance/student_attendance_create.html'
-
+    form_class = StudentAttendanceForm
+    template_name = '1.main/attendance/add_student_attendance.html'
+    
     def form_valid(self, form):
         form.instance.created_by = self.request.user
         return super().form_valid(form)
 
     def get_success_url(self):
         messages.success(self.request, 'Student Attendance Added Successfully')
-        return reverse_lazy('student_attendance_list')
+        return reverse_lazy('MEhub:student-attendance-list-view')
 
 
 class StudentAttendanceUpdateView(UpdateView):
     model = StudentAttendance
-    fields = ['date', 'student', 'attendance_status']
-    template_name = 'attendance/student_attendance_update.html'
+    template_name = '1.main/attendance/edit_student_attendance.html'
+    form_class = StudentAttendanceEditForm
 
     def form_valid(self, form):
         form.instance.updated_by = self.request.user
@@ -85,14 +89,15 @@ class StudentAttendanceUpdateView(UpdateView):
     def get_success_url(self):
         messages.success(
             self.request, 'Student Attendance Updated Successfully')
-        return reverse_lazy('student_attendance_list')
+        return reverse_lazy('MEhub:student-attendance-list-view')
 
 
 class StudentAttendanceDeleteView(DeleteView):
     model = StudentAttendance
-    template_name = 'attendance/student_attendance_delete.html'
+    template_name = '1.main/attendance/confirm_delete.html'
 
     def get_success_url(self):
         messages.success(
             self.request, 'Student Attendance Deleted Successfully')
-        return reverse_lazy('student_attendance_list')
+        return reverse_lazy('MEhub:student-attendance-list-view')
+

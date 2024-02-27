@@ -1,0 +1,62 @@
+{% load custom_filters %}
+<div class="row">
+  <div class="col-sm-12">
+    <div class="card comman-shadow">
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="row">
+            <div class="col-12">
+              <h5 class="form-title student-info">
+                Student Information
+                <span
+                  ><a href="javascript:;"
+                    ><i class="feather-more-vertical"></i></a
+                ></span>
+              </h5>
+            </div>
+
+            
+            <div class="col-12 col-sm-3">
+              <div class="form-group local-forms">
+                {{ form.date.label_tag }} {{ form.date }} 
+                {{ form.date.errors }}
+              </div>
+            </div>
+            
+            <div class="col-12 col-sm-4">
+              <div class="form-group local-forms">
+                {{ form.student.label_tag }} {{ form.student }} 
+                {{ form.student.errors }}
+              </div>
+            </div>
+            
+            <div class="col-12 ">
+              <div class="form-group local-forms">
+                {{ form.attendance_status.label_tag }} {{ form.attendance_status }} 
+                {{ form.attendance_status.errors }}
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="student-submit">
+                <button type="submit" class="btn btn-primary">Submit</button>
+
+                {% if user.is_authenticated and user.is_superuser and request.path|extract_last == "edit"%} 
+                {% with request.path|extract_pk_from_url as pk %}
+                <a
+                  href="{%url 'MEhub:teacher-attendance-delete-view' pk%}"
+                  class="btn btn-danger"
+                  >Delete user</a
+                >
+                {% endwith %} {% endif %}
+              </div>
+            </div>
+          </div>
+        </form>
+
+        {% if form.errors %} {{form.errors}} {% endif %}
+      </div>
+    </div>
+  </div>
+</div>

@@ -30,6 +30,11 @@ urlpatterns = [
     path("teacher/attendance/<int:pk>/edit", login_required(views.TeacherAttendanceUpdateView.as_view()), name="teacher-attendance-edit-view"),  
     path("teacher/attendance/<int:pk>/delete",login_required(views.TeacherAttendanceDeleteView.as_view()) , name="teacher-attendance-delete-view"),  
 
+    path("student/attendances", views.StudentAttendanceListView.as_view(), name="student-attendance-list-view"),  
+    path("student/attendance/add",login_required(views.StudentAttendanceCreateView.as_view()) , name="student-attendance-add-view"),  
+    path("student/attendance/<int:pk>", login_required(views.StudentAttendanceDetailView.as_view()), name="student-attendance-detail-view"),
+    path("student/attendance/<int:pk>/edit", login_required(views.StudentAttendanceUpdateView.as_view()), name="student-attendance-edit-view"),  
+    path("student/attendance/<int:pk>/delete",login_required(views.StudentAttendanceDeleteView.as_view()) , name="student-attendance-delete-view"),  
 
     path("subjects", views.SubjectListView.as_view(), name="subject-list-view"),  
     path("subjects/1", views.SubjectEditView.as_view(), name="subject-edit-view"),  

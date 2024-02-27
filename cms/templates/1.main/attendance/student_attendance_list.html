@@ -1,5 +1,5 @@
 {% extends 'base.html'%} {% load static %} 
-{% block title %} Teacher Attendance {%endblock title %} 
+{% block title %} Student Attendance {%endblock title %} 
 {% block main %}
 {% load custom_filters %}
  <div class="content container-fluid">
@@ -7,12 +7,12 @@
       <div class="row">
         <div class="col-sm-12">
           <div class="page-sub-header">
-            <h3 class="page-title">Teacher Attendance</h3>
+            <h3 class="page-title">Student Attendance</h3>
             <ul class="breadcrumb">
               <li class="breadcrumb-item">
-                <a href="{% url 'MEhub:teacher-attendance-list-view' %}">Teacher</a>
+                <a href="{% url 'MEhub:student-attendance-list-view' %}">Student</a>
               </li>
-              <li class="breadcrumb-item active">All Teacher Attendance</li>
+              <li class="breadcrumb-item active">All Student Attendance</li>
             </ul>
           </div>
         </div>
@@ -63,23 +63,23 @@
             <div class="page-header">
               <div class="row align-items-center">
                 <div class="col">
-                  <h3 class="page-title">Teacher Attendance</h3>
+                  <h3 class="page-title">Student Attendance</h3>
                 </div>
                 <div class="col-auto text-end float-end ms-auto download-grp">
                   <a
-                    href="{% url 'MEhub:teacher-attendance-list-view' %}"
+                    href="{% url 'MEhub:student-attendance-list-view' %}"
                     class="btn btn-outline-gray me-2 active"
                     ><i class="feather-list"></i
                   ></a>
                   <a
-                    href="{% url 'MEhub:teacher-attendance-list-view' %}"
+                    href="{% url 'MEhub:student-attendance-list-view' %}"
                     class="btn btn-outline-gray me-2"
                     ><i class="feather-grid"></i
                   ></a>
                   <a href="#" class="btn btn-outline-primary me-2"
                     ><i class="fas fa-download"></i> Download</a
                   >
-                  <a href="{% url 'MEhub:teacher-attendance-add-view' %}" class="btn btn-primary"
+                  <a href="{% url 'MEhub:student-attendance-add-view' %}" class="btn btn-primary"
                     ><i class="fas fa-plus"></i
                   ></a>
                 </div>
@@ -102,7 +102,7 @@
                       </div>
                     </th>
                     <th>ID</th>
-                    <th>Teacher</th>
+                    <th>Student</th>
                     <th>Date</th>
                     <th>Activity</th>
                     <th>Percentage</th>
@@ -125,7 +125,7 @@
                     </td>
                     <td>
                       <a
-                        href="{% url 'MEhub:teacher-attendance-edit-view' attendance.id %}"
+                        href="{% url 'MEhub:student-attendance-edit-view' attendance.id %}"
                         class="avatar avatar-sm me-2"
                       >
                         {{ attendance.pk | upper}}
@@ -133,8 +133,8 @@
                     </td>
                     <td>
                       <h2 class="table-avatar">
-                        <a href="{% url 'MEhub:teacher-attendance-edit-view' attendance.id %}"
-                          >{{ attendance.teacher | capfirst}}</a
+                        <a href="{% url 'MEhub:student-attendance-edit-view' attendance.id %}"
+                          >{{ attendance.student | capfirst}}</a
                         >
                       </h2>
                     </td>
@@ -144,13 +144,13 @@
                     <td class="text-end">
                       <div class="actions">
                         <a
-                          href="{% url 'MEhub:teacher-attendance-edit-view' attendance.id %}"
+                          href="{% url 'MEhub:student-attendance-edit-view' attendance.id %}"
                           class="btn btn-sm bg-success-light me-2"
                         >
                           <i class="feather-eye"></i>
                         </a>
                         <a
-                          href="{% url 'MEhub:teacher-attendance-edit-view' attendance.id %}"
+                          href="{% url 'MEhub:student-attendance-edit-view' attendance.id %}"
                           class="btn btn-sm bg-danger-light"
                         >
                           <i class="feather-edit"></i>

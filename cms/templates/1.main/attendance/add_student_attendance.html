@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Add Attendance | Student{% endblock title %}
+{% block main %}
+
+<div class="content container-fluid">
+  <div class="page-header">
+    <div class="row align-items-center">
+      <div class="col-sm-12">
+        <div class="page-sub-header">
+          <h3 class="page-title">Add Student Attendance</h3>
+          <ul class="breadcrumb">
+            <li class="breadcrumb-item">
+              <a href="{% url 'MEhub:student-list-view' %}">Student Attendance</a>
+            </li>
+            <li class="breadcrumb-item active">Add Student Attendance</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{%include './student_attendance_form.html'%}
+{% endblock main %}

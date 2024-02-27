@@ -69,6 +69,18 @@
             <li><a href="{% url 'MEhub:teacher-attendance-add-view' %}">Attendance Add</a></li>
           </ul>
         </li>
+        <li class="submenu">
+          <a href="#"
+            ><i class="fas fa-clock"></i> <span>Student Attendance</span>
+            <span class="menu-arrow"></span
+          ></a>
+          <ul>
+            <li><a href="{% url 'MEhub:student-attendance-list-view' %}">Attendance List</a></li>
+            <li>
+            </li>
+            <li><a href="{% url 'MEhub:student-attendance-add-view' %}">Attendance Add</a></li>
+          </ul>
+        </li>
 
         <!--Departments-->
         {% comment %} <li class="submenu">

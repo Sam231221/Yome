@@ -10,7 +10,7 @@ class StudentAttendanceForm(forms.ModelForm):
         fields = ['date', 'student', 'attendance_status']
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(StudentAttendanceForm, self).__init__(*args, **kwargs)
         self.fields['student'].queryset = Student.objects.all()
         
         for field_name, field in self.fields.items():
@@ -84,6 +84,31 @@ class TeacherAttendanceEditForm(forms.ModelForm):
         self.fields['attendance_status'].widget.attrs['class'] += ' select'
         self.fields['date'].widget.attrs['class'] = 'form-control datetimepicker'
         self.fields['teacher'].widget.attrs['class'] += ' select'
+        
+
+    def clean(self):
+        cleaned_data = super().clean()
+        return cleaned_data
+
+
+class StudentAttendanceEditForm(forms.ModelForm):
+    class Meta:
+        model = StudentAttendance
+        fields = ['date', 'student', 'attendance_status']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['student'].queryset = Student.objects.all()
+
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-control'
+            if field.required:
+                field.label = mark_safe(
+                    field.label + '\t <span class="login-danger">*</span>')
+
+        self.fields['attendance_status'].widget.attrs['class'] += ' select'
+        self.fields['date'].widget.attrs['class'] = 'form-control datetimepicker'
+        self.fields['student'].widget.attrs['class'] += ' select'
         
 
     def clean(self):
