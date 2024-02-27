@@ -20,3 +20,21 @@
 <script src="{% static 'assets/js/circle-progress.min.js' %}"></script>
 <script src="{% static 'assets/js/script.js' %}"></script>
 {% include 'utilities/flash_message.html' %}
+
+<!--Assigning active to nav items-->
+<script>
+  window.addEventListener("DOMContentLoaded", (event) => {
+    const url = window.location.pathname;
+    const menuItems = document.querySelectorAll("#menu li a");
+    console.log("HI");
+    console.log(menuItems);
+
+    menuItems.forEach((item) => {
+      if (item.getAttribute("href") === url) {
+        console.log(url);
+        item.parentElement.classList.add("active");
+        item.parentElement.parentElement.parentElement.classList.add("active");
+      }
+    });
+  });
+</script>
