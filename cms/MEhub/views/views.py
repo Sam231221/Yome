@@ -3,7 +3,7 @@ from django.views.generic import  View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 # The views of MEhub
-from .dashboard import AdminDashboardView, TeacherDashboardView, StudentDashboardView
+from .dashboard import *
 from .student import StudentCreateView, StudentDeleteView, StudentDetailView, StudentListView, StudentUpdateView
 from .subject import SubjectAddView, SubjectDeleteView, SubjectListView, SubjectEditView
 from .invoice import InvoiceAddView, InvoiceDeleteView, InvoiceEditView, InvoiceListView

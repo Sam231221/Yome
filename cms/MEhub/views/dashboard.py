@@ -1,6 +1,23 @@
 from django.shortcuts import render
 from django.views.generic import View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.urls import reverse_lazy
+from django.http import HttpResponseRedirect
+
+
+
+
+class DashboardView(View, LoginRequiredMixin):
+    def get(self, request):
+        if request.user.role == 'admin':
+            return render(request, 'admin_dashboard.html', {'user': self.request.user})
+        if request.user.role == 'student':
+            return render(request,'student_dashboard.html', {'user': self.request.user})
+        if request.user.role == 'teacher':
+            return render(request, 'teacher_dashboard.html', {'user': self.request.user})
+        default_url = reverse_lazy('MEhub:home-view')
+        return HttpResponseRedirect(default_url)
+
 
 
 class AdminDashboardView(View, LoginRequiredMixin, UserPassesTestMixin):

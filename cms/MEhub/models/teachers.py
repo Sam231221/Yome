@@ -3,6 +3,7 @@ from django.core.validators import FileExtensionValidator, RegexValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db import models
+# from .models import Department
 
 class TeacherManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -53,6 +54,7 @@ class Teacher(AbstractUser):
     bio = models.TextField(max_length=800, blank=True, null=True)
 
     email = models.EmailField(unique=True)
+    # department = models.ForeignKey(Department, related_name='teachers', on_delete=models.CASCADE, null=True, blank=True)
 
     objects = TeacherManager()
 

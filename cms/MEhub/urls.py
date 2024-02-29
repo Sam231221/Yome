@@ -8,6 +8,7 @@ app_name = "MEhub"
 
 urlpatterns = [
     path("", login_required(views.HomeView.as_view()), name="home-view"),  
+    path("dashboard/", login_required(views.DashboardView.as_view()), name="dashboard"),  
     path("student-dashboard/", login_required(views.StudentDashboardView.as_view()), name="student-dashboard"),  
     path("admin-dashboard/", login_required(views.AdminDashboardView.as_view()), name="admin-dashboard"),  
     path("teacher-dashboard/", login_required(views.TeacherDashboardView.as_view()), name="teacher-dashboard"),  

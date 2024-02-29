@@ -5,6 +5,8 @@ from MAuthentication.models import User
 from .students import Student
 from .teachers import Teacher
 from .attendance import StudentAttendance, TeacherAttendance
+from .departments import *
+from .subjects import *
 import uuid
 
 

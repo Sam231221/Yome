@@ -9,12 +9,12 @@
         </li>
         <!-- Dashboard -->
         <li class="submenu">
-          <a href="#">
+          <a href="{% url 'MEhub:dashboard' %}" >
             <i class="feather-grid"></i> <span> Dashboard</span>
             <span class="menu-arrow"></span>
           </a>
           
-          <ul>
+          {% comment %} <ul>
             {%if user.is_superuser%}
             <li class="">
               <a href="{% url 'MEhub:admin-dashboard' %}">Admin Dashboard</a>
@@ -26,7 +26,7 @@
             <li>
               <a href="{% url 'MEhub:student-dashboard' %}">Student Dashboard</a>
             </li>
-          </ul>
+          </ul> {% endcomment %}
         </li>
 
         <!-- Students -->
@@ -83,7 +83,7 @@
           </ul>
         </li>
 
-        {% comment %} 
+         
         
           <!--Departments-->
           <li class="submenu">
@@ -257,7 +257,7 @@
             </ul>
           </li>  
         
-        {% endcomment %}
+        
 
         
       </ul>
