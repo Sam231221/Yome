@@ -1,0 +1,79 @@
+{% extends 'pbase.html'%} 
+{% load static %} 
+{% block title %} 
+Edit Transport
+{% endblock title %} 
+{% block main %}
+<div class="content container-fluid">
+
+<div class="page-header">
+<div class="row align-items-center">
+<div class="col">
+<h3 class="page-title">Edit Transport</h3>
+<ul class="breadcrumb">
+<li class="breadcrumb-item"><a href="transport.html">Transport</a></li>
+<li class="breadcrumb-item active">Edit Transport</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-sm-12">
+<div class="card">
+<div class="card-body">
+<form>
+<div class="row">
+<div class="col-12">
+<h5 class="form-title"><span>Transport Information</span></h5>
+</div>
+<div class="col-12 col-sm-4">
+<div class="form-group local-forms">
+<label>Route Name <span class="login-danger">*</span></label>
+<input type="text" class="form-control" value="New Cross">
+</div>
+</div>
+<div class="col-12 col-sm-4">
+<div class="form-group local-forms">
+<label>Vehicle Number <span class="login-danger">*</span></label>
+<input type="text" class="form-control" value="TN 43 AS 5263">
+</div>
+</div>
+<div class="col-12 col-sm-4">
+<div class="form-group local-forms">
+<label>Driver Name <span class="login-danger">*</span></label>
+<input type="text" class="form-control" value="Steve">
+</div>
+</div>
+<div class="col-12 col-sm-4">
+<div class="form-group local-forms">
+<label>License Number <span class="login-danger">*</span></label>
+<input type="text" class="form-control" value="REDH968532">
+</div>
+</div>
+<div class="col-12 col-sm-4">
+<div class="form-group local-forms">
+<label>Contact Number <span class="login-danger">*</span></label>
+<input type="text" class="form-control" value="+91 8974158962">
+</div>
+</div>
+<div class="col-12 col-sm-4">
+<div class="form-group local-forms">
+<label>Driver Address <span class="login-danger">*</span></label>
+<input type="text" class="form-control" value="152, South Pole, 2nd Street, 3rd Cross">
+</div>
+</div>
+<div class="col-12">
+<div class="student-submit">
+<button type="submit" class="btn btn-primary">Submit</button>
+</div>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+{% endblock main %} 
