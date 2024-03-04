@@ -110,21 +110,21 @@ export const institutionsUtils = {
       classrooms: 30,
       library: 1,
       laboratories: 23,
-      sportsFacilities: false,
+      sportsFacilities: 43,
     },
     {
       name: "Arts Building",
       classrooms: 40,
       library: 1,
-      laboratories: false,
-      sportsFacilities: 34,
+      laboratories: 12,
+      sportsFacilities: 4,
     },
     {
       name: "Engineering Wing",
       classrooms: 25,
       library: 1,
-      laboratories: 23,
-      sportsFacilities: 34,
+      laboratories: 6,
+      sportsFacilities: 5,
     },
   ],
 };
@@ -174,6 +174,7 @@ export const institutionsData = [
     ownerId: 2,
   },
   {
+    name: "Global Arts Institute",
     albumIds: [1, 2],
     programsIds: [1, 2],
     facultyIds: [1, 2],
@@ -181,7 +182,7 @@ export const institutionsData = [
     costIds: [1, 2],
     alumniSuccessIds: [1, 2],
     insfrastructureIds: [1, 2],
-    name: "Global Arts Institute",
+
     thumbnail:
       "https://res.cloudinary.com/dcgrv6shk/image/upload/v1705222929/Eduroclass/Uploads/EducationInstitutions/kcjt7pxrmuecb70byky0.jpg",
     description: "Nurturing creativity and artistic talent",
@@ -196,6 +197,7 @@ export const institutionsData = [
     ownerId: 3,
   },
   {
+    name: "Innovator's Academy",
     albumIds: [1, 2],
     programsIds: [1, 2],
     facultyIds: [1, 2],
@@ -203,7 +205,7 @@ export const institutionsData = [
     costIds: [1, 2],
     alumniSuccessIds: [1, 2],
     insfrastructureIds: [1, 2],
-    name: "Innovator's Academy",
+
     thumbnail:
       "https://res.cloudinary.com/dcgrv6shk/image/upload/v1705222929/Eduroclass/Uploads/EducationInstitutions/kcjt7pxrmuecb70byky0.jpg",
     description: "Fostering innovation and technology",

@@ -19,15 +19,21 @@ import {
 
 import CommunityCarousel from "./components/PCarousel/CommunityCarousel";
 import MentorCarousel from "./components/PCarousel/MentorCarousel";
-
+import { InstitutionSkeleton } from "@/components/Loading/Skeletons";
 const Home = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
+  const [filteredInstitutions, setFilteredInstitutions] = useState([]);
+  const [isInstitutionsLoading, setInstitutionsLoading] = useState(true);
+  const [hasInstitutionsErrors, setInstitutionsErrors] = useState(false);
+  const [institutions, setInstitutions] = useState([]);
   const [mentors, setMentors] = useState([]);
+  const [isMentorsLoading, setMentorsLoading] = useState(true);
+  const [hasMentorsErrors, setMentorsErrors] = useState(false);
   const [communities, setCommunities] = useState([]);
+  const [hasCommunitiesErrors, setCommunitiesErrors] = useState(false);
+  const [isCommunitiesLoading, setCommunitiesLoading] = useState(true);
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState("All");
-  const [filteredInstitutions, setFilteredInstitutions] = useState([]);
-  const [institutions, setInstitutions] = useState([]);
 
   //Get user from Db and set 'userInfo'
   useEffect(() => {
@@ -77,8 +83,10 @@ const Home = () => {
       let { data } = await axios.get(GET_ALL_EDUCATIONAL_INSTITUTIONS);
       setInstitutions(data.institutions);
       setFilteredInstitutions(data.institutions);
+      setInstitutionsLoading(false);
     } catch (e) {
-      toast.error(e);
+      setInstitutionsErrors(e);
+      setInstitutionsLoading(false);
     }
   };
   const getMentors = async (e) => {
@@ -87,8 +95,10 @@ const Home = () => {
         `${GET_UNFOLLOWED_MENTORS}/${userInfo.id}`
       );
       setMentors(data.mentorsNotFollowed);
+      setMentorsLoading(false);
     } catch (e) {
-      toast.error(e);
+      setMentorsErrors(e);
+      setMentorsLoading(false);
     }
   };
   const getGroups = async (e) => {
@@ -97,8 +107,10 @@ const Home = () => {
         `${GET_UNASSOCIATED_GROUPS}/${userInfo.id}`
       );
       setCommunities(data.unassociatedGroups);
+      setCommunitiesLoading(false);
     } catch (e) {
-      toast.error(e);
+      setCommunitiesErrors(false);
+      setCommunitiesLoading(false);
     }
   };
   const handleTab = (type) => {
@@ -174,7 +186,15 @@ const Home = () => {
           </li>
         </ul>
         <div className="bg-white grid xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          {filteredInstitutions.length > 0 ? (
+          {isInstitutionsLoading ? (
+            <InstitutionSkeleton
+              classname={"col-md-4 col-lg-4 col-xl-4 mb-5 mb-lg-0"}
+              counts={2}
+              cards={6}
+            />
+          ) : hasInstitutionsErrors ? (
+            <div>{hasInstitutionsErrors}</div>
+          ) : filteredInstitutions?.length > 0 ? (
             <>
               {filteredInstitutions.map((ei, index) => (
                 <div key={index} className="flex flex-col border shadow-lg">
@@ -231,7 +251,11 @@ const Home = () => {
             <p className="text-primaryTextColor">Communities</p>
           </div>
         </div>
-        <CommunityCarousel communities={communities} />
+        <CommunityCarousel
+          isLoading={isCommunitiesLoading}
+          hasErrors={hasCommunitiesErrors}
+          communities={communities}
+        />
       </div>
 
       {/* Mentors */}
@@ -242,7 +266,11 @@ const Home = () => {
             <p className="text-primaryTextColor">Mentors</p>
           </div>
         </div>
-        <MentorCarousel mentors={mentors} />
+        <MentorCarousel
+          isLoading={isMentorsLoading}
+          hasErrors={hasMentorsErrors}
+          mentors={mentors}
+        />
       </div>
     </div>
   );

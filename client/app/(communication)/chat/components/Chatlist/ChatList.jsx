@@ -5,7 +5,7 @@ import SearchBar from "./SearchBar";
 import ContactsList from "./ContactsList";
 import { useStateProvider } from "@/context/StateContext";
 
-export default function ChatList() {
+export default function ChatList({ isUserLoading }) {
   const [pageType, setPageType] = useState("default");
   const [{ contactsPage }] = useStateProvider();
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function ChatList() {
     <div className="bg-white flex flex-col h-screen z-20 ">
       {pageType === "default" && (
         <>
-          <ChatListHeader />
+          <ChatListHeader isUserLoading={isUserLoading} />
           <SearchBar />
           <List />
         </>

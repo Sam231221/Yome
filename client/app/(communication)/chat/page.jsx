@@ -34,7 +34,7 @@ export default function Chatpage() {
     },
     dispatch,
   ] = useStateProvider();
-
+  const [isUserLoading, setIsUserLoading] = useState(true);
   const handleResize = () => {
     setWindowWidth(window.innerWidth);
   };
@@ -85,9 +85,7 @@ export default function Chatpage() {
           });
         }
       }
-    } catch (e) {
-      console.log(e);
-    }
+    } catch (e) {}
   };
 
   //start socket connection on adding authenticated user.
@@ -96,6 +94,7 @@ export default function Chatpage() {
       socket.current = io(HOST);
       socket.current.emit("add-user", userInfo.id);
       dispatch({ type: reducerCases.SET_SOCKET, socket });
+      setIsUserLoading(false);
     }
   }, [userInfo]);
 
@@ -215,7 +214,7 @@ export default function Chatpage() {
       {!videoCall && !voiceCall && (
         <div className="grid xs:grid-cols-1 sm:grid-cols-main h-screen w-screen max-h-screen max-w-full overflow-hidden">
           {/* Sidebar */}
-          <ChatList />
+          <ChatList isUserLoading={isUserLoading} />
 
           {/* ChatContainer */}
           {currentChatUser ? (
@@ -227,7 +226,7 @@ export default function Chatpage() {
               {messageSearch && <SearchMessages />}
             </div>
           ) : (
-            <>{isMobileView ? <></> : <Empty />}</>
+            <div>{isMobileView ? <div></div> : <Empty />}</div>
           )}
         </div>
       )}

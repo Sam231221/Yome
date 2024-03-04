@@ -1,5 +1,6 @@
 import getPrismaInstance from "../utils/PrismaClient.js";
 import { v2 as cloudinary } from "cloudinary";
+import { rankInstitutions } from "../utils/rankInstitutions.js";
 
 export const getAllEducationalInstitutions = async (req, res, next) => {
   try {
@@ -17,7 +18,8 @@ export const getAllEducationalInstitutions = async (req, res, next) => {
       },
     });
 
-    return res.status(200).json({ institutions });
+    const institutionsByRanking = rankInstitutions(institutions);
+    return res.status(200).json({ institutions: institutionsByRanking });
   } catch (error) {
     next(error);
   }

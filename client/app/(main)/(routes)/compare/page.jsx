@@ -70,11 +70,13 @@ const ComparePage = () => {
   const getEIs = async (e) => {
     try {
       let { data } = await axios.get(GET_ALL_EDUCATIONAL_INSTITUTIONS);
+
       setInstitutions(data.institutions);
     } catch (e) {
       console.log(e);
     }
   };
+  console.log(institutions);
   const handleInputChange = (id, value, filterField) => {
     const updatedInputs = inputs.map((input) => {
       if (input.id === id) {
@@ -204,6 +206,7 @@ const ComparePage = () => {
                   ))}
                 </ul>
               )}
+            {/* Instititions */}
             {!input.notFound ? (
               <>
                 {input.selectedInstitution && (
@@ -231,26 +234,112 @@ const ComparePage = () => {
                         }}
                       />
                     </div>
-                    <h3 className="font-semibold text-gray-800">
+                    <h3 className="font-bold text-lg text-gray-800">
                       {input.selectedInstitution.name}
                     </h3>
-                    <div className="flex text-xs mb-1">
+                    <hr />
+
+                    <div className="flex mb-1">
                       <h1 className="font-semibold text-gray-600">Location:</h1>
                       <p className="text-gray-500 ml-2">
                         {input.selectedInstitution.address}
                       </p>
                     </div>
-                    <div className="flex text-xs mb-1">
+                    <div className="flex mb-1">
                       <h1 className="font-semibold text-gray-600">Type:</h1>
                       <p className="text-gray-500 ml-2">
                         {input.selectedInstitution.type}
                       </p>
                     </div>
-                    <div className="flex text-xs mb-1">
+                    <div className="flex mb-1">
                       <h1 className="font-semibold text-gray-600">Category:</h1>
                       <p className="text-gray-500 ml-2">
                         {input.selectedInstitution.category}
                       </p>
+                    </div>
+                    <div className="flex mb-1">
+                      <h1 className="font-semibold text-gray-600">
+                        Accreditation Status :
+                      </h1>
+                      <p className="text-gray-500 ml-2">
+                        {input.selectedInstitution.accreditation_status}
+                      </p>
+                    </div>
+                    <div>
+                      <h1 className="font-semibold text-gray-600">Programs:</h1>
+                      <ul className="list-disc text-gray-500 pl-6">
+                        {input.selectedInstitution.programs.map(
+                          (item, index) => (
+                            <li key={index}>
+                              <div>
+                                <span>{item.name}</span>
+                              </div>
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                    <div>
+                      <h1 className="font-semibold text-gray-600">Cost:</h1>
+                      <ul className="list-disc text-gray-500 pl-6">
+                        {input.selectedInstitution.cost.map((item, index) => (
+                          <li key={index}>
+                            <div>
+                              Tutition:{item.tuition}, Fees:{item.fees},
+                              LivingExpenses:{item.livingExpenses}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h1 className="font-semibold text-gray-600">
+                        Infrastructure:
+                      </h1>
+                      <ul className="list-disc text-gray-500 pl-6">
+                        {input.selectedInstitution.infrastructure.map(
+                          (item, index) => (
+                            <li key={index}>
+                              <div>
+                                <span>{item.name}</span>:Library:{item.library}
+                                ,Classes:{item.classrooms}, Laboratories:
+                                {item.laboratories}, SportsFacilities:
+                                {item.sportsFacilities}
+                              </div>
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                    <div>
+                      <h1 className="font-semibold text-gray-600">
+                        Faculties:
+                      </h1>
+                      <ul className="list-disc text-gray-500 pl-6">
+                        {input.selectedInstitution.faculty.map(
+                          (faculty, index) => (
+                            <li key={index}>
+                              <div>
+                                <span>{faculty.name}</span>,{" "}
+                                {faculty.qualification}, Experience:
+                                {faculty.experience}
+                              </div>
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                    <div>
+                      <h1 className="font-semibold text-gray-600">
+                        Alumni Success:
+                      </h1>
+                      <ul className="list-disc text-gray-500 pl-6">
+                        {input.selectedInstitution.alumniSuccess.map(
+                          (item, index) => (
+                            <li key={index}>{item.description}</li>
+                          )
+                        )}
+                      </ul>
                     </div>
                   </div>
                 )}

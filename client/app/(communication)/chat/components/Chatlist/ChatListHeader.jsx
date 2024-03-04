@@ -6,7 +6,8 @@ import { reducerCases } from "@/context/constants";
 import { useRouter } from "next/navigation";
 import ContextMenu from "@/components/common/ContextMenu";
 import { signOut } from "next-auth/react";
-export default function ChatListHeader() {
+import ProfileSkeleton from "@/components/Loading/Skeletons";
+export default function ChatListHeader({ isUserLoading }) {
   const [{ userInfo, socket }, dispatch] = useStateProvider();
   const router = useRouter();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
@@ -39,17 +40,23 @@ export default function ChatListHeader() {
 
   return (
     <div className="h-16 px-4 py-3 flex justify-between items-center">
-      <div className="flex gap-3 items-center">
-        <div className="cursor-pointer">
-          <Avatar
-            type="sm"
-            image={userInfo?.profilePicture || "/avatars/userprofile.png"}
-          />
+      {isUserLoading ? (
+        <>
+          <ProfileSkeleton />
+        </>
+      ) : (
+        <div className="flex gap-3 items-center">
+          <div className="cursor-pointer">
+            <Avatar
+              type="sm"
+              image={userInfo?.profilePicture || "/avatars/userprofile.png"}
+            />
+          </div>
+          <span className="text-lg font-semibold text-gray-700">
+            {userInfo?.firstname}
+          </span>
         </div>
-        <span className="text-lg font-semibold text-gray-700">
-          {userInfo?.firstname}
-        </span>
-      </div>
+      )}
 
       <div className="flex gap-6 relative ">
         <BsFillChatLeftTextFill
