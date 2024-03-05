@@ -44,8 +44,8 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
       type: "text",
       placeholder: "Username",
       errorMessage:
-        "Username should be 3-16 characters and shouldn't include any special character!",
-      pattern: "^[A-Za-z0-9]{3,16}$",
+        "Username should be 5-10 characters and include a @ in between",
+      pattern: "^[a-zA-Z]{3,}@[0-9]{3,}$",
       required: true,
     },
     {

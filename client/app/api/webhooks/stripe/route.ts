@@ -18,17 +18,17 @@ interface UserProfile {
   created_at: string; // You might want to use a specific date type here
   updated_at: string; // You might want to use a specific date type here
 }
+
 interface UserData {
-  firstname?: string;
-  lastname?: string;
+  first_name?: string;
+  last_name?: string;
   username: string;
-  profilePicture?: string;
+  profile_pic?: string;
   email?: string;
-  role?: string;
   is_email_verified?: boolean;
   is_activated?: boolean;
   password?: string;
-  userProfile: UserProfile;
+  address?: string;
   stripeSubscriptionId?: string;
   stripeCustomerId?: string;
   stripePriceId?: string;
@@ -59,7 +59,6 @@ interface User {
   stripeCurrentPeriodEnd?: Date | null;
 }
 import { headers } from "next/headers";
-import { use } from "react";
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -104,7 +103,7 @@ export async function POST(request: Request) {
       const mailOptions = {
         from: "acadeprasuccor2112@gmail.com",
         to: email,
-        subject: "Welcome to EduroSms!",
+        subject: "Welcome to EduroCms!",
         text: `Hello ${firstname},\n\nWelcome to Your SMS! Here are your login details:\n\nusername: ${username}\nPassword: ${password}\n\nPlease keep this information safe and secure.\n\nThanks,\nThe EduroTeam`,
       };
 
@@ -116,8 +115,6 @@ export async function POST(request: Request) {
     }
   }
   const handleCheckoutSessionCompleted = async () => {
-    console.log("Updating by Id");
-
     const subscription = await stripe.subscriptions.retrieve(
       session.subscription as string
     );
@@ -128,24 +125,21 @@ export async function POST(request: Request) {
         GET_USER_BY_ID_ROUTE,
         { userId }
       );
-      console.log("data:", data);
-      if (!data.status) {
-        console.log(data.msg); // Handle error
-      } else {
+
+      if (data.status) {
         const user = data.user;
 
         if (user) {
           const userData: UserData = {
-            firstname: user.firstname,
-            lastname: user.lastname,
+            first_name: user.firstname,
+            last_name: user.lastname,
             username: user.username,
-            profilePicture: user.profilePicture,
+            profile_pic: user.profilePicture,
             email: user.email,
-            role: "ADMIN",
             is_email_verified: true,
             is_activated: true,
             password: "Qa34ExyyiDedSSf",
-            userProfile: user.userProfile,
+            address: user.userProfile.address,
             stripeSubscriptionId: subscription.id,
             stripeCustomerId: subscription.customer as string,
             stripePriceId: subscription.items.data[0].price.id,
@@ -155,7 +149,7 @@ export async function POST(request: Request) {
           };
 
           const [apiResponse] = await Promise.all([
-            axios.post("http://localhost:8000/api/create-user/", userData),
+            axios.post("http://127.0.0.1:8000/api/create-user/", userData),
             axios.post(UPDATE_USER_SUBSCRIPTION_PLAN_BY_ID, {
               userId: session?.metadata?.userId,
               stripeSubscriptionId: subscription.id,
@@ -170,7 +164,7 @@ export async function POST(request: Request) {
           await sendUserWelcomeEmail(
             userData.email,
             userData.username,
-            userData.firstname,
+            userData.first_name,
             userData.password
           );
           console.log(apiResponse.data);
@@ -179,6 +173,7 @@ export async function POST(request: Request) {
         }
       }
     } catch (error) {
+      console.log("eerror");
       console.error(error);
     }
   };
@@ -198,9 +193,12 @@ export async function POST(request: Request) {
     });
   };
   if (event.type === "checkout.session.completed") {
-    await handleCheckoutSessionCompleted();
+    try {
+      await handleCheckoutSessionCompleted();
+    } catch (e) {
+      console.log(e);
+    }
   }
-
   if (event.type === "customer.subscription.updated") {
     console.log("event triggered");
 

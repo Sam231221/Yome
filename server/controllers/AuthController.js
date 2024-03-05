@@ -5,7 +5,6 @@ import bcryptjs from "bcryptjs";
 import { stripe } from "../lib/stripe.js";
 import { absoluteUrl } from "../lib/utils.js";
 import { v2 as cloudinary } from "cloudinary";
-import { parse } from "path";
 
 /**-----------------------
 USER
@@ -33,11 +32,8 @@ export const getUserByEmail = async (request, response, next) => {
   }
 };
 
-
-
 export const getUserById = async (request, response, next) => {
   try {
-    console.log("enter")
     const { userId } = request.body;
     if (!userId) {
       return response.json({ msg: "Id is required", status: false });
@@ -137,21 +133,26 @@ export const updateUser = async (request, response) => {
     const prisma = getPrismaInstance();
     const { userId } = request.query;
     const { email, bio, lastname, firstname, address } = request.body;
+    let image = null; // Initialize image variable
 
-    const image = await new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          { folder: "Eduroclass/Uploads/Profiles/" },
-          (error, result) => {
-            if (error) {
-              reject("Failed to upload profile picture");
-            } else {
-              resolve(result);
+    // Check if request.file is provided and contains file data
+    if (request.file && request.file.buffer) {
+      // Upload image if provided
+      image = await new Promise((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream(
+            { folder: "Eduroclass/Uploads/Profiles/" },
+            (error, result) => {
+              if (error) {
+                reject("Failed to upload profile picture");
+              } else {
+                resolve(result);
+              }
             }
-          }
-        )
-        .end(request.file.buffer);
-    });
+          )
+          .end(request.file.buffer);
+      });
+    }
 
     const existingUserbyId = await prisma.user.findUnique({
       where: { id: parseInt(userId) },
@@ -176,17 +177,23 @@ export const updateUser = async (request, response) => {
       }
     }
 
+    const userUpdateData = {
+      username: firstname + " " + lastname,
+      firstname: firstname,
+      lastname: lastname,
+      email: email,
+    };
+
+    // If image is provided, include it in the update data
+    if (image) {
+      userUpdateData.profilePicture = image.secure_url;
+    }
+
     const user = await prisma.user.update({
       where: {
         id: parseInt(userId),
       },
-      data: {
-        username: firstname + " " + lastname,
-        firstname: firstname,
-        lastname: lastname,
-        email: email,
-        profilePicture: image.secure_url,
-      },
+      data: userUpdateData,
     });
 
     const userProfile = await prisma.userProfile.update({
@@ -414,7 +421,7 @@ export const manageStripeSubscriptionAction = async (
       },
     ],
     metadata: {
-      email:email,
+      email: email,
       userId: parseInt(userId),
     },
   });
@@ -628,6 +635,10 @@ export const joinUnjoinedGroups = async (req, res, next) => {
     res.status(500).send("Error joining the group.");
   }
 };
+
+/**-----------------------
+Utils
+ --------------------------*/
 
 export const generateToken = (req, res, next) => {
   try {

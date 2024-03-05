@@ -40,7 +40,7 @@ export default function HomeLayout({ children }) {
           "hidden w-0 sm:block sm:w-[65px] h-screen navigation fixed left-0 bg-white border-white"
         }
       >
-        <div className="group mt-2 w-full gap-1 flex items-center text-white">
+        <div className="group md:hidden mt-2 w-full gap-1 flex items-center text-white">
           <Link className="flex p-1 items-center" href="/home">
             <Image
               src="/logos/logoBlueT.png"
@@ -51,7 +51,7 @@ export default function HomeLayout({ children }) {
             />
           </Link>
         </div>
-        <ul className="w-full mt-5 md:active:w-[244px]">
+        <ul className="w-full mt-20 md:active:w-[244px]">
           <li
             className={`${
               splitLocation === "/home" ? "active bg-[#EEF2FA]" : ""
@@ -173,6 +173,21 @@ export default function HomeLayout({ children }) {
       >
         {/*Topbar */}
         <div className="topbar z-[3]  sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
+          <Link href="/home">
+            <div className="hidden md:flex gap-2 ml-3 items-center">
+              <div className="w-10 h-10">
+                <Image
+                  width={40}
+                  height={40}
+                  loading="lazy"
+                  className="w-full h-full"
+                  src="/logos/LogoBlueT.png"
+                />
+              </div>
+
+              <h1 className="text-gray-700 text-lg font-bold">Eduroclass</h1>
+            </div>
+          </Link>
           <div className="flex gap-3 items-center">
             {/* Hamburger */}
             {/* <IoMenuOutline

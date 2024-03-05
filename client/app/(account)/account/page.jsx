@@ -17,12 +17,14 @@ import { useStateProvider } from "@/context/StateContext";
 import FormInput from "@/components/FormInut/Form";
 import { accountInputs, securityInputs } from "./inputs";
 import toast from "react-hot-toast";
-
+import Loader from "@/components/common/Loader";
 import ProfileAvatar from "@/components/common/ProfileAvatar/ProfileAvatar";
 
 const Account = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
   const [userSubscriptionPlan, setUserSubscriptionPlan] = useState({});
+  const [isUserSubscritionPlanLoading, setUserSubscritionPlanLoading] =
+    useState(true);
   const [updatedDetails, setUpdatedDetails] = useState(false);
   const [IsFormFilled, setIsFormFilled] = useState(false);
   const { data: session } = useSession();
@@ -72,6 +74,7 @@ const Account = () => {
         userId: userInfo.id,
       });
       setUserSubscriptionPlan(data);
+      setUserSubscritionPlanLoading(false);
     }
   };
   useEffect(() => {
@@ -220,170 +223,182 @@ const Account = () => {
             </ul>
           </div>
           {/*Rightbar*/}
-          <div className="flex flex-col p-1 sm:p-5 w-full">
-            {activeTab === "general" && (
+          <div className="flex flex-col p-1 sm:p-5 w-full items-center justify-center">
+            {isUserSubscritionPlanLoading ? (
+              <Loader />
+            ) : (
               <>
-                <h2 className="text-lg sm:text-2xl font-semibold text-gray-700">
-                  General Settings
-                </h2>
+                {activeTab === "general" && (
+                  <>
+                    <h2 className="text-lg sm:text-2xl font-semibold text-gray-700">
+                      General Settings
+                    </h2>
 
-                <hr />
+                    <hr />
 
-                <div className="p-3 w-full flex flex-col items-center  ">
-                  <div className="w-[200px] mt-3 sm:w-[400px] md:w-[500px] lg:w-[700px]">
-                    {/* Avatar */}
-                    <ProfileAvatar
-                      pic={`${
-                        userInfo?.profilePicture || "/avatars/userprofile.png"
-                      }`}
-                      setPic={setPic}
-                    />
+                    <div className="p-3 w-full flex flex-col items-center  ">
+                      <div className="w-[200px] mt-3 sm:w-[400px] md:w-[500px] lg:w-[700px]">
+                        {/* Avatar */}
+                        <ProfileAvatar
+                          pic={`${
+                            userInfo?.profilePicture ||
+                            "/avatars/userprofile.png"
+                          }`}
+                          setPic={setPic}
+                        />
 
-                    <form method="POST">
-                      <div className="grid grid-cols-1   gap-3">
-                        {accountInputs.slice(0, 2).map((input) => (
-                          <FormInput
-                            label={input.name}
-                            readOnly={false}
-                            key={input.id}
-                            {...input}
-                            value={values[input.name]}
-                            onChange={(e) => onChangeFormInputs(e)}
-                          />
-                        ))}
+                        <form method="POST">
+                          <div className="grid grid-cols-1   gap-3">
+                            {accountInputs.slice(0, 2).map((input) => (
+                              <FormInput
+                                label={input.name}
+                                readOnly={false}
+                                key={input.id}
+                                {...input}
+                                value={values[input.name]}
+                                onChange={(e) => onChangeFormInputs(e)}
+                              />
+                            ))}
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2  gap-3">
+                            {accountInputs.slice(2, 5).map((input) => (
+                              <FormInput
+                                readOnly={false}
+                                label={input.name}
+                                key={input.id}
+                                {...input}
+                                value={values[input.name]}
+                                onChange={(e) => onChangeFormInputs(e)}
+                              />
+                            ))}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleAccountUpdate()}
+                            disabled={updatedDetails ? false : true}
+                            className={`${
+                              updatedDetails
+                                ? "bg-sky-500 hover:bg-sky-600"
+                                : "bg-slate-400"
+                            }  rounded-lg font-medium text-sm text-white py-3 px-2`}
+                          >
+                            Update
+                          </button>
+                        </form>
                       </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2  gap-3">
-                        {accountInputs.slice(2, 5).map((input) => (
-                          <FormInput
-                            readOnly={false}
-                            label={input.name}
-                            key={input.id}
-                            {...input}
-                            value={values[input.name]}
-                            onChange={(e) => onChangeFormInputs(e)}
-                          />
-                        ))}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleAccountUpdate()}
-                        disabled={updatedDetails ? false : true}
-                        className={`${
-                          updatedDetails ? "bg-sky-500" : "bg-slate-400"
-                        }  rounded-lg font-medium text-sm text-white py-3 px-2`}
-                      >
-                        Update
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {activeTab === "plans" && (
-              <>
-                <h2 className="text-lg sm:text-2xl font-semibold text-gray-700">
-                  Plans
-                </h2>
-                <hr />
-
-                <div className="p-3  w-full flex flex-col items-center justify-center ">
-                  <div className="w-[200px] h-[200px] mt-3 p-3 sm:w-[400px] sm:h-[400px] md:w-[400px] md:h-[400px] lg:w-[600px] lg:h-[500px] bg-white shadow-lg flex flex-col items-center justify-center border border-sky-500 rounded-lg">
-                    <div className="w-20 h-20 border-4 border-sky-700 rounded-full ">
-                      <Image
-                        className="w-full h-full object-cover rounded-full"
-                        src={
-                          userInfo?.profilePicture || "/avatars/userprofile.png"
-                        }
-                        width={200}
-                        height={200}
-                        loading="lazy"
-                      />
                     </div>
-                    {/* Header */}
-                    {userInfo.role === "USER" ? (
-                      <h2 className="text-2xl font-semibold text-gray-700">
-                        You haven't subscribed for any plans yet.
-                      </h2>
-                    ) : (
-                      <>
-                        <div className="text-center">
-                          <h2 className="text-2xl font-semibold text-gray-700">
-                            You're on the {userSubscriptionPlan?.plan} Plan
-                          </h2>
-                          <p className="text-sm font-medium text-gray-500">
-                            Thanks for subscribing to the{" "}
-                            {userSubscriptionPlan?.plan} Plan. As a part of this
-                            plan, you have access to:
-                          </p>
-                        </div>
-                        <ul className="grid grid-cols-2 gap-2 mt-3">
-                          {userSubscriptionPlan?.features?.map((feature, i) => (
-                            <div
-                              class="icon-container flex gap-2 text-sm icon-md text-blue-600"
-                              aria-hidden="true"
-                            >
-                              <svg
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="feather feather-check-circle"
-                              >
-                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                <path d="M22 4 12 14.01l-3-3"></path>
-                              </svg>
-                              <li className="text-medium">{feature}</li>
-                            </div>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
+                  </>
+                )}
 
-            {activeTab === "security" && (
-              <>
-                <h2 className="text-lg sm:text-2xl font-semibold text-gray-700">
-                  Security
-                </h2>
-                <hr />
+                {activeTab === "plans" && (
+                  <>
+                    <h2 className="text-lg sm:text-2xl font-semibold text-gray-700">
+                      Plans
+                    </h2>
+                    <hr />
 
-                <div className="p-3 w-full flex flex-col items-center  ">
-                  <div className="w-[200px] mt-3 sm:w-[400px] md:w-[500px] lg:w-[700px]">
-                    <form onSubmit={handleAccountUpdate} method="POST">
-                      <div className="grid grid-cols-1   gap-3">
-                        {securityInputs.map((input) => (
-                          <FormInput
-                            label={input.name}
-                            key={input.id}
-                            {...input}
-                            value={values[input.name]}
-                            onChange={onChangeFormInputs}
+                    <div className="p-3  w-full flex flex-col items-center justify-center ">
+                      <div className="w-[200px] h-[200px] mt-3 p-3 sm:w-[400px] sm:h-[400px] md:w-[400px] md:h-[400px] lg:w-[600px] lg:h-[500px] bg-white shadow-lg flex flex-col items-center justify-center border border-sky-500 rounded-lg">
+                        <div className="w-20 h-20 border-4 border-sky-700 rounded-full ">
+                          <Image
+                            className="w-full h-full object-cover rounded-full"
+                            src={
+                              userInfo?.profilePicture ||
+                              "/avatars/userprofile.png"
+                            }
+                            width={200}
+                            height={200}
+                            loading="lazy"
                           />
-                        ))}
+                        </div>
+                        {/* Header */}
+                        {userInfo.role === "USER" ? (
+                          <h2 className="text-2xl font-semibold text-gray-700">
+                            You haven't subscribed for any plans yet.
+                          </h2>
+                        ) : (
+                          <>
+                            <div className="text-center">
+                              <h2 className="text-2xl font-semibold text-gray-700">
+                                You're on the {userSubscriptionPlan?.plan} Plan
+                              </h2>
+                              <p className="text-sm font-medium text-gray-500">
+                                Thanks for subscribing to the{" "}
+                                {userSubscriptionPlan?.plan} Plan. As a part of
+                                this plan, you have access to:
+                              </p>
+                            </div>
+                            <ul className="grid grid-cols-2 gap-2 mt-3">
+                              {userSubscriptionPlan?.features?.map(
+                                (feature, i) => (
+                                  <div
+                                    class="icon-container flex gap-2 text-sm icon-md text-blue-600"
+                                    aria-hidden="true"
+                                  >
+                                    <svg
+                                      width="24"
+                                      height="24"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      class="feather feather-check-circle"
+                                    >
+                                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                      <path d="M22 4 12 14.01l-3-3"></path>
+                                    </svg>
+                                    <li className="text-medium">{feature}</li>
+                                  </div>
+                                )
+                              )}
+                            </ul>
+                          </>
+                        )}
                       </div>
+                    </div>
+                  </>
+                )}
 
-                      <button
-                        type="submit"
-                        disabled={IsFormFilled ? false : true}
-                        className={`${
-                          IsFormFilled ? "bg-[#0e24a0]" : "bg-[#b6b6b6]"
-                        } rounded-lg font-medium text-sm text-white py-3 px-2`}
-                      >
-                        Update
-                      </button>
-                    </form>
-                  </div>
-                </div>
+                {activeTab === "security" && (
+                  <>
+                    <h2 className="text-lg sm:text-2xl font-semibold text-gray-700">
+                      Security
+                    </h2>
+                    <hr />
+
+                    <div className="p-3 w-full flex flex-col items-center  ">
+                      <div className="w-[200px] mt-3 sm:w-[400px] md:w-[500px] lg:w-[700px]">
+                        <form onSubmit={handleAccountUpdate} method="POST">
+                          <div className="grid grid-cols-1   gap-3">
+                            {securityInputs.map((input) => (
+                              <FormInput
+                                label={input.name}
+                                key={input.id}
+                                {...input}
+                                value={values[input.name]}
+                                onChange={onChangeFormInputs}
+                              />
+                            ))}
+                          </div>
+
+                          <button
+                            type="submit"
+                            disabled={IsFormFilled ? false : true}
+                            className={`${
+                              IsFormFilled ? "bg-[#0e24a0]" : "bg-[#b6b6b6]"
+                            } rounded-lg font-medium text-sm text-white py-3 px-2`}
+                          >
+                            Update
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>

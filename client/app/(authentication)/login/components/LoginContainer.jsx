@@ -142,8 +142,8 @@ export default function LoginContainer({ activeTab }) {
           type="submit"
           disabled={IsFormFilled ? false : true}
           className={`${
-            IsFormFilled ? "bg-[#0e24a0]" : "bg-[#7599ff]"
-          } hover:bg-blue-700 w-full font-medium text-sm text-white py-3 px-2`}
+            IsFormFilled ? "bg-[#0e24a0] hover:bg-blue-700" : "bg-[#7599ff]"
+          }  w-full font-medium text-sm text-white py-3 px-2`}
         >
           Sign In {" >"}
         </button>

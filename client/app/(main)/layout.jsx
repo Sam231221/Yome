@@ -66,23 +66,7 @@ export default function HomeLayout({ children }) {
               </span>
             </Link>
           </li>
-          {/* <li
-            className={`${
-              splitLocation === "/userfeeds" ? "active bg-[#EEF2FA]" : ""
-            } my-2 relative group w-full rounded-tl-full rounded-bl-full hover:bg-[#EEF2FA]`}
-          >
-            <Link
-              href="/userfeeds"
-              className="relative flex w-full hover:text-blue-500 items-center"
-            >
-              <span className="icon relative py-3 block px-5 text-center">
-                <CiBoxList className="text-ternaryTextColor group-hover:text-secondaryTextColor text-2xl" />
-              </span>
-              <span className="text-primaryTextColor group-hover:text-secondaryTextColor font-semibold relative block py-3 px-2 whitespace-nowrap text-sm">
-                Feeds
-              </span>
-            </Link>
-          </li> */}
+
           <li
             className={`${
               splitLocation === "/explore" ? "active bg-[#EEF2FA]" : ""
@@ -133,30 +117,23 @@ export default function HomeLayout({ children }) {
         className={`w-[calc(100%-4rem)] left-16 transition duration-500 ease-out absolute  min-h-screen bg-primaryBgColor`}
       >
         <div className="topbar z-[3]  sticky top-0 bg-white w-full h-[60px] flex justify-between items-center">
-          <div className="hidden md:flex gap-2 ml-3 items-center">
-            <div className="w-10 h-10">
-              <Image
-                width={40}
-                height={40}
-                loading="lazy"
-                className="w-full h-full"
-                src="/logos/LogoBlueT.png"
-              />
-            </div>
-            <h1 className="text-gray-700 text-lg font-bold">Eduroclass</h1>
-          </div>
+          <Link href="/home">
+            <div className="hidden md:flex gap-2 ml-3 items-center">
+              <div className="w-10 h-10">
+                <Image
+                  width={40}
+                  height={40}
+                  loading="lazy"
+                  className="w-full h-full"
+                  src="/logos/LogoBlueT.png"
+                />
+              </div>
 
-          <div className="flex gap-3 items-center">
-            {/* SearchBar */}
-            <div className="border-[1px] ml-5 min-w-[300px] border-ternaryTextColor hidden lg:flex focus:border-secondaryTextColor items-center">
-              <input
-                className="border-none w-full py-2 px-4 outline-none text-primaryTextColor text-sm"
-                type="text"
-                placeholder="Search for ..."
-              />
-              <IoSearchOutline className="w-[40px] h-[40px] py-2 px-2 cursor-pointer text-primaryTextColor" />
+              <h1 className="text-gray-700 text-lg font-bold">Eduroclass</h1>
             </div>
-          </div>
+          </Link>
+
+          <div className="flex gap-3 items-center"></div>
 
           <div className="flex gap-4 pr-4">
             <IoSearchOutline className="w-[25px] h-[25px] lg:hidden cursor-pointer text-primaryTextColor" />

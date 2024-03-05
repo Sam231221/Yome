@@ -41,12 +41,7 @@ export function ManageUserSubscriptionButton({
     stripePriceId,
     classes
   );
-  const [
-    {
-      userInfo,
-    },
-    dispatch,
-  ] = useStateProvider();
+  const [{ userInfo }, dispatch] = useStateProvider();
 
   const [isPending, startTransition] = React.useTransition();
 
@@ -56,7 +51,6 @@ export function ManageUserSubscriptionButton({
     if (status === 200) {
       startTransition(async () => {
         try {
-          console.log("Sending data:", email, userId, isSubscribed, isCurrentPlan, stripeCustomerId, stripePriceId)
           const { data } = await axios.post(MANAGE_STRIPE_SUBSCRIPTION_ACTION, {
             email,
             userId,
@@ -67,7 +61,6 @@ export function ManageUserSubscriptionButton({
           });
 
           if (data) {
-     
             window.location.href = data.url ?? "/account";
           }
         } catch (err) {
