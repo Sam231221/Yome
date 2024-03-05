@@ -9,6 +9,7 @@ export const institutionsUtils = {
         "https://res.cloudinary.com/dcgrv6shk/image/upload/v1705222929/Eduroclass/Uploads/EducationInstitutions/kcjt7pxrmuecb70byky0.jpg",
     },
   ],
+  thumbnail: "",
   programs: [
     {
       name: "Computer Science",

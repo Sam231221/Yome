@@ -16,6 +16,7 @@ export const groupData = [
     about: "Discussing classic and contemporary literature",
     adminUserIDs: [1, 3],
     memberUserIDs: [1, 3],
+    thumbnail: "",
   },
   // Additional education-related group data
   {

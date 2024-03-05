@@ -53,7 +53,9 @@ export default function ChatListHeader({ isUserLoading }) {
             />
           </div>
           <span className="text-lg font-semibold text-gray-700">
-            {userInfo?.firstname}
+            {userInfo?.firstname &&
+              userInfo.firstname.charAt(0).toUpperCase() +
+                userInfo.firstname.slice(1)}
           </span>
         </div>
       )}

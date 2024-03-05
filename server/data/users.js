@@ -3,6 +3,7 @@ export const usersData = [
     email: "samirshahi9882@gmail.com",
     firstname: "Sameer",
     lastname: "Shahi",
+    profilePicture: "",
     username: "sameershahithakuri",
     password: "coder123",
     bio: "Bio for User Sameer",

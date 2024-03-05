@@ -6,7 +6,7 @@ export const careers = [
     image:
       "https://res.cloudinary.com/dcgrv6shk/image/upload/v1686376170/Portfolio/Images/CsitGuru_sw5r6l.png",
     code: "https://github.com/Sam231221/CsitGuruBackend",
-    siteUrl: "https://csitguru.netlify.app/",
+    fileUrl: "https://csitguru.netlify.app/",
     categories: ["Computer Science", "It", "Software Engineering"],
     video: false,
 
@@ -19,7 +19,7 @@ export const careers = [
       "https://res.cloudinary.com/dcgrv6shk/image/upload/v1687082583/Portfolio/Images/Screenshot_186_gb0uai.png",
 
     code: "https://github.com/Sam231221/CsitGuruBackend",
-    siteUrl: "https://yo-texto.vercel.app/",
+    fileUrl: "https://yo-texto.vercel.app/",
     categories: ["Computer Science", "It", "Software Engineering"],
     video: false,
     id: 1112,
@@ -31,7 +31,7 @@ export const careers = [
     image:
       "https://res.cloudinary.com/dcgrv6shk/image/upload/v1686587069/Portfolio/Images/360-Paragliding-Private-Limited_hcxqlx.png",
     code: "https://github.com/Sam231221/CsitGuruBackend",
-    siteUrl: "https://360paragliding.com/",
+    fileUrl: "https://360paragliding.com/",
     categories: ["Computer Science", "It", "Software Engineering"],
     video: false,
     id: 67,
@@ -43,7 +43,7 @@ export const careers = [
       "https://res.cloudinary.com/dcgrv6shk/image/upload/v1686461164/Portfolio/Images/LeadGen-Dashboard_jdnh3d.png",
 
     code: "https://github.com/Sam231221/CsitGuruBackend",
-    siteUrl: "https://dashboardleadgen.netlify.app/",
+    fileUrl: "https://dashboardleadgen.netlify.app/",
     categories: ["Computer Science", "It", "Software Engineering"],
     video: false,
     id: 91,
@@ -56,7 +56,7 @@ export const careers = [
     image:
       "https://res.cloudinary.com/dcgrv6shk/image/upload/v1686472165/Portfolio/Images/OpenTable_elxdra.png",
     code: "https://github.com/Sam231221/CsitGuruBackend",
-    siteUrl: "https://open-table.vercel.app/",
+    fileUrl: "https://open-table.vercel.app/",
     categories: ["Computer Science", "It", "Software Engineering"],
     video: false,
     id: 12,
@@ -68,7 +68,7 @@ export const careers = [
     image:
       "https://res.cloudinary.com/dcgrv6shk/image/upload/v1686376171/Portfolio/Images/VanezStore_nk3zao.png",
     code: "https://github.com/Sam231221/VanezStore",
-    siteUrl: "https://vanezstore.up.railway.app/",
+    fileUrl: "https://vanezstore.up.railway.app/",
     categories: ["Computer Science", "It", "Software Engineering"],
     video: false,
     id: 2,
@@ -79,7 +79,7 @@ export const careers = [
     image:
       "https://res.cloudinary.com/dcgrv6shk/image/upload/v1686376172/Portfolio/Images/Relshop_wztar4.png",
     code: "https://github.com/Sam231221/RelshopBackend",
-    siteUrl: "https://relshop.netlify.app/",
+    fileUrl: "https://relshop.netlify.app/",
     categories: ["Computer Science", "It", "Software Engineering"],
     video: false,
     id: 3,
@@ -91,7 +91,7 @@ export const careers = [
     image:
       "https://res.cloudinary.com/dcgrv6shk/image/upload/v1686376170/Portfolio/Images/DI_krqshm.png",
     code: "https://github.com/Sam231221/Dimensionalillusions",
-    siteUrl: "https://dimensional-illusions.up.railway.app/",
+    fileUrl: "https://dimensional-illusions.up.railway.app/",
     categories: ["Computer Science", "It", "Software Engineering"],
     video: false,
     id: 4,

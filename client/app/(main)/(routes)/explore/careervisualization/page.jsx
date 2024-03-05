@@ -38,11 +38,9 @@ const CareerVisualizationPage = () => {
                 onClick={() => showModalHandler(career.id)}
                 className="relative px-3 py-3 border border-gray-300 hover:border-sky-700 shadow-md bg-white text-lg text-gray-600 rounded-lg"
               >
-                <a href="">
-                  <CiBookmark className="absolute top-1 right-2 hover:text-sky-700 " />
+                <CiBookmark className="absolute top-1 right-2 hover:text-sky-700 " />
 
-                  <span>{career.title}</span>
-                </a>
+                <span>{career.title}</span>
               </li>
             ))}
           </ul>

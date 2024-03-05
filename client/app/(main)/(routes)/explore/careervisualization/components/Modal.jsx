@@ -13,7 +13,7 @@ const Modal = ({ activeId, setShowModal }) => {
           "
         >
           <a
-            href={career.siteUrl}
+            href={career.fileUrl}
             rel="noreferrer"
             target="_blank"
             className="btn-visit"
