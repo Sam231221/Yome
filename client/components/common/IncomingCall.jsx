@@ -53,16 +53,18 @@ function IncomingCall() {
     <div className="h-24 w-80 fixed bottom-8 mb-0 right-6 z-50 rounded-sm flex gap-5 items-center justify-start p-4 bg-conversation-panel-background text-white drop-shadow-2xl border-icon-green border-2 py-14">
       <div>
         <Image
-          src={incomingVoiceCall.profilePicture}
+          src={incomingVoiceCall.profilePicture || "/avatars/userprofile.png"}
           alt="avatar"
-          width={70}
-          height={70}
+          width={50}
+          height={50}
           className="rounded-full"
         />
       </div>
       <div>
-        <div>{incomingVoiceCall.name}</div>
-        <div className="text-xs">Incoming Voice Call</div>
+        <div className="text-sm text-gray-700 font-bold">
+          {incomingVoiceCall.name}
+        </div>
+        <div className="text-xs text-gray-700">Incoming Voice Call</div>
         <div className="flex gap-2 mt-2">
           <button
             className="bg-red-500 p-1 px-3 text-sm rounded-full"

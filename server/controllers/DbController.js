@@ -28,9 +28,11 @@ export const createMultipleUsersWithProfiles = async (req, res) => {
           email: userData.email,
           firstname: userData.firstname,
           lastname: userData.lastname,
+          name: userData.firstname + " " + userData.lastname,
           username: userData.username,
           password: userData.password,
           role: userData.role,
+          profilePicture: userData.thumbnail,
           // Add other user-related data here as needed
         },
       });
@@ -61,13 +63,13 @@ export const createEducationGroups = async (req, res) => {
     const prisma = getPrismaInstance();
     const createdGroups = [];
     for (const data of groupData) {
-      const { name, about, adminUserIDs, memberUserIDs } = data;
+      const { name, about, thumbnail, adminUserIDs, memberUserIDs } = data;
 
       const newGroup = await prisma.group.create({
         data: {
           name,
           about,
-          thumbnail: "", // You can specify a thumbnail here if available
+          thumbnail: thumbnail,
           admins: { connect: adminUserIDs.map((userID) => ({ id: userID })) },
           members: { connect: memberUserIDs.map((userID) => ({ id: userID })) },
         },

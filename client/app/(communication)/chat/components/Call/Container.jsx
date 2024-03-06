@@ -14,7 +14,7 @@ function Container({ data }) {
   const [zgVar, setZgVar] = useState(undefined);
   const [callStarted, setCallStarted] = useState(false);
   const [callAccepted, setcallAccepted] = useState(false);
-
+  console.log("daaa:", data);
   useEffect(() => {
     if (data.type === "out-going")
       socket.current.on("accept-call", () => setcallAccepted(true));
@@ -160,11 +160,7 @@ function Container({ data }) {
       {(!callAccepted || data.callType === "audio") && (
         <div className="my-10">
           <Image
-            src={`${
-              data.profilePicture == ""
-                ? "/avatars/userprofile.png"
-                : data.profilePicture
-            }`}
+            src={data?.profilePicture || "/avatars/userprofile.png"}
             alt="avatar"
             height={200}
             width={200}

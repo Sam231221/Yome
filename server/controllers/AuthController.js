@@ -647,6 +647,7 @@ export const generateToken = (req, res, next) => {
     const userId = req.params.userId;
     const effectiveTimeInSeconds = 3600;
     const payload = "";
+    console.log(appID, serverSecret, userId);
     if (appID && serverSecret && userId) {
       const token = generateToken04(
         appID,
