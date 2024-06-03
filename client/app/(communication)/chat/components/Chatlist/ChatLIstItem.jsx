@@ -80,7 +80,7 @@ export default function ChatLIstItem({
             chatType="group"
             className="pointer-events-none"
             type="sm"
-            image={`${data?.profilePicture || "/avatars/groupprofile.png"}`}
+            image={`${data?.thumbnail || "/avatars/groupprofile.png"}`}
           />
         ) : (
           <AvatarWithStatus

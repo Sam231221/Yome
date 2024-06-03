@@ -57,7 +57,7 @@ export default function ChatHeader({ chatType }) {
       },
     });
   };
-
+console.log("csad:", currentChatUser)
   return (
     <div className="h-16 px-4 py-3 flex justify-between items-center bg-white z-10">
       <div className="flex items-center justify-center gap-6">
@@ -66,7 +66,7 @@ export default function ChatHeader({ chatType }) {
             <Avatar
               type="lg"
               image={`${
-                currentChatUser?.profilePicture || "/avatars/groupprofile.png"
+                currentChatUser?.thumbnail || "/avatars/groupprofile.png"
               }`}
             />
           ) : (
@@ -80,7 +80,6 @@ export default function ChatHeader({ chatType }) {
               }`}
             />
           )}
-          <span></span>
         </div>
         <div className="flex flex-col">
           <span className="font-semibold text-gray-700">

@@ -2,30 +2,20 @@
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import axios from "axios";
-import { CiLocationOn } from "react-icons/ci";
 import { reducerCases } from "@/context/constants";
 import { useStateProvider } from "@/context/StateContext";
 import toast from "react-hot-toast";
-
-import Image from "next/image";
-import Link from "next/link";
 
 import {
   GET_USER_ROUTE,
   GET_UNASSOCIATED_GROUPS,
   GET_UNFOLLOWED_MENTORS,
-  GET_ALL_EDUCATIONAL_INSTITUTIONS,
 } from "@/utils/ApiRoutes";
-
+import InstitutionsListings from "./components/InsitutionsListings";
 import CommunityCarousel from "./components/PCarousel/CommunityCarousel";
 import MentorCarousel from "./components/PCarousel/MentorCarousel";
-import { InstitutionSkeleton } from "@/components/Loading/Skeletons";
 const Home = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
-  const [filteredInstitutions, setFilteredInstitutions] = useState([]);
-  const [isInstitutionsLoading, setInstitutionsLoading] = useState(true);
-  const [hasInstitutionsErrors, setInstitutionsErrors] = useState(false);
-  const [institutions, setInstitutions] = useState([]);
   const [mentors, setMentors] = useState([]);
   const [isMentorsLoading, setMentorsLoading] = useState(true);
   const [hasMentorsErrors, setMentorsErrors] = useState(false);
@@ -73,22 +63,11 @@ const Home = () => {
 
   useEffect(() => {
     if (userInfo) {
-      getEIs();
       getGroups();
       getMentors();
     }
   }, [userInfo]);
-  const getEIs = async (e) => {
-    try {
-      let { data } = await axios.get(GET_ALL_EDUCATIONAL_INSTITUTIONS);
-      setInstitutions(data.institutions);
-      setFilteredInstitutions(data.institutions);
-      setInstitutionsLoading(false);
-    } catch (e) {
-      setInstitutionsErrors(e);
-      setInstitutionsLoading(false);
-    }
-  };
+
   const getMentors = async (e) => {
     try {
       let { data } = await axios.get(
@@ -115,12 +94,6 @@ const Home = () => {
   };
   const handleTab = (type) => {
     setActiveTab(type);
-    if (type === "All") {
-      setFilteredInstitutions(institutions);
-    } else {
-      const filteredEis = institutions.filter((ei) => ei.type === type);
-      setFilteredInstitutions(filteredEis);
-    }
   };
 
   return (
@@ -185,62 +158,7 @@ const Home = () => {
             Educational Consultancy
           </li>
         </ul>
-        <div className="bg-white grid xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          {isInstitutionsLoading ? (
-            <InstitutionSkeleton
-              classname={"col-md-4 col-lg-4 col-xl-4 mb-5 mb-lg-0"}
-              counts={2}
-              cards={6}
-            />
-          ) : hasInstitutionsErrors ? (
-            <div>{hasInstitutionsErrors}</div>
-          ) : filteredInstitutions?.length > 0 ? (
-            <>
-              {filteredInstitutions.map((ei, index) => (
-                <div key={index} className="flex flex-col border shadow-lg">
-                  <div className="relative w-full h-40 overflow-hidden">
-                    <Image
-                      className="transform transition ease-in-out duration-300 hover:scale-110"
-                      src={ei.thumbnail}
-                      alt="educational institution"
-                      width={400}
-                      height={500}
-                      priority="true"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </div>
-
-                  <div className="my-2 p-2 leading-tight">
-                    <Link href="/school">
-                      <h2 className="text-[16px] text-gray-700 font-semibold">
-                        {ei.name}
-                      </h2>
-                    </Link>
-                    <hr />
-                    <div className="">
-                      <p className="text-sm  text-gray-600 ">
-                        {ei.description.substring(0, 50)}...
-                      </p>
-                      <div className="flex text-gray-500 gap-1">
-                        {" "}
-                        <CiLocationOn />
-                        <p className="text-xs ">{ei.address}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </>
-          ) : (
-            <div className=" col-span-3 border items-center justify-center shadow-lg p-4">
-              No Educational Institutions found for this category.
-            </div>
-          )}
-        </div>
+        <InstitutionsListings activeTab={activeTab} />
       </div>
 
       {/* Communities */}

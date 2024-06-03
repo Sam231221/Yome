@@ -6,41 +6,35 @@ export const InstitutionSkeleton = ({ cards, counts, classname }) => {
     .fill(0)
     .map((item, i) => (
       <div key={i} className={classname}>
-        <div className="card">
-          <div className="d-flex justify-content-center align-items-center p-2">
-            <div className="container notice-div">
-              <Skeleton
-                count={1}
-                style={{
-                  height: "160px",
-                  marginBottom: "10px",
-                }}
-              />
+        <Skeleton
+          count={1}
+          style={{
+            height: "160px",
+            marginBottom: "10px",
+          }}
+        />
 
-              <Skeleton
-                count={1}
-                style={{
-                  width: "200px",
-                  height: "12px",
-                }}
-              />
-              <Skeleton
-                count={1}
-                style={{
-                  width: "100%",
-                  height: "10px",
-                }}
-              />
-              <Skeleton
-                count={1}
-                style={{
-                  width: "100%",
-                  height: "8px",
-                }}
-              />
-            </div>
-          </div>
-        </div>
+        <Skeleton
+          count={1}
+          style={{
+            width: "200px",
+            height: "12px",
+          }}
+        />
+        <Skeleton
+          count={1}
+          style={{
+            width: "100%",
+            height: "10px",
+          }}
+        />
+        <Skeleton
+          count={1}
+          style={{
+            width: "100%",
+            height: "8px",
+          }}
+        />
       </div>
     ));
 };

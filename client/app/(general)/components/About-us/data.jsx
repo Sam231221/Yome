@@ -1,13 +1,12 @@
-import { MdContentPasteSearch, MdPrivacyTip } from "react-icons/md"
-import { VscDebugConsole } from "react-icons/vsc"
+import { MdContentPasteSearch, MdPrivacyTip } from "react-icons/md";
+import { VscDebugConsole } from "react-icons/vsc";
 
 export const accordions = [
   {
-    title: "Session Replay",
+    title: "Compare EIs",
     icon: MdContentPasteSearch,
     image: "/hi.png",
-    description:
-      "Understand the real reason why bugs are happening in your web application",
+    description: "Compare different Educational Institutions",
     lists: [
       {
         title: "Console and Network Recording",
@@ -24,7 +23,7 @@ export const accordions = [
     ],
   },
   {
-    title: "Error Monitoring",
+    title: "Connect With Mentors",
     icon: MdContentPasteSearch,
     image: "/hi.png",
     description:
@@ -45,7 +44,7 @@ export const accordions = [
     ],
   },
   {
-    title: "Logging",
+    title: "Take Right Plans",
     icon: MdContentPasteSearch,
     image: "/hi.png",
     description:
@@ -65,4 +64,4 @@ export const accordions = [
       },
     ],
   },
-]
+];

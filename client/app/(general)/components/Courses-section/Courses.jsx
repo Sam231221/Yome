@@ -18,7 +18,7 @@ const Courses = () => {
           <div className="col-lg-6 col-md-6">
             <div className="text-white">
               <h2 className="text-5xl font-semibold">
-                A cohesive view of your entire stack.
+                A Monitory System for your management system.
               </h2>
               <p className="text-xl font-medium mt-4 text-gray-400">
                 A natural pairing between your errors, session replay, logs and

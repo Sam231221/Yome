@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 import { FaPlay } from "react-icons/fa";
 const HeroSection = () => {
@@ -12,9 +13,11 @@ const HeroSection = () => {
         </h2>
       </div>
       <div className="buttons flex gap-4 md:pl-10 lg:pl-16 mt-3 mb-12">
-        <button className="btn-get-started bg-blue-500 text-black font-bold px-9 py-3 rounded transition duration-300 hover:bg-violet-500 hover:text-white">
-          Get Started
-        </button>
+        <Link href="/pricing">
+          <button className="btn-get-started bg-blue-500 text-black font-bold px-9 py-3 rounded transition duration-300 hover:bg-violet-500 hover:text-white">
+            Get Started
+          </button>
+        </Link>
         <button className="btn-live-demo flex items-center border border-white text-white font-bold rounded cursor-pointer transition duration-300 px-9 py-3 hover:bg-pink-500 hover:text-black">
           <FaPlay />
           <span className="ml-2"> Live Demo</span>
