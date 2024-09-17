@@ -22,7 +22,9 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+app.get("/", (req, res) => {
+  res.send("Hello World! Welcome to Express.js");
+});
 //Note:Routes must be defined below express.json()
 app.use("/uploads/recordings", express.static("uploads/recordings"));
 app.use("/uploads/images/", express.static("uploads/images"));
