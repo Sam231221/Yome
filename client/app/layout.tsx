@@ -7,8 +7,9 @@ import ModalContextProvider from "@/context/ModalContextProvider";
 const inter = Inter({ subsets: ["latin"] });
 import { Toaster } from "react-hot-toast";
 export const metadata = {
-  title: "EduroClass",
-  description: "An Web based Saas Platform to centrailize Education system",
+  title: "Yome",
+  description:
+    "Experience seamless communication with our cutting-edge video calling and chat platform",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -20,7 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <StateProvider>
               <Toaster />
               <div id="photo-picker-element"></div>
-              <div>{children}</div>
+              <>{children}</>
             </StateProvider>
           </ModalContextProvider>
         </AuthProvider>
