@@ -1,16 +1,17 @@
+import axios from "axios";
+import toast from "react-hot-toast";
+import React, { useEffect, useState } from "react";
+import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import {
   GET_ALL_CONNECTED_USERS,
   GET_ALL_CONNECTED_GROUPS,
 } from "@/utils/ApiRoutes";
-import axios from "axios";
-import toast from "react-hot-toast";
-import React, { useEffect, useState } from "react";
-import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
+
 import ChatLIstItem from "./ChatLIstItem";
 
-function ContactsList() {
+function AllContactsList() {
   const [{ userInfo }, dispatch] = useStateProvider();
   const [allContacts, setAllContacts] = useState([]);
   const [searchTerm, setsearchTerm] = useState("");
@@ -119,4 +120,4 @@ function ContactsList() {
   );
 }
 
-export default ContactsList;
+export default AllContactsList;

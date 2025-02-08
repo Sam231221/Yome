@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import ChatListHeader from "./ChatListHeader";
-import List from "./List";
-import SearchBar from "./SearchBar";
-import ContactsList from "./ContactsList";
 import { useStateProvider } from "@/context/StateContext";
+import ChatListHeader from "./components/ChatListHeader";
+import List from "./components/List";
+import SearchBar from "./components/SearchBar";
+import AllContactsList from "./components/AllContactsList";
 
-export default function ChatList({ isUserLoading }) {
+export default function ChatLeftBar({ isUserLoading }) {
   const [pageType, setPageType] = useState("default");
   const [{ contactsPage }] = useStateProvider();
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function ChatList({ isUserLoading }) {
           <List />
         </>
       )}
-      {pageType === "all-contacts" && <ContactsList />}
+      {pageType === "all-contacts" && <AllContactsList />}
     </div>
   );
 }

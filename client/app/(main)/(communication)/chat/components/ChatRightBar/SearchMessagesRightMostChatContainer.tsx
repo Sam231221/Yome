@@ -5,7 +5,7 @@ import { BiFilter, BiSearchAlt2, BiArrowBack } from "react-icons/bi";
 import { reducerCases } from "@/context/constants";
 import { calculateTime } from "@/utils/CalculateTime";
 
-function SearchMessages() {
+function SearchMessagesRightMostChatContainer() {
   const [{ currentChatUser, messages }, dispatch] = useStateProvider();
   const [searchBarFocus, setSearchBarFocus] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -94,4 +94,4 @@ function SearchMessages() {
   );
 }
 
-export default SearchMessages;
+export default SearchMessagesRightMostChatContainer;

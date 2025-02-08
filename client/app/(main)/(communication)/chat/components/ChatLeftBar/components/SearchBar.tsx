@@ -1,6 +1,6 @@
+import { BiFilter, BiSearchAlt2, BiArrowBack } from "react-icons/bi";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { BiFilter, BiSearchAlt2, BiArrowBack } from "react-icons/bi";
 
 export default function SearchBar() {
   const [{ contactSearch }, dispatch] = useStateProvider();

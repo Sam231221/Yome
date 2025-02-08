@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 import { Video, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -75,12 +75,12 @@ export default function Navbar() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <button
-              onClick={() => signOut()}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            <Link
+              href={"/dashboard"}
+              className="w-full bg-blue-600 px-3 py-2 rounded-sm hover:bg-blue-700 text-white"
             >
-              Sign out
-            </button>
+              Go to Dasboard
+            </Link>
           </motion.li>
         ) : (
           <Link
@@ -123,12 +123,12 @@ export default function Navbar() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <button
-                      onClick={() => signOut()}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    <Link
+                      href={"/dashboard"}
+                      className="w-full bg-blue-600 px-3 py-2 rounded-sm hover:bg-blue-700 text-white"
                     >
-                      Sign out
-                    </button>
+                      Go to Dasboard
+                    </Link>
                   </motion.li>
                 ) : (
                   <Link

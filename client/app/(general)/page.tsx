@@ -5,10 +5,12 @@ import { ArrowRight, MessageCircle, Video, Shield } from "lucide-react";
 import { motion, useAnimation } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import Link from "next/link";
+import Navbar from "@/components/common/Navbar";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b bg-blue-50/40  to-white">
+      <Navbar />
       <main>
         <HeroSection />
         <FeaturesSection />

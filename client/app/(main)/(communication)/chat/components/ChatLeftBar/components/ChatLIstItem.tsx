@@ -1,9 +1,10 @@
 import React from "react";
+import { FaCamera, FaMicrophone } from "react-icons/fa";
 import Avatar from "@/components/common/Avatar";
 import AvatarWithStatus from "@/components/common/AvatarWithStatus";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { FaCamera, FaMicrophone } from "react-icons/fa";
+
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
 export default function ChatLIstItem({
@@ -116,7 +117,7 @@ export default function ChatLIstItem({
         </div>
         <div className="flex border-b border-conversation-border pb-2 pt-1 pr-2">
           <div className="flex justify-between w-full">
-            <span className="text-secondary line-clamp-1 text-sm ">
+            <span className="text-gray-700 line-clamp-1 text-sm ">
               {isContactPage ? (
                 <>
                   {type === "group" ? (

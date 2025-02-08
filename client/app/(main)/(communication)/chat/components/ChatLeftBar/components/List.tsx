@@ -1,7 +1,9 @@
 import React, { useEffect } from "react";
-import ChatLIstItem from "./ChatLIstItem";
-import { useStateProvider } from "@/context/StateContext";
 import axios from "axios";
+import { useStateProvider } from "@/context/StateContext";
+
+import ChatLIstItem from "./ChatLIstItem";
+
 import {
   GET_INITIAL_USERS_MESSAGES,
   GET_INITIAL_GROUP_MESSAGES,

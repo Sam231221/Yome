@@ -1,22 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import axios from "axios";
+import toast from "react-hot-toast";
+import EmojiPicker from "emoji-picker-react";
 import { BsEmojiSmile } from "react-icons/bs";
 import { ImAttachment } from "react-icons/im";
 import { FaMicrophone } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import axios from "axios";
 import { ADD_IMAGE_MESSAGE_ROUTE, ADD_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
-import EmojiPicker from "emoji-picker-react";
-import dynamic from "next/dynamic";
 import PhotoPicker from "@/components/common/PhotoPicker";
-import toast from "react-hot-toast";
 
 const CaptureAudio = dynamic(() => import("@/components/common/CaptureAudio"), {
   ssr: false,
 });
 
-export default function MessageBar({ id, chatType }) {
+export default function MessageSendBar({ id, chatType }) {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);

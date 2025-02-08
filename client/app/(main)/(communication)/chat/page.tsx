@@ -8,20 +8,14 @@ import { reducerCases } from "@/context/constants";
 import IncomingCall from "@/components/common/IncomingCall";
 import IncomingVideoCall from "@/components/common/IncomingVideoCall";
 import { GET_USER_ROUTE, GET_MESSAGES_ROUTE, HOST } from "@/utils/ApiRoutes";
-import Empty from "@/components/Empty";
 
 import VideoCall from "./components/Call/VideoCall";
 import VoiceCall from "./components/Call/VoiceCall";
 
-import Chat from "./components/Chat/Chat";
-import ChatList from "./components/Chatlist/ChatList";
-import SearchMessages from "./components/Chat/SearchMessages";
-
 import { useSession } from "next-auth/react";
+import ChatLeftBar from "./components/ChatLeftBar";
+import ChatRightBar from "./components/ChatRightBar";
 export default function Chatpage() {
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 0
-  );
   const [
     {
       userInfo,
@@ -30,25 +24,12 @@ export default function Chatpage() {
       voiceCall,
       incomingVoiceCall,
       incomingVideoCall,
-      messageSearch,
       userContacts,
       groupContacts,
     },
     dispatch,
   ] = useStateProvider();
   const [isUserLoading, setIsUserLoading] = useState(true);
-  const handleResize = () => {
-    setWindowWidth(window.innerWidth);
-  };
-
-  useEffect(() => {
-    setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
 
   const socket = useRef();
 
@@ -197,12 +178,14 @@ export default function Chatpage() {
       getMessages();
     }
   }, [currentChatUser]);
-  const isMobileView = windowWidth < 720;
+
   return (
     <>
+      {/* giving notification of call in chatpage */}
       {incomingVoiceCall && <IncomingCall />}
       {incomingVideoCall && <IncomingVideoCall />}
 
+      {/* if any user picks video/voice call container of full resolution will be shown */}
       {videoCall && (
         <div className="h-screen w-screen max-h-full max-w-full overflow-hidden">
           <VideoCall />
@@ -213,23 +196,13 @@ export default function Chatpage() {
           <VoiceCall />
         </div>
       )}
+
       {!videoCall && !voiceCall && (
         <div className="grid xs:grid-cols-1 sm:grid-cols-main h-screen w-screen max-h-screen max-w-full overflow-hidden">
           {/* Sidebar */}
-          <ChatList isUserLoading={isUserLoading} />
-
+          <ChatLeftBar isUserLoading={isUserLoading} />
           {/* ChatContainer */}
-          {currentChatUser ? (
-            <div className={messageSearch ? "grid grid-cols-2" : "grid-cols-2"}>
-              <Chat
-                id={currentChatUser.id}
-                chatType={currentChatUser.identifier}
-              />
-              {messageSearch && <SearchMessages />}
-            </div>
-          ) : (
-            <div>{isMobileView ? <div></div> : <Empty />}</div>
-          )}
+          <ChatRightBar />
         </div>
       )}
     </>

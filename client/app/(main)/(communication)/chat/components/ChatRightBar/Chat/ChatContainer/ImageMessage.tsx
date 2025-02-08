@@ -1,5 +1,4 @@
 import { useStateProvider } from "@/context/StateContext";
-import { HOST } from "@/utils/ApiRoutes";
 import { calculateTime } from "@/utils/CalculateTime";
 import Image from "next/image";
 import React from "react";

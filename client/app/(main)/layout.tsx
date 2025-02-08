@@ -1,13 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
 import { RxDashboard } from "react-icons/rx";
 import { SlCompass } from "react-icons/sl";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
-import {
-  IoBookmarksOutline,
-  IoSearchOutline,
-  IoStatsChartOutline,
-} from "react-icons/io5";
+import { IoSearchOutline } from "react-icons/io5";
 
 import { MessagesDropDown } from "@/components/MessagesDropDown";
 import { NotificationDropdown } from "@/components/NotificationDropDown";
@@ -38,7 +33,7 @@ export default function HomeLayout({ children }) {
         <ul className="w-full mt-20 md:active:w-[244px]">
           <li
             className={`${
-              splitLocation === "/home" ? "active bg-[#EEF2FA]" : ""
+              splitLocation === "/dashboard" ? "active bg-[#EEF2FA]" : ""
             } my-2 relative group w-full rounded-tl-full rounded-bl-full hover:bg-[#EEF2FA]`}
           >
             <Link
@@ -66,49 +61,6 @@ export default function HomeLayout({ children }) {
               </span>
             </Link>
           </li>
-
-          <li
-            className={`${
-              splitLocation === "/explore" ? "active bg-[#EEF2FA]" : ""
-            }  my-2 relative group w-full rounded-tl-full rounded-bl-full hover:bg-[#EEF2FA]`}
-          >
-            <Link
-              href="/explore"
-              className="relative group flex w-full hover:text-secondaryTextColor items-center"
-            >
-              <span className="icon relative py-3 block px-5 text-center">
-                <SlCompass className="text-ternaryTextColor group-hover:text-secondaryTextColor text-2xl" />
-              </span>
-            </Link>
-          </li>
-          <li
-            className={`${
-              splitLocation === "/compare" ? "active bg-[#EEF2FA]" : ""
-            }  my-2 relative group w-full rounded-tl-full rounded-bl-full hover:bg-[#EEF2FA]`}
-          >
-            <Link
-              href="/compare"
-              className="relative group flex w-full hover:text-secondaryTextColor items-center"
-            >
-              <span className="icon relative py-3 block px-5 text-center">
-                <IoStatsChartOutline className="text-ternaryTextColor group-hover:text-secondaryTextColor text-2xl" />
-              </span>
-            </Link>
-          </li>
-          <li
-            className={`${
-              splitLocation === "/favourites" ? "active bg-[#EEF2FA]" : ""
-            }  my-2 relative group w-full rounded-tl-full rounded-bl-full hover:bg-[#EEF2FA]`}
-          >
-            <Link
-              href="/favourites"
-              className="relative group flex w-full hover:text-secondaryTextColor items-center"
-            >
-              <span className="icon relative py-3 block px-5 text-center">
-                <IoBookmarksOutline className="text-ternaryTextColor group-hover:text-secondaryTextColor text-2xl" />
-              </span>
-            </Link>
-          </li>
         </ul>
       </div>
 
@@ -129,7 +81,7 @@ export default function HomeLayout({ children }) {
                 />
               </div>
 
-              <h1 className="text-gray-700 text-lg font-bold">Eduroclass</h1>
+              <h1 className="text-gray-700 text-lg font-bold">Yome</h1>
             </div>
           </Link>
 

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import Avatar from "@/components/common/Avatar";
+import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { BsFillChatLeftTextFill, BsThreeDotsVertical } from "react-icons/bs";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { useRouter } from "next/navigation";
+import Avatar from "@/components/common/Avatar";
 import ContextMenu from "@/components/common/ContextMenu";
-import { signOut } from "next-auth/react";
 import ProfileSkeleton from "@/components/Loading/Skeletons";
 export default function ChatListHeader({ isUserLoading }) {
   const [{ userInfo, socket }, dispatch] = useStateProvider();

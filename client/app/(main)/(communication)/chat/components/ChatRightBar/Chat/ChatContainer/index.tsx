@@ -1,10 +1,10 @@
-import { useStateProvider } from "@/context/StateContext";
 import React, { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
+import { useStateProvider } from "@/context/StateContext";
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
-import ImageMessage from "./ImageMessage";
 import Avatar from "@/components/common/Avatar";
+import ImageMessage from "./ImageMessage";
 
 const VoiceMessage = dynamic(() => import("./VoiceMessage"), {
   ssr: false,
