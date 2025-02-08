@@ -1,11 +1,10 @@
 "use client";
-import Header from "./components/Header/Header";
-import { usePathname } from "next/navigation";
+import Navbar from "@/components/common/Navbar";
 
 export default function HomeLayout({ children }) {
   return (
     <div className="relative">
-      <Header />
+      <Navbar />
       {children}
     </div>
   );
