@@ -1,17 +1,18 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import "./styles.css";
-import { TransitionGroup, CSSTransition } from "react-transition-group";
 import Image from "next/image";
 import Link from "next/link";
-import Carousel from "./Carousel";
+import axios from "axios";
+
+import toast from "react-hot-toast";
 import { AiOutlineUsergroupAdd } from "react-icons/ai";
+import { TransitionGroup, CSSTransition } from "react-transition-group";
+
+import Carousel from "./Carousel";
 import { CONNECT_USER_TO_GROUP } from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
-import toast from "react-hot-toast";
 import { CommunitySkeleton } from "@/components/Loading/Skeletons";
-
+import "./styles.css";
 const CommunityCarousel = ({ communities, isLoading, hasErrors }) => {
   const [{ userInfo }] = useStateProvider();
   const [filteredItems, setFilteredItems] = useState([]);

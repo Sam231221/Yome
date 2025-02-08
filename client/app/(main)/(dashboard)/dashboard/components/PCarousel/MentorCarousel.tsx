@@ -1,14 +1,17 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import { TransitionGroup, CSSTransition } from "react-transition-group";
 import Link from "next/link";
+import Image from "next/image";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { TransitionGroup, CSSTransition } from "react-transition-group";
+
 import { IoMdPersonAdd } from "react-icons/io";
 import Carousel from "./Carousel";
 import "./styles.css";
-import axios from "axios";
+
 import { useStateProvider } from "@/context/StateContext";
-import toast from "react-hot-toast";
+
 import { CONNECT_USER_TO_MENTOR } from "@/utils/ApiRoutes";
 import { MentorSkeleton } from "@/components/Loading/Skeletons";
 const MentorCarousel = ({ mentors, isLoading, hasErrors }) => {

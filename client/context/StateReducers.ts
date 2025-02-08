@@ -252,45 +252,38 @@ const reducer = (state, action) => {
     }
 
     case reducerCases.ADD_GROUP_MESSAGE: {
-      // Check if the new group message belongs to the currently active group chat
-      if (state.currentChatUser?.id === action.newMessage.groupId) {
-        state.socket.current.emit("mark-group-read", {
-          groupId: action.newMessage.groupId,
-          userId: state.userInfo.id,
-        });
+      const {
+        groupId,
+        message,
+        type,
+        id,
+        messageStatus,
+        recieverId,
+        senderId,
+        createdAt,
+        group,
+        sender,
+      } = action.newMessage;
 
-        // Clone the group contacts array
-        const clonedGroupContacts = [...state.groupContacts];
+      const updateGroupContacts = (clonedGroupContacts) => {
         const index = clonedGroupContacts.findIndex(
-          (groupContact) => groupContact.id === action.newMessage.groupId
+          (groupContact) => groupContact.id === groupId
         );
 
         if (index !== -1) {
-          //Append message to the group in the list that logged in user sent
           const updatedGroup = clonedGroupContacts[index];
-          updatedGroup.message = action.newMessage.message;
-          updatedGroup.type = action.newMessage.type;
-          updatedGroup.messageId = action.newMessage.id;
-          updatedGroup.createdAt = action.newMessage.createdAt;
-          updatedGroup.messageStatus = action.newMessage.messageStatus;
-          updatedGroup.recieverId = action.newMessage.recieverId;
-          updatedGroup.senderId = action.newMessage.senderId;
+          updatedGroup.message = message;
+          updatedGroup.type = type;
+          updatedGroup.messageId = id;
+          updatedGroup.createdAt = createdAt;
+          updatedGroup.messageStatus = messageStatus;
+          updatedGroup.recieverId = recieverId;
+          updatedGroup.senderId = senderId;
+          updatedGroup.totalUnreadMessages += 1;
 
-          // Remove and place the updated group contact at the top of the list
           clonedGroupContacts.splice(index, 1);
           clonedGroupContacts.unshift(updatedGroup);
         } else {
-          // If the group contact is not found, create a new group contact entry
-          const {
-            message,
-            type,
-            id,
-            messageStatus,
-            recieverId,
-            senderId,
-            createdAt,
-          } = action.newMessage;
-
           const newGroupData = {
             message,
             type,
@@ -300,128 +293,43 @@ const reducer = (state, action) => {
             senderId,
             createdAt,
             identifier: "group",
-            id: action.newMessage.group.id,
-            name: action.newMessage.group.name,
-            thumbnail: action.newMessage.group.thumbnail,
+            id: group.id,
+            name: group.name,
+            thumbnail: group.thumbnail,
             totalUnreadMessages: 1,
           };
-
-          // Add the new group contact at the top of the list
           clonedGroupContacts.unshift(newGroupData);
         }
 
-        // Return the updated state with the new group message and updated group contacts
+        return clonedGroupContacts;
+      };
+
+      if (state.currentChatUser?.id === groupId) {
+        state.socket.current.emit("mark-group-read", {
+          groupId,
+          userId: state.userInfo.id,
+        });
+
+        const clonedGroupContacts = updateGroupContacts([
+          ...state.groupContacts,
+        ]);
+
         return {
           ...state,
           messages: [...state.messages, action.newMessage],
           groupContacts: clonedGroupContacts,
         };
       } else {
-        if (state.currentChatUser === undefined) {
-          const clonedGroupContacts = [...state.groupContacts];
-          const index = clonedGroupContacts.findIndex(
-            (contact) => contact.id === action.newMessage.groupId
-          );
-          if (index !== -1) {
-            const data = clonedGroupContacts[index];
-            data.message = action.newMessage.message;
-            data.type = action.newMessage.type;
-            data.messageId = action.newMessage.id;
-            data.messageStatus = action.newMessage.messageStatus;
-            data.recieverId = action.newMessage.recieverId;
-            data.senderId = action.newMessage.senderId;
-            data.createdAt = action.newMessage.createdAt;
-            data.totalUnreadMessages += 1;
-            clonedGroupContacts.splice(index, 1);
-            clonedGroupContacts.unshift(data);
-          } else {
-            // for the very first time If the sender is not in contacts,
-            // add them to contacts for logged in users on left side bar.
-            const {
-              message,
-              type,
-              id,
-              messageStatus,
-              recieverId,
-              senderId,
-              createdAt,
-            } = action.newMessage;
-            const data = {
-              message,
-              type,
-              messageId: id,
-              messageStatus,
-              recieverId,
-              senderId,
-              createdAt,
-              identifier: "group",
-              id: action.newMessage.sender.id,
-              name: action.newMessage.sender.name,
-              profilePicture: action.newMessage.sender.profilePicture,
-              totalUnreadMessages: action.fromSelf ? 0 : 1,
-            };
-            clonedContacts.unshift(data);
-          }
-          return {
-            ...state,
-            messages: [...state.messages, action.newMessage],
-            groupContacts: clonedGroupContacts,
-          };
-        }
-        if (state.currentChatUser?.id !== action.newMessage.groupId) {
-          const clonedGroupContacts = [...state.groupContacts];
-          const index = clonedGroupContacts.findIndex(
-            (contact) => contact.id === action.newMessage.groupId
-          );
-          if (index !== -1) {
-            const data = clonedGroupContacts[index];
-            data.message = action.newMessage.message;
-            data.type = action.newMessage.type;
-            data.messageId = action.newMessage.id;
-            data.messageStatus = action.newMessage.messageStatus;
-            data.recieverId = action.newMessage.recieverId;
-            data.senderId = action.newMessage.senderId;
-            data.createdAt = action.newMessage.createdAt;
-            data.totalUnreadMessages += 1;
-            clonedGroupContacts.splice(index, 1);
-            clonedGroupContacts.unshift(data);
-          } else {
-            // for the very first time If the sender is not in contacts,
-            // add them to contacts for logged in users on left side bar.
-            const {
-              message,
-              type,
-              id,
-              messageStatus,
-              recieverId,
-              senderId,
-              createdAt,
-            } = action.newMessage;
-            const data = {
-              message,
-              type,
-              messageId: id,
-              messageStatus,
-              recieverId,
-              senderId,
-              createdAt,
-              identifier: "group",
-              id: action.newMessage.sender.id,
-              name: action.newMessage.sender.name,
-              profilePicture: action.newMessage.sender.profilePicture,
-              totalUnreadMessages: action.fromSelf ? 0 : 1,
-            };
-            clonedContacts.unshift(data);
-          }
-          return {
-            ...state,
-            groupContacts: clonedGroupContacts,
-          };
-        }
-      }
+        const clonedGroupContacts = updateGroupContacts([
+          ...state.groupContacts,
+        ]);
 
-      // If the new group message doesn't belong to the current chat group, return the current state
-      return state;
+        return {
+          ...state,
+          messages: [...state.messages, action.newMessage],
+          groupContacts: clonedGroupContacts,
+        };
+      }
     }
 
     case reducerCases.SET_MESSAGES:

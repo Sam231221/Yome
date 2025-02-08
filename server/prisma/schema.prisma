@@ -47,11 +47,7 @@ model User {
   likes                     Like[]
   followers                 User[]                  @relation("Followers")
   following                 User[]                  @relation("Followers")
-
-  stripeCustomerId       String?   @unique @map(name: "stripe_customer_id")
-  stripeSubscriptionId   String?   @unique @map(name: "stripe_subscription_id")
-  stripePriceId          String?   @map(name: "stripe_price_id")
-  stripeCurrentPeriodEnd DateTime? @map(name: "stripe_current_period_end")
+  messagesSeen              Messages[]              @relation(name: "MessageSeenBy")
 
   //for filtering
   @@index([email])
@@ -72,6 +68,7 @@ model Messages {
   senderId      Int
   reciever      User?    @relation("recievedMessages", fields: [recieverId], references: [id])
   recieverId    Int?
+  seenBy        User[]   @relation("MessageSeenBy")
   type          String   @default("text")
   message       String
   msgType       String   @default("")

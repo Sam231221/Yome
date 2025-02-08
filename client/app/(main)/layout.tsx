@@ -1,15 +1,15 @@
 "use client";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { RxDashboard } from "react-icons/rx";
-import { SlCompass } from "react-icons/sl";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoSearchOutline } from "react-icons/io5";
 
 import { MessagesDropDown } from "@/components/MessagesDropDown";
 import { NotificationDropdown } from "@/components/NotificationDropDown";
 import { ProfileDropDown } from "@/components/ProfileDropDown";
-import { usePathname } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
+
 export default function HomeLayout({ children }) {
   const splitLocation = usePathname();
 
@@ -37,7 +37,7 @@ export default function HomeLayout({ children }) {
             } my-2 relative group w-full rounded-tl-full rounded-bl-full hover:bg-[#EEF2FA]`}
           >
             <Link
-              href="/home"
+              href="/dashboard"
               className={`${splitLocation === "/home" ? "active" : ""} 
                          relative group flex w-full hover:text-secondaryTextColor items-center `}
             >

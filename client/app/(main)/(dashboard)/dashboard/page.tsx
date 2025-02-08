@@ -2,9 +2,10 @@
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import axios from "axios";
+import toast from "react-hot-toast";
 import { reducerCases } from "@/context/constants";
 import { useStateProvider } from "@/context/StateContext";
-import toast from "react-hot-toast";
+
 
 import {
   GET_USER_ROUTE,

@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  env: {
-    NEXT_PUBLIC_ZEGO_APP_ID: 481623770,
-    NEXT_PUBLIC_ZEGO_SERVER_ID: "3901bf1c99551de036ef8a2cd22eddde",
-  },
+  env: {},
   eslint: {
     // Warning: This allows production builds to successfully complete even if
     // your project has ESLint errors.

@@ -61,6 +61,7 @@ export default function List() {
       toast.error(err);
     }
   }, [userInfo]);
+  console.log("userContacts:", userContacts);
   return (
     <div className="bg-white flex-auto overflow-auto max-h-full custom-scrollbar">
       {filteredContacts && filteredContacts.length > 0
