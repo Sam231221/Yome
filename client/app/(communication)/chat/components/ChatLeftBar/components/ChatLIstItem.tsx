@@ -37,7 +37,7 @@ export default function ChatLIstItem({
             type: e.target.getAttribute("name"),
             name: data.name,
             about: data.about,
-            profilePicture: data.profilePicture,
+            profilePicture: data.thumbnail,
             identifier: data.identifier,
             email: data.email,
             id: data.id,
@@ -64,6 +64,7 @@ export default function ChatLIstItem({
       dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
     }
   };
+  console.log("data:", data);
   return (
     <div
       id={id}
