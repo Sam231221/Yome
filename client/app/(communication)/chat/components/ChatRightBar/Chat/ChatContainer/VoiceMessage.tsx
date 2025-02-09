@@ -7,33 +7,47 @@ import { HOST } from "@/utils/ApiRoutes";
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
 
-function VoiceMessage({ message }) {
+interface FormatTimeFunction {
+  (time: number): string;
+}
+interface VoiceMessageProps {
+  message: {
+    senderId: string;
+    message: string;
+    createdAt: string;
+    messageStatus: string;
+  };
+}
+function VoiceMessage({ message }: VoiceMessageProps) {
   const [{ currentChatUser, userInfo }] = useStateProvider();
-  const [audioMessage, setAudioMessage] = useState(null);
+  const [audioMessage, setAudioMessage] = useState<HTMLAudioElement | null>(
+    null
+  );
   const [isPlaying, setIsPlaying] = useState(false);
   const [waveformReady, setWaveformReady] = useState(false);
   const [currentPlaybackTime, setCurrentPlaybackTime] = useState(0);
   const [totalDuration, setTotalDuration] = useState(0);
   const waveformRef = useRef(null);
-  const waveform = useRef(null);
+  const waveform = useRef<WaveSurfer | null>(null);
 
   useEffect(() => {
     if (waveform.current === null) {
-      waveform.current = WaveSurfer.create({
-        container: waveformRef.current,
-        waveColor: "#131313",
-        progressColor: "#000000",
-        cursorColor: "#7ae3c3",
-        barWidth: 2,
-        height: 30,
-        responsive: true,
-      });
-      waveform.current.on("finish", () => {
+      if (waveformRef.current) {
+        waveform.current = WaveSurfer.create({
+          container: waveformRef.current,
+          waveColor: "#131313",
+          progressColor: "#000000",
+          cursorColor: "#7ae3c3",
+          barWidth: 2,
+          height: 30,
+        });
+      }
+      waveform.current?.on("finish", () => {
         setIsPlaying(false);
       });
     }
     return () => {
-      waveform.current.destroy();
+      waveform.current?.destroy();
     };
   }, []);
 
@@ -42,16 +56,16 @@ function VoiceMessage({ message }) {
     const audio = new Audio(audioURL);
     setAudioMessage(audio);
     setWaveformReady(true);
-    waveform.current.load(audioURL);
-    waveform.current.on("ready", () => {
-      setTotalDuration(waveform.current.getDuration());
+    waveform.current?.load(audioURL);
+    waveform.current?.on("ready", () => {
+      setTotalDuration(waveform.current?.getDuration() || 0);
     });
   }, [message.message]);
 
   const handlePlayAudio = () => {
     if (audioMessage) {
-      waveform.current.stop();
-      waveform.current.play();
+      waveform.current?.stop();
+      waveform.current?.play();
       audioMessage.play();
       setIsPlaying(true);
     }
@@ -59,7 +73,7 @@ function VoiceMessage({ message }) {
 
   const handlePauseAudio = () => {
     if (audioMessage) {
-      waveform.current.stop();
+      waveform.current?.stop();
       audioMessage.pause();
       setIsPlaying(false);
     }
@@ -77,7 +91,7 @@ function VoiceMessage({ message }) {
     }
   }, [audioMessage]);
 
-  const formatTime = (time) => {
+  const formatTime: FormatTimeFunction = (time) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes.toString().padStart(2, "0")}:${seconds
@@ -96,7 +110,7 @@ function VoiceMessage({ message }) {
     >
       <div>
         <Avatar
-          type="sm"
+          size="sm"
           image={
             message.senderId === currentChatUser.id
               ? currentChatUser?.profilePicture || "/avatars/userprofile.png"

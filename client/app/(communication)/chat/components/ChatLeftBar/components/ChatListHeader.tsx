@@ -7,7 +7,11 @@ import { reducerCases } from "@/context/constants";
 import Avatar from "@/components/common/Avatar";
 import ContextMenu from "@/components/common/ContextMenu";
 import ProfileSkeleton from "@/components/Loading/Skeletons";
-export default function ChatListHeader({ isUserLoading }) {
+export default function ChatListHeader({
+  isUserLoading,
+}: {
+  isUserLoading: boolean;
+}) {
   const [{ userInfo, socket }, dispatch] = useStateProvider();
   const router = useRouter();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
@@ -16,7 +20,7 @@ export default function ChatListHeader({ isUserLoading }) {
   });
   const [isContextMenuVisible, setIsContextMenuVisible] = useState(false);
 
-  const showContextMenu = (e) => {
+  const showContextMenu = (e: React.MouseEvent<SVGElement>) => {
     e.preventDefault();
     setContextMenuCordinates({ x: 22, y: 25 });
     setIsContextMenuVisible(true);
@@ -48,7 +52,7 @@ export default function ChatListHeader({ isUserLoading }) {
         <div className="flex gap-3 items-center">
           <div className="cursor-pointer">
             <Avatar
-              type="sm"
+              size="sm"
               image={userInfo?.profilePicture || "/avatars/userprofile.png"}
             />
           </div>

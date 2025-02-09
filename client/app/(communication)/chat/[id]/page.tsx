@@ -13,7 +13,7 @@ import MeetingRoom from "./components/MeetingRoom";
 import { useStateProvider } from "@/context/StateContext";
 
 const VideoChatOnBoardingPage = () => {
-  const [{ userInfo: user }, dispatch] = useStateProvider();
+  const [{ userInfo }] = useStateProvider();
   //get the id of an  specific call
   const { id } = useParams();
 
@@ -32,7 +32,7 @@ const VideoChatOnBoardingPage = () => {
   // get more info about custom call type:  https://getstream.io/video/docs/react/guides/configuring-call-types/
   const notAllowed =
     call.type === "invited" &&
-    (!user || !call.state.members.find((m) => m.user.id === user.id));
+    (!userInfo || !call.state.members.find((m) => m.user.id === userInfo.id));
 
   if (notAllowed) return <h1>not allowed</h1>;
 

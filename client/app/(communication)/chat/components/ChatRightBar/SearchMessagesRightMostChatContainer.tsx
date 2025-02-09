@@ -9,7 +9,7 @@ function SearchMessagesRightMostChatContainer() {
   const [{ currentChatUser, messages }, dispatch] = useStateProvider();
   const [searchBarFocus, setSearchBarFocus] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchedMessages, setSearchedMessages] = useState([]);
+  const [searchedMessages, setSearchedMessages] = useState<any[]>([]);
 
   useEffect(() => {
     if (searchTerm) {

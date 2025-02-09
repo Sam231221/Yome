@@ -1,16 +1,16 @@
 "use client";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { RxDashboard } from "react-icons/rx";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoSearchOutline } from "react-icons/io5";
-import { StreamVideoClient, User } from "@stream-io/video-react-sdk";
 import { MessagesDropDown } from "@/components/MessagesDropDown";
 import { NotificationDropdown } from "@/components/NotificationDropDown";
 import { ProfileDropDown } from "@/components/ProfileDropDown";
 
-export default function HomeLayout({ children }) {
+export default function Layout({ children }: { children: React.ReactNode }) {
   const splitLocation = usePathname();
 
   return (
@@ -73,6 +73,7 @@ export default function HomeLayout({ children }) {
             <div className="hidden md:flex gap-2 ml-3 items-center">
               <div className="w-10 h-10">
                 <Image
+                  alt="logo"
                   width={40}
                   height={40}
                   loading="lazy"

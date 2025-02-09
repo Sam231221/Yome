@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import axios from "axios";
+import toast from "react-hot-toast";
 import { useStateProvider } from "@/context/StateContext";
 
 import ChatLIstItem from "./ChatLIstItem";
@@ -15,9 +16,10 @@ export default function List() {
     { userInfo, userContacts, groupContacts, filteredContacts },
     dispatch,
   ] = useStateProvider();
+
   useEffect(() => {
-    try {
-      const getContacts = async () => {
+    const getContacts = async () => {
+      try {
         const {
           data: { usersWithLatestPivateMessages, onlineUsers },
         } = await axios.get(`${GET_INITIAL_USERS_MESSAGES}/${userInfo.id}`);
@@ -27,15 +29,19 @@ export default function List() {
           userContacts: usersWithLatestPivateMessages,
         });
         dispatch({ type: reducerCases.SET_ONLINE_USERS, onlineUsers });
-      };
+      } catch (err: any) {
+        toast.error(err.message);
+      }
+    };
 
-      const getGroups = async () => {
+    const getGroups = async () => {
+      try {
         const {
           data: { groupsWithLatestGroupMessages },
         } = await axios.get(`${GET_INITIAL_GROUP_MESSAGES}/${userInfo.id}`);
 
-        groupsWithLatestGroupMessages.forEach((group) => {
-          group.messages.forEach((message) => {
+        groupsWithLatestGroupMessages.forEach((group: any) => {
+          group.messages.forEach((message: any) => {
             const { groupId, ...messageId } = message;
             messageId.messageId = messageId.id;
             delete messageId.id;
@@ -50,22 +56,21 @@ export default function List() {
           type: reducerCases.SET_GROUP_CONTACTS,
           groupContacts: groupsWithLatestGroupMessages,
         });
-        // dispatch({ type: reducerCases.SET_ONLINE_USERS, onlineUsers });
-      };
-
-      if (userInfo?.id) {
-        getContacts();
-        getGroups();
+      } catch (err: any) {
+        toast.error(err.message);
       }
-    } catch (err) {
-      toast.error(err);
+    };
+
+    if (userInfo?.id) {
+      getContacts();
+      getGroups();
     }
-  }, [userInfo]);
-  console.log("userContacts:", userContacts);
+  }, [userInfo, dispatch]);
+
   return (
     <div className="bg-white flex-auto overflow-auto max-h-full custom-scrollbar">
       {filteredContacts && filteredContacts.length > 0
-        ? filteredContacts.map((contact) => {
+        ? filteredContacts.map((contact: any) => {
             return (
               <ChatLIstItem
                 id={contact.id}
@@ -76,12 +81,12 @@ export default function List() {
             );
           })
         : [...userContacts, ...groupContacts]
-            .sort((a, b) => {
+            .sort((a: any, b: any) => {
               const dateA = new Date(a.createdAt);
               const dateB = new Date(b.createdAt);
-              return dateB - dateA;
+              return dateB.getTime() - dateA.getTime();
             })
-            .map((contact) => {
+            .map((contact: any) => {
               return (
                 <ChatLIstItem
                   id={contact.id}

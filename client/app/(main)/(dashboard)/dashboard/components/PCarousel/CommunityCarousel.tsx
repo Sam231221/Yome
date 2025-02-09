@@ -13,14 +13,32 @@ import { CONNECT_USER_TO_GROUP } from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
 import { CommunitySkeleton } from "@/components/Loading/Skeletons";
 import "./styles.css";
-const CommunityCarousel = ({ communities, isLoading, hasErrors }) => {
-  const [{ userInfo }] = useStateProvider();
-  const [filteredItems, setFilteredItems] = useState([]);
-  const [slidesLength, setSlidesLength] = useState(0);
-  const [items, setItems] = useState([]);
-  const [activeIndex, setActiveIndex] = useState(0);
 
-  const handleConnectClick = async (id) => {
+interface Community {
+  id: string;
+  thumbnail: string;
+  name: string;
+  removed?: boolean;
+}
+
+interface CommunityCarouselProps {
+  communities: Community[];
+  isLoading: boolean;
+  hasErrors: string | null;
+}
+
+const CommunityCarousel: React.FC<CommunityCarouselProps> = ({
+  communities,
+  isLoading,
+  hasErrors,
+}) => {
+  const [{ userInfo }] = useStateProvider();
+  const [filteredItems, setFilteredItems] = useState<Community[]>([]);
+  const [slidesLength, setSlidesLength] = useState<number>(0);
+  const [items, setItems] = useState<Community[]>([]);
+  const [activeIndex, setActiveIndex] = useState<number>(0);
+
+  const handleConnectClick = async (id: string) => {
     try {
       const { data } = await axios.post(`${CONNECT_USER_TO_GROUP}`, {
         loggedInUserId: userInfo.id,
@@ -35,17 +53,24 @@ const CommunityCarousel = ({ communities, isLoading, hasErrors }) => {
         toast.success("You Joined the group.");
       }
     } catch (e) {
-      toast.error(e);
+      if (e instanceof Error) {
+        toast.error(e.message);
+      } else {
+        toast.error("An unknown error occurred.");
+      }
     }
   };
+
   useEffect(() => {
     setItems(communities);
   }, [communities]);
+
   useEffect(() => {
     const filters = items.filter((item) => !item.removed);
     setSlidesLength(filters.length);
     setFilteredItems(filters);
   }, [items]);
+
   return (
     <Carousel>
       <TransitionGroup
@@ -122,4 +147,5 @@ const CommunityCarousel = ({ communities, isLoading, hasErrors }) => {
     </Carousel>
   );
 };
+
 export default CommunityCarousel;

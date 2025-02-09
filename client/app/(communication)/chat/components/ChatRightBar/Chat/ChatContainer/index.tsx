@@ -10,20 +10,22 @@ const VoiceMessage = dynamic(() => import("./VoiceMessage"), {
   ssr: false,
 });
 
-export default function ChatContainer({ chatType }) {
+export default function ChatContainer({ chatType }: { chatType: string }) {
   const [{ messages, currentChatUser, userInfo }] = useStateProvider();
 
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   //On Message Updates
   useEffect(() => {
     const container = containerRef.current;
-    const lastMessage =
-      container.lastElementChild.lastElementChild.lastElementChild
-        .lastElementChild;
+    if (container) {
+      const lastMessage =
+        container.lastElementChild?.lastElementChild?.lastElementChild
+          ?.lastElementChild;
 
-    if (lastMessage) {
-      lastMessage.scrollIntoView({ behavior: "smooth" });
+      if (lastMessage) {
+        lastMessage.scrollIntoView({ behavior: "smooth" });
+      }
     }
   }, [messages]);
 

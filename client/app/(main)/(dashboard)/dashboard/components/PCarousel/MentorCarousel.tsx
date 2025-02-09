@@ -14,14 +14,33 @@ import { useStateProvider } from "@/context/StateContext";
 
 import { CONNECT_USER_TO_MENTOR } from "@/utils/ApiRoutes";
 import { MentorSkeleton } from "@/components/Loading/Skeletons";
-const MentorCarousel = ({ mentors, isLoading, hasErrors }) => {
-  const [{ userInfo }] = useStateProvider();
-  const [filteredItems, setFilteredItems] = useState([]);
-  const [slidesLength, setSlidesLength] = useState(0);
-  const [items, setItems] = useState([]);
-  const [activeIndex, setActiveIndex] = useState(0);
 
-  const handleConnectClick = async (id) => {
+interface Mentor {
+  id: string;
+  profilePicture: string;
+  firstname: string;
+  lastname: string;
+  removed?: boolean;
+}
+
+interface MentorCarouselProps {
+  mentors: Mentor[];
+  isLoading: boolean;
+  hasErrors: string | null;
+}
+
+const MentorCarousel: React.FC<MentorCarouselProps> = ({
+  mentors,
+  isLoading,
+  hasErrors,
+}) => {
+  const [{ userInfo }] = useStateProvider();
+  const [filteredItems, setFilteredItems] = useState<Mentor[]>([]);
+  const [slidesLength, setSlidesLength] = useState<number>(0);
+  const [items, setItems] = useState<Mentor[]>([]);
+  const [activeIndex, setActiveIndex] = useState<number>(0);
+
+  const handleConnectClick = async (id: string) => {
     try {
       const { data } = await axios.post(`${CONNECT_USER_TO_MENTOR}`, {
         loggedInUserId: userInfo.id,

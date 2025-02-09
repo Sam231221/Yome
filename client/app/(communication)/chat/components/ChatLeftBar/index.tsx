@@ -5,7 +5,11 @@ import List from "./components/List";
 import SearchBar from "./components/SearchBar";
 import AllContactsList from "./components/AllContactsList";
 
-export default function ChatLeftBar({ isUserLoading }) {
+export default function ChatLeftBar({
+  isUserLoading,
+}: {
+  isUserLoading: boolean;
+}) {
   const [pageType, setPageType] = useState("default");
   const [{ contactsPage }] = useStateProvider();
   useEffect(() => {

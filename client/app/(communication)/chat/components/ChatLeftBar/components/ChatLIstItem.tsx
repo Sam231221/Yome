@@ -7,16 +7,24 @@ import { reducerCases } from "@/context/constants";
 
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
+
+interface ChatListItemProps {
+  id: string;
+  data: any;
+  type: string;
+  isContactPage?: boolean;
+}
+
 export default function ChatLIstItem({
   id,
   data,
   type,
   isContactPage = false,
-}) {
+}: ChatListItemProps) {
   const [{ userInfo, socket, onlineUsers, currentChatUser }, dispatch] =
     useStateProvider();
 
-  const handleContactClick = (e) => {
+  const handleContactClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (currentChatUser?.id === data?.id) {
       return dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
     }
@@ -24,17 +32,16 @@ export default function ChatLIstItem({
       socket.current.emit("join room", `room-${data.id}`, userInfo.id);
     }
 
-    //here both CurrentchatUser and data are object
     if (currentChatUser?.id === data?.id) {
       return dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
     }
 
     if (!isContactPage) {
-      if (e.target.getAttribute("name") == "group") {
+      if (e.currentTarget.getAttribute("data-name") === "group") {
         dispatch({
           type: reducerCases.CHANGE_CURRENT_CHAT_USER,
           user: {
-            type: e.target.getAttribute("name"),
+            type: e.currentTarget.getAttribute("data-name"),
             name: data.name,
             about: data.about,
             profilePicture: data.thumbnail,
@@ -44,11 +51,11 @@ export default function ChatLIstItem({
           },
         });
       }
-      if (e.target.getAttribute("name") == "user") {
+      if (e.currentTarget.getAttribute("data-name") === "user") {
         dispatch({
           type: reducerCases.CHANGE_CURRENT_CHAT_USER,
           user: {
-            type: e.target.getAttribute("name"),
+            type: e.currentTarget.getAttribute("data-name"),
             name: data.name,
             about: data.about,
             profilePicture: data.profilePicture,
@@ -59,16 +66,15 @@ export default function ChatLIstItem({
         });
       }
     } else {
-      //toggle with data object
       dispatch({ type: reducerCases.CHANGE_CURRENT_CHAT_USER, user: data });
       dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
     }
   };
-  console.log("data:", data);
+
   return (
     <div
       id={id}
-      name={type}
+      data-name={type}
       className={`flex cursor-pointer justify-center items-center ${
         currentChatUser?.id === data.id && !isContactPage
           ? "bg-background-default-hover"
@@ -79,17 +85,17 @@ export default function ChatLIstItem({
       <div className="min-w-fit pointer-events-none px-5 pt-3 pb-1 ">
         {type === "group" ? (
           <Avatar
-            chatType="group"
-            className="pointer-events-none"
-            type="sm"
+            type="group"
+            classNames="pointer-events-none"
+            size="sm"
             image={`${data?.thumbnail || "/avatars/groupprofile.png"}`}
           />
         ) : (
           <AvatarWithStatus
-            chatType="user"
-            className="pointer-events-none"
+            type="user"
+            classNames="pointer-events-none"
             status={`${onlineUsers.includes(data?.id) ? "online" : "offline"}`}
-            type="sm"
+            size="sm"
             image={`${data?.profilePicture || "/avatars/userprofile.png"}`}
           />
         )}
@@ -106,7 +112,7 @@ export default function ChatLIstItem({
             <div className="pointer-events-none">
               <span
                 className={`${
-                  !data.totalUnreadMessages > 0
+                  !(data.totalUnreadMessages > 0)
                     ? "text-secondary"
                     : "text-icon-green"
                 } text-xs font-medium`}
@@ -128,7 +134,6 @@ export default function ChatLIstItem({
                   )}
                 </>
               ) : (
-                // Send msg by different ways for images,texts...
                 <div className="flex items-center gap-1 max-w-[200px] sm:max-w-[250px] md:max-w-[300px] lg:max-w-[200px] xl:max-w-[300px]">
                   {data.senderId === userInfo.id && (
                     <MessageStatus messageStatus={data.messageStatus} />

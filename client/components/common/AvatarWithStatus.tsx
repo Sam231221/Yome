@@ -1,12 +1,29 @@
+import { cn } from "@/lib/utils";
 import React from "react";
 
-export default function AvatarWithStatus({ type, image, status }) {
+interface AvatarWithStatusProps {
+  type?: string;
+  size: string;
+  classNames?: string;
+  image: string;
+  status: string;
+}
+export default function AvatarWithStatus({
+  type,
+  size,
+  classNames,
+  image,
+  status,
+}: AvatarWithStatusProps) {
   return (
     <>
-      {type == "lg" && (
+      {size == "lg" && (
         <figure>
           <figcaption
-            className="w-6 h-6 before:w-4 before:h-4 before:top-5 before:left-6"
+            className={cn(
+              "w-6 h-6 before:w-4 before:h-4 before:top-5 before:left-6",
+              classNames
+            )}
             data-status={status}
           >
             32teeth
@@ -16,15 +33,18 @@ export default function AvatarWithStatus({ type, image, status }) {
           </picture>
         </figure>
       )}
-      {type == "sm" && (
+      {size == "sm" && (
         <figure>
           <figcaption
-            className="w-5 h-5  before:w-[12px] before:h-[12px] before:top-[15px] before:left-[12px]"
+            className={cn(
+              "w-5 h-5  before:w-[12px] before:h-[12px] before:top-[15px] before:left-[12px]",
+              classNames
+            )}
             data-status={status}
           >
             32teeth
           </figcaption>
-          <picture className="w-11 h-11">
+          <picture className={cn("w-11 h-11", classNames)}>
             <img src={image} />
           </picture>
         </figure>

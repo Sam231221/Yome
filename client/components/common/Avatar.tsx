@@ -7,7 +7,20 @@ import PhotoLibrary from "./PhotoLibrary";
 import CapturePhoto from "./CapturePhoto";
 import Image from "next/image";
 
-export default function Avatar({ type, image, setImage }) {
+interface AvatarProps {
+  type?: string;
+  size?: string;
+  image: string;
+  setImage?: (image: string) => void;
+  classNames?: string;
+}
+export default function Avatar({
+  type,
+  size,
+  classNames,
+  image,
+  setImage,
+}: AvatarProps) {
   const [hover, setHover] = useState(false);
   const [showPhotoLibrary, setShowPhotoLibrary] = useState(false);
   const [grabImage, setGrabImage] = useState(false);
@@ -45,7 +58,9 @@ export default function Avatar({ type, image, setImage }) {
       name: "Remove Photo",
       callBack: () => {
         setIsContextMenuVisible(false);
-        setImage("/default_avatar.png");
+        if (setImage) {
+          setImage("/default_avatar.png");
+        }
       },
     },
   ];
@@ -53,7 +68,7 @@ export default function Avatar({ type, image, setImage }) {
   useEffect(() => {
     if (grabImage) {
       const data = document.getElementById("photo-picker");
-      data.click();
+      data?.click();
       document.body.onfocus = (e) => {
         setGrabImage(false);
       };
@@ -73,30 +88,40 @@ export default function Avatar({ type, image, setImage }) {
     return () => window.removeEventListener("click", handleClick);
   }, [isContextMenuVisible, isFirstRun]);
 
-  const showContextMenu = (e) => {
+  const showContextMenu = (e: React.MouseEvent<SVGElement | HTMLElement>) => {
     e.preventDefault();
     setContextMenuCordinates({ x: e.pageX, y: e.pageY });
     setIsContextMenuVisible(true);
   };
 
-  const photoPickerOnChange = async (e) => {
-    const file = e.target.files[0];
+  const photoPickerOnChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    if (!files) return;
+    const file = files[0];
     const reader = new FileReader();
     const data = document.createElement("img");
     reader.onload = function (event) {
-      data.src = event.target.result;
-      data.setAttribute("data-src", event.target.result);
+      if (event.target) {
+        data.src = event.target.result as string;
+      }
+      if (event.target && typeof event.target.result === "string") {
+        data.setAttribute("data-src", event.target.result);
+      }
     };
     reader.readAsDataURL(file);
     setTimeout(() => {
-      setImage(data.src);
+      if (setImage) {
+        setImage(data.src);
+      }
     }, 100);
   };
 
   return (
     <>
       <div className="flex items-center justify-center">
-        {type === "sm" && (
+        {size === "sm" && (
           <div className="h-11 w-11 bg-white rounded-full">
             <Image
               width={44}
@@ -108,7 +133,7 @@ export default function Avatar({ type, image, setImage }) {
             />
           </div>
         )}
-        {type === "lg" && (
+        {size === "lg" && (
           <div className="h-14 w-14 bg-white rounded-full">
             <Image
               width={56}
@@ -120,7 +145,7 @@ export default function Avatar({ type, image, setImage }) {
             />
           </div>
         )}
-        {type === "xl" && (
+        {size === "xl" && (
           // avatar with text on hover
           <div
             className="relative cursor-pointer z-0"

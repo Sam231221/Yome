@@ -1,13 +1,36 @@
-import { userInfo } from "os";
 import { reducerCases } from "./constants";
 
-export const initialState = {
-  //object
+export interface State {
+  userInfo: any;
+  newUser: boolean;
+  contactsPage: boolean;
+  messageSearch: boolean;
+  currentChatUser: any;
+  currentChatGroup: any;
+  socket: any;
+  messages: any[];
+  groupMessages: any[];
+  userContacts: any[];
+  groupContacts: any[];
+  videoCall: any;
+  voiceCall: any;
+  incomingVoiceCall: any;
+  incomingVideoCall: any;
+  onlineUsers: any[];
+  contactSearch: string;
+  filteredContacts: any[];
+}
+
+export interface Action {
+  type: string;
+  [key: string]: any;
+}
+
+export const initialState: State = {
   userInfo: undefined,
   newUser: false,
   contactsPage: false,
   messageSearch: false,
-  //object
   currentChatUser: undefined,
   currentChatGroup: undefined,
   socket: undefined,
@@ -24,7 +47,7 @@ export const initialState = {
   filteredContacts: [],
 };
 
-const reducer = (state, action) => {
+const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case reducerCases.SET_USER_INFO:
       return {

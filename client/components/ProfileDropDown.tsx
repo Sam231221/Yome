@@ -13,7 +13,11 @@ import { useStateProvider } from "@/context/StateContext";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import ProfileSkeleton from "./Loading/Skeletons";
-export const ProfileDropDown = ({ isLoading }) => {
+export const ProfileDropDown = ({
+  isLoading = false,
+}: {
+  isLoading?: boolean;
+}) => {
   const router = useRouter();
   const [{ userInfo, socket }, dispatch] = useStateProvider();
   const [open, setOpen] = useState(false);

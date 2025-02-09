@@ -5,10 +5,24 @@ import { FaFacebook, FaGithub } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { REGISTER_USER } from "@/utils/ApiRoutes";
 import FormInput from "@/components/FormInut/Form";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 
-export default function RegisterContainer({ activeTab, setActiveTab }) {
+interface RegisterContainerProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}
+
+export default function RegisterContainer({
+  activeTab,
+  setActiveTab,
+}: RegisterContainerProps) {
   const [IsFormFilled, setFormFill] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const callbackUrl = searchParams.get("callbackUrl");
   const [values, setValues] = useState({
     username: "",
     firstname: "",
@@ -77,7 +91,7 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
       required: true,
     },
   ];
-  const handleCheckboxChange = (e) => {
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIsChecked(e.target.checked);
   };
   useEffect(() => {
@@ -95,12 +109,32 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
     }
   }, [values]);
 
-  const onChangeFormInputs = (e) => {
+  const onChangeFormInputs = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [e.target.name]: e.target.value });
+  };
+  const loginWithNextAuthProvider = (e: React.MouseEvent<HTMLDivElement>) => {
+    let provider = e.currentTarget.getAttribute("data-provider");
+
+    signIn(provider as string, { redirect: false })
+      .then((callback) => {
+        if (callback?.error) {
+          toast.error("Invalid credentials!");
+        }
+        if (callback?.ok) {
+          if (callbackUrl === null) {
+            router.push("/dashboard");
+          } else {
+            window.location.href = callbackUrl;
+          }
+        }
+      })
+      .finally(() => toast.success("Login Successfully"));
   };
 
   //Register Users
-  const handleRegisterFormSubmit = async (e) => {
+  const handleRegisterFormSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
     const { data } = await axios.post(REGISTER_USER, {
       email: values.email,
@@ -170,7 +204,7 @@ export default function RegisterContainer({ activeTab, setActiveTab }) {
           <FormInput
             key={input.id}
             {...input}
-            value={values[input.name]}
+            value={values[input.name as keyof typeof values]}
             onChange={onChangeFormInputs}
             enableErrorMsg={true}
           />

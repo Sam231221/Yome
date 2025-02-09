@@ -1,10 +1,10 @@
-export function absoluteUrl(path) {
+export function absoluteUrl(path: string) {
   return `${
     process.env.FRONTEND_CLIENT_PORT || "http://localhost:3000/"
   }${path}`;
 }
 
-export function backendAbsoluteUrl(path) {
+export function backendAbsoluteUrl(path: string) {
   return `${
     process.env.NEXT_PUBLIC_BACKEND_API || "http://localhost:3005"
   }/${path}`;

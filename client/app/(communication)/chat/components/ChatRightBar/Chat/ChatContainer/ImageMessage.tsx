@@ -4,7 +4,15 @@ import Image from "next/image";
 import React from "react";
 import MessageStatus from "@/components/common/MessageStatus";
 
-function ImageMessage({ message }) {
+interface ImageMessageProps {
+  message: {
+    senderId: string;
+    message: string;
+    createdAt: string;
+    messageStatus: string;
+  };
+}
+function ImageMessage({ message }: ImageMessageProps) {
   const [{ currentChatUser, userInfo }] = useStateProvider();
   return (
     <div

@@ -11,17 +11,27 @@ import {
 
 import ChatLIstItem from "./ChatLIstItem";
 
+interface Contact {
+  id: string;
+  type: string;
+  name?: string;
+  firstname?: string;
+  username?: string;
+  identifier: string;
+}
+
 function AllContactsList() {
   const [{ userInfo }, dispatch] = useStateProvider();
-  const [allContacts, setAllContacts] = useState([]);
-  const [searchTerm, setsearchTerm] = useState("");
+  const [allContacts, setAllContacts] = useState<Contact[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
-  const [searchContacts, setSearchContacts] = useState([]);
+  const [searchContacts, setSearchContacts] = useState<Contact[]>([]);
 
-  //Get all contacts
+  // Get all contacts
   useEffect(() => {
     getContacts();
   }, []);
+
   const getContacts = async () => {
     try {
       const {
@@ -34,7 +44,7 @@ function AllContactsList() {
 
       let combinedContacts = [...followedUsers, ...groups];
       setAllContacts(
-        combinedContacts.filter((obj) => {
+        combinedContacts.filter((obj: Contact) => {
           if (obj.type === "group") {
             return obj.name !== userInfo.name;
           } else {
@@ -43,7 +53,7 @@ function AllContactsList() {
         })
       );
       setSearchContacts(
-        combinedContacts.filter((obj) => {
+        combinedContacts.filter((obj: Contact) => {
           if (obj.type === "group") {
             return obj.name !== userInfo.name;
           } else {
@@ -51,18 +61,19 @@ function AllContactsList() {
           }
         })
       );
-    } catch (err) {
-      toast.error(err?.msg);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to fetch contacts");
     }
   };
+
   useEffect(() => {
     if (searchTerm.length) {
-      let filteredData = [];
-      filteredData = allContacts.filter((obj) => {
+      let filteredData: Contact[] = [];
+      filteredData = allContacts.filter((obj: Contact) => {
         if (obj.type === "group") {
-          return obj.name.toLowerCase().includes(searchTerm.toLowerCase());
+          return obj.name?.toLowerCase().includes(searchTerm.toLowerCase());
         } else {
-          return obj.firstname.toLowerCase().includes(searchTerm.toLowerCase());
+          return obj.name?.toLowerCase().includes(searchTerm.toLowerCase());
         }
       });
 
@@ -70,8 +81,8 @@ function AllContactsList() {
     } else {
       setSearchContacts(allContacts);
     }
-  }, [searchTerm]);
-
+  }, [searchTerm, allContacts]);
+  console.log("ssd:", searchContacts);
   return (
     <div className="h-full flex flex-col">
       <div className="h-24 flex items-end px-3 py-4">
@@ -98,7 +109,7 @@ function AllContactsList() {
                 type="text"
                 placeholder="Search Contacts"
                 className="bg-transparent text-sm focus:outline-none  w-full"
-                onChange={(e) => setsearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 value={searchTerm}
               />
             </div>

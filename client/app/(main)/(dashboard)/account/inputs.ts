@@ -1,4 +1,13 @@
-export const accountInputs = [
+export interface FormInputProps {
+  id: number;
+  name: string;
+  type: string;
+  placeholder: string;
+  errorMessage: string;
+  required: boolean;
+}
+
+export const accountInputs: FormInputProps[] = [
   {
     id: 0,
     name: "email",
@@ -15,10 +24,8 @@ export const accountInputs = [
     placeholder: "bio",
     errorMessage:
       "Bioshould be 3-16 characters and shouldn't include any special character!",
-
     required: true,
   },
-
   {
     id: 2,
     name: "firstname",
@@ -26,7 +33,6 @@ export const accountInputs = [
     placeholder: "Your Firstname",
     errorMessage:
       "Firstname should be 3-16 characters and shouldn't include any special character!",
-
     required: true,
   },
   {
@@ -36,7 +42,6 @@ export const accountInputs = [
     placeholder: "Your Lastname",
     errorMessage:
       "Lastname should be 3-16 characters and shouldn't include any special character!",
-
     required: true,
   },
   {
@@ -49,7 +54,7 @@ export const accountInputs = [
   },
 ];
 
-export const securityInputs = [
+export const securityInputs: FormInputProps[] = [
   {
     id: 5,
     name: "password",
@@ -57,7 +62,6 @@ export const securityInputs = [
     placeholder: "Password",
     errorMessage:
       "Password should be 8-20 characters and include at least 1 letter, 1 number and 1 special character!",
-
     required: true,
   },
   {
@@ -66,7 +70,6 @@ export const securityInputs = [
     type: "password",
     placeholder: "Confirm Password",
     errorMessage: "Passwords don't match!",
-
     required: true,
   },
 ];

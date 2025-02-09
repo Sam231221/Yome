@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
-
 import { signIn } from "next-auth/react";
 import { FaFacebook, FaGithub } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-
 import FormInput from "@/components/FormInut/Form";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
-export default function LoginContainer({ activeTab }: { activeTab: string }) {
+
+interface LoginContainerProps {
+  activeTab: string;
+}
+
+export default function LoginContainer({ activeTab }: LoginContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -42,15 +45,15 @@ export default function LoginContainer({ activeTab }: { activeTab: string }) {
     }
   }, [values]);
 
-  const onChangeFormInputs = (e) => {
+  const onChangeFormInputs = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [e.target.name]: e.target.value });
   };
 
   //Login with  Next Auth Provider
-  const loginWithNextAuthProvider = (e) => {
-    let provider = e.target.getAttribute("data-provider");
+  const loginWithNextAuthProvider = (e: React.MouseEvent<HTMLDivElement>) => {
+    let provider = e.currentTarget.getAttribute("data-provider");
 
-    signIn(provider, { redirect: false })
+    signIn(provider as string, { redirect: false })
       .then((callback) => {
         if (callback?.error) {
           toast.error("Invalid credentials!");
@@ -67,7 +70,7 @@ export default function LoginContainer({ activeTab }: { activeTab: string }) {
   };
 
   //Login with Credentials
-  const handleFormSubmit = async (e) => {
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = await signIn("credentials", {
       redirect: false,
@@ -130,7 +133,7 @@ export default function LoginContainer({ activeTab }: { activeTab: string }) {
           <FormInput
             key={input.id}
             {...input}
-            value={values[input.name]}
+            value={values[input.name as keyof typeof values]}
             onChange={onChangeFormInputs}
           />
         ))}

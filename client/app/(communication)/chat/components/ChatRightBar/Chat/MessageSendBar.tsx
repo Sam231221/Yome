@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import axios from "axios";
 import toast from "react-hot-toast";
-import EmojiPicker from "emoji-picker-react";
+import EmojiPicker, { Theme } from "emoji-picker-react";
 import { BsEmojiSmile } from "react-icons/bs";
 import { ImAttachment } from "react-icons/im";
 import { FaMicrophone } from "react-icons/fa";
@@ -16,20 +16,28 @@ const CaptureAudio = dynamic(() => import("@/components/common/CaptureAudio"), {
   ssr: false,
 });
 
-export default function MessageSendBar({ id, chatType }) {
+interface MessageSendBarProps {
+  id: string;
+  chatType: string;
+}
+
+export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
   const [message, setMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
   const [grabImage, setGrabImage] = useState(false);
   const [{ socket, currentChatUser, userInfo }, dispatch] = useStateProvider();
+
   //send image message
-  const photoPickerOnChange = async (e) => {
-    const file = e.target.files[0];
+  const photoPickerOnChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     try {
       const formData = new FormData();
       formData.append("image", file);
-      console.log("d:", formData);
       const response = await axios.post(ADD_IMAGE_MESSAGE_ROUTE, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -56,7 +64,6 @@ export default function MessageSendBar({ id, chatType }) {
             newMessage: {
               ...response.data.message,
             },
-
             fromSelf: true,
           });
         }
@@ -67,7 +74,6 @@ export default function MessageSendBar({ id, chatType }) {
               ...response.data.message,
             },
             groupId: currentChatUser.id,
-
             fromSelf: true,
           });
         }
@@ -100,7 +106,6 @@ export default function MessageSendBar({ id, chatType }) {
           newMessage: {
             ...data.message,
           },
-
           fromSelf: true,
         });
       }
@@ -111,12 +116,11 @@ export default function MessageSendBar({ id, chatType }) {
             ...data.message,
           },
           groupId: currentChatUser.id,
-
           fromSelf: true,
         });
       }
-    } catch (err) {
-      toast.error(err);
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
@@ -125,15 +129,18 @@ export default function MessageSendBar({ id, chatType }) {
   };
 
   //just append emoji to text message.
-  const handleEmojiClick = (emoji, event) => {
+  const handleEmojiClick = (emoji: any) => {
     setMessage((prevMessage) => (prevMessage += emoji.emoji));
   };
 
-  const emojiPickerRef = useRef(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleOutsideClick = (event) => {
-      if (event.target.id !== "emoji-open") {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        event.target instanceof HTMLElement &&
+        event.target.id !== "emoji-open"
+      ) {
         if (
           emojiPickerRef.current && // Check if the emoji picker ref exists
           !emojiPickerRef.current.contains(event.target) // Check if the click is outside of the emoji picker
@@ -157,7 +164,7 @@ export default function MessageSendBar({ id, chatType }) {
   useEffect(() => {
     if (grabImage) {
       const data = document.getElementById("photo-picker");
-      data.click();
+      data?.click();
       document.body.onfocus = (e) => {
         setTimeout(() => {
           setGrabImage(false);
@@ -182,7 +189,10 @@ export default function MessageSendBar({ id, chatType }) {
                 className="absolute bottom-24 left-16 z-40"
                 ref={emojiPickerRef}
               >
-                <EmojiPicker onEmojiClick={handleEmojiClick} theme="light" />
+                <EmojiPicker
+                  onEmojiClick={handleEmojiClick}
+                  theme={Theme.LIGHT}
+                />
               </div>
             )}
             <ImAttachment

@@ -13,10 +13,14 @@ import { Call, useStreamVideoClient } from "@stream-io/video-react-sdk";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
-export default function ChatHeader({ chatType }) {
+interface ChatHeaderProps {
+  chatType: string;
+}
+
+export default function ChatHeader({ chatType }: ChatHeaderProps) {
   const [{ currentChatUser, userInfo, onlineUsers }, dispatch] =
     useStateProvider();
-  const [callDetail, setCallDetail] = useState<Call>();
+  const [callDetail, setCallDetail] = useState<Call | undefined>(undefined);
   const client = useStreamVideoClient();
   const router = useRouter();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
@@ -25,7 +29,7 @@ export default function ChatHeader({ chatType }) {
   });
   const [isContextMenuVisible, setIsContextMenuVisible] = useState(false);
 
-  const showContextMenu = (e) => {
+  const showContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     setContextMenuCordinates({ x: 22, y: 20 });
     setIsContextMenuVisible(true);
@@ -48,9 +52,6 @@ export default function ChatHeader({ chatType }) {
       //create a call of type default and with the id
       const call = client.call("default", id);
       if (!call) throw new Error("Failed to create meeting");
-      // //setting up start tme of now
-      // const startsAt = new Date(Date.now()).toISOString();
-      // const description = "Instant Meeting";
       await call.getOrCreate();
       //set the call state
       setCallDetail(call);
@@ -62,15 +63,6 @@ export default function ChatHeader({ chatType }) {
       console.error(error);
       toast("Failed to create Meeting");
     }
-    // dispatch({
-    //   type: reducerCases.SET_VIDEO_CALL,
-    //   videoCall: {
-    //     ...currentChatUser,
-    //     type: "out-going",
-    //     callType: "video",
-    //     roomId: Date.now(),
-    //   },
-    // });
   };
 
   const handleVoiceCall = () => {
@@ -84,24 +76,25 @@ export default function ChatHeader({ chatType }) {
       },
     });
   };
-  console.log("csad:", callDetail);
+
   return (
     <div className="h-16 px-4 py-3 flex justify-between items-center bg-white z-10">
       <div className="flex items-center justify-center gap-6">
         <div>
           {chatType === "group" ? (
             <Avatar
-              type="lg"
+              size="lg"
               image={`${
                 currentChatUser?.profilePicture || "/avatars/groupprofile.png"
               }`}
             />
           ) : (
             <AvatarWithStatus
+              type="user"
               status={`${
                 onlineUsers.includes(currentChatUser.id) ? "online" : "offline"
               }`}
-              type="lg"
+              size="lg"
               image={`${
                 currentChatUser?.profilePicture || "/avatars/userprofile.png"
               }`}

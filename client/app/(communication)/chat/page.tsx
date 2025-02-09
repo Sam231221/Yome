@@ -1,21 +1,17 @@
 "use client";
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
-import { io } from "socket.io-client";
-
+import { io, Socket } from "socket.io-client";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import IncomingCall from "@/components/common/IncomingCall";
 import IncomingVideoCall from "@/components/common/IncomingVideoCall";
-import { GET_USER_ROUTE, GET_MESSAGES_ROUTE, HOST } from "@/utils/ApiRoutes";
-
+import { GET_MESSAGES_ROUTE, HOST } from "@/utils/ApiRoutes";
 import VideoCall from "./components/Call/VideoCall";
 import VoiceCall from "./components/Call/VoiceCall";
-
-import { useSession } from "next-auth/react";
 import ChatLeftBar from "./components/ChatLeftBar";
 import ChatRightBar from "./components/ChatRightBar";
-import { useStreamVideoClient } from "@stream-io/video-react-sdk";
+
 export default function Chatpage() {
   const [
     {
@@ -31,9 +27,7 @@ export default function Chatpage() {
     dispatch,
   ] = useStateProvider();
   const [isUserLoading, setIsUserLoading] = useState(true);
-
-  const socket = useRef();
-
+  const socket = useRef<Socket | null>(null);
   const [socketEvent, setSocketEvent] = useState(false);
 
   //start socket connection on adding authenticated user.
@@ -44,7 +38,7 @@ export default function Chatpage() {
       dispatch({ type: reducerCases.SET_SOCKET, socket });
       setIsUserLoading(false);
     }
-  }, [userInfo]);
+  }, [userInfo, dispatch]);
 
   //add message when msg-receive is triggered
   useEffect(() => {
@@ -121,7 +115,7 @@ export default function Chatpage() {
 
       setSocketEvent(true);
     }
-  }, [socket.current]);
+  }, [socket.current, dispatch, socketEvent]);
 
   //Changes current user/group and get messages for it.
   useEffect(() => {
@@ -142,7 +136,7 @@ export default function Chatpage() {
     ) {
       getMessages();
     }
-  }, [currentChatUser]);
+  }, [currentChatUser, userInfo.id, userContacts, groupContacts, dispatch]);
 
   return (
     <>

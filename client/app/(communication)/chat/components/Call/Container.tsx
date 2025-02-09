@@ -5,15 +5,30 @@ import { MdOutlineCallEnd } from "react-icons/md";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import { GET_CALL_TOKEN } from "@/utils/ApiRoutes";
-function Container({ data }) {
+
+interface CallData {
+  id: string;
+  name: string;
+  profilePicture: string;
+  type: string;
+  callType: string;
+  roomId: number;
+}
+
+function Container({ data }: { data: CallData }) {
   const [{ socket, userInfo }, dispatch] = useStateProvider();
-  const [localStream, setLocalStream] = useState(undefined);
-  const [publishStream, setPublishStream] = useState(undefined);
-  const [token, setToken] = useState(undefined);
-  const [zgVar, setZgVar] = useState(undefined);
+  const [localStream, setLocalStream] = useState<MediaStream | undefined>(
+    undefined
+  );
+  const [publishStream, setPublishStream] = useState<string | undefined>(
+    undefined
+  );
+  const [token, setToken] = useState<string | undefined>(undefined);
+  const [zgVar, setZgVar] = useState<any>(undefined);
   const [callStarted, setCallStarted] = useState(false);
   const [callAccepted, setcallAccepted] = useState(false);
   console.log("daaa:", data);
+
   useEffect(() => {
     if (data.type === "out-going")
       socket.current.on("accept-call", () => setcallAccepted(true));
