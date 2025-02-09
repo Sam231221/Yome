@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { RxDashboard } from "react-icons/rx";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { IoSearchOutline } from "react-icons/io5";
-
+import { StreamVideoClient, User } from "@stream-io/video-react-sdk";
 import { MessagesDropDown } from "@/components/MessagesDropDown";
 import { NotificationDropdown } from "@/components/NotificationDropDown";
 import { ProfileDropDown } from "@/components/ProfileDropDown";

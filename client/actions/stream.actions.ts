@@ -1,14 +1,15 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getServerSession } from "next-auth/next";
 import { StreamClient } from "@stream-io/node-sdk";
+import { options } from "@/app/api/auth/[...nextauth]/options";
 
 const STREAM_API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY;
 const STREAM_API_SECRET = process.env.STREAM_SECRET_KEY;
 
 export const tokenProvider = async () => {
-  const user = await currentUser();
-
+  const session = await getServerSession(options);
+  const user = session?.user;
   if (!user) throw new Error("User is not authenticated");
   if (!STREAM_API_KEY) throw new Error("Stream API key secret is missing");
   if (!STREAM_API_SECRET) throw new Error("Stream API secret is missing");

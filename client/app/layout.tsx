@@ -1,5 +1,6 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
+import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { StateProvider } from "@/context/StateContext";
 import { ReactNode } from "react";
 import AuthProvider from "@/context/AuthProvider";

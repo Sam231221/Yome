@@ -8,10 +8,17 @@ import { IoVideocam } from "react-icons/io5";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import ContextMenu from "@/components/common/ContextMenu";
+import { Call, useStreamVideoClient } from "@stream-io/video-react-sdk";
+
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export default function ChatHeader({ chatType }) {
-  const [{ currentChatUser, onlineUsers }, dispatch] = useStateProvider();
-
+  const [{ currentChatUser, userInfo, onlineUsers }, dispatch] =
+    useStateProvider();
+  const [callDetail, setCallDetail] = useState<Call>();
+  const client = useStreamVideoClient();
+  const router = useRouter();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,
     y: 0,
@@ -34,16 +41,36 @@ export default function ChatHeader({ chatType }) {
     },
   ];
 
-  const handleVideoCall = () => {
-    dispatch({
-      type: reducerCases.SET_VIDEO_CALL,
-      videoCall: {
-        ...currentChatUser,
-        type: "out-going",
-        callType: "video",
-        roomId: Date.now(),
-      },
-    });
+  const handleVideoCall = async () => {
+    if (!client || !userInfo) return;
+    try {
+      const id = crypto.randomUUID();
+      //create a call of type default and with the id
+      const call = client.call("default", id);
+      if (!call) throw new Error("Failed to create meeting");
+      // //setting up start tme of now
+      // const startsAt = new Date(Date.now()).toISOString();
+      // const description = "Instant Meeting";
+      await call.getOrCreate();
+      //set the call state
+      setCallDetail(call);
+      //everything fine then push to the meeting page with call id
+      router.push(`/chat/${call.id}`);
+
+      toast.success("Meeting Created");
+    } catch (error) {
+      console.error(error);
+      toast("Failed to create Meeting");
+    }
+    // dispatch({
+    //   type: reducerCases.SET_VIDEO_CALL,
+    //   videoCall: {
+    //     ...currentChatUser,
+    //     type: "out-going",
+    //     callType: "video",
+    //     roomId: Date.now(),
+    //   },
+    // });
   };
 
   const handleVoiceCall = () => {
@@ -57,7 +84,7 @@ export default function ChatHeader({ chatType }) {
       },
     });
   };
-  console.log("csad:", currentChatUser);
+  console.log("csad:", callDetail);
   return (
     <div className="h-16 px-4 py-3 flex justify-between items-center bg-white z-10">
       <div className="flex items-center justify-center gap-6">

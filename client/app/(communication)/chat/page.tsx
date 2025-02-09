@@ -15,6 +15,7 @@ import VoiceCall from "./components/Call/VoiceCall";
 import { useSession } from "next-auth/react";
 import ChatLeftBar from "./components/ChatLeftBar";
 import ChatRightBar from "./components/ChatRightBar";
+import { useStreamVideoClient } from "@stream-io/video-react-sdk";
 export default function Chatpage() {
   const [
     {
@@ -34,42 +35,6 @@ export default function Chatpage() {
   const socket = useRef();
 
   const [socketEvent, setSocketEvent] = useState(false);
-  const { data: session } = useSession();
-
-  //Get user from Db and set 'userInfo'
-  useEffect(() => {
-    getUserInfo();
-  }, [session]);
-
-  const getUserInfo = async (e) => {
-    try {
-      if (session?.user) {
-        if (!userInfo) {
-          let { data } = await axios.post(GET_USER_ROUTE, {
-            email: session?.user.email,
-          });
-
-          //Get the user from database and populate useInfo state
-          dispatch({
-            type: reducerCases.SET_USER_INFO,
-            userInfo: {
-              id: data?.user?.id,
-              role: data?.user?.role,
-              email: data?.user?.email,
-              name: data?.user?.name,
-              username: data?.user?.username,
-              firstname: data?.user?.firstname,
-              lastname: data?.user?.lastname,
-              userProfile: data?.user?.userProfile,
-              identifier: data?.user?.identifier,
-              profilePicture: data?.user?.profilePicture,
-              status: data?.user?.about,
-            },
-          });
-        }
-      }
-    } catch (e) {}
-  };
 
   //start socket connection on adding authenticated user.
   useEffect(() => {
