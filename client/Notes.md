@@ -1,3 +1,8 @@
+Suppose u create a call with user id 9 and then end the call. IF u or other try to access the same /chat/9 ,the page would say "the host has ended the call."
+IF u directly visit chat/3534/ , it won;t work becox we haven't created the call with that id(3534)
+So, you need to again create call from video icon button.
+Better not use userid for creating call, instead use random uuid
+
 ADD_GROUP_MESSAGE
 The provided code is a case within a reducer function in a TypeScript file, specifically handling the ADD_GROUP_MESSAGE action. This reducer is part of a state management system, likely using a library such as Redux, to manage the state of a chat application.
 
@@ -143,14 +148,3 @@ const newMessage = await prisma.message.create({
 - **Type Safety:** Prisma generates TypeScript types, improving the developer experience and reducing errors.
 
 This improved schema and the usage examples will give you a solid foundation for implementing the "seen by" functionality in your group chat app. Remember to run `npx prisma generate` after modifying your schema.
-
-const user: User = {
-id: "sara",
-};
-const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY as string;
-const client = new StreamVideoClient({ apiKey, tokenProvider, user });
-console.log(client);
-const callType = "default";
-const callId = "test-call";
-const call = client.call(callType, callId);
-console.log("call:", call);
