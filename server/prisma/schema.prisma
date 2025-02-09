@@ -31,7 +31,6 @@ model User {
   updated_at                DateTime                @updatedAt
   userProfile               UserProfile?            @relation(fields: [userProfileId], references: [id])
   userProfileId             String?                 @unique
-  eiOwner                   EducationalInstitution? @relation(fields: [eiId], references: [id])
   eiId                      String?                 @unique
   sentMessages              Messages[]              @relation("sentMessages")
   recievedMessages          Messages[]              @relation("recievedMessages")
@@ -117,77 +116,3 @@ model Like {
   postId Int
 }
 
-model Album {
-  id          Int                      @id @default(autoincrement())
-  institution EducationalInstitution[]
-  thumbnail   String                   @default("")
-}
-
-model EducationalInstitution {
-  id                     String                    @id @default(uuid())
-  name                   String                    @unique
-  owner                  User?
-  thumbnail              String                    @default("")
-  albums                 Album[]
-  description            String                    @default("")
-  address                String                    @default("")
-  type                   String                    @default("")
-  category               String                    @default("")
-  accreditation          Int?
-  graduationRate         Int?
-  accreditation_status   String                    @default("")
-  principal_name         String                    @default("")
-  principal_email        String                    @default("")
-  principal_phone_number String                    @default("")
-  files                  String                    @default("")
-  infrastructure         Infrastructure[]
-  programs               Program[]
-  faculty                Faculty[]
-  extraActivities        ExtracurricularActivity[]
-  cost                   Cost[]
-  alumniSuccess          AlumniSuccess[]
-}
-
-model Program {
-  id          Int                      @id @default(autoincrement())
-  name        String
-  institution EducationalInstitution[]
-}
-
-model Faculty {
-  id            Int                      @id @default(autoincrement())
-  name          String
-  qualification String
-  experience    Int
-  institution   EducationalInstitution[]
-}
-
-model Infrastructure {
-  id               Int                      @id @default(autoincrement())
-  name             String
-  classrooms       Int
-  library          Int
-  laboratories     Int
-  sportsFacilities Int
-  institution      EducationalInstitution[]
-}
-
-model ExtracurricularActivity {
-  id          Int                      @id @default(autoincrement())
-  name        String
-  institution EducationalInstitution[]
-}
-
-model Cost {
-  id             Int                      @id @default(autoincrement())
-  tuition        Int
-  fees           Int
-  livingExpenses Int
-  institution    EducationalInstitution[]
-}
-
-model AlumniSuccess {
-  id          Int                      @id @default(autoincrement())
-  description String
-  institution EducationalInstitution[]
-}
