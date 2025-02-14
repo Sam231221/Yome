@@ -122,7 +122,14 @@ function FeaturesSection() {
   );
 }
 
-function FeatureCard({ icon, title, description, delay }) {
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  delay: number;
+}
+
+function FeatureCard({ icon, title, description, delay }: FeatureCardProps) {
   const controls = useAnimation();
   const [ref, inView] = useInView({
     triggerOnce: true,

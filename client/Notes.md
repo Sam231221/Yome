@@ -3,7 +3,8 @@ IF u directly visit chat/3534/ , it won;t work becox we haven't created the call
 So, you need to again create call from video icon button.
 Better not use userid for creating call, instead use random uuid
 
-ADD_GROUP_MESSAGE
+## ADD_GROUP_MESSAGE
+
 The provided code is a case within a reducer function in a TypeScript file, specifically handling the ADD_GROUP_MESSAGE action. This reducer is part of a state management system, likely using a library such as Redux, to manage the state of a chat application.
 
 When a new group message is added, the reducer first checks if the current chat user is viewing the group where the new message was sent. If so, it emits a "mark-group-read" event via a socket connection to mark the group as read for the current user. It then clones the existing group contacts array to avoid direct state mutation.
@@ -16,7 +17,8 @@ If the current chat user is defined but is not viewing the group where the new m
 
 Finally, the reducer returns the updated state, including the new message added to the messages array and the updated group contacts array. If none of the conditions are met, it simply returns the current state unchanged. This ensures that the state is only modified when necessary, maintaining the integrity of the application's state management.
 
-ADDUSER MESSAGE
+## ADDUSER MESSAGE
+
 The ADD_USER_MESSAGE case in the reducer handles the addition of a new message from a user. Here's a step-by-step explanation of the logic:
 
 Check if the message is from the current chat user or from the logged-in user:
@@ -43,7 +45,12 @@ Handle the case where the logged-in user has no active current chat user:
 
 If the logged-in user has no active current chat user, it finds the sender in the clonedContacts array, updates the contact's message details, and moves the updated contact to the top of the list. If the sender is not found, it creates a new contact object with the message details and adds it to the top of the list. The state is then updated with the updated contacts list.
 
-## Imrpovements
+## Imrpovement needed
+
+-- name of message sender
+-- seen by <count> functionaliy
+-- video and audio call functionality.
+-- Ui and Perfromance imrpovements
 
 Yes, you'll need to add a field to your `Message` model in your Prisma schema to track which users have seen the message. Here's how you can do it, along with explanations and best practices:
 
