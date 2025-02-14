@@ -6,7 +6,6 @@ import axios from "axios";
 
 import toast from "react-hot-toast";
 import { AiOutlineUsergroupAdd } from "react-icons/ai";
-import { TransitionGroup, CSSTransition } from "react-transition-group";
 
 import Carousel from "./Carousel";
 import { CONNECT_USER_TO_GROUP } from "@/utils/ApiRoutes";
@@ -73,7 +72,7 @@ const CommunityCarousel: React.FC<CommunityCarouselProps> = ({
 
   return (
     <Carousel>
-      <TransitionGroup
+      <div
         className="carousel-wrapper"
         style={{
           transform: `translateX(-${activeIndex * (100 / slidesLength)}%)`,
@@ -92,10 +91,8 @@ const CommunityCarousel: React.FC<CommunityCarouselProps> = ({
           <>
             {filteredItems?.map((community) => {
               return (
-                <CSSTransition
+                <div
                   key={community.id}
-                  timeout={500}
-                  classNames="item"
                   className="carousel-item xs:w-full sm:w-1/3 lg:w-1/3 ml-[14px] p-3 inline-block first:ml-0 object-cover select-none "
                 >
                   <div className="flex flex-col  border shadow-lg">
@@ -136,14 +133,14 @@ const CommunityCarousel: React.FC<CommunityCarouselProps> = ({
                       </div>
                     </div>
                   </div>
-                </CSSTransition>
+                </div>
               );
             })}
           </>
         ) : (
           <>No results</>
         )}
-      </TransitionGroup>
+      </div>
     </Carousel>
   );
 };

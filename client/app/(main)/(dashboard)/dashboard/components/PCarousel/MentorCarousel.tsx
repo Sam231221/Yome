@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { TransitionGroup, CSSTransition } from "react-transition-group";
+
 
 import { IoMdPersonAdd } from "react-icons/io";
 import Carousel from "./Carousel";
@@ -70,7 +70,7 @@ const MentorCarousel: React.FC<MentorCarouselProps> = ({
   }, [items]);
   return (
     <Carousel>
-      <TransitionGroup
+      <div
         className="carousel-wrapper"
         style={{
           transform: `translateX(-${activeIndex * (100 / slidesLength)}%)`,
@@ -89,7 +89,7 @@ const MentorCarousel: React.FC<MentorCarouselProps> = ({
           <>
             {filteredItems.map((mentor) => {
               return (
-                <CSSTransition
+                <div
                   key={mentor.id}
                   timeout={500}
                   classNames="item"

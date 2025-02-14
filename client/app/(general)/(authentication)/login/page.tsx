@@ -30,7 +30,7 @@ export default function Login() {
         <div className=" md:w-[400px] lg:w-[600px] xl:w-full flex flex-col p-3">
           <div className="xl:hidden flex mb-5 w-full justify-center">
             <Image src={"/LogoB.png"} width={35} height={50} alt="logo" />
-            <h1 className="ml-2 text-4xl font-bold">Eduroclass</h1>
+            <h1 className="ml-2 text-4xl font-bold">Yome</h1>
           </div>
 
           {/*Tabs */}

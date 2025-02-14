@@ -29,7 +29,7 @@ export default function Navbar() {
           whileTap={{ scale: 0.95 }}
         >
           <Video className="h-8 w-8 text-blue-600" />
-          <span className="text-2xl font-bold text-blue-900">ConnectNow</span>
+          <span className="text-2xl font-bold text-blue-900">Yome</span>
         </motion.div>
 
         <div className="flex items-center md:hidden">
