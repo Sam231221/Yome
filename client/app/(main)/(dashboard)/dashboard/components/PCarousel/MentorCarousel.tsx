@@ -5,7 +5,6 @@ import Image from "next/image";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-
 import { IoMdPersonAdd } from "react-icons/io";
 import Carousel from "./Carousel";
 import "./styles.css";
@@ -91,8 +90,6 @@ const MentorCarousel: React.FC<MentorCarouselProps> = ({
               return (
                 <div
                   key={mentor.id}
-                  timeout={500}
-                  classNames="item"
                   className={`carousel-item xs:w-full sm:w-1/3 lg:w-1/4 ml-[14px] p-3 inline-block first:ml-0 object-cover select-none `}
                 >
                   <div className="flex flex-col border shadow-lg">
@@ -129,14 +126,14 @@ const MentorCarousel: React.FC<MentorCarouselProps> = ({
                       <h2 className="text-xs rounded-sm py-2 px-1 ">Connect</h2>
                     </div>
                   </div>
-                </CSSTransition>
+                </div>
               );
             })}
           </>
         ) : (
           <>No results</>
         )}
-      </TransitionGroup>
+      </div>
     </Carousel>
   );
 };
