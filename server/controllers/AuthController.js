@@ -20,7 +20,6 @@ export const getUserByEmail = async (request, response, next) => {
       where: { email },
       include: {
         userProfile: true,
-        eiOwner: true,
       },
     });
     if (!user) {
@@ -96,6 +95,15 @@ export const registerUser = async (request, response, next) => {
       const salt = await bcryptjs.genSalt(10);
       const hashedPassword = await bcryptjs.hash(password, salt);
 
+      // Create UserProfile first
+      const userProfile = await prisma.userProfile.create({
+        data: {
+          bio: "Bio for " + firstname,
+          address: "Address for " + firstname,
+        },
+      });
+
+      // Create User and link to UserProfile
       const user = await prisma.user.create({
         data: {
           email,
@@ -104,19 +112,10 @@ export const registerUser = async (request, response, next) => {
           name: firstname + " " + lastname,
           username: username,
           password: hashedPassword,
+          userProfileId: userProfile.id,
         },
       });
-      await prisma.userProfile.create({
-        data: {
-          bio: "Bio for " + firstname,
-          address: "Address for " + firstname,
-          user: {
-            connect: {
-              id: user.id,
-            },
-          },
-        },
-      });
+
       return response.json({
         msg: "User Created Successfully",
         status: 200,

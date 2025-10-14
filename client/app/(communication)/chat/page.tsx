@@ -6,11 +6,14 @@ import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import IncomingCall from "@/components/common/IncomingCall";
 import IncomingVideoCall from "@/components/common/IncomingVideoCall";
-import { GET_MESSAGES_ROUTE, HOST } from "@/utils/ApiRoutes";
+import { GET_MESSAGES_ROUTE, GET_USER_ROUTE, HOST } from "@/utils/ApiRoutes";
 import VideoCall from "./components/Call/VideoCall";
 import VoiceCall from "./components/Call/VoiceCall";
 import ChatLeftBar from "./components/ChatLeftBar";
 import ChatRightBar from "./components/ChatRightBar";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function Chatpage() {
   const [
@@ -29,6 +32,50 @@ export default function Chatpage() {
   const [isUserLoading, setIsUserLoading] = useState(true);
   const socket = useRef<Socket | null>(null);
   const [socketEvent, setSocketEvent] = useState(false);
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  // Get user info from session if not already set
+  useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        if (session?.user && !userInfo) {
+          const { data } = await axios.post(GET_USER_ROUTE, {
+            email: session.user.email,
+          });
+
+          if (data.status) {
+            dispatch({
+              type: reducerCases.SET_USER_INFO,
+              userInfo: {
+                id: data.user.id,
+                role: data.user.role,
+                email: data.user.email,
+                name: data.user.name,
+                username: data.user.username,
+                firstname: data.user.firstname,
+                lastname: data.user.lastname,
+                userProfile: data.user.userProfile,
+                identifier: data.user.identifier,
+                profilePicture: data.user.profilePicture,
+                status: data.user.about,
+              },
+            });
+          } else {
+            toast.error("User not found. Please login again.");
+            router.push("/login");
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+        toast.error("Failed to load user information");
+      }
+    };
+
+    if (session && !userInfo) {
+      getUserInfo();
+    }
+  }, [session, userInfo, dispatch, router]);
 
   //start socket connection on adding authenticated user.
   useEffect(() => {
@@ -120,23 +167,30 @@ export default function Chatpage() {
   //Changes current user/group and get messages for it.
   useEffect(() => {
     const getMessages = async () => {
-      const {
-        data: { messages },
-      } = await axios.get(
-        `${GET_MESSAGES_ROUTE}/${userInfo.id}/${currentChatUser.id}/${currentChatUser.type}`
-      );
-      dispatch({ type: reducerCases.SET_MESSAGES, messages });
+      if (!userInfo?.id || !currentChatUser?.id) return;
+
+      try {
+        const {
+          data: { messages },
+        } = await axios.get(
+          `${GET_MESSAGES_ROUTE}/${userInfo.id}/${currentChatUser.id}/${currentChatUser.type}`
+        );
+        dispatch({ type: reducerCases.SET_MESSAGES, messages });
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
     };
 
     if (
       currentChatUser &&
+      userInfo &&
       [...userContacts, ...groupContacts].findIndex(
         (contact) => contact.id === currentChatUser.id
       ) !== -1
     ) {
       getMessages();
     }
-  }, [currentChatUser, userInfo.id, userContacts, groupContacts, dispatch]);
+  }, [currentChatUser, userInfo, userContacts, groupContacts, dispatch]);
 
   return (
     <>

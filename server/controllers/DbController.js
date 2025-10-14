@@ -1,10 +1,7 @@
 import getPrismaInstance from "../utils/PrismaClient.js";
 import { usersData } from "../data/users.js";
 import { groupData } from "../data/groups.js";
-import {
-  institutionsData,
-  institutionsUtils,
-} from "../data/educationalInstitutions.js";
+
 import bcryptjs from "bcryptjs";
 
 export const createMultipleUsersWithProfiles = async (req, res) => {
@@ -61,27 +58,85 @@ export const createMultipleUsersWithProfiles = async (req, res) => {
 export const createEducationGroups = async (req, res) => {
   try {
     const prisma = getPrismaInstance();
+
+    // Get all existing users from the database
+    const allUsers = await prisma.user.findMany({
+      select: { id: true },
+      orderBy: { id: "asc" },
+    });
+
+    if (allUsers.length === 0) {
+      return res.status(400).json({
+        error:
+          "No users found. Please create users first using /api/db/create-multiple-users",
+      });
+    }
+
+    // Get the range of user IDs
+    const userIds = allUsers.map((user) => user.id);
+    const minUserId = Math.min(...userIds);
+    const maxUserId = Math.max(...userIds);
+
+    console.log(
+      `Found ${allUsers.length} users with IDs from ${minUserId} to ${maxUserId}`
+    );
+
     const createdGroups = [];
+
     for (const data of groupData) {
       const { name, about, thumbnail, adminUserIDs, memberUserIDs } = data;
+
+      // Map the hardcoded IDs to actual database IDs
+      // If hardcoded ID is 1, use minUserId; if 2, use minUserId+1, etc.
+      const mapUserId = (oldId) => {
+        const index = oldId - 1;
+        return index < allUsers.length ? allUsers[index].id : null;
+      };
+
+      // Filter out null IDs (in case we have fewer users than expected)
+      const actualAdminIds = adminUserIDs
+        .map(mapUserId)
+        .filter((id) => id !== null);
+
+      const actualMemberIds = memberUserIDs
+        .map(mapUserId)
+        .filter((id) => id !== null);
+
+      if (actualAdminIds.length === 0 && actualMemberIds.length === 0) {
+        console.warn(`Skipping group "${name}" - no valid user IDs`);
+        continue;
+      }
 
       const newGroup = await prisma.group.create({
         data: {
           name,
           about,
           thumbnail: thumbnail,
-          admins: { connect: adminUserIDs.map((userID) => ({ id: userID })) },
-          members: { connect: memberUserIDs.map((userID) => ({ id: userID })) },
+          admins:
+            actualAdminIds.length > 0
+              ? { connect: actualAdminIds.map((userID) => ({ id: userID })) }
+              : undefined,
+          members:
+            actualMemberIds.length > 0
+              ? { connect: actualMemberIds.map((userID) => ({ id: userID })) }
+              : undefined,
         },
       });
 
       createdGroups.push(newGroup);
+      console.log(`Created group: ${name}`);
     }
 
-    return res.status(201).json({ createdGroups });
+    return res.status(201).json({
+      createdGroups,
+      message: `Successfully created ${createdGroups.length} groups`,
+    });
   } catch (error) {
     console.error("Error creating education groups:", error);
-    res.status(500).json({ error: "Unable to create education groups" });
+    res.status(500).json({
+      error: "Unable to create education groups",
+      details: error.message,
+    });
   }
 };
 
