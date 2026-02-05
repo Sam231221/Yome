@@ -60,7 +60,7 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
         }
         if (callback?.ok) {
           if (callbackUrl === null) {
-            router.push("/home");
+            router.push("/dashboard");
           } else {
             window.location.href = callbackUrl;
           }
@@ -82,7 +82,7 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
     } else {
       toast.success("Login Successfully");
       if (callbackUrl === null) {
-        router.push("/home");
+        router.push("/dashboard");
       } else {
         window.location.href = callbackUrl;
       }

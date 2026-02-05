@@ -1,12 +1,21 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
+import dotenv from "dotenv";
 
-let prismaInstance = null;
+dotenv.config();
+
+let prisma = null;
 
 function getPrismaInstance() {
-  if (!prismaInstance) {
-    prismaInstance = new PrismaClient();
+  if (!prisma) {
+    const pool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+    });
+    const adapter = new PrismaPg(pool);
+    prisma = new PrismaClient({ adapter });
   }
-  return prismaInstance;
+  return prisma;
 }
 
 export default getPrismaInstance;

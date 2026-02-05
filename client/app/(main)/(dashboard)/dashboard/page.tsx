@@ -1,134 +1,120 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { reducerCases } from "@/context/constants";
 import { useStateProvider } from "@/context/StateContext";
+import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
+import DashboardShell from "./components/facebook/DashboardShell";
+import ComposerCard from "./components/facebook/ComposerCard";
+import { UserLite } from "./components/facebook/types";
 
+function TraySkeleton() {
+  return (
+    <div className="rounded-2xl bg-[var(--fb-card)] p-3 shadow-[var(--fb-shadow)]">
+      <div className="flex gap-3 overflow-hidden">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div
+            key={`tray-skeleton-${index}`}
+            className="h-44 min-w-[120px] animate-pulse rounded-2xl bg-[var(--fb-bg)]"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
-import {
-  GET_USER_ROUTE,
-  GET_UNASSOCIATED_GROUPS,
-  GET_UNFOLLOWED_MENTORS,
-} from "@/utils/ApiRoutes";
+function FeedSkeleton() {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: 2 }).map((_, index) => (
+        <div
+          key={`feed-skeleton-${index}`}
+          className="rounded-2xl bg-[var(--fb-card)] p-4 shadow-[var(--fb-shadow)]"
+        >
+          <div className="h-4 w-1/3 animate-pulse rounded bg-[var(--fb-bg)]" />
+          <div className="mt-3 h-56 animate-pulse rounded-2xl bg-[var(--fb-bg)]" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
-import CommunityCarousel from "./components/PCarousel/CommunityCarousel";
-import MentorCarousel from "./components/PCarousel/MentorCarousel";
+const StoriesTray = dynamic(
+  () => import("./components/facebook/StoriesTray"),
+  {
+    loading: () => <TraySkeleton />,
+  }
+);
+const ReelsTray = dynamic(() => import("./components/facebook/ReelsTray"), {
+  loading: () => <TraySkeleton />,
+});
+const Feed = dynamic(() => import("./components/facebook/Feed"), {
+  loading: () => <FeedSkeleton />,
+});
+
 const Home = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
-  const [mentors, setMentors] = useState([]);
-  const [isMentorsLoading, setMentorsLoading] = useState(true);
-  const [hasMentorsErrors, setMentorsErrors] = useState(false);
-  const [communities, setCommunities] = useState([]);
-  const [hasCommunitiesErrors, setCommunitiesErrors] = useState(false);
-  const [isCommunitiesLoading, setCommunitiesLoading] = useState(true);
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState("All");
 
-  //Get user from Db and set 'userInfo'
   useEffect(() => {
-    const getUserInfo = async (e) => {
+    const getUserInfo = async () => {
       try {
-        if (session?.user) {
-          if (!userInfo) {
-            let { data } = await axios.post(GET_USER_ROUTE, {
-              email: session?.user.email,
-            });
-            //Get the user from database and populate useInfo state
-            dispatch({
-              type: reducerCases.SET_USER_INFO,
-              userInfo: {
-                id: data?.user?.id,
-                role: data?.user?.role,
-                email: data?.user?.email,
-                name: data?.user?.name,
-                username: data?.user?.username,
-                firstname: data?.user?.firstname,
-                lastname: data?.user?.lastname,
-                userProfile: data?.user?.userProfile,
-                identifier: data?.user?.identifier,
-                profilePicture: data?.user?.profilePicture,
-                status: data?.user?.about,
-              },
-            });
-          }
+        if (session?.user && !userInfo) {
+          const { data } = await axios.post(GET_USER_ROUTE, {
+            email: session?.user.email,
+          });
+          dispatch({
+            type: reducerCases.SET_USER_INFO,
+            userInfo: {
+              id: data?.user?.id,
+              role: data?.user?.role,
+              email: data?.user?.email,
+              name: data?.user?.name,
+              username: data?.user?.username,
+              firstname: data?.user?.firstname,
+              lastname: data?.user?.lastname,
+              userProfile: data?.user?.userProfile,
+              identifier: data?.user?.identifier,
+              profilePicture: data?.user?.profilePicture,
+              status: data?.user?.about,
+            },
+          });
         }
       } catch (e) {
-        toast.error(e);
+        const message =
+          e instanceof Error ? e.message : "Failed to load user information.";
+        toast.error(message);
       }
     };
 
     getUserInfo();
-  }, [session]);
+  }, [session, userInfo, dispatch]);
 
-  useEffect(() => {
-    if (userInfo) {
-      getGroups();
-      getMentors();
-    }
-  }, [userInfo]);
+  const fullName = userInfo?.firstname
+    ? `${userInfo.firstname} ${userInfo.lastname ?? ""}`.trim()
+    : userInfo?.name || session?.user?.name || "Friend";
 
-  const getMentors = async (e) => {
-    try {
-      let { data } = await axios.get(
-        `${GET_UNFOLLOWED_MENTORS}/${userInfo.id}`
-      );
-      setMentors(data.mentorsNotFollowed);
-      setMentorsLoading(false);
-    } catch (e) {
-      setMentorsErrors(e);
-      setMentorsLoading(false);
-    }
-  };
-  const getGroups = async (e) => {
-    try {
-      let { data } = await axios.get(
-        `${GET_UNASSOCIATED_GROUPS}/${userInfo.id}`
-      );
-      setCommunities(data.unassociatedGroups);
-      setCommunitiesLoading(false);
-    } catch (e) {
-      setCommunitiesErrors(false);
-      setCommunitiesLoading(false);
-    }
-  };
-  const handleTab = (type) => {
-    setActiveTab(type);
+  const user: UserLite = {
+    name: fullName,
+    avatarUrl:
+      userInfo?.profilePicture ||
+      session?.user?.image ||
+      "/avatars/userprofile.png",
   };
 
   return (
-    <div className="p-5">
-      {/* Communities */}
-      <div className="bg-white p-4 mt-5 rounded-lg">
-        <div className="mb-5 flex justify-between">
-          <div className="section-title">
-            <h2 className="text-ternaryTextColor">You might interested in</h2>
-            <p className="text-primaryTextColor">Communities</p>
-          </div>
-        </div>
-        <CommunityCarousel
-          isLoading={isCommunitiesLoading}
-          hasErrors={hasCommunitiesErrors}
-          communities={communities}
-        />
+    <DashboardShell user={user}>
+      <div className="space-y-4">
+        <ComposerCard user={user} />
+        <StoriesTray user={user} />
+        <ReelsTray />
+        <Feed />
       </div>
-
-      {/* Mentors */}
-      <div className="bg-white p-4 mt-5 rounded-lg">
-        <div className="mb-5 flex justify-between">
-          <div className="section-title">
-            <h2 className="text-ternaryTextColor">Follow</h2>
-            <p className="text-primaryTextColor">Mentors</p>
-          </div>
-        </div>
-        <MentorCarousel
-          isLoading={isMentorsLoading}
-          hasErrors={hasMentorsErrors}
-          mentors={mentors}
-        />
-      </div>
-    </div>
+    </DashboardShell>
   );
 };
+
 export default Home;
