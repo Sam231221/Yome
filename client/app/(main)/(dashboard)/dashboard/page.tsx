@@ -10,6 +10,8 @@ import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
 import DashboardShell from "./components/facebook/DashboardShell";
 import ComposerCard from "./components/facebook/ComposerCard";
 import { UserLite } from "./components/facebook/types";
+import PeopleYouMayKnow from "./components/facebook/PeopleYouMayKnow";
+import GroupSuggestions from "./components/facebook/GroupSuggestions";
 
 function TraySkeleton() {
   return (
@@ -111,6 +113,8 @@ const Home = () => {
         <ComposerCard user={user} />
         <StoriesTray user={user} />
         <ReelsTray />
+        <PeopleYouMayKnow />
+        <GroupSuggestions />
         <Feed />
       </div>
     </DashboardShell>

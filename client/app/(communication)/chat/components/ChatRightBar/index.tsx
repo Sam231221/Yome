@@ -32,12 +32,20 @@ export default function ChatRightBar() {
   return (
     <>
       {currentChatUser ? (
-        <div className={messageSearch ? "grid grid-cols-2" : "grid-cols-2"}>
+        <div
+          className={
+            messageSearch
+              ? "grid h-full w-full grid-cols-[1fr_320px]"
+              : "h-full w-full"
+          }
+        >
           <Chat id={currentChatUser.id} chatType={currentChatUser.identifier} />
           {messageSearch && <SearchMessagesRightMostChatContainer />}
         </div>
       ) : (
-        <div>{isMobileView ? <div></div> : <Empty />}</div>
+        <div className="h-full w-full">
+          {isMobileView ? <div></div> : <Empty />}
+        </div>
       )}
     </>
   );

@@ -4,7 +4,6 @@ import { signOut } from "next-auth/react";
 import { BsFillChatLeftTextFill, BsThreeDotsVertical } from "react-icons/bs";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import Avatar from "@/components/common/Avatar";
 import ContextMenu from "@/components/common/ContextMenu";
 import ProfileSkeleton from "@/components/Loading/Skeletons";
 export default function ChatListHeader({
@@ -20,9 +19,9 @@ export default function ChatListHeader({
   });
   const [isContextMenuVisible, setIsContextMenuVisible] = useState(false);
 
-  const showContextMenu = (e: React.MouseEvent<SVGElement>) => {
+  const showContextMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    setContextMenuCordinates({ x: 22, y: 25 });
+    setContextMenuCordinates({ x: 56, y: 24 });
     setIsContextMenuVisible(true);
   };
 
@@ -43,49 +42,46 @@ export default function ChatListHeader({
   };
 
   return (
-    <div className="h-16 px-4 py-3 flex justify-between items-center">
+    <div className="px-5 pt-5 pb-3 flex justify-between items-center">
       {isUserLoading ? (
-        <>
-          <ProfileSkeleton />
-        </>
+        <ProfileSkeleton />
       ) : (
-        <div className="flex gap-3 items-center">
-          <div className="cursor-pointer">
-            <Avatar
-              size="sm"
-              image={userInfo?.profilePicture || "/avatars/userprofile.png"}
-            />
-          </div>
-          <span className="text-lg font-semibold text-gray-700">
-            {userInfo?.firstname &&
-              userInfo.firstname.charAt(0).toUpperCase() +
-                userInfo.firstname.slice(1)}
+        <div className="flex flex-col">
+          <span className="text-2xl font-semibold text-[#111827]">Chats</span>
+          <span className="text-xs text-[#6B7280]">
+            {userInfo?.firstname
+              ? `Hi, ${userInfo.firstname.charAt(0).toUpperCase()}${userInfo.firstname.slice(
+                  1
+                )}`
+              : "Messenger"}
           </span>
         </div>
       )}
 
-      <div className="flex gap-6 relative ">
-        <BsFillChatLeftTextFill
-          className="text-panel-header-icon cursor-pointer text-xl"
+      <div className="flex gap-2 relative">
+        <button
+          className="h-9 w-9 rounded-full bg-[#F1F3F9] border border-[#E6E8EE] flex items-center justify-center text-[#3F3F3F]"
           title="New chat"
           onClick={handleAllContactsPage}
-        />
-        <>
-          <BsThreeDotsVertical
-            className="text-panel-header-icon cursor-pointer text-xl"
-            title="Menu"
-            onClick={(e) => showContextMenu(e)}
-            id="context-opener"
+        >
+          <BsFillChatLeftTextFill className="text-lg" />
+        </button>
+        <button
+          className="h-9 w-9 rounded-full bg-[#F1F3F9] border border-[#E6E8EE] flex items-center justify-center text-[#3F3F3F]"
+          title="Menu"
+          onClick={(e) => showContextMenu(e)}
+          id="context-opener"
+        >
+          <BsThreeDotsVertical className="text-lg" />
+        </button>
+        {isContextMenuVisible && (
+          <ContextMenu
+            options={contextMenuOptions}
+            cordinates={contextMenuCordinates}
+            contextMenu={isContextMenuVisible}
+            setContextMenu={setIsContextMenuVisible}
           />
-          {isContextMenuVisible && (
-            <ContextMenu
-              options={contextMenuOptions}
-              cordinates={contextMenuCordinates}
-              contextMenu={isContextMenuVisible}
-              setContextMenu={setIsContextMenuVisible}
-            />
-          )}
-        </>
+        )}
       </div>
     </div>
   );

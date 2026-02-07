@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import axios from "axios";
 import toast from "react-hot-toast";
 import EmojiPicker, { Theme } from "emoji-picker-react";
-import { BsEmojiSmile } from "react-icons/bs";
+import { BsEmojiSmile, BsPlusLg } from "react-icons/bs";
 import { ImAttachment } from "react-icons/im";
 import { FaMicrophone } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
@@ -174,12 +174,18 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
   }, [grabImage]);
 
   return (
-    <div className="bg-white  h-20 px-4 flex items-center gap-6  relative">
+    <div className="bg-white h-20 px-6 flex items-center gap-4 border-t border-[#E6E8EE] relative">
       {!showAudioRecorder && (
         <>
-          <div className="flex gap-6">
+          <div className="flex gap-4 items-center">
+            <button
+              className="h-9 w-9 rounded-full bg-[#1877F2] text-white flex items-center justify-center"
+              title="More"
+            >
+              <BsPlusLg className="text-sm" />
+            </button>
             <BsEmojiSmile
-              className="text-panel-header-icon cursor-pointer text-xl"
+              className="text-[#6B7280] cursor-pointer text-xl"
               title="Emoji"
               onClick={handleEmojiModal}
               id="emoji-open"
@@ -196,16 +202,16 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
               </div>
             )}
             <ImAttachment
-              className="text-panel-header-icon cursor-pointer text-xl"
+              className="text-[#6B7280] cursor-pointer text-xl"
               title="Attach"
               onClick={() => setGrabImage(true)}
             />
           </div>
-          <div className="w-full rounded-lg h-10 flex items-center">
+          <div className="w-full rounded-2xl h-10 flex items-center">
             <input
               type="text"
               placeholder="Type a message"
-              className="bg-input-background text-sm focus:outline-none  h-10 rounded-lg pl-5 pr-5 py-4 w-full"
+              className="bg-[#F3F5FA] text-sm focus:outline-none h-10 rounded-2xl pl-5 pr-5 py-4 w-full"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
@@ -214,13 +220,13 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
             {message.length ? (
               <button onClick={sendTextMessage}>
                 <MdSend
-                  className="text-panel-header-icon cursor-pointer text-xl"
+                  className="text-[#1877F2] cursor-pointer text-xl"
                   title="Send"
                 />
               </button>
             ) : (
               <FaMicrophone
-                className="text-panel-header-icon cursor-pointer text-xl"
+                className="text-[#1877F2] cursor-pointer text-xl"
                 title="Record"
                 onClick={() => setShowAudioRecorder(true)}
               />

@@ -75,14 +75,14 @@ export default function ChatLIstItem({
     <div
       id={id}
       data-name={type}
-      className={`flex cursor-pointer justify-center items-center ${
+      className={`mx-3 my-1 rounded-2xl flex cursor-pointer justify-center items-center transition ${
         currentChatUser?.id === data.id && !isContactPage
-          ? "bg-background-default-hover"
-          : "hover:bg-background-default-hover"
+          ? "bg-[#F3F5FA]"
+          : "hover:bg-[#F7F8FC]"
       }`}
       onClick={(e) => handleContactClick(e)}
     >
-      <div className="min-w-fit pointer-events-none px-5 pt-3 pb-1 ">
+      <div className="min-w-fit pointer-events-none px-4 py-3">
         {type === "group" ? (
           <Avatar
             type="group"
@@ -100,10 +100,10 @@ export default function ChatLIstItem({
           />
         )}
       </div>
-      <div className="min-h-full flex pointer-events-none flex-col justify-center mt-3 pr-2 w-full">
+      <div className="min-h-full flex pointer-events-none flex-col justify-center pr-4 w-full">
         <div className="flex pointer-events-none justify-between ">
           <div>
-            <span className="pointer-events-none font-medium text-sm">
+            <span className="pointer-events-none font-semibold text-sm text-[#111827]">
               {data?.name}
             </span>
           </div>
@@ -113,18 +113,18 @@ export default function ChatLIstItem({
               <span
                 className={`${
                   !(data.totalUnreadMessages > 0)
-                    ? "text-secondary"
-                    : "text-icon-green"
-                } text-xs font-medium`}
+                    ? "text-[#9CA3AF]"
+                    : "text-[#1877F2]"
+                } text-[11px] font-medium`}
               >
                 {calculateTime(data.createdAt)}
               </span>
             </div>
           )}
         </div>
-        <div className="flex border-b border-conversation-border pb-2 pt-1 pr-2">
+        <div className="flex pb-2 pt-1 pr-2">
           <div className="flex justify-between w-full">
-            <span className="text-gray-700 line-clamp-1 text-sm ">
+            <span className="text-[#6B7280] line-clamp-1 text-xs">
               {isContactPage ? (
                 <>
                   {type === "group" ? (
@@ -165,8 +165,8 @@ export default function ChatLIstItem({
               )}
             </span>
             {type === "user" && data.totalUnreadMessages > 0 && (
-              <span className="bg-icon-green px-[5px] rounded-full text-sm">
-                +{data.totalUnreadMessages}
+              <span className="bg-[#1877F2] px-[6px] rounded-full text-[11px] text-white font-semibold">
+                {data.totalUnreadMessages}
               </span>
             )}
           </div>

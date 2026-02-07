@@ -18,7 +18,7 @@ export const tokenProvider = async () => {
 
   // Get user ID from database to ensure it matches the one used in StreamVideoClient
   let userId = user.id;
-  
+
   // If user.id is not available, fetch from database
   if (!userId && user.email) {
     try {

@@ -78,8 +78,8 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
   };
 
   return (
-    <div className="h-16 px-4 py-3 flex justify-between items-center bg-white z-10">
-      <div className="flex items-center justify-center gap-6">
+    <div className="h-16 px-6 py-3 flex justify-between items-center bg-white border-b border-[#E6E8EE] z-10">
+      <div className="flex items-center justify-center gap-4">
         <div>
           {chatType === "group" ? (
             <Avatar
@@ -102,26 +102,26 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
           )}
         </div>
         <div className="flex flex-col">
-          <span className="font-semibold text-gray-700">
+          <span className="font-semibold text-[#111827]">
             {currentChatUser?.name}
           </span>
         </div>
       </div>
-      <div className="flex gap-6 relative">
+      <div className="flex gap-4 relative">
         <MdCall
-          className="text-panel-header-icon cursor-pointer text-xl"
+          className="text-[#7C3AED] cursor-pointer text-xl"
           onClick={handleVoiceCall}
         />
         <IoVideocam
-          className="text-panel-header-icon cursor-pointer text-xl"
+          className="text-[#7C3AED] cursor-pointer text-xl"
           onClick={handleVideoCall}
         />
         <BiSearchAlt2
-          className="text-panel-header-icon cursor-pointer text-xl"
+          className="text-[#7C3AED] cursor-pointer text-xl"
           onClick={() => dispatch({ type: reducerCases.SET_MESSAGES_SEARCH })}
         />
         <BsThreeDotsVertical
-          className="text-panel-header-icon cursor-pointer text-xl"
+          className="text-[#7C3AED] cursor-pointer text-xl"
           onClick={(e) => showContextMenu(e)}
           id="context-opener"
         />

@@ -62,7 +62,7 @@ export const options = {
         if (data.user) {
           const match = await bcryptjs.compare(
             credentials.password,
-            data.user.password
+            data.user.password,
           );
           if (match) {
             return data.user;

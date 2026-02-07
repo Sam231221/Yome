@@ -30,12 +30,9 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
   }, [messages]);
 
   return (
-    <div
-      className="h-[80vh] w-full relative flex-grow overflow-auto"
-      ref={containerRef}
-    >
-      <div className="bg-chat-background bg-fixed h-full w-full opacity-5 fixed left-0 top-0 z-0"></div>
-      <div className="mx-10 my-6 relative bottom-0 left-0 ">
+    <div className="flex-1 w-full relative overflow-auto bg-[#F7F8FC]" ref={containerRef}>
+      <div className="bg-chat-background bg-fixed h-full w-full opacity-[0.04] fixed left-0 top-0 z-0"></div>
+      <div className="mx-8 my-6 relative bottom-0 left-0 ">
         <div className="flex w-full">
           <div className="flex flex-col z-[2] justify-end w-full gap-1 overflow-auto">
             {chatType === "user" &&

@@ -3,7 +3,7 @@ import React from "react";
 
 function Empty() {
   return (
-    <div className="relative h-screen w-full">
+    <div className="relative h-full w-full">
       {/* Background image with reduced opacity */}
       <div
         className="absolute inset-0 bg-cover bg-center"

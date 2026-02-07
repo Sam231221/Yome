@@ -11,6 +11,7 @@ import VideoCall from "./components/Call/VideoCall";
 import VoiceCall from "./components/Call/VoiceCall";
 import ChatLeftBar from "./components/ChatLeftBar";
 import ChatRightBar from "./components/ChatRightBar";
+import ChatSideNav from "./components/ChatSideNav";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -211,11 +212,14 @@ export default function Chatpage() {
       )}
 
       {!videoCall && !voiceCall && (
-        <div className="grid xs:grid-cols-1 sm:grid-cols-main h-screen w-screen max-h-screen max-w-full overflow-hidden">
-          {/* Sidebar */}
-          <ChatLeftBar isUserLoading={isUserLoading} />
-          {/* ChatContainer */}
-          <ChatRightBar />
+        <div className="h-screen w-screen bg-[#E9EDF5] px-4 py-4">
+          <div className="h-full w-full rounded-2xl bg-white/90 shadow-[0_25px_60px_rgba(15,23,42,0.18)] border border-[#E6E8EE] overflow-hidden flex">
+            <ChatSideNav />
+            <div className="flex-1 grid grid-cols-[360px_1fr]">
+              <ChatLeftBar isUserLoading={isUserLoading} />
+              <ChatRightBar />
+            </div>
+          </div>
         </div>
       )}
     </>

@@ -11,7 +11,7 @@ export default function Chat({
   chatType: string;
 }) {
   return (
-    <div className="border-conversation-border border-l w-full bg-conversation-panel-background flex flex-col h-[100vh] z-10 ">
+    <div className="border-l border-[#E6E8EE] w-full bg-white flex flex-col h-full min-h-0 z-10">
       <ChatHeader chatType={chatType} />
       <ChatContainer chatType={chatType} />
       <MessageSendBar id={id} chatType={chatType} />
