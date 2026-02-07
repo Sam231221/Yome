@@ -80,13 +80,24 @@ export const options = {
     async jwt({ token, user }) {
       // if (user) token.role = user.role;
       // return token;
-      return { ...token, ...user };
+      if (user) {
+        // Ensure id is set from user data on first sign in
+        return { ...token, ...user, id: user.id };
+      }
+      return token;
     },
     // If you want to use the role in client components
     async session({ session, token }) {
       // if (session?.user) session.user.role = token.role;
       // return session;
-      session.user = token;
+      session.user = token as any;
+      // Ensure id is always set
+      if (token.id) {
+        session.user.id = token.id;
+      } else if (token.sub) {
+        // Fallback to sub (subject) which is the default user ID in NextAuth
+        session.user.id = token.sub;
+      }
       //Dont store password in session.
       delete session.user.password;
       return session;
