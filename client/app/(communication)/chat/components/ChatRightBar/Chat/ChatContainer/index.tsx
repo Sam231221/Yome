@@ -30,11 +30,11 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
   }, [messages]);
 
   return (
-    <div className="flex-1 w-full relative overflow-auto bg-[#F7F8FC]" ref={containerRef}>
-      <div className="bg-chat-background bg-fixed h-full w-full opacity-[0.04] fixed left-0 top-0 z-0"></div>
-      <div className="mx-8 my-6 relative bottom-0 left-0 ">
+    <div className="flex-1 w-full relative overflow-auto bg-[#F7F8FC] custom-scrollbar" ref={containerRef}>
+      <div className="pointer-events-none absolute inset-0 bg-chat-background opacity-[0.04]"></div>
+      <div className="lg:mx-8 md:mx-5 mx-4 lg:my-6 md:my-5 my-4 relative bottom-0 left-0 z-[1]">
         <div className="flex w-full">
-          <div className="flex flex-col z-[2] justify-end w-full gap-1 overflow-auto">
+          <div className="flex flex-col z-[2] justify-end w-full lg:gap-1 md:gap-1 gap-1 overflow-auto">
             {chatType === "user" &&
               messages.map((message, index) => (
                 // decide whether to display the message left or right at the right sidebar of chat.
@@ -49,7 +49,7 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
                   {/* text message display */}
                   {message.type === "text" && (
                     <div
-                      className={`text-white px-2 py-[5px] text-sm rounded-lg flex gap-2  max-w-[45%]	
+                      className={`text-white lg:px-3 md:px-3 px-2 lg:py-2 md:py-2 py-[5px] text-sm rounded-lg flex gap-2 max-w-[85%] md:max-w-[70%] lg:max-w-[45%]	
                      ${
                        message.senderId === currentChatUser.id
                          ? "bg-incoming-background"
@@ -61,17 +61,17 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
                           message.senderId === currentChatUser.id
                             ? "text-black"
                             : "bg-outgoing-background"
-                        } break-all text-sm font-medium`}
+                        } break-words lg:text-sm md:text-sm text-[13px] font-medium flex-1`}
                       >
                         {message.message}
                       </span>
-                      <div className="flex items-center pt-2 gap-1">
+                      <div className="flex items-end gap-1 flex-shrink-0">
                         <span
                           className={` ${
                             message.senderId === currentChatUser.id
                               ? "text-gray-800"
                               : "text-white"
-                          } text-[9px]  min-w-fit`}
+                          } text-[9px] min-w-fit`}
                         >
                           {calculateTime(message.createdAt)}
                         </span>
@@ -120,7 +120,7 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
                           }`}
                         />
                         <div
-                          className={`text-white px-2 py-[5px] text-sm rounded-lg flex gap-2  max-w-[85%]	
+                          className={`text-white lg:px-3 md:px-3 px-2 lg:py-2 md:py-2 py-[5px] text-sm rounded-lg flex gap-2 max-w-[85%] md:max-w-[70%] lg:max-w-[70%]	
                      ${
                        message.senderId !== userInfo.id
                          ? "bg-incoming-background"
@@ -132,17 +132,17 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
                               message.senderId !== userInfo.id
                                 ? "text-black"
                                 : "bg-outgoing-background"
-                            } break-all text-sm font-medium`}
+                            } break-words lg:text-sm md:text-sm text-[13px] font-medium flex-1`}
                           >
                             {message.message}
                           </span>
-                          <div className="flex items-center pt-2 gap-1">
+                          <div className="flex items-end gap-1 flex-shrink-0">
                             <span
                               className={` ${
                                 message.senderId !== userInfo.id
                                   ? "text-gray-800"
                                   : "text-white"
-                              } text-[9px]  min-w-fit`}
+                              } text-[9px] min-w-fit`}
                             >
                               {calculateTime(message.createdAt)}
                             </span>

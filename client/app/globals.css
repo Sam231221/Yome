@@ -148,6 +148,27 @@ html {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #ffffff3b;
 }
+
+/* Mobile-specific styles for better touch interactions */
+@media (max-width: 1023px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .custom-scrollbar {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
 .carousel.dragging {
   cursor: grab;
   scroll-behavior: auto;

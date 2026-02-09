@@ -87,6 +87,9 @@ const reducer = (state: State, action: Action): State => {
       }
     }
     case reducerCases.CHANGE_CURRENT_CHAT_USER: {
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/3e9d039c-923e-469d-a996-c24e5de167f3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'StateReducers.ts:CHANGE_CURRENT_CHAT_USER',message:'Reducer entered',data:{hasUser:!!action.user,userType:action.user?.type,userId:action.user?.id,userName:action.user?.name,contactsPage:state.contactsPage},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
       if (action.user) {
         if (state.contactsPage) {
           return {
@@ -96,15 +99,19 @@ const reducer = (state: State, action: Action): State => {
           };
         }
         if (action.user.type === "user") {
-          state.socket.current.emit("mark-read", {
-            id: action.user.id,
-            recieverId: state.userInfo.id,
-          });
+          if (state.socket?.current) {
+            state.socket.current.emit("mark-read", {
+              id: action.user.id,
+              recieverId: state.userInfo.id,
+            });
+          }
           const clonedContacts = [...state.userContacts];
           const index = clonedContacts.findIndex(
             (contact) => contact.id === action.user.id
           );
-          clonedContacts[index].totalUnreadMessages = 0;
+          if (index !== -1) {
+            clonedContacts[index].totalUnreadMessages = 0;
+          }
           return {
             ...state,
             currentChatUser: action.user,
@@ -123,6 +130,8 @@ const reducer = (state: State, action: Action): State => {
           };
         }
       }
+      // If action.user doesn't exist or type doesn't match, return state unchanged
+      return state;
     }
     case reducerCases.SET_SOCKET:
       return {

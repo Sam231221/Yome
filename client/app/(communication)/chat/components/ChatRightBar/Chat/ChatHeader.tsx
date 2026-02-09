@@ -3,7 +3,7 @@ import Avatar from "@/components/common/Avatar";
 import AvatarWithStatus from "@/components/common/AvatarWithStatus";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { BiSearchAlt2 } from "react-icons/bi";
-import { MdCall } from "react-icons/md";
+import { MdCall, MdArrowBack } from "react-icons/md";
 import { IoVideocam } from "react-icons/io5";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
@@ -77,10 +77,22 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
     });
   };
 
+  const handleBackToList = () => {
+    dispatch({ type: reducerCases.SET_EXIT_CHAT });
+  };
+
   return (
-    <div className="h-16 px-6 py-3 flex justify-between items-center bg-white border-b border-[#E6E8EE] z-10">
-      <div className="flex items-center justify-center gap-4">
-        <div>
+    <div className="h-16 lg:px-6 md:px-4 px-4 py-3 flex justify-between items-center bg-white border-b border-[#E6E8EE] z-10">
+      <div className="flex items-center lg:gap-4 md:gap-3 gap-2 flex-1 min-w-0">
+        {/* Back button for small screens only (mobile) */}
+        <button
+          onClick={handleBackToList}
+          className="md:hidden flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors flex-shrink-0"
+          aria-label="Back to chat list"
+        >
+          <MdArrowBack className="text-[#7C3AED] text-xl" />
+        </button>
+        <div className="flex-shrink-0">
           {chatType === "group" ? (
             <Avatar
               size="lg"
@@ -101,30 +113,42 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
             />
           )}
         </div>
-        <div className="flex flex-col">
-          <span className="font-semibold text-[#111827]">
+        <div className="flex flex-col min-w-0 flex-1">
+          <span className="font-semibold text-[#111827] truncate lg:text-base md:text-base text-sm">
             {currentChatUser?.name}
           </span>
         </div>
       </div>
-      <div className="flex gap-4 relative">
-        <MdCall
-          className="text-[#7C3AED] cursor-pointer text-xl"
+      <div className="flex lg:gap-4 md:gap-3 gap-2 relative flex-shrink-0">
+        <button
           onClick={handleVoiceCall}
-        />
-        <IoVideocam
-          className="text-[#7C3AED] cursor-pointer text-xl"
+          className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          aria-label="Voice call"
+        >
+          <MdCall className="text-[#7C3AED] text-xl" />
+        </button>
+        <button
           onClick={handleVideoCall}
-        />
-        <BiSearchAlt2
-          className="text-[#7C3AED] cursor-pointer text-xl"
+          className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          aria-label="Video call"
+        >
+          <IoVideocam className="text-[#7C3AED] text-xl" />
+        </button>
+        <button
           onClick={() => dispatch({ type: reducerCases.SET_MESSAGES_SEARCH })}
-        />
-        <BsThreeDotsVertical
-          className="text-[#7C3AED] cursor-pointer text-xl"
+          className="h-9 w-9 hidden md:flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          aria-label="Search messages"
+        >
+          <BiSearchAlt2 className="text-[#7C3AED] text-xl" />
+        </button>
+        <button
           onClick={(e) => showContextMenu(e)}
+          className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          aria-label="More options"
           id="context-opener"
-        />
+        >
+          <BsThreeDotsVertical className="text-[#7C3AED] text-xl" />
+        </button>
         {isContextMenuVisible && (
           <ContextMenu
             options={contextMenuOptions}

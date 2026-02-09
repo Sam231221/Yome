@@ -68,7 +68,7 @@ export default function List() {
   }, [userInfo, dispatch]);
 
   return (
-    <div className="bg-white flex-auto overflow-auto max-h-full custom-scrollbar pb-4">
+    <div className="bg-white flex-auto overflow-auto max-h-full custom-scrollbar lg:pb-4 md:pb-3 pb-2">
       {filteredContacts && filteredContacts.length > 0
         ? filteredContacts.map((contact: any) => {
             return (

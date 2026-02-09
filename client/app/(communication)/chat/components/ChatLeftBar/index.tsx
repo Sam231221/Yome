@@ -21,15 +21,15 @@ export default function ChatLeftBar({
   }, [contactsPage]);
 
   return (
-    <div className="bg-white flex flex-col h-full z-20 border-r border-[#E6E8EE]">
+    <div className="bg-white flex flex-col h-full z-20 lg:border-r border-[#E6E8EE] w-full">
       {pageType === "default" && (
         <>
           <ChatListHeader isUserLoading={isUserLoading} />
           <SearchBar />
-          <div className="px-5 pb-2">
-            <div className="rounded-2xl border border-[#E8ECF3] bg-[#F7F9FC] px-4 py-3 shadow-sm">
+          <div className="lg:px-5 md:px-4 px-4 pb-2">
+            <div className="rounded-2xl border border-[#E8ECF3] bg-[#F7F9FC] lg:px-4 md:px-3 px-3 lg:py-3 md:py-3 py-3 shadow-sm">
               <div className="flex items-start justify-between gap-2">
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#111827]">
                     Chat history is missing
                   </p>
@@ -38,7 +38,7 @@ export default function ChatLeftBar({
                     device.
                   </p>
                 </div>
-                <button className="h-6 w-6 rounded-full bg-white border border-[#E6E8EE] text-[#6B7280] text-xs">
+                <button className="h-6 w-6 rounded-full bg-white border border-[#E6E8EE] text-[#6B7280] text-xs flex-shrink-0">
                   ×
                 </button>
               </div>

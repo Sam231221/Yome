@@ -6,13 +6,13 @@ export default function SearchBar() {
   const [{ contactSearch }, dispatch] = useStateProvider();
 
   return (
-    <div className="flex py-2 px-5 items-center gap-3">
-      <div className="bg-[#F1F3F9] flex items-center gap-3 px-3 py-2 rounded-xl flex-grow border border-[#E6E8EE]">
-        <BiSearchAlt2 className="text-[#6B7280] text-lg" />
+    <div className="flex py-2 lg:px-5 md:px-4 px-4 items-center gap-3">
+      <div className="bg-[#F1F3F9] flex items-center gap-3 lg:px-3 md:px-3 px-3 py-2 rounded-xl flex-grow border border-[#E6E8EE]">
+        <BiSearchAlt2 className="text-[#6B7280] text-lg flex-shrink-0" />
         <input
           type="text"
           placeholder="Search Messenger"
-          className="bg-transparent text-sm focus:outline-none  w-full text-[#111827] placeholder:text-[#9CA3AF]"
+          className="bg-transparent text-sm focus:outline-none w-full text-[#111827] placeholder:text-[#9CA3AF]"
           value={contactSearch}
           onChange={(e) =>
             dispatch({

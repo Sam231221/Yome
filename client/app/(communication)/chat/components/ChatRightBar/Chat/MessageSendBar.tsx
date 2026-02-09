@@ -174,25 +174,27 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
   }, [grabImage]);
 
   return (
-    <div className="bg-white h-20 px-6 flex items-center gap-4 border-t border-[#E6E8EE] relative">
+    <div className="bg-white lg:h-20 md:h-18 h-16 lg:px-6 md:px-4 px-4 flex items-center gap-2 md:gap-3 lg:gap-4 border-t border-[#E6E8EE] relative">
       {!showAudioRecorder && (
         <>
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-2 md:gap-3 items-center flex-shrink-0">
             <button
-              className="h-9 w-9 rounded-full bg-[#1877F2] text-white flex items-center justify-center"
+              className="h-9 w-9 rounded-full bg-[#1877F2] text-white flex items-center justify-center flex-shrink-0 active:bg-[#1565D8] transition-colors"
               title="More"
             >
               <BsPlusLg className="text-sm" />
             </button>
-            <BsEmojiSmile
-              className="text-[#6B7280] cursor-pointer text-xl"
+            <button
+              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors flex-shrink-0"
               title="Emoji"
               onClick={handleEmojiModal}
               id="emoji-open"
-            />
+            >
+              <BsEmojiSmile className="text-[#6B7280] text-xl" />
+            </button>
             {showEmojiPicker && (
               <div
-                className="absolute bottom-24 left-16 z-40"
+                className="absolute bottom-20 lg:left-16 md:left-12 left-4 z-40"
                 ref={emojiPickerRef}
               >
                 <EmojiPicker
@@ -201,35 +203,45 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
                 />
               </div>
             )}
-            <ImAttachment
-              className="text-[#6B7280] cursor-pointer text-xl"
+            <button
+              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors flex-shrink-0"
               title="Attach"
               onClick={() => setGrabImage(true)}
-            />
+            >
+              <ImAttachment className="text-[#6B7280] text-xl" />
+            </button>
           </div>
-          <div className="w-full rounded-2xl h-10 flex items-center">
+          <div className="flex-1 rounded-2xl h-10 flex items-center min-w-0">
             <input
               type="text"
               placeholder="Type a message"
-              className="bg-[#F3F5FA] text-sm focus:outline-none h-10 rounded-2xl pl-5 pr-5 py-4 w-full"
+              className="bg-[#F3F5FA] text-sm focus:outline-none h-10 rounded-2xl lg:px-4 md:px-4 px-3 w-full"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && message.trim()) {
+                  sendTextMessage();
+                }
+              }}
             />
           </div>
-          <div className=" w-10 flex items-center justify-center">
+          <div className="flex items-center justify-center flex-shrink-0">
             {message.length ? (
-              <button onClick={sendTextMessage}>
-                <MdSend
-                  className="text-[#1877F2] cursor-pointer text-xl"
-                  title="Send"
-                />
+              <button 
+                onClick={sendTextMessage}
+                className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                aria-label="Send message"
+              >
+                <MdSend className="text-[#1877F2] text-xl" />
               </button>
             ) : (
-              <FaMicrophone
-                className="text-[#1877F2] cursor-pointer text-xl"
-                title="Record"
+              <button
                 onClick={() => setShowAudioRecorder(true)}
-              />
+                className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                aria-label="Record audio"
+              >
+                <FaMicrophone className="text-[#1877F2] text-xl" />
+              </button>
             )}
           </div>
         </>

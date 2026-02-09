@@ -211,13 +211,29 @@ export default function Chatpage() {
         </div>
       )}
 
+      {/* #region agent log */}
+      {(() => { fetch('http://127.0.0.1:7243/ingest/3e9d039c-923e-469d-a996-c24e5de167f3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:render',message:'Chat page rendering layout',data:{hasCurrentChatUser:!!currentChatUser,currentChatUserId:currentChatUser?.id,currentChatUserName:currentChatUser?.name,windowInnerWidth:typeof window!=='undefined'?window.innerWidth:0},timestamp:Date.now(),hypothesisId:'H3,H5'})}).catch(()=>{}); return null; })()}
+      {/* #endregion */}
       {!videoCall && !voiceCall && (
-        <div className="h-screen w-screen bg-[#E9EDF5] px-4 py-4">
-          <div className="h-full w-full rounded-2xl bg-white/90 shadow-[0_25px_60px_rgba(15,23,42,0.18)] border border-[#E6E8EE] overflow-hidden flex">
-            <ChatSideNav />
-            <div className="flex-1 grid grid-cols-[360px_1fr]">
-              <ChatLeftBar isUserLoading={isUserLoading} />
-              <ChatRightBar />
+        <div className="h-screen w-screen bg-[#E9EDF5] lg:px-4 lg:py-4 md:px-0 md:py-0 px-0 py-0">
+          <div className="h-full w-full lg:rounded-2xl md:rounded-none rounded-none bg-white/90 lg:shadow-[0_25px_60px_rgba(15,23,42,0.18)] md:shadow-none shadow-none lg:border md:border-none border-none border-[#E6E8EE] overflow-hidden flex">
+            {/* Hide ChatSideNav on medium and smaller screens */}
+            <div className="hidden lg:block">
+              <ChatSideNav />
+            </div>
+            <div className="flex-1 grid md:grid-cols-[340px_1fr] lg:grid-cols-[360px_1fr] grid-cols-1 min-h-0 min-w-0">
+              {/* On small screens (<768px): show only ChatLeftBar OR ChatRightBar, not both */}
+              {/* On medium+ screens (>=768px): show both side by side via grid */}
+              <div className={`${
+                currentChatUser ? 'hidden md:block' : 'block'
+              } h-full overflow-hidden`}>
+                <ChatLeftBar isUserLoading={isUserLoading} />
+              </div>
+              <div className={`${
+                currentChatUser ? 'block' : 'hidden md:block'
+              } h-full overflow-hidden`}>
+                <ChatRightBar />
+              </div>
             </div>
           </div>
         </div>

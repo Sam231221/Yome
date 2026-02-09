@@ -7,10 +7,18 @@ import AuthProvider from "@/context/AuthProvider";
 import ModalContextProvider from "@/context/ModalContextProvider";
 const inter = Inter({ subsets: ["latin"] });
 import { Toaster } from "react-hot-toast";
+
 export const metadata = {
   title: "Yome",
   description:
     "Experience seamless communication with our cutting-edge video calling and chat platform",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
