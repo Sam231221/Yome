@@ -5,6 +5,7 @@ import bcryptjs from "bcryptjs";
 import { stripe } from "../lib/stripe.js";
 import { absoluteUrl } from "../lib/utils.js";
 import { v2 as cloudinary } from "cloudinary";
+import { groupData } from "../data/groups.js";
 
 /**-----------------------
 USER
@@ -495,7 +496,11 @@ export const getUnfollowedMentors = async (req, res, next) => {
 };
 
 export const getUnassociatedGroupsForUser = async (req, res, next) => {
-  const loggedInUserId = parseInt(req.params.loggedInUserId);
+  const loggedInUserId = parseInt(req.params.loggedInUserId, 10);
+
+  if (Number.isNaN(loggedInUserId)) {
+    return res.status(400).json({ msg: "Invalid user id", unassociatedGroups: [] });
+  }
 
   try {
     const prisma = getPrismaInstance();
@@ -510,6 +515,38 @@ export const getUnassociatedGroupsForUser = async (req, res, next) => {
         },
       },
     });
+
+    // If DB has no groups (e.g. not seeded), use server groupData and filter out groups the user has "joined" (in member/admin lists)
+    if (unassociatedGroups.length === 0) {
+      const totalGroups = await prisma.group.count();
+      if (totalGroups === 0 && groupData?.length > 0) {
+        const allUsers = await prisma.user.findMany({
+          select: { id: true },
+          orderBy: { id: "asc" },
+        });
+        const oneBasedIndex =
+          allUsers.findIndex((u) => u.id === loggedInUserId) + 1;
+        const fromData = groupData
+          .map((data, index) => ({
+            data,
+            index,
+          }))
+          .filter(
+            ({ data }) =>
+              ![
+                ...(data.adminUserIDs || []),
+                ...(data.memberUserIDs || []),
+              ].includes(oneBasedIndex)
+          )
+          .map(({ data, index }) => ({
+            id: `groupData-${index}`,
+            name: data.name || "Untitled group",
+            about: data.about || "Community group on Yome",
+            thumbnail: data.thumbnail || "",
+          }));
+        return res.status(200).json({ unassociatedGroups: fromData });
+      }
+    }
 
     return res.status(200).json({ unassociatedGroups });
   } catch (error) {
@@ -590,26 +627,86 @@ export const followUnfollowedUser = async (req, res, next) => {
 };
 
 export const joinUnjoinedGroups = async (req, res, next) => {
-  const { loggedInUserId, groupIdToJoin } = req.body; // Assuming groupIdToJoin is passed as a parameter
+  const { loggedInUserId, groupIdToJoin } = req.body;
+
+  const userId = typeof loggedInUserId === "number" ? loggedInUserId : parseInt(loggedInUserId, 10);
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ msg: "Invalid user id." });
+  }
 
   try {
     const prisma = getPrismaInstance();
-    // Check if the group to join exists
+    let groupId = groupIdToJoin;
+
+    // Synthetic id from groupData fallback: create group from server data then join
+    if (
+      typeof groupIdToJoin === "string" &&
+      groupIdToJoin.startsWith("groupData-")
+    ) {
+      const index = parseInt(groupIdToJoin.replace("groupData-", ""), 10);
+      if (
+        Number.isNaN(index) ||
+        index < 0 ||
+        index >= (groupData?.length ?? 0)
+      ) {
+        return res.status(400).json({ msg: "Invalid group to join." });
+      }
+      const data = groupData[index];
+      const allUsers = await prisma.user.findMany({
+        select: { id: true },
+        orderBy: { id: "asc" },
+      });
+      const mapUserId = (oldId) => {
+        const i = oldId - 1;
+        return i < allUsers.length ? allUsers[i].id : null;
+      };
+      let group = await prisma.group.findFirst({
+        where: { name: data.name },
+      });
+      if (!group) {
+        const actualAdminIds = (data.adminUserIDs || [])
+          .map(mapUserId)
+          .filter(Boolean);
+        const actualMemberIds = (data.memberUserIDs || [])
+          .map(mapUserId)
+          .filter(Boolean);
+        group = await prisma.group.create({
+          data: {
+            name: data.name,
+            about: data.about || "",
+            thumbnail: data.thumbnail || "",
+            admins:
+              actualAdminIds.length > 0
+                ? {
+                    connect: actualAdminIds.map((id) => ({ id })),
+                  }
+                : undefined,
+            members:
+              actualMemberIds.length > 0
+                ? {
+                    connect: actualMemberIds.map((id) => ({ id })),
+                  }
+                : undefined,
+          },
+        });
+      }
+      groupId = group.id;
+    }
+
     const groupToJoin = await prisma.group.findUnique({
-      where: { id: groupIdToJoin },
+      where: { id: groupId },
     });
 
     if (!groupToJoin) {
-      return res.status(400).send("Invalid group to join.");
+      return res.status(400).json({ msg: "Invalid group to join." });
     }
 
-    // Check if the logged-in user is already a member or admin of the group
     const isMemberOrAdmin = await prisma.group.count({
       where: {
-        id: groupIdToJoin,
+        id: groupId,
         OR: [
-          { members: { some: { id: loggedInUserId } } },
-          { admins: { some: { id: loggedInUserId } } },
+          { members: { some: { id: userId } } },
+          { admins: { some: { id: userId } } },
         ],
       },
     });
@@ -617,18 +714,17 @@ export const joinUnjoinedGroups = async (req, res, next) => {
     if (isMemberOrAdmin > 0) {
       return res
         .status(400)
-        .send("You are already a member or admin of this group.");
+        .json({ msg: "You are already a member or admin of this group." });
     }
 
-    // Connect the logged-in user to the group they want to join as a member
     await prisma.group.update({
-      where: { id: groupIdToJoin },
-      data: { members: { connect: { id: loggedInUserId } } },
+      where: { id: groupId },
+      data: { members: { connect: { id: userId } } },
     });
 
     res
       .status(200)
-      .send({ status: 200, msg: "Successfully joined the group." });
+      .json({ status: 200, msg: "Successfully joined the group." });
   } catch (error) {
     next(error);
     res.status(500).send("Error joining the group.");

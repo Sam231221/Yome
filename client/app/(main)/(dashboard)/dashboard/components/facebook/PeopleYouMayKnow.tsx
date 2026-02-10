@@ -124,16 +124,16 @@ export default function PeopleYouMayKnow() {
   }
 
   return (
-    <section className="rounded-2xl bg-[var(--fb-card)] p-4 shadow-[var(--fb-shadow)]">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <BsPeople className="text-xl text-[var(--fb-text)]" />
-          <h3 className="text-2xl font-bold text-[var(--fb-text)]">
+    <section className="rounded-xl bg-[var(--fb-card)] p-3 shadow-[var(--fb-shadow)] sm:rounded-2xl sm:p-4">
+      <div className="mb-3 flex items-center justify-between sm:mb-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <BsPeople className="text-base text-[var(--fb-text)] sm:text-lg md:text-xl" />
+          <h3 className="text-lg font-bold text-[var(--fb-text)] sm:text-xl md:text-2xl">
             People you may know
           </h3>
         </div>
         <button
-          className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--fb-muted)] hover:bg-[var(--fb-bg)]"
+          className="flex h-7 w-7 items-center justify-center rounded-full text-[var(--fb-muted)] hover:bg-[var(--fb-bg)] sm:h-8 sm:w-8"
           aria-label="More"
         >
           <BsThreeDots />
@@ -141,62 +141,62 @@ export default function PeopleYouMayKnow() {
       </div>
 
       {isLoading ? (
-        <div className="flex gap-4 overflow-hidden">
+        <div className="flex gap-2 overflow-hidden sm:gap-3">
           {Array.from({ length: 4 }).map((_, index) => (
             <div
               key={`people-skeleton-${index}`}
-              className="min-w-[230px] rounded-2xl border border-[var(--fb-divider)] bg-[var(--fb-card)]"
+              className="min-w-[130px] rounded-xl border border-[var(--fb-divider)] bg-[var(--fb-card)] sm:min-w-[160px] sm:rounded-2xl md:min-w-[190px]"
             >
-              <div className="h-[220px] animate-pulse rounded-t-2xl bg-[var(--fb-bg)]" />
-              <div className="space-y-2 p-4">
-                <div className="h-4 w-2/3 animate-pulse rounded bg-[var(--fb-bg)]" />
-                <div className="h-3 w-1/2 animate-pulse rounded bg-[var(--fb-bg)]" />
-                <div className="h-10 w-full animate-pulse rounded-xl bg-[var(--fb-bg)]" />
+              <div className="h-[100px] animate-pulse rounded-t-xl bg-[var(--fb-bg)] sm:h-[120px] sm:rounded-t-2xl md:h-[150px]" />
+              <div className="space-y-1 p-2.5 sm:space-y-1.5 sm:p-3">
+                <div className="h-3 w-2/3 animate-pulse rounded bg-[var(--fb-bg)]" />
+                <div className="h-2.5 w-1/2 animate-pulse rounded bg-[var(--fb-bg)]" />
+                <div className="h-7 w-full animate-pulse rounded-lg bg-[var(--fb-bg)] sm:h-8 sm:rounded-xl" />
               </div>
             </div>
           ))}
         </div>
       ) : visibleSuggestions.length === 0 ? (
-        <div className="rounded-xl bg-[var(--fb-bg)] p-4 text-sm text-[var(--fb-muted)]">
+        <div className="rounded-lg bg-[var(--fb-bg)] p-3 text-xs text-[var(--fb-muted)] sm:rounded-xl sm:p-4 sm:text-sm">
           No suggestions right now.
         </div>
       ) : (
         <>
-          <div className="custom-scrollbar flex gap-4 overflow-x-auto pb-2">
+          <div className="custom-scrollbar flex gap-2 overflow-x-auto pb-2 sm:gap-3">
             {visibleSuggestions.slice(0, 12).map((person) => (
               <article
                 key={person.id}
-                className="relative min-w-[230px] overflow-hidden rounded-2xl border border-[var(--fb-divider)] bg-[var(--fb-card)] shadow-[var(--fb-shadow)]"
+                className="relative min-w-[130px] overflow-hidden rounded-xl border border-[var(--fb-divider)] bg-[var(--fb-card)] shadow-[var(--fb-shadow)] sm:min-w-[160px] sm:rounded-2xl md:min-w-[190px]"
               >
                 <button
                   onClick={() => hideCard(person.id)}
-                  className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-3xl leading-none text-white"
+                  className="absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/40 text-sm leading-none text-white sm:right-2 sm:top-2 sm:h-7 sm:w-7 md:h-8 md:w-8 md:text-lg"
                   aria-label={`Hide ${person.name}`}
                 >
                   x
                 </button>
-                <div className="relative h-[220px] w-full bg-[var(--fb-bg)]">
+                <div className="relative h-[100px] w-full bg-[var(--fb-bg)] sm:h-[120px] md:h-[150px]">
                   <Image
                     src={person.profilePicture}
                     alt={person.name}
                     fill
-                    sizes="230px"
+                    sizes="(max-width: 640px) 130px, (max-width: 768px) 160px, 190px"
                     className="object-cover"
                   />
                 </div>
-                <div className="space-y-2 p-4">
-                  <h4 className="line-clamp-1 text-[2rem] font-semibold leading-tight text-[var(--fb-text)]">
+                <div className="space-y-1 p-2.5 sm:space-y-1.5 sm:p-3">
+                  <h4 className="line-clamp-1 text-sm font-semibold leading-tight text-[var(--fb-text)] sm:text-base md:text-lg">
                     {person.name}
                   </h4>
-                  <p className="line-clamp-1 text-base text-[var(--fb-muted)]">
+                  <p className="line-clamp-1 text-[10px] text-[var(--fb-muted)] sm:text-xs md:text-sm">
                     {person.subtitle}
                   </p>
                   <button
                     onClick={() => handleAddFriend(person.id)}
                     disabled={pendingIds.includes(person.id)}
-                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#e7f3ff] py-2.5 text-xl font-semibold text-[var(--fb-blue)] transition hover:bg-[#dcecff] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg bg-[#e7f3ff] py-1.5 text-xs font-semibold text-[var(--fb-blue)] transition hover:bg-[#dcecff] disabled:cursor-not-allowed disabled:opacity-70 sm:rounded-xl sm:py-2 sm:text-sm md:text-base"
                   >
-                    <IoMdPersonAdd className="text-2xl" />
+                    <IoMdPersonAdd className="text-base sm:text-lg md:text-xl" />
                     {pendingIds.includes(person.id) ? "Adding..." : "Add friend"}
                   </button>
                 </div>
@@ -204,8 +204,8 @@ export default function PeopleYouMayKnow() {
             ))}
           </div>
           {visibleSuggestions.length > 4 ? (
-            <div className="pt-3 text-center">
-              <button className="text-xl font-semibold text-[var(--fb-blue)] hover:underline">
+            <div className="pt-2 text-center sm:pt-3">
+              <button className="text-sm font-semibold text-[var(--fb-blue)] hover:underline sm:text-base md:text-lg">
                 See all
               </button>
             </div>
