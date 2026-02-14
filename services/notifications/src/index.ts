@@ -3,7 +3,7 @@ import cors from "cors";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
-import { servicePorts, errorHandler } from "@repo/shared";
+import { servicePorts, errorHandler, internalTokenGuard } from "@repo/shared";
 import notificationRoutes from "./routes/notifications.routes.js";
 
 // TODO: Implement actual notification sending (email, push, in-app).
@@ -21,6 +21,7 @@ app.use(express.json());
 app.get("/health", (_req, res) =>
   res.status(200).json({ ok: true, service: "notifications" })
 );
+app.use(internalTokenGuard);
 
 app.use("/api/notifications", notificationRoutes);
 

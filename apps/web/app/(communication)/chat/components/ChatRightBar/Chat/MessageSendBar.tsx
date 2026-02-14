@@ -9,7 +9,7 @@ import { FaMicrophone } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { ADD_IMAGE_MESSAGE_ROUTE, ADD_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
+import { ADD_IMAGE_MESSAGE_ROUTE, ADD_MEDIA_MESSAGE_ROUTE, ADD_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
 import PhotoPicker from "@/components/common/PhotoPicker";
 
 const CaptureAudio = dynamic(() => import("@/components/common/CaptureAudio"), {
@@ -38,15 +38,17 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
     try {
       const formData = new FormData();
       formData.append("image", file);
-      const response = await axios.post(ADD_IMAGE_MESSAGE_ROUTE, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        params: {
-          chatType: chatType,
-          from: userInfo.id,
-          to: currentChatUser.id,
-        },
+      const uploadRes = await axios.post(ADD_IMAGE_MESSAGE_ROUTE, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const { url, type } = uploadRes.data ?? {};
+      if (!url) return;
+      const response = await axios.post(ADD_MEDIA_MESSAGE_ROUTE, {
+        chatType,
+        from: userInfo.id,
+        to: currentChatUser.id,
+        url,
+        type: type ?? "image",
       });
 
       if (response.status === 201) {

@@ -1,5 +1,6 @@
 import express, { type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
+import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import http from "node:http";
 import https from "node:https";
@@ -12,9 +13,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, "../../.env") });
 dotenv.config();
 
+const nextAuthSecret = process.env.NEXTAUTH_SECRET || "";
+
 interface GatewayRequest extends Request {
   requestId: string;
   rawBody?: Buffer;
+  gatewayUser?: { id: string; email?: string };
 }
 
 const app = express();
@@ -26,6 +30,7 @@ const rateMaxRequests = Number(process.env.GATEWAY_RATE_MAX_REQUESTS || 120);
 
 const services = {
   auth: process.env.AUTH_SERVICE_URL || "http://127.0.0.1:4101",
+  user: process.env.USER_SERVICE_URL || "http://127.0.0.1:4102",
   chat: process.env.CHAT_SERVICE_URL || "http://127.0.0.1:4103",
   media: process.env.MEDIA_SERVICE_URL || "http://127.0.0.1:4104",
   notifications:
@@ -93,6 +98,7 @@ const publicRoutePrefixes = [
   "/health",
   "/api/auth/get-user",
   "/api/auth/register-user",
+  "/api/auth/verify-credentials",
   "/api/auth/generate-token",
 ];
 
@@ -108,11 +114,32 @@ app.use((req: Request, res, next) => {
   const token = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7).trim()
     : "";
-  if (!token || token !== sharedGatewayToken) {
+  if (!token) {
     return res.status(401).json({
       ok: false,
       error: "unauthorized",
-      details: "Missing or invalid gateway bearer token",
+      details: "Missing Authorization header",
+      requestId: r.requestId,
+    });
+  }
+  // Try JWT first (NextAuth session token)
+  if (nextAuthSecret) {
+    try {
+      const decoded = jwt.verify(token, nextAuthSecret) as { id?: string; sub?: string; email?: string };
+      const id = decoded.id ?? decoded.sub;
+      if (id) {
+        r.gatewayUser = { id: String(id), email: decoded.email };
+        return next();
+      }
+    } catch {
+      // Not a valid JWT, fall through to shared token
+    }
+  }
+  if (token !== sharedGatewayToken) {
+    return res.status(401).json({
+      ok: false,
+      error: "unauthorized",
+      details: "Invalid token",
       requestId: r.requestId,
     });
   }
@@ -169,17 +196,23 @@ async function proxyRequest(
   const isHttps = target.protocol === "https:";
   const lib = isHttps ? https : http;
 
+  const forwardHeaders: Record<string, string> = {
+    ...(req.headers as Record<string, string>),
+    "x-request-id": req.requestId,
+    "x-internal-token": sharedGatewayToken,
+    host: target.host,
+    connection: "close",
+  };
+  if (req.gatewayUser) {
+    forwardHeaders["x-user-id"] = req.gatewayUser.id;
+    if (req.gatewayUser.email) forwardHeaders["x-user-email"] = req.gatewayUser.email;
+  }
   await new Promise<void>((resolve) => {
     const forwardReq = lib.request(
       target,
       {
         method: req.method,
-        headers: {
-          ...req.headers,
-          "x-request-id": req.requestId,
-          host: target.host,
-          connection: "close",
-        },
+        headers: forwardHeaders,
       },
       (upstream) => {
         copyHeaders(
@@ -243,10 +276,10 @@ async function proxyRequest(
 app.use("/api/auth", (req, res) =>
   proxyRequest(req as GatewayRequest, res, services.auth)
 );
-app.use("/api/db", (req, res) =>
-  proxyRequest(req as GatewayRequest, res, services.auth)
+app.use("/api/user", (req, res) =>
+  proxyRequest(req as GatewayRequest, res, services.user)
 );
-app.use("/api/ei", (req, res) =>
+app.use("/api/db", (req, res) =>
   proxyRequest(req as GatewayRequest, res, services.auth)
 );
 app.use("/api/media", (req, res) =>

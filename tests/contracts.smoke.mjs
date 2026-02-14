@@ -1,6 +1,7 @@
 const services = [
   { name: "gateway", url: process.env.GATEWAY_URL || "http://localhost:4100/health" },
   { name: "auth", url: process.env.AUTH_SERVICE_URL || "http://localhost:4101/health" },
+  { name: "user", url: process.env.USER_SERVICE_URL || "http://localhost:4102/health" },
   { name: "chat", url: process.env.CHAT_SERVICE_URL || "http://localhost:4103/health" },
   { name: "media", url: process.env.MEDIA_SERVICE_URL || "http://localhost:4104/health" },
   {

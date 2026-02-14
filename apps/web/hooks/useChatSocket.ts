@@ -2,7 +2,7 @@
 
 import { MutableRefObject, useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
-import { HOST } from "@/utils/ApiRoutes";
+import { CHAT_SOCKET_URL } from "@/utils/ApiRoutes";
 
 type SocketPayload = any;
 
@@ -69,12 +69,29 @@ export const useChatSocket = ({
   useEffect(() => {
     if (!userId) return;
 
-    if (!socketRef.current) {
-      socketRef.current = io(HOST);
-      onSocketReadyRef.current?.(socketRef);
-    }
-
-    socketRef.current.emit("add-user", userId);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/socket-token", { credentials: "include" });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { token?: string };
+        if (!data.token || cancelled) return;
+        if (!socketRef.current) {
+          socketRef.current = io(CHAT_SOCKET_URL, { auth: { token: data.token } });
+          onSocketReadyRef.current?.(socketRef);
+        }
+        socketRef.current.emit("add-user", String(userId));
+      } catch {
+        if (!cancelled && !socketRef.current) {
+          socketRef.current = io(CHAT_SOCKET_URL);
+          onSocketReadyRef.current?.(socketRef);
+          socketRef.current.emit("add-user", String(userId));
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
   useEffect(() => {

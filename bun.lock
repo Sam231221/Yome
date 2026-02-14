@@ -23,7 +23,6 @@
         "@stream-io/node-sdk": "^0.7.40",
         "@stream-io/video-react-sdk": "^1.31.8",
         "axios": "^1.13.4",
-        "bcryptjs": "^3.0.3",
         "clsx": "^2.1.1",
         "concurrently": "^9.2.1",
         "emoji-picker-react": "^4.17.4",
@@ -49,7 +48,6 @@
         "wavesurfer.js": "^7.12.1",
       },
       "devDependencies": {
-        "@types/bcryptjs": "^2.4.6",
         "@types/jsonwebtoken": "^9.0.5",
         "@types/node": "^22",
         "@types/nodemailer": "^6.4.14",
@@ -93,26 +91,6 @@
         "typescript-eslint": "^8.50.0",
       },
     },
-    "packages/server-core": {
-      "name": "@repo/server-core",
-      "dependencies": {
-        "@repo/database": "workspace:*",
-        "@repo/shared": "workspace:*",
-        "bcryptjs": "^3.0.3",
-        "cloudinary": "^2.9.0",
-        "cors": "^2.8.6",
-        "dotenv": "^17.2.3",
-        "express": "^5.2.1",
-        "multer": "^2.0.2",
-        "socket.io": "^4.8.3",
-        "stripe": "^20.3.0",
-      },
-      "devDependencies": {
-        "@types/cors": "^2.8.12",
-        "@types/express": "5.0.6",
-        "@types/node": "25.2.0",
-      },
-    },
     "packages/shared": {
       "name": "@repo/shared",
       "version": "0.1.0",
@@ -138,18 +116,14 @@
         "@repo/database": "workspace:*",
         "@repo/shared": "workspace:*",
         "bcryptjs": "^3.0.3",
-        "cloudinary": "^2.9.0",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
         "express": "^5.1.0",
-        "multer": "^2.0.2",
-        "stripe": "^20.3.0",
       },
       "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@types/cors": "^2.8.17",
         "@types/express": "^5.0.0",
-        "@types/multer": "^1.4.12",
         "@types/node": "^22.0.0",
         "tsx": "^4.19.0",
         "typescript": "^5.9.2",
@@ -163,12 +137,14 @@
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
         "express": "^5.1.0",
+        "jsonwebtoken": "^9.0.2",
         "socket.io": "^4.8.1",
       },
       "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@types/cors": "^2.8.17",
         "@types/express": "^5.0.0",
+        "@types/jsonwebtoken": "^9.0.7",
         "@types/node": "^22.0.0",
         "tsx": "^4.19.0",
         "typescript": "^5.9.2",
@@ -181,11 +157,13 @@
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
         "express": "^5.1.0",
+        "jsonwebtoken": "^9.0.2",
       },
       "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@types/cors": "^2.8.17",
         "@types/express": "^5.0.0",
+        "@types/jsonwebtoken": "^9.0.7",
         "@types/node": "^22.0.0",
         "tsx": "^4.19.0",
         "typescript": "^5.9.2",
@@ -194,7 +172,6 @@
     "services/media": {
       "name": "@services/media",
       "dependencies": {
-        "@repo/database": "workspace:*",
         "@repo/shared": "workspace:*",
         "cloudinary": "^2.9.0",
         "cors": "^2.8.5",
@@ -224,6 +201,27 @@
         "@repo/typescript-config": "workspace:*",
         "@types/cors": "^2.8.17",
         "@types/express": "^5.0.0",
+        "@types/node": "^22.0.0",
+        "tsx": "^4.19.0",
+        "typescript": "^5.9.2",
+      },
+    },
+    "services/user": {
+      "name": "@services/user",
+      "dependencies": {
+        "@repo/database": "workspace:*",
+        "@repo/shared": "workspace:*",
+        "cloudinary": "^2.9.0",
+        "cors": "^2.8.5",
+        "dotenv": "^17.2.3",
+        "express": "^5.1.0",
+        "multer": "^2.0.2",
+      },
+      "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/cors": "^2.8.17",
+        "@types/express": "^5.0.0",
+        "@types/multer": "^1.4.12",
         "@types/node": "^22.0.0",
         "tsx": "^4.19.0",
         "typescript": "^5.9.2",
@@ -509,8 +507,6 @@
 
     "@repo/eslint-config": ["@repo/eslint-config@workspace:packages/eslint-config"],
 
-    "@repo/server-core": ["@repo/server-core@workspace:packages/server-core"],
-
     "@repo/shared": ["@repo/shared@workspace:packages/shared"],
 
     "@repo/typescript-config": ["@repo/typescript-config@workspace:packages/typescript-config"],
@@ -526,6 +522,8 @@
     "@services/media": ["@services/media@workspace:services/media"],
 
     "@services/notifications": ["@services/notifications@workspace:services/notifications"],
+
+    "@services/user": ["@services/user@workspace:services/user"],
 
     "@socket.io/component-emitter": ["@socket.io/component-emitter@3.1.2", "", {}, "sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA=="],
 
@@ -550,8 +548,6 @@
     "@tanstack/virtual-core": ["@tanstack/virtual-core@3.13.18", "", {}, "sha512-Mx86Hqu1k39icq2Zusq+Ey2J6dDWTjDvEv43PJtRCoEYTLyfaPnxIQ6iy7YAOK0NV/qOEmZQ/uCufrppZxTgcg=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
-
-    "@types/bcryptjs": ["@types/bcryptjs@2.4.6", "", {}, "sha512-9xlo6R2qDs5uixm0bcIqCeMCE6HiQsIyel9KQySStiyqNl2tnj2mP3DX1Nf56MD6KMenNNlBBsy3LJ7gUEQPXQ=="],
 
     "@types/body-parser": ["@types/body-parser@1.19.6", "", { "dependencies": { "@types/connect": "*", "@types/node": "*" } }, "sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g=="],
 
@@ -1461,8 +1457,6 @@
 
     "strip-json-comments": ["strip-json-comments@3.1.1", "", {}, "sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig=="],
 
-    "stripe": ["stripe@20.3.1", "", { "peerDependencies": { "@types/node": ">=16" }, "optionalPeers": ["@types/node"] }, "sha512-k990yOT5G5rhX3XluRPw5Y8RLdJDW4dzQ29wWT66piHrbnM2KyamJ1dKgPsw4HzGHRWjDiSSdcI2WdxQUPV3aQ=="],
-
     "styled-jsx": ["styled-jsx@5.1.6", "", { "dependencies": { "client-only": "0.0.1" }, "peerDependencies": { "react": ">= 16.8.0 || 17.x.x || ^18.0.0-0 || ^19.0.0-0" } }, "sha512-qSVyDTeMotdvQYoHWLNGwRFJHC+i+ZvdBRYosOFgC+Wg1vx4frN2/RG/NA7SYqqvKNLf39P2LSRA2pu6n0XYZA=="],
 
     "sucrase": ["sucrase@3.35.1", "", { "dependencies": { "@jridgewell/gen-mapping": "^0.3.2", "commander": "^4.0.0", "lines-and-columns": "^1.1.6", "mz": "^2.7.0", "pirates": "^4.0.1", "tinyglobby": "^0.2.11", "ts-interface-checker": "^0.1.9" }, "bin": { "sucrase": "bin/sucrase", "sucrase-node": "bin/sucrase-node" } }, "sha512-DhuTmvZWux4H1UOnWMB3sk0sbaCVOoQZjv8u1rDoTV0HTdGem9hkAZtl4JZy8P2z4Bg0nT+YMeOFyVr4zcG5Tw=="],
@@ -1625,8 +1619,6 @@
 
     "@repo/database/@prisma/client": ["@prisma/client@5.22.0", "", { "peerDependencies": { "prisma": "*" }, "optionalPeers": ["prisma"] }, "sha512-M0SVXfyHnQREBKxCgyo7sffrKttwE6R8PMq330MIUF0pTwjUhLbW84pFDlf06B27XyCR++VtjugEnIHdr07SVA=="],
 
-    "@repo/server-core/@types/node": ["@types/node@25.2.0", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-DZ8VwRFUNzuqJ5khrvwMXHmvPe+zGayJhr2CDNiKB1WBE1ST8Djl00D0IC4vvNmHMdj6DlbYRIaFE7WHjlDl5w=="],
-
     "@repo/shared/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@services/auth/@types/node": ["@types/node@22.19.11", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-BH7YwL6rA93ReqeQS1c4bsPpcfOmJasG+Fkr6Y59q83f9M1WcBRHR2vM+P9eOisYRcN3ujQoiZY8uk5W+1WL8w=="],
@@ -1648,6 +1640,10 @@
     "@services/notifications/@types/node": ["@types/node@22.19.11", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-BH7YwL6rA93ReqeQS1c4bsPpcfOmJasG+Fkr6Y59q83f9M1WcBRHR2vM+P9eOisYRcN3ujQoiZY8uk5W+1WL8w=="],
 
     "@services/notifications/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+
+    "@services/user/@types/node": ["@types/node@22.19.11", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-BH7YwL6rA93ReqeQS1c4bsPpcfOmJasG+Fkr6Y59q83f9M1WcBRHR2vM+P9eOisYRcN3ujQoiZY8uk5W+1WL8w=="],
+
+    "@services/user/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@stream-io/node-sdk/@types/node": ["@types/node@18.19.130", "", { "dependencies": { "undici-types": "~5.26.4" } }, "sha512-GRaXQx6jGfL8sKfaIDD6OupbIHBr9jv7Jnaml9tB7l4v068PAOXqfcujMMo5PhbIs6ggR1XODELqahT2R8v0fg=="],
 
@@ -1738,6 +1734,8 @@
     "@services/media/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 
     "@services/notifications/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
+
+    "@services/user/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 
     "@stream-io/node-sdk/@types/node/undici-types": ["undici-types@5.26.5", "", {}, "sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA=="],
 

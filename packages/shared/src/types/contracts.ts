@@ -1,6 +1,7 @@
 export type ServiceName =
   | "gateway"
   | "auth"
+  | "user"
   | "chat"
   | "media"
   | "notifications";

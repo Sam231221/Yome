@@ -3,7 +3,7 @@ import cors from "cors";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
-import { servicePorts, errorHandler } from "@repo/shared";
+import { servicePorts, errorHandler, internalTokenGuard } from "@repo/shared";
 import { configCloudinary } from "./lib/cloudinary.js";
 import mediaRoutes from "./routes/media.routes.js";
 
@@ -22,6 +22,7 @@ app.use(express.json());
 app.get("/health", (_req, res) =>
   res.status(200).json({ ok: true, service: "media" })
 );
+app.use(internalTokenGuard);
 
 app.use("/api/media", mediaRoutes);
 

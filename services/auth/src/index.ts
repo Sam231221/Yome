@@ -3,10 +3,9 @@ import cors from "cors";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
-import { servicePorts, errorHandler } from "@repo/shared";
+import { servicePorts, errorHandler, internalTokenGuard } from "@repo/shared";
 
 import authRoutes from "./routes/auth.routes.js";
-import eiRoutes from "./routes/ei.routes.js";
 import dbRoutes from "./routes/db.routes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -22,9 +21,9 @@ app.use(express.json());
 app.get("/health", (_req, res) =>
   res.status(200).json({ ok: true, service: "auth" })
 );
+app.use(internalTokenGuard);
 
 app.use("/api/auth", authRoutes);
-app.use("/api/ei", eiRoutes);
 app.use("/api/db", dbRoutes);
 
 app.use(errorHandler);

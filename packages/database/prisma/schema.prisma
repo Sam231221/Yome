@@ -34,7 +34,6 @@ model User {
   updated_at                DateTime                @updatedAt
   userProfile               UserProfile?            @relation(fields: [userProfileId], references: [id])
   userProfileId             String?                 @unique
-  eiId                      String?                 @unique
   sentMessages              Messages[]              @relation("sentMessages")
   recievedMessages          Messages[]              @relation("recievedMessages")
   forgotPasswordToken       String?
@@ -50,10 +49,6 @@ model User {
   followers                 User[]                  @relation("Followers")
   following                 User[]                  @relation("Followers")
   messagesSeen              Messages[]              @relation(name: "MessageSeenBy")
-  stripeCustomerId          String?                 @unique
-  stripeSubscriptionId      String?                 @unique
-  stripePriceId             String?
-  stripeCurrentPeriodEnd    DateTime?
 
   @@index([email])
 }

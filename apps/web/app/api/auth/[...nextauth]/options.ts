@@ -1,11 +1,10 @@
-import bcryptjs from "bcryptjs";
 import axios from "axios";
 import type { AuthOptions } from "next-auth";
 import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
+import { VERIFY_CREDENTIALS_ROUTE } from "@/utils/ApiRoutes";
 
 export const options: AuthOptions = {
   pages: {
@@ -54,34 +53,18 @@ export const options: AuthOptions = {
         },
       },
       async authorize(credentials) {
-        // This is where you need to retrieve user data
-        // to verify with credentials
-        // Docs: https://next-auth.js.org/configuration/providers/credentials
         if (!credentials?.email || !credentials?.password) return null;
-
-        let data;
         try {
-          const response = await axios.post(GET_USER_ROUTE, {
-            email: credentials.email,
-          });
-          data = response.data;
-        } catch (error) {
-          return null;
-        }
-
-        if (data.user) {
-          const match = await bcryptjs.compare(
-            credentials.password,
-            data.user.password,
+          const response = await axios.post(
+            VERIFY_CREDENTIALS_ROUTE,
+            { email: credentials.email, password: credentials.password },
+            { validateStatus: () => true },
           );
-
-          if (match) {
-            return data.user;
-          } else {
-            return null;
+          if (response.status === 200 && response.data?.ok && response.data?.user) {
+            return response.data.user;
           }
-        }
-        if (!data.user) {
+          return null;
+        } catch {
           return null;
         }
       },

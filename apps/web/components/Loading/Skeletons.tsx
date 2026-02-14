@@ -6,50 +6,6 @@ interface SkeletonProps {
   classname?: string;
 }
 
-export const InstitutionSkeleton: React.FC<SkeletonProps> = ({
-  cards,
-  classname,
-}) => {
-  return (
-    <>
-      {Array(cards)
-        .fill(0)
-        .map((_, i) => (
-          <div key={i} className={classname}>
-            <Skeleton
-              count={1}
-              style={{
-                height: "160px",
-                marginBottom: "10px",
-              }}
-            />
-            <Skeleton
-              count={1}
-              style={{
-                width: "200px",
-                height: "12px",
-              }}
-            />
-            <Skeleton
-              count={1}
-              style={{
-                width: "100%",
-                height: "10px",
-              }}
-            />
-            <Skeleton
-              count={1}
-              style={{
-                width: "100%",
-                height: "8px",
-              }}
-            />
-          </div>
-        ))}
-    </>
-  );
-};
-
 export const CommunitySkeleton: React.FC<SkeletonProps> = ({
   cards,
   classname,

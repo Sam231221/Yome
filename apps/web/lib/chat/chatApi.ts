@@ -2,6 +2,7 @@ import axios from "axios";
 import {
   ADD_AUDIO_MESSAGE_ROUTE,
   ADD_IMAGE_MESSAGE_ROUTE,
+  ADD_MEDIA_MESSAGE_ROUTE,
   ADD_MESSAGE_ROUTE,
   GET_ALL_CONNECTED_USERS,
   GET_INITIAL_USERS_MESSAGES,
@@ -71,15 +72,18 @@ export const sendImageMessage = async ({
   const formData = new FormData();
   formData.append("image", file);
 
-  const { data } = await axios.post(ADD_IMAGE_MESSAGE_ROUTE, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-    params: {
-      chatType: "user",
-      from,
-      to,
-    },
+  const uploadRes = await axios.post(ADD_IMAGE_MESSAGE_ROUTE, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  const { url, type } = uploadRes.data ?? {};
+  if (!url) throw new Error("Upload failed");
+
+  const { data } = await axios.post(ADD_MEDIA_MESSAGE_ROUTE, {
+    chatType: "user",
+    from,
+    to,
+    url,
+    type: type ?? "image",
   });
   return data?.message;
 };
@@ -96,15 +100,18 @@ export const sendAudioMessage = async ({
   const formData = new FormData();
   formData.append("audio", file);
 
-  const { data } = await axios.post(ADD_AUDIO_MESSAGE_ROUTE, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-    params: {
-      chatType: "user",
-      from,
-      to,
-    },
+  const uploadRes = await axios.post(ADD_AUDIO_MESSAGE_ROUTE, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  const { url, type } = uploadRes.data ?? {};
+  if (!url) throw new Error("Upload failed");
+
+  const { data } = await axios.post(ADD_MEDIA_MESSAGE_ROUTE, {
+    chatType: "user",
+    from,
+    to,
+    url,
+    type: type ?? "audio",
   });
   return data?.message;
 };

@@ -6,7 +6,7 @@
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=@apps/web",
     "dev:gateway": "turbo run dev --filter=@services/gateway",
-    "dev:services": "concurrently -n g,auth,chat,media,notif \"bun run --cwd services/gateway dev\" \"bun run --cwd services/auth dev\" \"bun run --cwd services/chat dev\" \"bun run --cwd services/media dev\" \"bun run --cwd services/notifications dev\"",
+    "dev:services": "concurrently -n g,auth,user,chat,media,notif \"bun run --cwd services/gateway dev\" \"bun run --cwd services/auth dev\" \"bun run --cwd services/user dev\" \"bun run --cwd services/chat dev\" \"bun run --cwd services/media dev\" \"bun run --cwd services/notifications dev\"",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",

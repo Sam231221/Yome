@@ -10,7 +10,6 @@ import { LuClipboard } from "react-icons/lu";
 import axios from "axios";
 import {
   GET_USER_ROUTE,
-  GET_USER_SUBSCRIPTION_PLAN,
   UPDATE_USER,
 } from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";

@@ -245,3 +245,71 @@ export async function addMessage(
     next(err);
   }
 }
+
+/**
+ * Create a message with a media URL (from media service upload). Owns message persistence.
+ */
+export async function addMediaMessage(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const prisma = getPrismaInstance();
+    const { chatType, from, to, url, type } = req.body as {
+      chatType?: string;
+      from?: number | string;
+      to?: number | string;
+      url?: string;
+      type?: string;
+    };
+    if (!url || !from || !to || !chatType) {
+      res.status(400).json({ ok: false, error: "from, to, chatType and url required" });
+      return;
+    }
+    const fromId = typeof from === "number" ? from : parseInt(String(from), 10);
+    const toId = String(to);
+    const getUser = onlineUsers.get(toId);
+
+    if (chatType === "user") {
+      const recieverId = parseInt(toId, 10);
+      if (Number.isNaN(recieverId)) {
+        res.status(400).json({ ok: false, error: "Invalid to for user chat" });
+        return;
+      }
+      const newMessage = await prisma.messages.create({
+        data: {
+          message: url,
+          type: type || "audio",
+          msgType: "user",
+          sender: { connect: { id: fromId } },
+          reciever: { connect: { id: recieverId } },
+          messageStatus: getUser ? "delivered" : "sent",
+        },
+        include: { sender: true, reciever: true },
+      });
+      res.status(201).json({ ok: true, message: newMessage });
+      return;
+    }
+
+    if (chatType === "group") {
+      const newMessage = await prisma.messages.create({
+        data: {
+          message: url,
+          type: type || "image",
+          msgType: "group",
+          group: { connect: { id: toId } },
+          sender: { connect: { id: fromId } },
+          messageStatus: "sent",
+        },
+        include: { sender: true, group: true },
+      });
+      res.status(201).json({ ok: true, message: newMessage });
+      return;
+    }
+
+    res.status(400).json({ ok: false, error: "Invalid chatType" });
+  } catch (err) {
+    next(err);
+  }
+}

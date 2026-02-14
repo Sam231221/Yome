@@ -1,11 +1,12 @@
 import express from "express";
 import cors from "cors";
+import jwt from "jsonwebtoken";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
-import { servicePorts, errorHandler } from "@repo/shared";
+import { servicePorts, errorHandler, internalTokenGuard } from "@repo/shared";
 
 import chatRoutes from "./routes/chat.routes.js";
 import { attachSocketHandlers } from "./socket/handlers.js";
@@ -23,6 +24,7 @@ app.use(express.json());
 app.get("/health", (_req, res) =>
   res.status(200).json({ ok: true, service: "chat" })
 );
+app.use(internalTokenGuard);
 
 app.use("/api/chat", chatRoutes);
 
@@ -39,6 +41,21 @@ const io = new Server(httpServer, {
     credentials: true,
   },
 });
+
+const nextAuthSecret = process.env.NEXTAUTH_SECRET;
+if (nextAuthSecret) {
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token as string | undefined;
+    if (!token) return next();
+    try {
+      const decoded = jwt.verify(token, nextAuthSecret) as { sub?: string; id?: string };
+      socket.data.userId = decoded.sub ?? decoded.id ?? undefined;
+    } catch {
+      // Invalid token - allow for backward compat but socket.data.userId stays unset
+    }
+    next();
+  });
+}
 
 attachSocketHandlers(io);
 

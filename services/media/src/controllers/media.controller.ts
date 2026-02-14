@@ -1,15 +1,17 @@
 import type { Request, Response, NextFunction } from "express";
-import getPrismaInstance from "@repo/database";
 import { cloudinary } from "../lib/cloudinary.js";
 
-export async function addAudioMessage(
+/**
+ * Upload audio to Cloudinary and return the URL. Message persistence is done by the chat service.
+ */
+export async function uploadAudio(
   req: Request,
   res: Response,
   _next: NextFunction
 ): Promise<void> {
   try {
     if (!req.file?.buffer) {
-      res.status(400).send("Audio is required.");
+      res.status(400).json({ ok: false, error: "Audio is required." });
       return;
     }
 
@@ -29,51 +31,24 @@ export async function addAudioMessage(
         .end(req.file!.buffer);
     });
 
-    const prisma = getPrismaInstance();
-    const from = String(req.query.from ?? "");
-    const to = String(req.query.to ?? "");
-    const chatType = String(req.query.chatType ?? "");
-
-    if (chatType === "user") {
-      const message = await prisma.messages.create({
-        data: {
-          messageStatus: "sent",
-          message: audio.secure_url,
-          sender: { connect: { id: parseInt(from) } },
-          reciever: { connect: { id: parseInt(to) } },
-          type: "audio",
-        },
-      });
-      res.status(201).json({ message });
-      return;
-    }
-    if (chatType === "group") {
-      const message = await prisma.messages.create({
-        data: {
-          group: { connect: { id: to } },
-          msgType: "group",
-          messageStatus: "sent",
-          message: audio.secure_url,
-          sender: { connect: { id: parseInt(from) } },
-          type: "audio",
-        },
-      });
-      res.status(201).json({ message });
-    }
+    res.status(200).json({ ok: true, url: audio.secure_url, type: "audio" });
   } catch (err) {
     console.error(err);
-    res.status(500).send("Internal server error");
+    res.status(500).json({ ok: false, error: "Internal server error" });
   }
 }
 
-export async function addImageMessage(
+/**
+ * Upload image to Cloudinary and return the URL. Message persistence is done by the chat service.
+ */
+export async function uploadImage(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
     if (!req.file?.buffer) {
-      res.status(400).send("Image is required.");
+      res.status(400).json({ ok: false, error: "Image is required." });
       return;
     }
 
@@ -89,37 +64,7 @@ export async function addImageMessage(
         .end(req.file!.buffer);
     });
 
-    const prisma = getPrismaInstance();
-    const from = String(req.query.from ?? "");
-    const to = String(req.query.to ?? "");
-    const chatType = String(req.query.chatType ?? "");
-
-    if (chatType === "user") {
-      const message = await prisma.messages.create({
-        data: {
-          messageStatus: "sent",
-          message: image.secure_url,
-          sender: { connect: { id: parseInt(from) } },
-          reciever: { connect: { id: parseInt(to) } },
-          type: "image",
-        },
-      });
-      res.status(201).json({ message });
-      return;
-    }
-    if (chatType === "group") {
-      const message = await prisma.messages.create({
-        data: {
-          group: { connect: { id: to } },
-          msgType: "group",
-          messageStatus: "sent",
-          message: image.secure_url,
-          sender: { connect: { id: parseInt(from) } },
-          type: "image",
-        },
-      });
-      res.status(201).json({ message });
-    }
+    res.status(200).json({ ok: true, url: image.secure_url, type: "image" });
   } catch (err) {
     next(err);
   }

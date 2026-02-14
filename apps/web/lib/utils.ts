@@ -6,7 +6,7 @@ export function absoluteUrl(path: string) {
 
 export function backendAbsoluteUrl(path: string) {
   return `${
-    process.env.NEXT_PUBLIC_BACKEND_API || "http://localhost:3005"
+    process.env.NEXT_PUBLIC_BACKEND_API || "http://localhost:4100"
   }/${path}`;
 }
 import { clsx, type ClassValue } from "clsx";

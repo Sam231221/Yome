@@ -1,6 +1,6 @@
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { ADD_AUDIO_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
+import { ADD_AUDIO_MESSAGE_ROUTE, ADD_MEDIA_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
 import axios from "axios";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -173,15 +173,17 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
     try {
       const formData = new FormData();
       formData.append("audio", renderedAudio);
-      const response = await axios.post(ADD_AUDIO_MESSAGE_ROUTE, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        params: {
-          chatType: chatType,
-          from: userInfo.id,
-          to: currentChatUser.id,
-        },
+      const uploadRes = await axios.post(ADD_AUDIO_MESSAGE_ROUTE, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const { url, type } = uploadRes.data ?? {};
+      if (!url) return;
+      const response = await axios.post(ADD_MEDIA_MESSAGE_ROUTE, {
+        chatType,
+        from: userInfo.id,
+        to: currentChatUser.id,
+        url,
+        type: type ?? "audio",
       });
       if (response.status === 201) {
         socket.current.emit("send-msg", {
