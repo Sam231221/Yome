@@ -1,0 +1,27 @@
+name: Deploy Mobile
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [production]
+    paths:
+      - "apps/mobile/**"
+      - "packages/**"
+
+jobs:
+  build-mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bunx turbo run build --filter=@apps/mobile
+      - uses: expo/expo-github-action@v8
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: EAS Build
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        working-directory: apps/mobile
+        run: eas build --platform all --non-interactive

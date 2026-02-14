@@ -1,0 +1,54 @@
+name: Deploy Services
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [production]
+    paths:
+      - "services/**"
+      - "packages/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - service: "@services/gateway"
+            service_dir: "services/gateway"
+            image_name: "yome-gateway"
+          - service: "@services/auth"
+            service_dir: "services/auth"
+            image_name: "yome-auth"
+          - service: "@services/chat"
+            service_dir: "services/chat"
+            image_name: "yome-chat"
+          - service: "@services/media"
+            service_dir: "services/media"
+            image_name: "yome-media"
+          - service: "@services/notifications"
+            service_dir: "services/notifications"
+            image_name: "yome-notifications"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bunx turbo run build --filter=${{ matrix.service }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.service
+          push: true
+          build-args: |
+            SERVICE_DIR=${{ matrix.service_dir }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_name }}:latest

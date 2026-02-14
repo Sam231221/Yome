@@ -1,0 +1,50 @@
+"use server";
+
+import { getServerSession } from "next-auth/next";
+import { StreamClient } from "@stream-io/node-sdk";
+import { options } from "@/app/api/auth/[...nextauth]/options";
+import axios from "axios";
+import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
+
+const STREAM_API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY;
+const STREAM_API_SECRET = process.env.STREAM_SECRET_KEY;
+
+export const tokenProvider = async () => {
+  const session = await getServerSession(options);
+  type SessionUser = { id?: string; email?: string | null; name?: string | null; image?: string | null };
+  const user = session?.user as SessionUser | undefined;
+  if (!user) throw new Error("User is not authenticated");
+  if (!STREAM_API_KEY) throw new Error("Stream API key secret is missing");
+  if (!STREAM_API_SECRET) throw new Error("Stream API secret is missing");
+
+  // Get user ID from database to ensure it matches the one used in StreamVideoClient
+  let userId = user.id;
+
+  // If user.id is not available, fetch from database
+  if (!userId && user.email) {
+    try {
+      const { data } = await axios.post(GET_USER_ROUTE, {
+        email: user.email,
+      });
+      userId = data?.user?.id;
+    } catch (error) {
+      throw new Error("Failed to fetch user information");
+    }
+  }
+
+  if (!userId) throw new Error("User ID is missing");
+
+  const streamClient = new StreamClient(STREAM_API_KEY, STREAM_API_SECRET);
+
+  const expirationTime = Math.floor(Date.now() / 1000) + 3600;
+  const issuedAt = Math.floor(Date.now() / 1000) - 60;
+
+  const token = streamClient.generateUserToken({
+    user_id: String(userId), // Convert to string to match StreamVideoClient user.id
+    validity_in_seconds: 3600,
+    exp: expirationTime,
+    iat: issuedAt,
+  });
+
+  return token;
+};

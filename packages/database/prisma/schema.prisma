@@ -1,0 +1,123 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+  output          = "../src/generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  AGENT
+  STAFF
+  ADMIN
+  MENTOR
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id                        Int                     @id @default(autoincrement())
+  firstname                 String
+  lastname                  String
+  name                      String?
+  email                     String                  @unique
+  username                  String                  @unique
+  password                  String
+  profilePicture            String                  @default("")
+  identifier                String                  @default("user")
+  created_at                DateTime                @default(now())
+  updated_at                DateTime                @updatedAt
+  userProfile               UserProfile?            @relation(fields: [userProfileId], references: [id])
+  userProfileId             String?                 @unique
+  eiId                      String?                 @unique
+  sentMessages              Messages[]              @relation("sentMessages")
+  recievedMessages          Messages[]              @relation("recievedMessages")
+  forgotPasswordToken       String?
+  forgotPasswordTokenExpiry DateTime?
+  verifyToken               String?
+  verifyTokenExpiry         DateTime?
+  groupAdmin                Group[]                 @relation("AdminOfGroup")
+  group                     Group[]                 @relation("MembersOfGroup")
+  role                      Role                    @default(USER)
+  posts                     Post[]
+  comments                  Comment[]
+  likes                     Like[]
+  followers                 User[]                  @relation("Followers")
+  following                 User[]                  @relation("Followers")
+  messagesSeen              Messages[]              @relation(name: "MessageSeenBy")
+  stripeCustomerId          String?                 @unique
+  stripeSubscriptionId      String?                 @unique
+  stripePriceId             String?
+  stripeCurrentPeriodEnd    DateTime?
+
+  @@index([email])
+}
+
+model UserProfile {
+  id         String   @id @default(uuid())
+  user       User?
+  bio        String   @default("")
+  address    String   @default("")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Messages {
+  id            Int      @id @default(autoincrement())
+  sender        User?    @relation("sentMessages", fields: [senderId], references: [id])
+  senderId      Int
+  reciever      User?    @relation("recievedMessages", fields: [recieverId], references: [id])
+  recieverId    Int?
+  seenBy        User[]   @relation("MessageSeenBy")
+  type          String   @default("text")
+  message       String
+  msgType       String   @default("")
+  messageStatus String   @default("sent")
+  group         Group?   @relation(fields: [groupId], references: [id])
+  groupId       String?
+  createdAt     DateTime @default(now())
+}
+
+model Group {
+  id         String     @id @default(uuid())
+  name       String     @unique
+  about      String     @default("")
+  identifier String     @default("group")
+  admins     User[]     @relation("AdminOfGroup")
+  members    User[]     @relation("MembersOfGroup")
+  messages   Messages[]
+  thumbnail  String     @default("")
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+}
+
+model Post {
+  id          Int       @id @default(autoincrement())
+  description String
+  author      User      @relation(fields: [authorId], references: [id])
+  authorId    Int
+  comments    Comment[]
+  likes       Like[]
+}
+
+model Comment {
+  id          Int    @id @default(autoincrement())
+  description String
+  author      User   @relation(fields: [authorId], references: [id])
+  authorId    Int
+  post        Post   @relation(fields: [postId], references: [id])
+  postId      Int
+}
+
+model Like {
+  id     Int  @id @default(autoincrement())
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+  post   Post @relation(fields: [postId], references: [id])
+  postId Int
+}

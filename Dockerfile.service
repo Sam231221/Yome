@@ -1,0 +1,16 @@
+FROM oven/bun:1.3.5 AS runtime
+
+WORKDIR /app
+
+COPY package.json bun.lock turbo.json ./
+COPY apps ./apps
+COPY packages ./packages
+COPY services ./services
+
+RUN bun install --frozen-lockfile
+
+ARG SERVICE_DIR
+WORKDIR /app/${SERVICE_DIR}
+
+EXPOSE 4100
+CMD ["bun", "run", "start"]
