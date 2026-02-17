@@ -27,7 +27,7 @@ export default function Login() {
 
         <div className="relative z-10 flex flex-col h-full p-14 text-white">
           <div className="flex items-center gap-2">
-            <Image src={"/LogoB.png"} width={36} height={52} alt="logo" />
+            <Image src={"/logos/LogoWhiteT.png"} width={40} height={40} alt="logo" />
             <h1 className="text-3xl font-bold">Yome</h1>
           </div>
 
@@ -84,7 +84,7 @@ export default function Login() {
       <div className="h-screen w-full col-span-6 xl:col-span-2 flex justify-center items-center p-10">
         <div className=" md:w-[400px] lg:w-[600px] xl:w-full flex flex-col p-3">
           <div className="xl:hidden flex mb-5 w-full justify-center">
-            <Image src={"/LogoB.png"} width={35} height={50} alt="logo" />
+            <Image src={"/LogoB.png"} width={40} height={40} alt="logo" />
             <h1 className="ml-2 text-4xl font-bold">Yome</h1>
           </div>
 
