@@ -12,7 +12,6 @@ A modern, scalable full-stack communication platform built with Next.js, microse
 - [Development](#development)
 - [Code Review Guidelines](#code-review-guidelines)
 - [Environment Variables](#environment-variables)
-- [Docker Deployment](#docker-deployment)
 
 ---
 
@@ -124,7 +123,6 @@ The backend follows a **microservices pattern** with dedicated services:
 
 ### DevOps & Infrastructure
 
-- **Containerization**: Docker & Docker Compose
 - **Monorepo**: Turborepo
 - **Package Manager**: Bun
 - **Type Safety**: TypeScript
@@ -171,8 +169,6 @@ yome/
 │   └── typescript-config/      # Shared TS configs
 │
 ├── tests/                      # Integration tests
-├── docker-compose.yml          # Docker orchestration
-├── Dockerfile.service          # Service Docker image
 └── turbo.json                  # Turborepo configuration
 ```
 
@@ -182,8 +178,8 @@ yome/
 
 - **Bun**: v1.3.5 or higher
 - **Node.js**: v18 or higher
-- **PostgreSQL**: v16+ (or use Docker)
-- **Redis**: v7+ (or use Docker)
+-- **PostgreSQL**: v16+
+-- **Redis**: v7+
 
 ### Installation
 
@@ -225,19 +221,13 @@ yome/
    NEXT_PUBLIC_STREAM_API_KEY=your_stream_api_key
    STREAM_SECRET_KEY=your_stream_secret_key
 
-   # Internal Service Authentication
-   INTERNAL_SERVICE_SECRET=your_internal_secret
+  # Internal Service Authentication
+  GATEWAY_SHARED_TOKEN=your_internal_secret
    ```
 
 4. **Set up the database**
 
-   Using Docker (recommended):
-
-   ```bash
-   docker compose up -d postgres redis
-   ```
-
-   Or install PostgreSQL and Redis locally.
+   Install PostgreSQL and Redis locally.
 
 5. **Run database migrations**
 
@@ -504,7 +494,7 @@ NOTIFICATIONS_SERVICE_URL= # Notifications service endpoint
 # Authentication
 NEXTAUTH_SECRET=        # NextAuth.js secret
 NEXTAUTH_URL=          # Frontend URL
-INTERNAL_SERVICE_SECRET= # Inter-service communication secret
+GATEWAY_SHARED_TOKEN=   # Inter-service communication secret
 
 # Stream.io (Video)
 NEXT_PUBLIC_STREAM_API_KEY= # Public API key
@@ -525,60 +515,6 @@ SMTP_PASS=
 
 # Node Environment
 NODE_ENV=              # development | production | test
-```
-
-## 🐳 Docker Deployment
-
-### Development with Docker
-
-Run the entire stack locally:
-
-```bash
-docker compose up -d
-```
-
-This starts:
-
-- PostgreSQL (port 5432)
-- Redis (port 6379)
-- All microservices (ports 4101-4105)
-
-### Building Individual Services
-
-```bash
-# Build a specific service
-docker build -f Dockerfile.service \
-  --build-arg SERVICE_DIR=services/auth \
-  -t yome-auth .
-
-# Run the service
-docker run -p 4101:4101 --env-file .env yome-auth
-```
-
-### Production Deployment
-
-1. **Build all services**
-
-   ```bash
-   docker compose build
-   ```
-
-2. **Deploy to your infrastructure**
-   - Use Docker Swarm, Kubernetes, or cloud services
-   - Ensure environment variables are properly configured
-   - Set up persistent volumes for PostgreSQL data
-   - Configure proper networking between services
-
-### Health Checks
-
-PostgreSQL health check is configured in docker-compose:
-
-```yaml
-healthcheck:
-  test: ["CMD-SHELL", "pg_isready -U yome -d yome"]
-  interval: 5s
-  timeout: 5s
-  retries: 5
 ```
 
 ---

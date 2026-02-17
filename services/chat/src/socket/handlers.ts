@@ -4,7 +4,12 @@ import { onlineUsers } from "../state/online-users.js";
 
 export function attachSocketHandlers(io: Server): void {
   io.on("connection", (socket: Socket) => {
-    socket.on("add-user", (userId: string) => {
+    socket.on("add-user", () => {
+      const userId = socket.data.userId as string | undefined;
+      if (!userId) {
+        socket.disconnect(true);
+        return;
+      }
       socket.join(userId);
       onlineUsers.set(userId, socket.id);
       socket.broadcast.emit("online-users", {
@@ -17,6 +22,11 @@ export function attachSocketHandlers(io: Server): void {
     });
 
     socket.on("send-msg", async (data: { from: string; to: string; chatType: string; message: string; room?: string }) => {
+      const authedUserId = socket.data.userId as string | undefined;
+      if (!authedUserId) return;
+      if (data.from !== authedUserId) {
+        data.from = authedUserId;
+      }
       const sendUserSocket = onlineUsers.get(data.to);
       if (data.chatType === "user" && sendUserSocket) {
         socket.to(sendUserSocket).emit("privateMessageReceived", {

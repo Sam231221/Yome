@@ -58,7 +58,10 @@ export async function getMessages(
         orderBy: { id: "asc" },
       });
       res.status(200).json({ messages });
+      return;
     }
+
+    res.status(400).json({ ok: false, error: "Invalid chatType" });
   } catch (err) {
     next(err);
   }
@@ -232,7 +235,7 @@ export async function addMessage(
           group: { connect: { id: to } },
           msgType: "group",
           sender: { connect: { id: parseInt(from) } },
-          messageStatus: getUser ? "delivered" : "sent",
+          messageStatus: "sent",
         },
         include: { sender: true, group: true },
       });

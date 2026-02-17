@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import getPrismaInstance from "@repo/database";
 import { usersData } from "../data/users.js";
-import { groupData } from "../data/groups.js";
+import { groupData } from "@repo/shared";
 import bcryptjs from "bcryptjs";
 
 export async function createMultipleUsersWithProfiles(

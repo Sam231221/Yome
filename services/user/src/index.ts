@@ -6,10 +6,13 @@ import dotenv from "dotenv";
 import { servicePorts, errorHandler, internalTokenGuard } from "@repo/shared";
 
 import userRoutes from "./routes/user.routes.js";
+import { configCloudinary } from "./lib/cloudinary.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, "../../.env") });
 dotenv.config();
+
+configCloudinary();
 
 const app = express();
 const port = servicePorts.user;

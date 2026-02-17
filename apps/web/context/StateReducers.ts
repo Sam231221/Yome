@@ -334,11 +334,6 @@ const reducer = (state: State, action: Action): State => {
       };
 
       if (state.currentChatUser?.id === groupId) {
-        state.socket.current.emit("mark-group-read", {
-          groupId,
-          userId: state.userInfo.id,
-        });
-
         const clonedGroupContacts = updateGroupContacts([
           ...state.groupContacts,
         ]);

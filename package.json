@@ -10,6 +10,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
+    "check-types:all": "bun run --cwd services/auth check-types && bun run --cwd services/user check-types && bun run --cwd services/chat check-types && bun run --cwd services/media check-types && bun run --cwd services/notifications check-types && bun run --cwd services/gateway check-types && bun run --cwd packages/shared check-types",
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
     "db:migrate": "turbo run db:migrate"

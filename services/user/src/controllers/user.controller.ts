@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
 import { v2 as cloudinary } from "cloudinary";
-import { groupData } from "../data/groups.js";
+import { groupData } from "@repo/shared";
 
 export async function getUserById(
   req: Request,
@@ -26,7 +26,6 @@ export async function getUserById(
         username: true,
         role: true,
         profilePicture: true,
-        password: true,
         userProfile: { select: { bio: true, address: true } },
       },
     });

@@ -4,3 +4,4 @@ export { absoluteUrl } from "./utils/url.js";
 export { errorHandler } from "./middleware/errorHandler.js";
 export { internalTokenGuard } from "./middleware/internalTokenGuard.js";
 export { createLogger } from "./logger.js";
+export { groupData } from "./data/groups.js";

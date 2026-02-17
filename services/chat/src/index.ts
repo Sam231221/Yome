@@ -46,12 +46,14 @@ const nextAuthSecret = process.env.NEXTAUTH_SECRET;
 if (nextAuthSecret) {
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token as string | undefined;
-    if (!token) return next();
+    if (!token) return next(new Error("unauthorized"));
     try {
       const decoded = jwt.verify(token, nextAuthSecret) as { sub?: string; id?: string };
-      socket.data.userId = decoded.sub ?? decoded.id ?? undefined;
+      const userId = decoded.sub ?? decoded.id;
+      if (!userId) return next(new Error("unauthorized"));
+      socket.data.userId = userId;
     } catch {
-      // Invalid token - allow for backward compat but socket.data.userId stays unset
+      return next(new Error("unauthorized"));
     }
     next();
   });
