@@ -355,11 +355,11 @@ export default function DashboardShell({
       appendMessage(incomingContact.id, normalizedMessage);
       await openChat(incomingContact, { ensureConversation: true });
     },
-    onMarkReadReceived: ({ id, recieverId }) => {
+    onMarkReadReceived: ({ id, receiverId, recieverId }) => {
       dispatch({
         type: reducerCases.SET_MESSAGES_READ,
         id,
-        recieverId,
+        recieverId: receiverId ?? recieverId,
       });
     },
     onIncomingVoiceCall: ({ from, roomId, callType }) => {

@@ -136,27 +136,39 @@ export default function RegisterContainer({
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
-    const { data } = await axios.post(REGISTER_USER, {
-      email: values.email,
-      firstname: values.firstname,
-      lastname: values.lastname,
-      username: values.username,
-      password: values.password,
-    });
-    setValues({
-      firstname: "",
-      lastname: "",
-      username: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    });
-    if (data.status === 200) {
-      toast.success(data.msg);
-      setActiveTab("login");
-    }
-    if (data.status === 400 || data.status === 409) {
-      toast.error(data.msg);
+    try {
+      const response = await axios.post(
+        REGISTER_USER,
+        {
+          email: values.email,
+          firstname: values.firstname,
+          lastname: values.lastname,
+          username: values.username,
+          password: values.password,
+        },
+        { validateStatus: () => true }
+      );
+      const { data } = response;
+      if (response.status === 201) {
+        setValues({
+          firstname: "",
+          lastname: "",
+          username: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
+        toast.success(data.msg || "User created successfully");
+        setActiveTab("login");
+        return;
+      }
+      if (response.status === 400 || response.status === 409) {
+        toast.error(data.error || data.msg || "Registration failed");
+        return;
+      }
+      toast.error(data?.error || data?.msg || "Registration failed");
+    } catch {
+      toast.error("Registration failed");
     }
   };
   return (

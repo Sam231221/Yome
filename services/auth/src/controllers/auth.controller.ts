@@ -3,6 +3,11 @@ import getPrismaInstance from "@repo/database";
 import { generateToken04 } from "../lib/zego-token.js";
 import bcryptjs from "bcryptjs";
 
+function stripPassword<T extends { password: string }>(user: T): Omit<T, "password"> {
+  const { password: _password, ...safeUser } = user;
+  return safeUser;
+}
+
 export async function getUserByEmail(
   req: Request,
   res: Response,
@@ -11,7 +16,7 @@ export async function getUserByEmail(
   try {
     const { email } = req.body as { email?: string };
     if (!email) {
-      res.json({ msg: "Email is required", status: false });
+      res.status(400).json({ ok: false, error: "Email is required" });
       return;
     }
     const prisma = getPrismaInstance();
@@ -20,9 +25,9 @@ export async function getUserByEmail(
       include: { userProfile: true },
     });
     if (!user) {
-      res.json({ msg: "User not found", status: false });
+      res.status(404).json({ ok: false, error: "User not found" });
     } else {
-      res.json({ msg: "User Found", status: true, user });
+      res.status(200).json({ ok: true, user: stripPassword(user) });
     }
   } catch (error) {
     next(error);
@@ -80,9 +85,9 @@ export async function registerUser(
       password?: string;
     };
     if (!email || !username || !password) {
-      res.json({
-        msg: "Email, Name and Password are required",
-        status: 400,
+      res.status(400).json({
+        ok: false,
+        error: "Email, Name and Password are required",
       });
       return;
     }
@@ -93,7 +98,7 @@ export async function registerUser(
       where: { username },
     });
     if (existingByName || existingByEmail) {
-      res.json({ msg: "User already exists", status: 409 });
+      res.status(409).json({ ok: false, error: "User already exists" });
       return;
     }
     const salt = await bcryptjs.genSalt(10);
@@ -115,10 +120,9 @@ export async function registerUser(
         userProfileId: userProfile.id,
       },
     });
-    res.json({
-      msg: "User Created Successfully",
-      status: 200,
-      data: user,
+    res.status(201).json({
+      ok: true,
+      user: stripPassword(user),
     });
   } catch (error) {
     next(error);

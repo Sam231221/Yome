@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import { servicePorts, errorHandler, internalTokenGuard } from "@repo/shared";
 import notificationRoutes from "./routes/notifications.routes.js";
 
-// TODO: Implement actual notification sending (email, push, in-app).
+// Stub notifications service. Real delivery can be wired later.
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, "../../.env") });

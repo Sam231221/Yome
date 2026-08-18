@@ -5,7 +5,7 @@ import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import IncomingCall from "@/components/common/IncomingCall";
 import IncomingVideoCall from "@/components/common/IncomingVideoCall";
-import { GET_MESSAGES_ROUTE, GET_USER_ROUTE } from "@/utils/ApiRoutes";
+import { GET_MESSAGES_ROUTE } from "@/utils/ApiRoutes";
 import VideoCall from "./components/Call/VideoCall";
 import VoiceCall from "./components/Call/VoiceCall";
 import ChatLeftBar from "./components/ChatLeftBar";
@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useChatSocket } from "@/hooks/useChatSocket";
 import { playNotificationSound } from "@/lib/chat/notificationSound";
+import { ensureUserInfo } from "@/lib/auth/userInfo";
 
 export default function Chatpage() {
   const [
@@ -37,44 +38,31 @@ export default function Chatpage() {
 
   // Get user info from session if not already set
   useEffect(() => {
-    const getUserInfo = async () => {
+    let cancelled = false;
+    const load = async () => {
       try {
-        if (session?.user && !userInfo) {
-          const { data } = await axios.post(GET_USER_ROUTE, {
-            email: session.user.email,
-          });
-
-          if (data.status) {
-            dispatch({
-              type: reducerCases.SET_USER_INFO,
-              userInfo: {
-                id: data.user.id,
-                role: data.user.role,
-                email: data.user.email,
-                name: data.user.name,
-                username: data.user.username,
-                firstname: data.user.firstname,
-                lastname: data.user.lastname,
-                userProfile: data.user.userProfile,
-                identifier: data.user.identifier,
-                profilePicture: data.user.profilePicture,
-                status: data.user.about,
-              },
-            });
-          } else {
-            toast.error("User not found. Please login again.");
-            router.push("/login");
-          }
+        if (!session?.user || userInfo) return;
+        const loaded = await ensureUserInfo({
+          sessionUser: session.user,
+          currentUserInfo: userInfo,
+          dispatch,
+        });
+        if (!loaded && !cancelled) {
+          toast.error("User not found. Please login again.");
+          router.push("/login");
         }
       } catch (error) {
         console.error("Error fetching user info:", error);
-        toast.error("Failed to load user information");
+        if (!cancelled) {
+          toast.error("Failed to load user information");
+        }
       }
     };
 
-    if (session && !userInfo) {
-      getUserInfo();
-    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [session, userInfo, dispatch, router]);
 
   const socket = useChatSocket({
@@ -110,11 +98,11 @@ export default function Chatpage() {
         onlineUsers,
       });
     },
-    onMarkReadReceived: ({ id, recieverId }) => {
+    onMarkReadReceived: ({ id, receiverId, recieverId }) => {
       dispatch({
         type: reducerCases.SET_MESSAGES_READ,
         id,
-        recieverId,
+        recieverId: receiverId ?? recieverId,
       });
     },
     onIncomingVoiceCall: ({ from, roomId, callType }) => {

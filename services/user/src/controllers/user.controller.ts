@@ -1,7 +1,14 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
-import { v2 as cloudinary } from "cloudinary";
+import { cloudinary } from "../lib/cloudinary.js";
 import { groupData } from "@repo/shared";
+
+function getAuthenticatedUserId(req: Request): number | null {
+  const raw = req.headers["x-user-id"];
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const id = Number.parseInt(String(value ?? ""), 10);
+  return Number.isNaN(id) ? null : id;
+}
 
 export async function getUserById(
   req: Request,
@@ -11,7 +18,7 @@ export async function getUserById(
   try {
     const { userId } = req.body as { userId?: string };
     if (!userId) {
-      res.json({ msg: "Id is required", status: false });
+      res.status(400).json({ ok: false, error: "Id is required" });
       return;
     }
     const prisma = getPrismaInstance();
@@ -30,9 +37,9 @@ export async function getUserById(
       },
     });
     if (!user) {
-      res.json({ msg: "User not found", status: false });
+      res.status(404).json({ ok: false, error: "User not found" });
     } else {
-      res.json({ msg: "User Found", status: true, user });
+      res.status(200).json({ ok: true, user });
     }
   } catch (error) {
     next(error);
@@ -46,7 +53,20 @@ export async function updateUser(
 ): Promise<void> {
   try {
     const prisma = getPrismaInstance();
-    const userId = String(req.query.userId ?? "");
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+    const userId = parseInt(String(req.query.userId ?? ""), 10);
+    if (Number.isNaN(userId)) {
+      res.status(400).json({ ok: false, error: "Invalid user id" });
+      return;
+    }
+    if (userId !== authenticatedUserId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
     const { email, bio, lastname, firstname, address } = req.body as Record<
       string,
       string
@@ -68,20 +88,20 @@ export async function updateUser(
     }
 
     const existingUser = await prisma.user.findUnique({
-      where: { id: parseInt(userId) },
+      where: { id: userId },
       include: { userProfile: true },
     });
     if (!existingUser?.userProfile) {
-      res.status(500).send({ status: 500, msg: "User not found" });
+      res.status(404).json({ ok: false, error: "User not found" });
       return;
     }
 
     if (existingUser.email !== email) {
       const existingWithEmail = await prisma.user.findFirst({
-        where: { email, NOT: { id: parseInt(userId) } },
+        where: { email, NOT: { id: userId } },
       });
       if (existingWithEmail) {
-        res.json({ msg: "Sorry!, This email is already taken.", status: 400 });
+        res.status(409).json({ ok: false, error: "Email is already taken." });
         return;
       }
     }
@@ -95,7 +115,7 @@ export async function updateUser(
     if (image) userUpdateData.profilePicture = image.secure_url;
 
     const user = await prisma.user.update({
-      where: { id: parseInt(userId) },
+      where: { id: userId },
       data: userUpdateData as Parameters<typeof prisma.user.update>[0]["data"],
     });
     const userProfile = await prisma.userProfile.update({
@@ -103,13 +123,13 @@ export async function updateUser(
       data: { bio: bio ?? "", address: address ?? "" },
     });
     res.status(200).send({
-      status: 200,
+      ok: true,
       user: { ...user, userProfile },
       msg: "updated successfully",
     });
   } catch (error) {
     console.error(error);
-    res.send({ status: 500, msg: "Internal Server Error" });
+    res.status(500).json({ ok: false, error: "Internal Server Error" });
   }
 }
 
@@ -148,7 +168,20 @@ export async function getFollowedUsersByUser(
 ): Promise<void> {
   try {
     const prisma = getPrismaInstance();
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
     const loggedInUserId = parseInt(String(req.params.loggedInUserId ?? ""), 10);
+    if (Number.isNaN(loggedInUserId)) {
+      res.status(400).json({ ok: false, error: "Invalid user id" });
+      return;
+    }
+    if (authenticatedUserId !== loggedInUserId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
     const user = await prisma.user.findUnique({
       where: { id: loggedInUserId },
       include: {
@@ -168,7 +201,20 @@ export async function getUnfollowedMentors(
   next: NextFunction
 ): Promise<void> {
   try {
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
     const loggedInUserId = parseInt(String(req.params.loggedInUserId ?? ""), 10);
+    if (Number.isNaN(loggedInUserId)) {
+      res.status(400).json({ ok: false, error: "Invalid user id" });
+      return;
+    }
+    if (authenticatedUserId !== loggedInUserId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
     const prisma = getPrismaInstance();
     const mentorsNotFollowed = await prisma.user.findMany({
       where: {
@@ -188,9 +234,18 @@ export async function getUnassociatedGroupsForUser(
   res: Response,
   next: NextFunction
 ): Promise<void> {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  if (authenticatedUserId === null) {
+    res.status(401).json({ ok: false, error: "Unauthorized" });
+    return;
+  }
   const loggedInUserId = parseInt(String(req.params.loggedInUserId ?? ""), 10);
   if (Number.isNaN(loggedInUserId)) {
     res.status(400).json({ msg: "Invalid user id", unassociatedGroups: [] });
+    return;
+  }
+  if (authenticatedUserId !== loggedInUserId) {
+    res.status(403).json({ ok: false, error: "Forbidden" });
     return;
   }
   try {
@@ -247,7 +302,20 @@ export async function getAllGroupsForUser(
 ): Promise<void> {
   try {
     const prisma = getPrismaInstance();
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
     const loggedInUserId = parseInt(String(req.params.loggedInUserId ?? ""), 10);
+    if (Number.isNaN(loggedInUserId)) {
+      res.status(400).json({ ok: false, error: "Invalid user id" });
+      return;
+    }
+    if (authenticatedUserId !== loggedInUserId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
     const groups = await prisma.group.findMany({
       where: {
         OR: [
@@ -288,18 +356,37 @@ export async function followUnfollowedUser(
     mentorId?: string;
   };
   try {
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+    const requesterId = Number(loggedInUserId);
+    if (Number.isNaN(requesterId)) {
+      res.status(400).send("Invalid loggedInUserId.");
+      return;
+    }
+    if (authenticatedUserId !== requesterId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
+    const mentorIdAsNumber = parseInt(String(mentorId ?? ""), 10);
+    if (Number.isNaN(mentorIdAsNumber)) {
+      res.status(400).send("Invalid mentor id.");
+      return;
+    }
     const prisma = getPrismaInstance();
     const userToFollow = await prisma.user.findUnique({
-      where: { id: parseInt(mentorId!) },
+      where: { id: mentorIdAsNumber },
     });
-    if (!userToFollow || userToFollow.id === loggedInUserId) {
+    if (!userToFollow || userToFollow.id === requesterId) {
       res.status(400).send("Invalid user to follow.");
       return;
     }
     const isFollowing = await prisma.user.count({
       where: {
-        id: loggedInUserId!,
-        following: { some: { id: parseInt(mentorId!) } },
+        id: requesterId,
+        following: { some: { id: mentorIdAsNumber } },
       },
     });
     if (isFollowing > 0) {
@@ -307,8 +394,8 @@ export async function followUnfollowedUser(
       return;
     }
     await prisma.user.update({
-      where: { id: loggedInUserId! },
-      data: { following: { connect: { id: parseInt(mentorId!) } } },
+      where: { id: requesterId },
+      data: { following: { connect: { id: mentorIdAsNumber } } },
     });
     res.status(200).send({ status: 200, msg: "Successfully followed the user." });
   } catch (error) {
@@ -334,6 +421,15 @@ export async function joinUnjoinedGroups(
     return;
   }
   try {
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+    if (authenticatedUserId !== userId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
     const prisma = getPrismaInstance();
     let groupId: string = groupIdToJoin!;
 

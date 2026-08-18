@@ -2,11 +2,9 @@
 import React, { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
-import axios from "axios";
 import toast from "react-hot-toast";
-import { reducerCases } from "@/context/constants";
 import { useStateProvider } from "@/context/StateContext";
-import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
+import { ensureUserInfo } from "@/lib/auth/userInfo";
 import DashboardShell from "./components/facebook/DashboardShell";
 import ComposerCard from "./components/facebook/ComposerCard";
 import { UserLite } from "./components/facebook/types";
@@ -62,37 +60,28 @@ const Home = () => {
   const { data: session } = useSession();
 
   useEffect(() => {
-    const getUserInfo = async () => {
+    let cancelled = false;
+    const load = async () => {
       try {
-        if (session?.user && !userInfo) {
-          const { data } = await axios.post(GET_USER_ROUTE, {
-            email: session?.user.email,
-          });
-          dispatch({
-            type: reducerCases.SET_USER_INFO,
-            userInfo: {
-              id: data?.user?.id,
-              role: data?.user?.role,
-              email: data?.user?.email,
-              name: data?.user?.name,
-              username: data?.user?.username,
-              firstname: data?.user?.firstname,
-              lastname: data?.user?.lastname,
-              userProfile: data?.user?.userProfile,
-              identifier: data?.user?.identifier,
-              profilePicture: data?.user?.profilePicture,
-              status: data?.user?.about,
-            },
-          });
-        }
+        if (!session?.user || userInfo) return;
+        await ensureUserInfo({
+          sessionUser: session.user,
+          currentUserInfo: userInfo,
+          dispatch,
+        });
       } catch (e) {
-        const message =
-          e instanceof Error ? e.message : "Failed to load user information.";
-        toast.error(message);
+        if (!cancelled) {
+          const message =
+            e instanceof Error ? e.message : "Failed to load user information.";
+          toast.error(message);
+        }
       }
     };
 
-    getUserInfo();
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [session, userInfo, dispatch]);
 
   const fullName = userInfo?.firstname

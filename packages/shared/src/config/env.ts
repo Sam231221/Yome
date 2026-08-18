@@ -9,11 +9,28 @@ export function getRequiredEnv(name: string): string {
   return value;
 }
 
+function toPort(value: string | undefined, fallback: number): number {
+  const port = Number(value ?? fallback);
+  return Number.isFinite(port) ? port : fallback;
+}
+
 export const servicePorts = {
-  gateway: Number(process.env.GATEWAY_PORT || 4100),
-  auth: Number(process.env.AUTH_SERVICE_PORT || 4101),
-  user: Number(process.env.USER_SERVICE_PORT || 4102),
-  chat: Number(process.env.CHAT_SERVICE_PORT || 4103),
-  media: Number(process.env.MEDIA_SERVICE_PORT || 4104),
-  notifications: Number(process.env.NOTIFICATIONS_SERVICE_PORT || 4105),
+  get gateway() {
+    return toPort(process.env.GATEWAY_PORT, 4100);
+  },
+  get auth() {
+    return toPort(process.env.AUTH_SERVICE_PORT, 4101);
+  },
+  get user() {
+    return toPort(process.env.USER_SERVICE_PORT, 4102);
+  },
+  get chat() {
+    return toPort(process.env.CHAT_SERVICE_PORT, 4103);
+  },
+  get media() {
+    return toPort(process.env.MEDIA_SERVICE_PORT, 4104);
+  },
+  get notifications() {
+    return toPort(process.env.NOTIFICATIONS_SERVICE_PORT, 4105);
+  },
 } as const;

@@ -4,10 +4,30 @@ import { usersData } from "../data/users.js";
 import { groupData } from "@repo/shared";
 import bcryptjs from "bcryptjs";
 
+function canRunSeedMutations(): boolean {
+  return (
+    process.env.ENABLE_DEV_SEED_ROUTES === "true" &&
+    process.env.NODE_ENV !== "production"
+  );
+}
+
+function rejectIfSeedDisabled(res: Response): boolean {
+  if (canRunSeedMutations()) {
+    return false;
+  }
+  res.status(404).json({
+    ok: false,
+    error: "Not found",
+    details: "Seed endpoints are disabled",
+  });
+  return true;
+}
+
 export async function createMultipleUsersWithProfiles(
   _req: Request,
   res: Response
 ): Promise<void> {
+  if (rejectIfSeedDisabled(res)) return;
   try {
     const prisma = getPrismaInstance();
     const usersWithHashedPasswords = await Promise.all(
@@ -97,6 +117,7 @@ export async function createEducationGroups(
   _req: Request,
   res: Response
 ): Promise<void> {
+  if (rejectIfSeedDisabled(res)) return;
   try {
     const prisma = getPrismaInstance();
     const allUsers = await prisma.user.findMany({
@@ -163,6 +184,7 @@ export async function deleteAllRecords(
   _req: Request,
   res: Response
 ): Promise<void> {
+  if (rejectIfSeedDisabled(res)) return;
   try {
     const prisma = getPrismaInstance();
     await prisma.messages.deleteMany();

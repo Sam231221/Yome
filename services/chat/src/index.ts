@@ -43,21 +43,23 @@ const io = new Server(httpServer, {
 });
 
 const nextAuthSecret = process.env.NEXTAUTH_SECRET;
-if (nextAuthSecret) {
-  io.use((socket, next) => {
-    const token = socket.handshake.auth?.token as string | undefined;
-    if (!token) return next(new Error("unauthorized"));
-    try {
-      const decoded = jwt.verify(token, nextAuthSecret) as { sub?: string; id?: string };
-      const userId = decoded.sub ?? decoded.id;
-      if (!userId) return next(new Error("unauthorized"));
-      socket.data.userId = userId;
-    } catch {
-      return next(new Error("unauthorized"));
-    }
-    next();
-  });
+if (!nextAuthSecret) {
+  throw new Error("NEXTAUTH_SECRET is required for chat socket authentication");
 }
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token as string | undefined;
+  if (!token) return next(new Error("unauthorized"));
+  try {
+    const decoded = jwt.verify(token, nextAuthSecret) as { sub?: string; id?: string };
+    const userId = decoded.sub ?? decoded.id;
+    if (!userId) return next(new Error("unauthorized"));
+    socket.data.userId = userId;
+  } catch {
+    return next(new Error("unauthorized"));
+  }
+  next();
+});
 
 attachSocketHandlers(io);
 

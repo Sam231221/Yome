@@ -9,7 +9,6 @@ import { IoKeyOutline } from "react-icons/io5";
 import { LuClipboard } from "react-icons/lu";
 import axios from "axios";
 import {
-  GET_USER_ROUTE,
   UPDATE_USER,
 } from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
@@ -18,6 +17,7 @@ import { accountInputs, securityInputs } from "./inputs";
 import toast from "react-hot-toast";
 import Loader from "@/components/common/Loader";
 import ProfileAvatar from "@/components/common/ProfileAvatar/ProfileAvatar";
+import { ensureUserInfo } from "@/lib/auth/userInfo";
 
 interface Values {
   email: string;
@@ -42,51 +42,37 @@ const Account = () => {
     lastname: "",
     address: "",
   });
-  const getUserInfo = async () => {
-    try {
-      if (session?.user) {
-        if (!userInfo) {
-          let { data } = await axios.post(GET_USER_ROUTE, {
-            email: session?.user.email,
-          });
-          //Get the user from database and populate useInfo state
-          dispatch({
-            type: reducerCases.SET_USER_INFO,
-            userInfo: {
-              id: data?.user?.id,
-              role: data?.user?.role,
-              name: data?.user?.name,
-              identifier: data?.user?.identifier,
-              status: data?.user?.about,
-              profilePicture: data?.user?.profilePicture,
-              username: data?.user?.username,
-              email: data?.user?.email,
-              bio: data?.user?.userProfile?.bio,
-              firstname: data?.user?.firstname,
-              lastname: data?.user?.lastname,
-              address: data?.user?.userProfile?.address,
-            },
-          });
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        if (!session?.user || userInfo) return;
+        await ensureUserInfo({
+          sessionUser: session.user,
+          currentUserInfo: userInfo,
+          dispatch,
+        });
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load user info:", error);
         }
       }
-    } catch (e) {
-      console.log(e);
-    }
-  };
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user, userInfo, dispatch]);
 
   useEffect(() => {
-    getUserInfo();
-  }, [session?.user]);
-
-  useEffect(() => {
-    setValues({
-      ...values,
+    setValues((prev) => ({
+      ...prev,
       email: userInfo?.email || "",
       bio: userInfo?.bio || "",
       firstname: userInfo?.firstname || "",
       lastname: userInfo?.lastname || "",
       address: userInfo?.address || "",
-    });
+    }));
   }, [userInfo]);
 
   interface FormInputEvent extends React.ChangeEvent<HTMLInputElement> {}
@@ -121,37 +107,30 @@ const Account = () => {
       formData.append("firstname", values.firstname);
       formData.append("lastname", values.lastname);
       formData.append("address", values.address);
-      const { data } = await axios.post(UPDATE_USER, formData, {
+      const response = await axios.post(UPDATE_USER, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
         params: { userId: userInfo?.id },
+        validateStatus: () => true,
       });
+      const { data, status } = response;
 
-      if (data.status === 200) {
+      if (status === 200 && data?.ok && data?.user) {
         dispatch({
           type: reducerCases.SET_USER_INFO,
           userInfo: {
-            id: data.user.id,
-            role: data.user.role,
-            profilePicture: data.user.profilePicture,
-            username: data.user.username,
-            email: data.user.email,
-            bio: data.user.userProfile.bio,
-            firstname: data.user.firstname,
-            lastname: data.user.lastname,
-            address: data.user.userProfile.address,
-            name: data.user.name,
-            identifier: data.user.identifier,
-            status: data.user.about,
+            ...userInfo,
+            ...data.user,
+            bio: data.user.userProfile?.bio ?? "",
+            address: data.user.userProfile?.address ?? "",
           },
         });
         toast.success(data.msg);
         setUpdatedDetails(false);
+        return;
       }
-      if (data.status === 400 || data.status === 409 || data.status === 500) {
-        toast.error(data.msg);
-      }
+      toast.error(data?.error || data?.msg || "Failed to update account");
     } catch (error) {
       console.error("Error uploading file:", error);
     }

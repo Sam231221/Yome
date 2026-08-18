@@ -4,6 +4,21 @@ import { onlineUsers } from "../state/online-users.js";
 
 export function attachSocketHandlers(io: Server): void {
   io.on("connection", (socket: Socket) => {
+    const emitOnlineUsers = () => {
+      io.emit("online-users", {
+        onlineUsers: Array.from(onlineUsers.keys()),
+      });
+    };
+
+    const removeUserBySocketId = (socketId: string) => {
+      for (const [userId, mappedSocketId] of onlineUsers.entries()) {
+        if (mappedSocketId === socketId) {
+          onlineUsers.delete(userId);
+          break;
+        }
+      }
+    };
+
     socket.on("add-user", () => {
       const userId = socket.data.userId as string | undefined;
       if (!userId) {
@@ -12,9 +27,7 @@ export function attachSocketHandlers(io: Server): void {
       }
       socket.join(userId);
       onlineUsers.set(userId, socket.id);
-      socket.broadcast.emit("online-users", {
-        onlineUsers: Array.from(onlineUsers.keys()),
-      });
+      emitOnlineUsers();
     });
 
     socket.on("join room", (room: string) => {
@@ -55,7 +68,6 @@ export function attachSocketHandlers(io: Server): void {
                 groupId: data.to,
               };
               socket.to(memberSocketId).emit("msg-receive", payload);
-              socket.to(memberSocketId).emit("msg-recieve", payload); // legacy
             }
           }
         }
@@ -66,18 +78,27 @@ export function attachSocketHandlers(io: Server): void {
       const { id, receiverId, recieverId } = payload;
       const sendUserSocket = onlineUsers.get(id);
       if (sendUserSocket) {
-        const data = { id, receiverId: receiverId ?? recieverId };
+        const resolvedReceiverId = receiverId ?? recieverId;
+        const data = {
+          id,
+          receiverId: resolvedReceiverId,
+          recieverId: resolvedReceiverId,
+        };
         socket.to(sendUserSocket).emit("mark-read-receive", data);
-        socket.to(sendUserSocket).emit("mark-read-recieve", data); // legacy
       }
     });
 
-    socket.on("signout", (id: string) => {
-      onlineUsers.delete(id);
-      socket.leave(id);
-      socket.broadcast.emit("online-users", {
-        onlineUsers: Array.from(onlineUsers.keys()),
-      });
+    socket.on("signout", (id: string | number) => {
+      const normalizedUserId = String(id ?? socket.data.userId ?? "");
+      if (!normalizedUserId) return;
+      onlineUsers.delete(normalizedUserId);
+      socket.leave(normalizedUserId);
+      emitOnlineUsers();
+    });
+
+    socket.on("disconnect", () => {
+      removeUserBySocketId(socket.id);
+      emitOnlineUsers();
     });
 
     // Voice call events

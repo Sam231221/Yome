@@ -25,8 +25,21 @@ const app = express();
 const port = servicePorts.gateway;
 const authEnabled = process.env.GATEWAY_REQUIRE_AUTH === "true";
 const sharedGatewayToken = process.env.GATEWAY_SHARED_TOKEN || "";
+const frontendOrigin =
+  process.env.FRONTEND_URL ||
+  process.env.FRONTEND_CLIENT_PORT ||
+  "http://localhost:3000";
 const rateWindowMs = Number(process.env.GATEWAY_RATE_WINDOW_MS || 60_000);
 const rateMaxRequests = Number(process.env.GATEWAY_RATE_MAX_REQUESTS || 120);
+
+if (!sharedGatewayToken) {
+  throw new Error("GATEWAY_SHARED_TOKEN is required for gateway startup");
+}
+if (authEnabled && !nextAuthSecret) {
+  throw new Error(
+    "NEXTAUTH_SECRET is required when GATEWAY_REQUIRE_AUTH is true"
+  );
+}
 
 const services = {
   auth: process.env.AUTH_SERVICE_URL || "http://127.0.0.1:4101",
@@ -37,7 +50,12 @@ const services = {
     process.env.NOTIFICATIONS_SERVICE_URL || "http://127.0.0.1:4105",
 };
 
-app.use(cors());
+app.use(
+  cors({
+    origin: frontendOrigin,
+    credentials: true,
+  })
+);
 app.use(
   express.json({
     limit: "20mb",
@@ -96,29 +114,73 @@ app.use((req: Request, res, next) => {
 
 const publicRoutePrefixes = [
   "/health",
-  "/api/auth/get-user",
   "/api/auth/register-user",
   "/api/auth/verify-credentials",
-  "/api/auth/generate-token",
 ];
 
 const isPublicRoute = (path: string) =>
   publicRoutePrefixes.some((prefix) => path.startsWith(prefix));
+
+const sessionCookieNames = [
+  "next-auth.session-token",
+  "__Secure-next-auth.session-token",
+  "authjs.session-token",
+  "__Secure-authjs.session-token",
+];
+
+function readCookie(cookieHeader: string, name: string): string {
+  const parts = cookieHeader.split(";");
+  const chunked: Array<{ index: number; value: string }> = [];
+  for (const part of parts) {
+    const [rawKey, ...valueParts] = part.trim().split("=");
+    const key = rawKey ?? "";
+    if (valueParts.length === 0) continue;
+    const value = decodeURIComponent(valueParts.join("="));
+    if (key === name) {
+      return value;
+    }
+    if (key.startsWith(`${name}.`)) {
+      const suffix = key.slice(name.length + 1);
+      const index = Number.parseInt(suffix, 10);
+      if (!Number.isNaN(index)) {
+        chunked.push({ index, value });
+      }
+    }
+  }
+  if (chunked.length > 0) {
+    chunked.sort((a, b) => a.index - b.index);
+    return chunked.map((entry) => entry.value).join("");
+  }
+  return "";
+}
+
+function getAuthToken(req: Request): string {
+  const authHeader = (req.headers.authorization as string) || "";
+  if (authHeader.startsWith("Bearer ")) {
+    const bearer = authHeader.slice(7).trim();
+    if (bearer) return bearer;
+  }
+  const cookieHeader =
+    typeof req.headers.cookie === "string" ? req.headers.cookie : "";
+  if (!cookieHeader) return "";
+  for (const cookieName of sessionCookieNames) {
+    const token = readCookie(cookieHeader, cookieName);
+    if (token) return token;
+  }
+  return "";
+}
 
 app.use((req: Request, res, next) => {
   const r = req as GatewayRequest;
   if (!authEnabled || isPublicRoute(req.path)) {
     return next();
   }
-  const authHeader = (req.headers.authorization as string) || "";
-  const token = authHeader.startsWith("Bearer ")
-    ? authHeader.slice(7).trim()
-    : "";
+  const token = getAuthToken(req);
   if (!token) {
     return res.status(401).json({
       ok: false,
       error: "unauthorized",
-      details: "Missing Authorization header",
+      details: "Missing auth token",
       requestId: r.requestId,
     });
   }

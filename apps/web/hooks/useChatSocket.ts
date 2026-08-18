@@ -1,6 +1,6 @@
 "use client";
 
-import { MutableRefObject, useEffect, useRef } from "react";
+import { MutableRefObject, useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { CHAT_SOCKET_URL } from "@/utils/ApiRoutes";
 
@@ -34,6 +34,7 @@ export const useChatSocket = ({
   onVideoCallRejected,
 }: UseChatSocketParams) => {
   const socketRef = useRef<Socket | null>(null);
+  const [activeSocket, setActiveSocket] = useState<Socket | null>(null);
   const onSocketReadyRef = useRef(onSocketReady);
   const onPrivateMessageReceivedRef = useRef(onPrivateMessageReceived);
   const onGroupMessageReceivedRef = useRef(onGroupMessageReceived);
@@ -78,15 +79,12 @@ export const useChatSocket = ({
         if (!data.token || cancelled) return;
         if (!socketRef.current) {
           socketRef.current = io(CHAT_SOCKET_URL, { auth: { token: data.token } });
+          setActiveSocket(socketRef.current);
           onSocketReadyRef.current?.(socketRef);
         }
         socketRef.current.emit("add-user", String(userId));
       } catch {
-        if (!cancelled && !socketRef.current) {
-          socketRef.current = io(CHAT_SOCKET_URL);
-          onSocketReadyRef.current?.(socketRef);
-          socketRef.current.emit("add-user", String(userId));
-        }
+        // Keep socket unauthenticated-off when token fetch fails.
       }
     })();
     return () => {
@@ -95,9 +93,9 @@ export const useChatSocket = ({
   }, [userId]);
 
   useEffect(() => {
-    if (!socketRef.current) return;
+    if (!activeSocket) return;
 
-    const socket = socketRef.current;
+    const socket = activeSocket;
     const privateMessageHandler = (payload: SocketPayload) =>
       (onPrivateMessageReceivedRef.current || noop)(payload);
     const groupMessageHandler = (payload: SocketPayload) =>
@@ -116,18 +114,18 @@ export const useChatSocket = ({
       (onVideoCallRejectedRef.current || noop)();
 
     socket.off("privateMessageReceived", privateMessageHandler);
-    socket.off("msg-recieve", groupMessageHandler);
+    socket.off("msg-receive", groupMessageHandler);
     socket.off("online-users", onlineUsersHandler);
-    socket.off("mark-read-recieve", markReadHandler);
+    socket.off("mark-read-receive", markReadHandler);
     socket.off("incoming-voice-call", incomingVoiceCallHandler);
     socket.off("voice-call-rejected", voiceCallRejectedHandler);
     socket.off("incoming-video-call", incomingVideoCallHandler);
     socket.off("video-call-rejected", videoCallRejectedHandler);
 
     socket.on("privateMessageReceived", privateMessageHandler);
-    socket.on("msg-recieve", groupMessageHandler);
+    socket.on("msg-receive", groupMessageHandler);
     socket.on("online-users", onlineUsersHandler);
-    socket.on("mark-read-recieve", markReadHandler);
+    socket.on("mark-read-receive", markReadHandler);
     socket.on("incoming-voice-call", incomingVoiceCallHandler);
     socket.on("voice-call-rejected", voiceCallRejectedHandler);
     socket.on("incoming-video-call", incomingVideoCallHandler);
@@ -135,24 +133,25 @@ export const useChatSocket = ({
 
     return () => {
       socket.off("privateMessageReceived", privateMessageHandler);
-      socket.off("msg-recieve", groupMessageHandler);
+      socket.off("msg-receive", groupMessageHandler);
       socket.off("online-users", onlineUsersHandler);
-      socket.off("mark-read-recieve", markReadHandler);
+      socket.off("mark-read-receive", markReadHandler);
       socket.off("incoming-voice-call", incomingVoiceCallHandler);
       socket.off("voice-call-rejected", voiceCallRejectedHandler);
       socket.off("incoming-video-call", incomingVideoCallHandler);
       socket.off("video-call-rejected", videoCallRejectedHandler);
     };
-  }, [userId]);
+  }, [activeSocket]);
 
   useEffect(() => {
     return () => {
       if (!socketRef.current) return;
       if (userId) {
-        socketRef.current.emit("signout", userId);
+        socketRef.current.emit("signout", String(userId));
       }
       socketRef.current.disconnect();
       socketRef.current = null;
+      setActiveSocket(null);
     };
   }, [userId]);
 

@@ -7,8 +7,8 @@ import {
 
 const router = Router();
 
-router.get("/create-multiple-users", createMultipleUsersWithProfiles);
-router.get("/create-multiple-groups", createEducationGroups);
-router.get("/deleteAll", deleteAllRecords);
+router.post("/create-multiple-users", createMultipleUsersWithProfiles);
+router.post("/create-multiple-groups", createEducationGroups);
+router.post("/deleteAll", deleteAllRecords);
 
 export default router;

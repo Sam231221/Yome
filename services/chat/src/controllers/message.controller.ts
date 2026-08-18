@@ -2,6 +2,13 @@ import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
 import { onlineUsers } from "../state/online-users.js";
 
+function getAuthenticatedUserId(req: Request): number | null {
+  const raw = req.headers["x-user-id"];
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const id = Number.parseInt(String(value ?? ""), 10);
+  return Number.isNaN(id) ? null : id;
+}
+
 export async function getMessages(
   req: Request,
   res: Response,
@@ -9,16 +16,35 @@ export async function getMessages(
 ): Promise<void> {
   try {
     const prisma = getPrismaInstance();
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
     const from = String(req.params.from ?? "");
     const to = String(req.params.to ?? "");
     const chatType = String(req.params.chatType ?? "");
+    const fromId = parseInt(from, 10);
+    if (Number.isNaN(fromId)) {
+      res.status(400).json({ ok: false, error: "Invalid from user id" });
+      return;
+    }
+    if (fromId !== authenticatedUserId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
 
     if (chatType === "user") {
+      const toId = parseInt(to, 10);
+      if (Number.isNaN(toId)) {
+        res.status(400).json({ ok: false, error: "Invalid to user id" });
+        return;
+      }
       const messages = await prisma.messages.findMany({
         where: {
           OR: [
-            { senderId: parseInt(from), recieverId: parseInt(to) },
-            { senderId: parseInt(to), recieverId: parseInt(from) },
+            { senderId: fromId, recieverId: toId },
+            { senderId: toId, recieverId: fromId },
           ],
         },
         include: { sender: true },
@@ -33,7 +59,7 @@ export async function getMessages(
         ) => {
           if (
             message.messageStatus !== "read" &&
-            message.senderId === parseInt(to)
+            message.senderId === toId
           ) {
             (messages[index] as typeof message & { messageStatus: string }).messageStatus = "read";
             unreadIds.push(message.id);
@@ -74,6 +100,19 @@ export async function getInitialUsersWithMessages(
 ): Promise<void> {
   try {
     const userId = parseInt(String(req.params.from ?? ""), 10);
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+    if (Number.isNaN(userId)) {
+      res.status(400).json({ ok: false, error: "Invalid user id" });
+      return;
+    }
+    if (authenticatedUserId !== userId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
     const prisma = getPrismaInstance();
 
     const userWithPrivateMessages = await prisma.user.findUnique({
@@ -169,6 +208,19 @@ export async function getInitialGroupsWithMessages(
 ): Promise<void> {
   try {
     const userId = parseInt(String(req.params.group_id ?? ""), 10);
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+    if (Number.isNaN(userId)) {
+      res.status(400).json({ ok: false, error: "Invalid user id" });
+      return;
+    }
+    if (authenticatedUserId !== userId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
     const prisma = getPrismaInstance();
     const groupsWithLatestMessages = await prisma.group.findMany({
       where: {
@@ -205,21 +257,40 @@ export async function addMessage(
 ): Promise<void> {
   try {
     const prisma = getPrismaInstance();
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
     const { chatType, from, to, message } = req.body as {
       chatType?: string;
       from?: string;
       to?: string;
       message?: string;
     };
+    const fromId = parseInt(String(from ?? ""), 10);
+    if (Number.isNaN(fromId)) {
+      res.status(400).json({ ok: false, error: "Invalid from user id" });
+      return;
+    }
+    if (fromId !== authenticatedUserId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
     const getUser = to ? onlineUsers.get(String(to)) : undefined;
 
     if (message && from && to && chatType === "user") {
+      const toId = parseInt(to, 10);
+      if (Number.isNaN(toId)) {
+        res.status(400).json({ ok: false, error: "Invalid to user id" });
+        return;
+      }
       const newMessage = await prisma.messages.create({
         data: {
           message,
           msgType: "user",
-          sender: { connect: { id: parseInt(from) } },
-          reciever: { connect: { id: parseInt(to) } },
+          sender: { connect: { id: fromId } },
+          reciever: { connect: { id: toId } },
           messageStatus: getUser ? "delivered" : "sent",
         },
         include: { sender: true, reciever: true },
@@ -234,7 +305,7 @@ export async function addMessage(
           message,
           group: { connect: { id: to } },
           msgType: "group",
-          sender: { connect: { id: parseInt(from) } },
+          sender: { connect: { id: fromId } },
           messageStatus: "sent",
         },
         include: { sender: true, group: true },
@@ -259,6 +330,11 @@ export async function addMediaMessage(
 ): Promise<void> {
   try {
     const prisma = getPrismaInstance();
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
     const { chatType, from, to, url, type } = req.body as {
       chatType?: string;
       from?: number | string;
@@ -271,6 +347,14 @@ export async function addMediaMessage(
       return;
     }
     const fromId = typeof from === "number" ? from : parseInt(String(from), 10);
+    if (Number.isNaN(fromId)) {
+      res.status(400).json({ ok: false, error: "Invalid from user id" });
+      return;
+    }
+    if (fromId !== authenticatedUserId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
     const toId = String(to);
     const getUser = onlineUsers.get(toId);
 
