@@ -3,23 +3,19 @@ import React, { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import Avatar from "@/components/common/Avatar";
 import { FaPlay, FaStop } from "react-icons/fa";
-import { HOST } from "@/utils/ApiRoutes";
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
+import type { ChatMessage } from "@/types/chat";
 
 interface FormatTimeFunction {
   (time: number): string;
 }
 interface VoiceMessageProps {
-  message: {
-    senderId: string;
-    message: string;
-    createdAt: string;
-    messageStatus: string;
-  };
+  message: ChatMessage;
 }
 function VoiceMessage({ message }: VoiceMessageProps) {
   const [{ currentChatUser, userInfo }] = useStateProvider();
+  if (!currentChatUser || !userInfo) return null;
   const [audioMessage, setAudioMessage] = useState<HTMLAudioElement | null>(
     null
   );
@@ -159,7 +155,7 @@ function VoiceMessage({ message }: VoiceMessageProps) {
                   : "text-white"
               }  text-[9px] min-w-fit`}
             >
-              {calculateTime(message.createdAt)}
+              {calculateTime(String(message.createdAt))}
             </span>
             {message.senderId === userInfo.id && (
               <MessageStatus messageStatus={message.messageStatus} />

@@ -40,6 +40,7 @@ const MentorCarousel: React.FC<MentorCarouselProps> = ({
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
   const handleConnectClick = async (id: string) => {
+    if (!userInfo?.id) return;
     try {
       const { data } = await axios.post(`${CONNECT_USER_TO_MENTOR}`, {
         loggedInUserId: userInfo.id,
@@ -55,7 +56,7 @@ const MentorCarousel: React.FC<MentorCarouselProps> = ({
         toast.success("You followed the user.");
       }
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 

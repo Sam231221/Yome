@@ -303,7 +303,7 @@ export default function DashboardShell({
             name: message.sender.name,
             profilePicture: message.sender.profilePicture,
           },
-          onlineUsers
+          (onlineUsers ?? []).map((id) => Number(id))
         );
         upsertContact(contactFromPayload);
         return contactFromPayload;
@@ -312,7 +312,10 @@ export default function DashboardShell({
       try {
         const fallbackUser = await getUserById(senderId);
         if (!fallbackUser) return null;
-        const fallbackContact = toDashboardContact(fallbackUser, onlineUsers);
+        const fallbackContact = toDashboardContact(
+          fallbackUser,
+          (onlineUsers ?? []).map((id) => Number(id))
+        );
         upsertContact(fallbackContact);
         return fallbackContact;
       } catch {

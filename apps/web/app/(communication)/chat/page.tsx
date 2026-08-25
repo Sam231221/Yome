@@ -17,6 +17,22 @@ import toast from "react-hot-toast";
 import { useChatSocket } from "@/hooks/useChatSocket";
 import { playNotificationSound } from "@/lib/chat/notificationSound";
 import { ensureUserInfo } from "@/lib/auth/userInfo";
+import type { ActiveCall, NumericId } from "@/types/chat";
+
+function createIncomingCall(
+  from: { id: NumericId; name?: string; profilePicture?: string },
+  roomId: number,
+  callType: "audio" | "video"
+): ActiveCall {
+  return {
+    id: from.id,
+    name: from.name ?? "Unknown caller",
+    profilePicture: from.profilePicture,
+    roomId,
+    callType,
+    type: "in-coming",
+  };
+}
 
 export default function Chatpage() {
   const [
@@ -99,7 +115,8 @@ export default function Chatpage() {
         type: reducerCases.ADD_GROUP_MESSAGE,
         newMessage: {
           ...data.message,
-          groupId: data.groupId,
+          groupId:
+            typeof data.groupId === "undefined" ? null : String(data.groupId),
         },
       });
     },
@@ -110,16 +127,18 @@ export default function Chatpage() {
       });
     },
     onMarkReadReceived: ({ id, receiverId, recieverId }) => {
+      const resolvedReceiverId = receiverId ?? recieverId;
+      if (typeof resolvedReceiverId === "undefined") return;
       dispatch({
         type: reducerCases.SET_MESSAGES_READ,
         id,
-        recieverId: receiverId ?? recieverId,
+        recieverId: resolvedReceiverId,
       });
     },
     onIncomingVoiceCall: ({ from, roomId, callType }) => {
       dispatch({
         type: reducerCases.SET_INCOMING_VOICE_CALL,
-        incomingVoiceCall: { ...from, roomId, callType },
+        incomingVoiceCall: createIncomingCall(from, roomId, callType),
       });
     },
     onVoiceCallRejected: () => {
@@ -135,7 +154,7 @@ export default function Chatpage() {
     onIncomingVideoCall: ({ from, roomId, callType }) => {
       dispatch({
         type: reducerCases.SET_INCOMING_VIDEO_CALL,
-        incomingVideoCall: { ...from, roomId, callType },
+        incomingVideoCall: createIncomingCall(from, roomId, callType),
       });
     },
     onVideoCallRejected: () => {
@@ -174,7 +193,7 @@ export default function Chatpage() {
         const {
           data: { messages },
         } = await axios.get(
-          `${GET_MESSAGES_ROUTE}/${userInfo.id}/${currentChatUser.id}/${currentChatUser.type}`
+          `${GET_MESSAGES_ROUTE}/${userInfo.id}/${currentChatUser.id}/${currentChatUser.type || currentChatUser.identifier || "user"}`
         );
         dispatch({ type: reducerCases.SET_MESSAGES, messages });
       } catch (error) {

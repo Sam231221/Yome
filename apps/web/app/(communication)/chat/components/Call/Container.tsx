@@ -5,17 +5,9 @@ import { MdOutlineCallEnd } from "react-icons/md";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import { GET_CALL_TOKEN } from "@/utils/ApiRoutes";
+import type { ActiveCall } from "@/types/chat";
 
-interface CallData {
-  id: string;
-  name: string;
-  profilePicture: string;
-  type: string;
-  callType: string;
-  roomId: number;
-}
-
-function Container({ data }: { data: CallData }) {
+function Container({ data }: { data: ActiveCall }) {
   const [{ socket, userInfo }, dispatch] = useStateProvider();
   const [localStream, setLocalStream] = useState<MediaStream | undefined>(
     undefined
@@ -27,33 +19,32 @@ function Container({ data }: { data: CallData }) {
   const [zgVar, setZgVar] = useState<any>(undefined);
   const [callStarted, setCallStarted] = useState(false);
   const [callAccepted, setcallAccepted] = useState(false);
-  console.log("daaa:", data);
-
   useEffect(() => {
-    if (data.type === "out-going")
+    if (data.type === "out-going" && socket?.current) {
       socket.current.on("accept-call", () => setcallAccepted(true));
-    else {
+    } else {
       setTimeout(() => {
         setcallAccepted(true);
       }, 1000);
     }
-  }, [data]);
+  }, [data, socket]);
 
   useEffect(() => {
     const getToken = async () => {
       try {
+        if (!userInfo?.id) return;
         const {
           data: { token },
         } = await axios.get(`${GET_CALL_TOKEN}/${userInfo.id}`);
         setToken(token);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     };
     if (callAccepted) {
       getToken();
     }
-  }, [callAccepted]);
+  }, [callAccepted, userInfo?.id]);
 
   useEffect(() => {
     const startCall = async () => {};
@@ -65,10 +56,10 @@ function Container({ data }: { data: CallData }) {
 
   const endCall = () => {
     const id = data.id;
-    socket.current.emit("reject-voice-call", {
+    socket?.current?.emit("reject-voice-call", {
       from: id,
     });
-    if (zgVar && localStream && publishStream) {
+    if (zgVar && localStream && publishStream && typeof data.roomId === "number") {
       zgVar.destroyStream(localStream);
       zgVar.stopPublishingStream(publishStream);
       zgVar.logoutRoom(data.roomId.toString());
@@ -79,7 +70,9 @@ function Container({ data }: { data: CallData }) {
   return (
     <div className="border-conversation-border border-l w-full bg-conversation-panel-background flex flex-col h-[100vh] overflow-hidden items-center justify-center  ">
       <div className="flex flex-col gap-3 items-center">
-        <span className="text-5xl text-gray-700 font-bold">{data.name}</span>
+        <span className="text-5xl text-gray-700 font-bold">
+          {data.name ?? "Unknown caller"}
+        </span>
         <span className="text-lg">
           {callAccepted && data.callType !== "video"
             ? "On going call"

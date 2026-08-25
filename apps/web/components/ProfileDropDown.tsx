@@ -42,7 +42,7 @@ export const ProfileDropDown = ({
   });
   const handleSignOut = () => {
     signOut();
-    if (socket.current) {
+    if (socket?.current && userInfo?.id) {
       socket.current.emit("signout", userInfo.id);
     }
     router.push("/login");

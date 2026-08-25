@@ -38,6 +38,7 @@ const CommunityCarousel: React.FC<CommunityCarouselProps> = ({
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
   const handleConnectClick = async (id: string) => {
+    if (!userInfo?.id) return;
     try {
       const { data } = await axios.post(`${CONNECT_USER_TO_GROUP}`, {
         loggedInUserId: userInfo.id,

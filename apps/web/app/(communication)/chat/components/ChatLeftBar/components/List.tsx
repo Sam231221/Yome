@@ -10,6 +10,7 @@ import {
   GET_INITIAL_GROUP_MESSAGES,
 } from "@/utils/ApiRoutes";
 import { reducerCases } from "@/context/constants";
+import type { ChatListItem as ChatListItemData } from "@/types/chat";
 
 export default function List() {
   const [
@@ -20,6 +21,7 @@ export default function List() {
   useEffect(() => {
     const getContacts = async () => {
       try {
+        if (!userInfo?.id) return;
         const {
           data: { usersWithLatestPivateMessages, onlineUsers },
         } = await axios.get(`${GET_INITIAL_USERS_MESSAGES}/${userInfo.id}`);
@@ -36,6 +38,7 @@ export default function List() {
 
     const getGroups = async () => {
       try {
+        if (!userInfo?.id) return;
         const {
           data: { groupsWithLatestGroupMessages },
         } = await axios.get(`${GET_INITIAL_GROUP_MESSAGES}/${userInfo.id}`);
@@ -70,29 +73,29 @@ export default function List() {
   return (
     <div className="bg-white flex-auto overflow-auto max-h-full custom-scrollbar lg:pb-4 md:pb-3 pb-2">
       {filteredContacts && filteredContacts.length > 0
-        ? filteredContacts.map((contact: any) => {
+        ? filteredContacts.map((contact: ChatListItemData) => {
             return (
               <ChatListItem
-                id={contact.id}
-                type={contact.identifier}
+                id={String(contact.id)}
+                type={contact.identifier || contact.type || "user"}
                 data={contact}
-                key={contact.id}
+                key={String(contact.id)}
               />
             );
           })
         : [...userContacts, ...groupContacts]
-            .sort((a: any, b: any) => {
-              const dateA = new Date(a.createdAt);
-              const dateB = new Date(b.createdAt);
+            .sort((a: ChatListItemData, b: ChatListItemData) => {
+              const dateA = new Date(a.createdAt ?? 0);
+              const dateB = new Date(b.createdAt ?? 0);
               return dateB.getTime() - dateA.getTime();
             })
-            .map((contact: any) => {
+            .map((contact: ChatListItemData) => {
               return (
                 <ChatListItem
-                  id={contact.id}
-                  type={contact.identifier}
+                  id={String(contact.id)}
+                  type={contact.identifier || contact.type || "user"}
                   data={contact}
-                  key={contact.id}
+                  key={String(contact.id)}
                 />
               );
             })}

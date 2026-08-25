@@ -1,21 +1,28 @@
 "use client";
 
-import { MutableRefObject, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { CHAT_SOCKET_URL } from "@/utils/ApiRoutes";
-
-type SocketPayload = any;
+import type {
+  ChatSocketRef,
+  GroupMessageEvent,
+  IncomingCallEvent,
+  MarkReadEvent,
+  NumericId,
+  OnlineUsersEvent,
+  PrivateMessageEvent,
+} from "@/types/chat";
 
 type UseChatSocketParams = {
-  userId?: number;
-  onSocketReady?: (socketRef: MutableRefObject<Socket | null>) => void;
-  onPrivateMessageReceived?: (payload: SocketPayload) => void;
-  onGroupMessageReceived?: (payload: SocketPayload) => void;
-  onOnlineUsers?: (payload: SocketPayload) => void;
-  onMarkReadReceived?: (payload: SocketPayload) => void;
-  onIncomingVoiceCall?: (payload: SocketPayload) => void;
+  userId?: NumericId;
+  onSocketReady?: (socketRef: ChatSocketRef) => void;
+  onPrivateMessageReceived?: (payload: PrivateMessageEvent) => void;
+  onGroupMessageReceived?: (payload: GroupMessageEvent) => void;
+  onOnlineUsers?: (payload: OnlineUsersEvent) => void;
+  onMarkReadReceived?: (payload: MarkReadEvent) => void;
+  onIncomingVoiceCall?: (payload: IncomingCallEvent) => void;
   onVoiceCallRejected?: () => void;
-  onIncomingVideoCall?: (payload: SocketPayload) => void;
+  onIncomingVideoCall?: (payload: IncomingCallEvent) => void;
   onVideoCallRejected?: () => void;
 };
 
@@ -96,19 +103,19 @@ export const useChatSocket = ({
     if (!activeSocket) return;
 
     const socket = activeSocket;
-    const privateMessageHandler = (payload: SocketPayload) =>
+    const privateMessageHandler = (payload: PrivateMessageEvent) =>
       (onPrivateMessageReceivedRef.current || noop)(payload);
-    const groupMessageHandler = (payload: SocketPayload) =>
+    const groupMessageHandler = (payload: GroupMessageEvent) =>
       (onGroupMessageReceivedRef.current || noop)(payload);
-    const onlineUsersHandler = (payload: SocketPayload) =>
+    const onlineUsersHandler = (payload: OnlineUsersEvent) =>
       (onOnlineUsersRef.current || noop)(payload);
-    const markReadHandler = (payload: SocketPayload) =>
+    const markReadHandler = (payload: MarkReadEvent) =>
       (onMarkReadReceivedRef.current || noop)(payload);
-    const incomingVoiceCallHandler = (payload: SocketPayload) =>
+    const incomingVoiceCallHandler = (payload: IncomingCallEvent) =>
       (onIncomingVoiceCallRef.current || noop)(payload);
     const voiceCallRejectedHandler = () =>
       (onVoiceCallRejectedRef.current || noop)();
-    const incomingVideoCallHandler = (payload: SocketPayload) =>
+    const incomingVideoCallHandler = (payload: IncomingCallEvent) =>
       (onIncomingVideoCallRef.current || noop)(payload);
     const videoCallRejectedHandler = () =>
       (onVideoCallRejectedRef.current || noop)();

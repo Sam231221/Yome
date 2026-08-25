@@ -11,6 +11,7 @@ import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import { ADD_IMAGE_MESSAGE_ROUTE, ADD_MEDIA_MESSAGE_ROUTE, ADD_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
 import PhotoPicker from "@/components/common/PhotoPicker";
+import type { NumericId } from "@/types/chat";
 
 const CaptureAudio = dynamic(() => import("@/components/common/CaptureAudio"), {
   ssr: false,
@@ -28,12 +29,22 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
   const [grabImage, setGrabImage] = useState(false);
   const [{ socket, currentChatUser, userInfo }, dispatch] = useStateProvider();
 
+  const emitMessage = (targetId: NumericId, messagePayload: unknown) => {
+    socket?.current?.emit("send-msg", {
+      chatType,
+      room: `room-${targetId}`,
+      to: targetId,
+      from: userInfo?.id,
+      message: messagePayload,
+    });
+  };
+
   //send image message
   const photoPickerOnChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !userInfo?.id || !currentChatUser?.id) return;
 
     try {
       const formData = new FormData();
@@ -52,13 +63,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
       });
 
       if (response.status === 201) {
-        socket.current.emit("send-msg", {
-          chatType: chatType,
-          room: `room-${currentChatUser.id}`,
-          to: currentChatUser.id,
-          from: userInfo.id,
-          message: response.data.message,
-        });
+        emitMessage(currentChatUser.id, response.data.message);
 
         if (chatType === "user") {
           dispatch({
@@ -87,6 +92,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
 
   //Send text message
   const sendTextMessage = async () => {
+    if (!message.trim() || !userInfo?.id || !currentChatUser?.id) return;
     try {
       setMessage("");
       const { data } = await axios.post(ADD_MESSAGE_ROUTE, {
@@ -95,13 +101,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
         to: currentChatUser.id,
         message,
       });
-      socket.current.emit("send-msg", {
-        chatType: chatType,
-        from: userInfo.id,
-        room: `room-${currentChatUser.id}`,
-        to: currentChatUser.id,
-        message: data.message,
-      });
+      emitMessage(currentChatUser.id, data.message);
       if (chatType === "user") {
         dispatch({
           type: reducerCases.ADD_USER_MESSAGE,
@@ -167,7 +167,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
     if (grabImage) {
       const data = document.getElementById("photo-picker");
       data?.click();
-      document.body.onfocus = (e) => {
+      document.body.onfocus = () => {
         setTimeout(() => {
           setGrabImage(false);
         }, 1000);
@@ -222,7 +222,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && message.trim()) {
-                  sendTextMessage();
+                  void sendTextMessage();
                 }
               }}
             />
@@ -230,7 +230,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
           <div className="flex items-center justify-center flex-shrink-0">
             {message.length ? (
               <button 
-                onClick={sendTextMessage}
+                onClick={() => void sendTextMessage()}
                 className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
                 aria-label="Send message"
               >

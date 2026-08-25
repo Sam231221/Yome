@@ -4,12 +4,13 @@ import { IoClose } from "react-icons/io5";
 import { BiFilter, BiSearchAlt2, BiArrowBack } from "react-icons/bi";
 import { reducerCases } from "@/context/constants";
 import { calculateTime } from "@/utils/CalculateTime";
+import type { ChatMessage } from "@/types/chat";
 
 function SearchMessagesRightMostChatContainer() {
   const [{ currentChatUser, messages }, dispatch] = useStateProvider();
   const [searchBarFocus, setSearchBarFocus] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchedMessages, setSearchedMessages] = useState<any[]>([]);
+  const [searchedMessages, setSearchedMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -64,7 +65,7 @@ function SearchMessagesRightMostChatContainer() {
 
           <span className="mt-10 text-secondary">
             {!searchTerm.length &&
-              ` Search for messages with ${currentChatUser.name}`}
+              ` Search for messages with ${currentChatUser?.name ?? "this chat"}`}
           </span>
         </div>
         <div className="flex justify-center h-full flex-col">
@@ -80,7 +81,7 @@ function SearchMessagesRightMostChatContainer() {
               font-medium justify-center hover:bg-background-default-hover w-full px-4  border-b-[0.1px]  border-secondary py-5"
               >
                 <div className="text-xs text-secondary">
-                  {calculateTime(message.createdAt)}
+                  {calculateTime(String(message.createdAt))}
                 </div>
                 <div className="text-sm text-icon-skyblue">
                   {message.message}

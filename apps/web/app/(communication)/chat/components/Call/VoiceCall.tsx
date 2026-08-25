@@ -15,7 +15,12 @@ function VoiceCall() {
   const [{ voiceCall, socket, userInfo }] = useStateProvider();
 
   useEffect(() => {
-    if (voiceCall.type === "out-going") {
+    if (
+      voiceCall?.type === "out-going" &&
+      socket?.current &&
+      userInfo &&
+      typeof voiceCall.roomId === "number"
+    ) {
       socket.current.emit("outgoing-voice-call", {
         to: voiceCall.id,
         from: {
@@ -27,7 +32,10 @@ function VoiceCall() {
         roomId: voiceCall.roomId,
       });
     }
-  }, [voiceCall]);
+  }, [socket, userInfo, voiceCall]);
+
+  if (!voiceCall) return null;
+
   return <Container data={voiceCall} />;
 }
 

@@ -18,7 +18,9 @@
     "lint": "echo \"No lint configured for @repo/shared\"",
     "test": "echo \"No tests configured for @repo/shared\""
   },
-  "dependencies": {},
+  "dependencies": {
+    "zod": "^4.1.5"
+  },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "@types/express": "^5.0.0",

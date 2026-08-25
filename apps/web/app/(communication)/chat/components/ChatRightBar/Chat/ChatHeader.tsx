@@ -9,6 +9,7 @@ import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import ContextMenu from "@/components/common/ContextMenu";
 import { Call, useStreamVideoClient } from "@stream-io/video-react-sdk";
+import type { ActiveCall } from "@/types/chat";
 
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -66,14 +67,18 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
   };
 
   const handleVoiceCall = () => {
+    if (!currentChatUser?.id) return;
+    const voiceCall: ActiveCall = {
+      id: currentChatUser.id,
+      name: currentChatUser.name,
+      profilePicture: currentChatUser.profilePicture,
+      type: "out-going",
+      callType: "audio",
+      roomId: Date.now(),
+    };
     dispatch({
       type: reducerCases.SET_VOICE_CALL,
-      voiceCall: {
-        ...currentChatUser,
-        type: "out-going",
-        callType: "audio",
-        roomId: Date.now(),
-      },
+      voiceCall,
     });
   };
 
@@ -104,7 +109,7 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
             <AvatarWithStatus
               type="user"
               status={`${
-                onlineUsers.includes(currentChatUser.id) ? "online" : "offline"
+                onlineUsers.includes(currentChatUser?.id ?? "") ? "online" : "offline"
               }`}
               size="lg"
               image={`${

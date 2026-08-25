@@ -3,17 +3,14 @@ import { calculateTime } from "@/utils/CalculateTime";
 import Image from "next/image";
 import React from "react";
 import MessageStatus from "@/components/common/MessageStatus";
+import type { ChatMessage } from "@/types/chat";
 
 interface ImageMessageProps {
-  message: {
-    senderId: string;
-    message: string;
-    createdAt: string;
-    messageStatus: string;
-  };
+  message: ChatMessage;
 }
 function ImageMessage({ message }: ImageMessageProps) {
   const [{ currentChatUser, userInfo }] = useStateProvider();
+  if (!currentChatUser || !userInfo) return null;
   return (
     <div
       className={`p-1 rounded-lg ${
@@ -34,7 +31,7 @@ function ImageMessage({ message }: ImageMessageProps) {
         </div>
         <div className="absolute bottom-1 right-1 flex items-end gap-1">
           <span className="text-bubble-meta text-[11px] pt-1 min-w-fit">
-            {calculateTime(message.createdAt)}
+            {calculateTime(String(message.createdAt))}
           </span>
           <span className="text-bubble-meta">
             {message.senderId === userInfo.id && (

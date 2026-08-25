@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 function IncomingVideoCall() {
   const [{ incomingVideoCall, socket }, dispatch] = useStateProvider();
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  if (!incomingVideoCall) return null;
 
   useEffect(() => {
     const audio = new Audio("/call-sound.mp3");
@@ -26,7 +27,6 @@ function IncomingVideoCall() {
 
   const acceptCall = () => {
     const call = incomingVideoCall;
-    console.warn({ call });
     dispatch({
       type: reducerCases.SET_VIDEO_CALL,
       videoCall: { ...call, type: "in-coming" },
@@ -35,7 +35,7 @@ function IncomingVideoCall() {
       type: reducerCases.SET_INCOMING_VIDEO_CALL,
       incomingVideoCall: undefined,
     });
-    socket.current.emit("accept-incoming-call", { id: incomingVideoCall.id });
+    socket?.current?.emit("accept-incoming-call", { id: incomingVideoCall.id });
   };
 
   const rejectCall = () => {
@@ -44,7 +44,7 @@ function IncomingVideoCall() {
       type: reducerCases.SET_INCOMING_VIDEO_CALL,
       incomingVideoCall: undefined,
     });
-    socket.current.emit("reject-video-call", {
+    socket?.current?.emit("reject-video-call", {
       from: call.id,
     });
   };

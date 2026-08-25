@@ -8,12 +8,14 @@ import { useStateProvider } from "@/context/StateContext";
 
 function VideoCall() {
   const [{ videoCall, socket, userInfo }] = useStateProvider();
-  useEffect(() => {
-    console.warn({ videoCall });
-  }, []);
 
   useEffect(() => {
-    if (videoCall.type === "out-going") {
+    if (
+      videoCall?.type === "out-going" &&
+      socket?.current &&
+      userInfo &&
+      typeof videoCall.roomId === "number"
+    ) {
       socket.current.emit("outgoing-video-call", {
         to: videoCall.id,
         from: {
@@ -25,7 +27,9 @@ function VideoCall() {
         roomId: videoCall.roomId,
       });
     }
-  }, [videoCall]);
+  }, [socket, userInfo, videoCall]);
+
+  if (!videoCall) return null;
 
   return <Container data={videoCall} />;
 }

@@ -29,11 +29,13 @@ function AllContactsList() {
 
   // Get all contacts
   useEffect(() => {
+    if (!userInfo?.id) return;
     getContacts();
-  }, []);
+  }, [userInfo?.id]);
 
   const getContacts = async () => {
     try {
+      if (!userInfo?.id) return;
       const {
         data: { followedUsers },
       } = await axios.get(`${GET_ALL_CONNECTED_USERS}/${userInfo.id}`);
@@ -46,18 +48,18 @@ function AllContactsList() {
       setAllContacts(
         combinedContacts.filter((obj: Contact) => {
           if (obj.type === "group") {
-            return obj.name !== userInfo.name;
+            return obj.name !== userInfo?.name;
           } else {
-            return obj.firstname !== userInfo.firstname;
+            return obj.firstname !== userInfo?.firstname;
           }
         })
       );
       setSearchContacts(
         combinedContacts.filter((obj: Contact) => {
           if (obj.type === "group") {
-            return obj.name !== userInfo.name;
+            return obj.name !== userInfo?.name;
           } else {
-            return obj.firstname !== userInfo.firstname;
+            return obj.firstname !== userInfo?.firstname;
           }
         })
       );
@@ -82,7 +84,6 @@ function AllContactsList() {
       setSearchContacts(allContacts);
     }
   }, [searchTerm, allContacts]);
-  console.log("ssd:", searchContacts);
   return (
     <div className="h-full flex flex-col">
       <div className="h-24 flex items-end px-3 py-4">

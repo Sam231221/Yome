@@ -169,7 +169,7 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
   }, [recordedAudio]);
 
   const sendRecording = async () => {
-    if (!renderedAudio) return;
+    if (!renderedAudio || !userInfo?.id || !currentChatUser?.id) return;
     try {
       const formData = new FormData();
       formData.append("audio", renderedAudio);
@@ -186,7 +186,7 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
         type: type ?? "audio",
       });
       if (response.status === 201) {
-        socket.current.emit("send-msg", {
+        socket?.current?.emit("send-msg", {
           chatType: chatType,
           room: `room-${currentChatUser.id}`,
           to: currentChatUser.id,
@@ -219,7 +219,7 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
         hide?.(false);
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 

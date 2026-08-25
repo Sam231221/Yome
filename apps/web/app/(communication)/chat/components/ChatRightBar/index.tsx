@@ -39,7 +39,10 @@ export default function ChatRightBar() {
               : "h-full w-full"
           }
         >
-          <Chat id={currentChatUser.id} chatType={currentChatUser.type || currentChatUser.identifier} />
+          <Chat
+            id={String(currentChatUser.id)}
+            chatType={currentChatUser.type || currentChatUser.identifier || "user"}
+          />
           {/* Hide search panel on medium and smaller screens when message search is active */}
           {messageSearch && (
             <div className="hidden lg:block">

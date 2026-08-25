@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 function IncomingCall() {
   const [{ incomingVoiceCall, socket }, dispatch] = useStateProvider();
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  if (!incomingVoiceCall) return null;
 
   useEffect(() => {
     const audio = new Audio("/call-sound.mp3");
@@ -15,7 +16,6 @@ function IncomingCall() {
 
   useEffect(() => {
     if (audioElement) {
-      console.log({ audioElement });
       audioElement.play();
 
       return () => {
@@ -35,7 +35,7 @@ function IncomingCall() {
       type: reducerCases.SET_VOICE_CALL,
       voiceCall: { ...call, type: "in-coming" },
     });
-    socket.current.emit("accept-incoming-call", { id: incomingVoiceCall.id });
+    socket?.current?.emit("accept-incoming-call", { id: incomingVoiceCall.id });
   };
 
   const rejectCall = () => {
@@ -44,7 +44,7 @@ function IncomingCall() {
       type: reducerCases.SET_INCOMING_VOICE_CALL,
       incomingVoiceCall: undefined,
     });
-    socket.current.emit("reject-voice-call", {
+    socket?.current?.emit("reject-voice-call", {
       from: call.id,
     });
   };

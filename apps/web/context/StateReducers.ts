@@ -1,29 +1,55 @@
 import { reducerCases } from "./constants";
+import type {
+  ActiveCall,
+  ChatListItem,
+  ChatMessage,
+  ChatSocketRef,
+  NumericId,
+} from "@/types/chat";
+import type { AppUserInfo } from "@/lib/auth/userInfo";
 
 export interface State {
-  userInfo: any;
+  userInfo: AppUserInfo | undefined;
   newUser: boolean;
   contactsPage: boolean;
   messageSearch: boolean;
-  currentChatUser: any;
-  currentChatGroup: any;
-  socket: any;
-  messages: any[];
-  groupMessages: any[];
-  userContacts: any[];
-  groupContacts: any[];
-  videoCall: any;
-  voiceCall: any;
-  incomingVoiceCall: any;
-  incomingVideoCall: any;
-  onlineUsers: any[];
+  currentChatUser: ChatListItem | undefined;
+  currentChatGroup: ChatListItem | undefined;
+  socket: ChatSocketRef | undefined;
+  messages: ChatMessage[];
+  groupMessages: ChatMessage[];
+  userContacts: ChatListItem[];
+  groupContacts: ChatListItem[];
+  videoCall: ActiveCall | undefined;
+  voiceCall: ActiveCall | undefined;
+  incomingVoiceCall: ActiveCall | undefined;
+  incomingVideoCall: ActiveCall | undefined;
+  onlineUsers: NumericId[];
   contactSearch: string;
-  filteredContacts: any[];
+  filteredContacts: ChatListItem[];
 }
 
 export interface Action {
   type: string;
-  [key: string]: any;
+  userInfo?: AppUserInfo;
+  newUser?: boolean;
+  group?: ChatListItem;
+  user?: ChatListItem;
+  socket?: ChatSocketRef;
+  messages?: ChatMessage[];
+  newMessage?: ChatMessage & { groupId?: NumericId | null };
+  userContacts?: ChatListItem[];
+  groupContacts?: ChatListItem[];
+  videoCall?: ActiveCall;
+  voiceCall?: ActiveCall;
+  incomingVoiceCall?: ActiveCall;
+  incomingVideoCall?: ActiveCall;
+  onlineUsers?: NumericId[];
+  contactSearch?: string;
+  id?: NumericId;
+  recieverId?: NumericId;
+  fromSelf?: boolean;
+  groupId?: NumericId;
 }
 
 export const initialState: State = {
@@ -57,7 +83,7 @@ const reducer = (state: State, action: Action): State => {
     case reducerCases.SET_NEW_USER:
       return {
         ...state,
-        newUser: action.newUser,
+        newUser: action.newUser ?? state.newUser,
       };
     case reducerCases.SET_ALL_CONTACTS_PAGE:
       return {
@@ -87,41 +113,40 @@ const reducer = (state: State, action: Action): State => {
       }
     }
     case reducerCases.CHANGE_CURRENT_CHAT_USER: {
-      if (action.user) {
+      const currentUser = action.user;
+      if (currentUser) {
         if (state.contactsPage) {
           return {
             ...state,
-            currentChatUser: action.user,
+            currentChatUser: currentUser,
             messages: [],
           };
         }
-        if (action.user.type === "user") {
-          if (state.socket?.current) {
-            state.socket.current.emit("mark-read", {
-              id: action.user.id,
-              recieverId: state.userInfo.id,
-            });
-          }
+        if (currentUser.type === "user") {
+          state.socket?.current?.emit("mark-read", {
+            id: currentUser.id,
+            recieverId: state.userInfo?.id,
+          });
           const clonedContacts = [...state.userContacts];
           const index = clonedContacts.findIndex(
-            (contact) => contact.id === action.user.id
+            (contact) => contact.id === currentUser.id
           );
           if (index !== -1) {
             clonedContacts[index].totalUnreadMessages = 0;
           }
           return {
             ...state,
-            currentChatUser: action.user,
+            currentChatUser: currentUser,
             messageSearch: false,
             messages: [],
             userContacts: clonedContacts,
           };
         }
 
-        if (action.user.type === "group") {
+        if (currentUser.type === "group") {
           return {
             ...state,
-            currentChatUser: action.user,
+            currentChatUser: currentUser,
             messageSearch: false,
             messages: [],
           };
@@ -136,34 +161,38 @@ const reducer = (state: State, action: Action): State => {
         socket: action.socket,
       };
     case reducerCases.ADD_USER_MESSAGE: {
+      const newMessage = action.newMessage;
+      if (!newMessage) {
+        return state;
+      }
       if (
-        state.currentChatUser?.id === action.newMessage.senderId ||
+        state.currentChatUser?.id === newMessage.senderId ||
         action?.fromSelf
       ) {
         //if the incoming message is either for the person, the logged in user is
         // currently chatting with or if the logged in users themselves sent the message
         //trigger mark-read event
-        state.socket.current.emit("mark-read", {
-          id: action.newMessage.senderId,
-          recieverId: action.newMessage.recieverId,
+        state.socket?.current?.emit("mark-read", {
+          id: newMessage.senderId,
+          recieverId: newMessage.recieverId,
         });
 
         const clonedContacts = [...state.userContacts];
         // // Logic for handling new message that the loggedin user just recieves from a chat user/group
-        if (action.newMessage.recieverId === state.userInfo.id) {
+        if (newMessage.recieverId === state.userInfo?.id) {
           const index = clonedContacts.findIndex(
-            (contact) => contact.id === action.newMessage.senderId
+            (contact) => contact.id === newMessage.senderId
           );
 
           if (index !== -1) {
             const data = clonedContacts[index];
-            data.message = action.newMessage.message;
-            data.type = action.newMessage.type;
-            data.createdAt = action.newMessage.createdAt;
-            data.messageId = action.newMessage.id;
-            data.messageStatus = action.newMessage.messageStatus;
-            data.recieverId = action.newMessage.recieverId;
-            data.senderId = action.newMessage.senderId;
+            data.message = newMessage.message;
+            data.type = newMessage.type;
+            data.createdAt = newMessage.createdAt;
+            data.messageId = newMessage.id;
+            data.messageStatus = newMessage.messageStatus;
+            data.recieverId = newMessage.recieverId;
+            data.senderId = newMessage.senderId;
 
             clonedContacts.splice(index, 1);
 
@@ -171,31 +200,31 @@ const reducer = (state: State, action: Action): State => {
           }
           return {
             ...state,
-            messages: [...state.messages, action.newMessage],
+            messages: [...state.messages, newMessage],
             userContacts: clonedContacts,
           };
         } else {
           // Logic for handling new message that the loggedin user just sents to chat user/group
 
           const index = clonedContacts.findIndex(
-            (contact) => contact.id === action.newMessage.recieverId
+            (contact) => contact.id === newMessage.recieverId
           );
           if (index !== -1) {
             //if the contact exist ,update the latest message.
 
             const newUpdatedContact = clonedContacts[index];
-            newUpdatedContact.message = action.newMessage.message;
-            newUpdatedContact.type = action.newMessage.type;
-            newUpdatedContact.messageId = action.newMessage.id;
-            newUpdatedContact.createdAt = action.newMessage.createdAt;
-            newUpdatedContact.messageStatus = action.newMessage.messageStatus;
-            newUpdatedContact.recieverId = action.newMessage.recieverId;
-            newUpdatedContact.senderId = action.newMessage.senderId;
+            newUpdatedContact.message = newMessage.message;
+            newUpdatedContact.type = newMessage.type;
+            newUpdatedContact.messageId = newMessage.id;
+            newUpdatedContact.createdAt = newMessage.createdAt;
+            newUpdatedContact.messageStatus = newMessage.messageStatus;
+            newUpdatedContact.recieverId = newMessage.recieverId;
+            newUpdatedContact.senderId = newMessage.senderId;
 
             clonedContacts.splice(index, 1);
 
             clonedContacts.unshift(newUpdatedContact);
-          } else {
+          } else if (newMessage.reciever) {
             const {
               message,
               type,
@@ -204,7 +233,8 @@ const reducer = (state: State, action: Action): State => {
               recieverId,
               senderId,
               createdAt,
-            } = action.newMessage;
+            } = newMessage;
+            const receiver = newMessage.reciever;
             const data = {
               message,
               type,
@@ -213,16 +243,16 @@ const reducer = (state: State, action: Action): State => {
               recieverId,
               senderId,
               createdAt,
-              id: action.newMessage.reciever.id,
-              name: action.newMessage.reciever.name,
-              profilePicture: action.newMessage.reciever.profilePicture,
+              id: receiver.id,
+              name: receiver.name ?? "",
+              profilePicture: receiver.profilePicture,
               totalUnreadMessages: action.fromSelf ? 0 : 1,
             };
             clonedContacts.unshift(data);
           }
           return {
             ...state,
-            messages: [...state.messages, action.newMessage],
+            messages: [...state.messages, newMessage],
             userContacts: clonedContacts,
           };
         }
@@ -232,21 +262,21 @@ const reducer = (state: State, action: Action): State => {
         //get the sender that has sent the message and append this as latest
         //message to the left sidebar items
         const index = clonedContacts.findIndex(
-          (contact) => contact.id === action.newMessage.senderId
+          (contact) => contact.id === newMessage.senderId
         );
         if (index !== -1) {
           const data = clonedContacts[index];
-          data.message = action.newMessage.message;
-          data.type = action.newMessage.type;
-          data.messageId = action.newMessage.id;
-          data.createdAt = action.newMessage.createdAt;
-          data.messageStatus = action.newMessage.messageStatus;
-          data.recieverId = action.newMessage.recieverId;
-          data.senderId = action.newMessage.senderId;
-          data.totalUnreadMessages += 1;
+          data.message = newMessage.message;
+          data.type = newMessage.type;
+          data.messageId = newMessage.id;
+          data.createdAt = newMessage.createdAt;
+          data.messageStatus = newMessage.messageStatus;
+          data.recieverId = newMessage.recieverId;
+          data.senderId = newMessage.senderId;
+          data.totalUnreadMessages = (data.totalUnreadMessages ?? 0) + 1;
           clonedContacts.splice(index, 1);
           clonedContacts.unshift(data);
-        } else {
+        } else if (newMessage.sender) {
           // for the very first time If the sender is not in contacts,
           // add them to contacts for logged in users on left side bar.
           const {
@@ -257,7 +287,8 @@ const reducer = (state: State, action: Action): State => {
             recieverId,
             senderId,
             createdAt,
-          } = action.newMessage;
+          } = newMessage;
+          const sender = newMessage.sender;
           const data = {
             message,
             type,
@@ -266,9 +297,9 @@ const reducer = (state: State, action: Action): State => {
             recieverId,
             senderId,
             createdAt,
-            id: action.newMessage.sender.id,
-            name: action.newMessage.sender.name,
-            profilePicture: action.newMessage.sender.profilePicture,
+            id: sender.id,
+            name: sender.name ?? "",
+            profilePicture: sender.profilePicture,
             totalUnreadMessages: action.fromSelf ? 0 : 1,
           };
           clonedContacts.unshift(data);
@@ -281,6 +312,9 @@ const reducer = (state: State, action: Action): State => {
     }
 
     case reducerCases.ADD_GROUP_MESSAGE: {
+      if (!action.newMessage) {
+        return state;
+      }
       const {
         groupId,
         message,
@@ -291,10 +325,9 @@ const reducer = (state: State, action: Action): State => {
         senderId,
         createdAt,
         group,
-        sender,
       } = action.newMessage;
 
-      const updateGroupContacts = (clonedGroupContacts) => {
+      const updateGroupContacts = (clonedGroupContacts: ChatListItem[]) => {
         const index = clonedGroupContacts.findIndex(
           (groupContact) => groupContact.id === groupId
         );
@@ -308,11 +341,12 @@ const reducer = (state: State, action: Action): State => {
           updatedGroup.messageStatus = messageStatus;
           updatedGroup.recieverId = recieverId;
           updatedGroup.senderId = senderId;
-          updatedGroup.totalUnreadMessages += 1;
+          updatedGroup.totalUnreadMessages =
+            (updatedGroup.totalUnreadMessages ?? 0) + 1;
 
           clonedGroupContacts.splice(index, 1);
           clonedGroupContacts.unshift(updatedGroup);
-        } else {
+        } else if (group) {
           const newGroupData = {
             message,
             type,
@@ -359,17 +393,17 @@ const reducer = (state: State, action: Action): State => {
     case reducerCases.SET_MESSAGES:
       return {
         ...state,
-        messages: action.messages,
+        messages: action.messages ?? [],
       };
     case reducerCases.SET_USER_CONTACTS:
       return {
         ...state,
-        userContacts: action.userContacts,
+        userContacts: action.userContacts ?? [],
       };
     case reducerCases.SET_GROUP_CONTACTS:
       return {
         ...state,
-        groupContacts: action.groupContacts,
+        groupContacts: action.groupContacts ?? [],
       };
     case reducerCases.SET_VIDEO_CALL:
       return {
@@ -406,7 +440,7 @@ const reducer = (state: State, action: Action): State => {
         messages: [],
       };
     case reducerCases.SET_MESSAGES_READ: {
-      if (state.userInfo.id === action.id) {
+      if (state.userInfo?.id === action.id) {
         const clonedMessages = [...state.messages];
         const clonedContacts = [...state.userContacts];
         clonedMessages.forEach(
@@ -432,15 +466,19 @@ const reducer = (state: State, action: Action): State => {
     case reducerCases.SET_ONLINE_USERS:
       return {
         ...state,
-        onlineUsers: action.onlineUsers,
+        onlineUsers: action.onlineUsers ?? [],
       };
 
     case reducerCases.SET_CONTACT_SEARCH: {
       const filteredUserContacts = state.userContacts.filter((contact) =>
-        contact.name.toLowerCase().includes(action.contactSearch.toLowerCase())
+        (contact.name ?? "")
+          .toLowerCase()
+          .includes((action.contactSearch ?? "").toLowerCase())
       );
       const filteredGroupContacts = state.groupContacts.filter((contact) =>
-        contact.name.toLowerCase().includes(action.contactSearch.toLowerCase())
+        (contact.name ?? "")
+          .toLowerCase()
+          .includes((action.contactSearch ?? "").toLowerCase())
       );
       const filteredContacts = [
         ...filteredUserContacts,
@@ -448,7 +486,7 @@ const reducer = (state: State, action: Action): State => {
       ];
       return {
         ...state,
-        contactSearch: action.contactSearch,
+        contactSearch: action.contactSearch ?? "",
         filteredContacts,
       };
     }

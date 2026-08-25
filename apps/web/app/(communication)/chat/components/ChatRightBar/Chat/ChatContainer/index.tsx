@@ -5,6 +5,7 @@ import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
 import Avatar from "@/components/common/Avatar";
 import ImageMessage from "./ImageMessage";
+import type { ChatMessage } from "@/types/chat";
 
 const VoiceMessage = dynamic(() => import("./VoiceMessage"), {
   ssr: false,
@@ -12,6 +13,7 @@ const VoiceMessage = dynamic(() => import("./VoiceMessage"), {
 
 export default function ChatContainer({ chatType }: { chatType: string }) {
   const [{ messages, currentChatUser, userInfo }] = useStateProvider();
+  if (!currentChatUser || !userInfo) return null;
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -36,7 +38,7 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
         <div className="flex w-full">
           <div className="flex flex-col z-[2] justify-end w-full lg:gap-1 md:gap-1 gap-1 overflow-auto">
             {chatType === "user" &&
-              messages.map((message, index) => (
+              messages.map((message: ChatMessage, index) => (
                 // decide whether to display the message left or right at the right sidebar of chat.
                 <div
                   key={index}
@@ -73,7 +75,7 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
                               : "text-white"
                           } text-[9px] min-w-fit`}
                         >
-                          {calculateTime(message.createdAt)}
+                          {calculateTime(String(message.createdAt))}
                         </span>
                         <span>
                           {message.senderId === userInfo.id && (
@@ -100,7 +102,7 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
               messages
                 ?.filter((message) => message.recieverId === null)
                 .filter((message) => message.groupId === currentChatUser.id)
-                .map((message, index) => (
+                .map((message: ChatMessage, index) => (
                   <div
                     key={index}
                     className={`flex ${
@@ -115,7 +117,7 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
                         <Avatar
                           type="sm"
                           image={`${
-                            message?.sender.profilePicture ||
+                            message?.sender?.profilePicture ||
                             "/avatars/userprofile.png"
                           }`}
                         />
@@ -144,7 +146,7 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
                                   : "text-white"
                               } text-[9px] min-w-fit`}
                             >
-                              {calculateTime(message.createdAt)}
+                              {calculateTime(String(message.createdAt))}
                             </span>
                             <span>
                               {message.senderId !== userInfo.id && (

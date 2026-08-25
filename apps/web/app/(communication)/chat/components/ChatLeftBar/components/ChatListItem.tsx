@@ -7,22 +7,23 @@ import { reducerCases } from "@/context/constants";
 
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
+import type { ChatListItem as ChatContact } from "@/types/chat";
 
 interface ChatListItemProps {
   id: string;
-  data: any;
+  data: ChatContact;
   type: string;
   isContactPage?: boolean;
 }
 
-const getConversationType = (chat: any) => chat?.type || chat?.identifier;
+const getConversationType = (chat?: ChatContact) => chat?.type || chat?.identifier;
 
 const buildSelectedChat = ({
   data,
   type,
   isContactPage,
 }: {
-  data: any;
+  data: ChatContact;
   type: string;
   isContactPage: boolean;
 }) => {
@@ -132,12 +133,12 @@ export default function ChatListItem({
             <div className="pointer-events-none flex-shrink-0 ml-2">
               <span
                 className={`${
-                  !(data.totalUnreadMessages > 0)
+                  !((data.totalUnreadMessages ?? 0) > 0)
                     ? "text-[#9CA3AF]"
                     : "text-[#1877F2]"
                 } text-[11px] font-medium`}
               >
-                {calculateTime(data.createdAt)}
+                {calculateTime(String(data.createdAt ?? ""))}
               </span>
             </div>
           )}
@@ -155,7 +156,7 @@ export default function ChatListItem({
                 </>
               ) : (
                 <div className="flex items-center gap-1 min-w-0">
-                  {data.senderId === userInfo.id && (
+                  {userInfo && data.senderId === userInfo.id && (
                     <MessageStatus messageStatus={data.messageStatus} />
                   )}
                   {data.type === "text" && (
@@ -165,7 +166,7 @@ export default function ChatListItem({
                     <span className="flex gap-1 text-xs items-center">
                       <FaMicrophone className="text-panel-header-icon flex-shrink-0" />
                       <span className="truncate">
-                        {data.senderId === userInfo.id ? (
+                        {userInfo && data.senderId === userInfo.id ? (
                           <>You sent an Audio</>
                         ) : (
                           <>sent an Audio</>
@@ -177,7 +178,7 @@ export default function ChatListItem({
                     <span className="flex text-xs gap-1 items-center">
                       <FaCamera className="text-panel-header-icon flex-shrink-0" />
                       <span className="truncate">
-                        {data.senderId === userInfo.id ? (
+                        {userInfo && data.senderId === userInfo.id ? (
                           <>You sent an Image</>
                         ) : (
                           <>sent an Image</>
@@ -188,7 +189,7 @@ export default function ChatListItem({
                 </div>
               )}
             </span>
-            {type === "user" && data.totalUnreadMessages > 0 && (
+            {type === "user" && (data.totalUnreadMessages ?? 0) > 0 && (
               <span className="bg-[#1877F2] px-[6px] rounded-full text-[11px] text-white font-semibold flex-shrink-0">
                 {data.totalUnreadMessages}
               </span>
