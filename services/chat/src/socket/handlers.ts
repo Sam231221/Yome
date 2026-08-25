@@ -74,15 +74,13 @@ export function attachSocketHandlers(io: Server): void {
       }
     });
 
-    socket.on("mark-read", (payload: { id: string; receiverId?: string; recieverId?: string }) => {
-      const { id, receiverId, recieverId } = payload;
+    socket.on("mark-read", (payload: { id: string; recieverId?: string }) => {
+      const { id, recieverId } = payload;
       const sendUserSocket = onlineUsers.get(id);
       if (sendUserSocket) {
-        const resolvedReceiverId = receiverId ?? recieverId;
         const data = {
           id,
-          receiverId: resolvedReceiverId,
-          recieverId: resolvedReceiverId,
+          recieverId,
         };
         socket.to(sendUserSocket).emit("mark-read-receive", data);
       }

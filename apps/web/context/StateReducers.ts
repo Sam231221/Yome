@@ -178,7 +178,7 @@ const reducer = (state: State, action: Action): State => {
         });
 
         const clonedContacts = [...state.userContacts];
-        // // Logic for handling new message that the loggedin user just recieves from a chat user/group
+        // Logic for handling a new message the logged-in user just receives from a chat user/group
         if (newMessage.recieverId === state.userInfo?.id) {
           const index = clonedContacts.findIndex(
             (contact) => contact.id === newMessage.senderId
@@ -234,7 +234,7 @@ const reducer = (state: State, action: Action): State => {
               senderId,
               createdAt,
             } = newMessage;
-            const receiver = newMessage.reciever;
+            const reciever = newMessage.reciever;
             const data = {
               message,
               type,
@@ -243,9 +243,9 @@ const reducer = (state: State, action: Action): State => {
               recieverId,
               senderId,
               createdAt,
-              id: receiver.id,
-              name: receiver.name ?? "",
-              profilePicture: receiver.profilePicture,
+              id: reciever.id,
+              name: reciever.name ?? "",
+              profilePicture: reciever.profilePicture,
               totalUnreadMessages: action.fromSelf ? 0 : 1,
             };
             clonedContacts.unshift(data);
@@ -294,7 +294,7 @@ const reducer = (state: State, action: Action): State => {
             type,
             messageId: id,
             messageStatus,
-            recieverId,
+              recieverId,
             senderId,
             createdAt,
             id: sender.id,

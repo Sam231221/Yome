@@ -90,7 +90,6 @@ export type GroupMessageEvent = {
 
 export type MarkReadEvent = {
   id: NumericId;
-  receiverId?: NumericId;
   recieverId?: NumericId;
 };
 

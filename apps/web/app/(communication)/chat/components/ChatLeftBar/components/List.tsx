@@ -1,6 +1,5 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import axios from "axios";
-import toast from "react-hot-toast";
 import { useStateProvider } from "@/context/StateContext";
 
 import ChatListItem from "./ChatListItem";
@@ -17,31 +16,41 @@ export default function List() {
     { userInfo, userContacts, groupContacts, filteredContacts },
     dispatch,
   ] = useStateProvider();
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
+    if (!userInfo?.id || hasLoadedRef.current) return;
+
+    hasLoadedRef.current = true;
+    let cancelled = false;
+
     const getContacts = async () => {
       try {
-        if (!userInfo?.id) return;
+        if (!userInfo?.id || cancelled) return;
         const {
           data: { usersWithLatestPivateMessages, onlineUsers },
         } = await axios.get(`${GET_INITIAL_USERS_MESSAGES}/${userInfo.id}`);
+        if (cancelled) return;
 
         dispatch({
           type: reducerCases.SET_USER_CONTACTS,
           userContacts: usersWithLatestPivateMessages,
         });
         dispatch({ type: reducerCases.SET_ONLINE_USERS, onlineUsers });
-      } catch (err: any) {
-        toast.error(err.message);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load initial chat contacts:", error);
+        }
       }
     };
 
     const getGroups = async () => {
       try {
-        if (!userInfo?.id) return;
+        if (!userInfo?.id || cancelled) return;
         const {
           data: { groupsWithLatestGroupMessages },
         } = await axios.get(`${GET_INITIAL_GROUP_MESSAGES}/${userInfo.id}`);
+        if (cancelled) return;
 
         groupsWithLatestGroupMessages.forEach((group: any) => {
           group.messages.forEach((message: any) => {
@@ -59,15 +68,19 @@ export default function List() {
           type: reducerCases.SET_GROUP_CONTACTS,
           groupContacts: groupsWithLatestGroupMessages,
         });
-      } catch (err: any) {
-        toast.error(err.message);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load initial group conversations:", error);
+        }
       }
     };
 
-    if (userInfo?.id) {
-      getContacts();
-      getGroups();
-    }
+    void getContacts();
+    void getGroups();
+
+    return () => {
+      cancelled = true;
+    };
   }, [userInfo, dispatch]);
 
   return (

@@ -126,13 +126,12 @@ export default function Chatpage() {
         onlineUsers,
       });
     },
-    onMarkReadReceived: ({ id, receiverId, recieverId }) => {
-      const resolvedReceiverId = receiverId ?? recieverId;
-      if (typeof resolvedReceiverId === "undefined") return;
+    onMarkReadReceived: ({ id, recieverId }) => {
+      if (typeof recieverId === "undefined") return;
       dispatch({
         type: reducerCases.SET_MESSAGES_READ,
         id,
-        recieverId: resolvedReceiverId,
+        recieverId,
       });
     },
     onIncomingVoiceCall: ({ from, roomId, callType }) => {

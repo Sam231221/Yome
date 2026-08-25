@@ -11,8 +11,9 @@ import MeetingSetup from "./components/MeetingSetup";
 import MeetingRoom from "./components/MeetingRoom";
 
 import { useStateProvider } from "@/context/StateContext";
+import StreamVideoProvider from "@/providers/StreamClientProvider";
 
-const VideoChatOnBoardingPage = () => {
+const VideoChatOnBoardingContent = () => {
   const [{ userInfo }] = useStateProvider();
   //get the id of an  specific call
   const { id } = useParams();
@@ -52,4 +53,10 @@ const VideoChatOnBoardingPage = () => {
   );
 };
 
-export default VideoChatOnBoardingPage;
+export default function VideoChatOnBoardingPage() {
+  return (
+    <StreamVideoProvider>
+      <VideoChatOnBoardingContent />
+    </StreamVideoProvider>
+  );
+}

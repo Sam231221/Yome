@@ -1,34 +1,17 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Empty from "@/components/Empty";
 import { useStateProvider } from "@/context/StateContext";
 import Chat from "./Chat";
 import SearchMessagesRightMostChatContainer from "./SearchMessagesRightMostChatContainer";
 export default function ChatRightBar() {
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 0
-  );
   const [
     {
       currentChatUser,
 
       messageSearch,
     },
-    dispatch,
   ] = useStateProvider();
-  const handleResize = () => {
-    setWindowWidth(window.innerWidth);
-  };
-
-  useEffect(() => {
-    setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-  const isMobileView = windowWidth < 720;
   return (
     <>
       {currentChatUser ? (
@@ -52,7 +35,9 @@ export default function ChatRightBar() {
         </div>
       ) : (
         <div className="h-full w-full">
-          {isMobileView ? <div></div> : <Empty />}
+          <div className="hidden h-full w-full md:block">
+            <Empty />
+          </div>
         </div>
       )}
     </>

@@ -8,7 +8,6 @@ import { IoVideocam } from "react-icons/io5";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import ContextMenu from "@/components/common/ContextMenu";
-import { Call, useStreamVideoClient } from "@stream-io/video-react-sdk";
 import type { ActiveCall } from "@/types/chat";
 
 import toast from "react-hot-toast";
@@ -21,8 +20,6 @@ interface ChatHeaderProps {
 export default function ChatHeader({ chatType }: ChatHeaderProps) {
   const [{ currentChatUser, userInfo, onlineUsers }, dispatch] =
     useStateProvider();
-  const [callDetail, setCallDetail] = useState<Call | undefined>(undefined);
-  const client = useStreamVideoClient();
   const router = useRouter();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,
@@ -47,18 +44,10 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
   ];
 
   const handleVideoCall = async () => {
-    if (!client || !userInfo) return;
+    if (!userInfo) return;
     try {
       const id = crypto.randomUUID();
-      //create a call of type default and with the id
-      const call = client.call("default", id);
-      if (!call) throw new Error("Failed to create meeting");
-      await call.getOrCreate();
-      //set the call state
-      setCallDetail(call);
-      //everything fine then push to the meeting page with call id
-      router.push(`/chat/${call.id}`);
-
+      router.push(`/chat/${id}`);
       toast.success("Meeting Created");
     } catch (error) {
       console.error(error);

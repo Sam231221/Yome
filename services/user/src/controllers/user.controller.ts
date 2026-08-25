@@ -168,8 +168,8 @@ export async function getAllUsers(
         role: true,
         identifier: true,
         profilePicture: true,
+        userProfile: true,
       },
-      include: { userProfile: true },
     });
     res.status(200).send({ users });
   } catch (error) {

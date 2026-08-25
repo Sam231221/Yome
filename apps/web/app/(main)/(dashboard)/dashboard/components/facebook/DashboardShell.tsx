@@ -358,11 +358,12 @@ export default function DashboardShell({
       appendMessage(incomingContact.id, normalizedMessage);
       await openChat(incomingContact, { ensureConversation: true });
     },
-    onMarkReadReceived: ({ id, receiverId, recieverId }) => {
+    onMarkReadReceived: ({ id, recieverId }) => {
+      if (typeof recieverId === "undefined") return;
       dispatch({
         type: reducerCases.SET_MESSAGES_READ,
         id,
-        recieverId: receiverId ?? recieverId,
+        recieverId,
       });
     },
     onIncomingVoiceCall: ({ from, roomId, callType }) => {
