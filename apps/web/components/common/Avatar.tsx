@@ -122,26 +122,26 @@ export default function Avatar({
     <>
       <div className="flex items-center justify-center">
         {size === "sm" && (
-          <div className="h-11 w-11 bg-white rounded-full">
+          <div className="relative h-11 w-11 rounded-full bg-white overflow-hidden">
             <Image
-              width={44}
-              height={44}
+              fill
               src={image}
               loading="lazy"
               alt="avatar"
-              className={`w-full h-full object-cover rounded-full`}
+              sizes="44px"
+              className="object-cover rounded-full"
             />
           </div>
         )}
         {size === "lg" && (
-          <div className="h-14 w-14 bg-white rounded-full">
+          <div className="relative h-14 w-14 rounded-full bg-white overflow-hidden">
             <Image
-              width={56}
-              height={56}
+              fill
               src={image}
               loading="lazy"
               alt="avatar"
-              className={`w-full h-full object-cover rounded-full`}
+              sizes="56px"
+              className="object-cover rounded-full"
             />
           </div>
         )}
@@ -174,13 +174,15 @@ export default function Avatar({
               </span>
             </div>
             <div className="flex items-center justify-center">
-              <Image
-                width={240}
-                height={240}
-                src={image}
-                alt="avatar"
-                className={`h-60 w-60 rounded-full object-cover `}
-              />
+              <div className="relative h-60 w-60 overflow-hidden rounded-full">
+                <Image
+                  fill
+                  src={image}
+                  alt="avatar"
+                  sizes="240px"
+                  className="rounded-full object-cover"
+                />
+              </div>
             </div>
           </div>
         )}

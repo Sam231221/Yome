@@ -158,9 +158,10 @@ export default function TopNav({
               <Image
                 src={user.avatarUrl || "/avatars/userprofile.png"}
                 alt={user.name}
-                width={40}
-                height={40}
-                className="h-full w-full object-cover"
+                fill
+                sizes="40px"
+                priority
+                className="object-cover"
               />
             </button>
             {notificationsPanel}
@@ -175,13 +176,13 @@ export default function TopNav({
                 <div className="absolute right-0 top-14 z-40 w-[min(22rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-[var(--fb-divider)] bg-[var(--fb-card)] shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
                   <div className="border-b border-[var(--fb-divider)] px-4 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-14 w-14 overflow-hidden rounded-full border border-[var(--fb-divider)]">
+                      <div className="relative h-14 w-14 overflow-hidden rounded-full border border-[var(--fb-divider)]">
                         <Image
                           src={user.avatarUrl || "/avatars/userprofile.png"}
                           alt={user.name}
-                          width={56}
-                          height={56}
-                          className="h-full w-full object-cover"
+                          fill
+                          sizes="56px"
+                          className="object-cover"
                         />
                       </div>
                       <div className="min-w-0">

@@ -9,13 +9,14 @@ export default function StoriesTray({ user }: { user: UserLite }) {
     <div className="rounded-2xl bg-[var(--fb-card)] p-3 shadow-[var(--fb-shadow)]">
       <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
         <div className="relative flex h-44 min-w-[120px] flex-col overflow-hidden rounded-2xl bg-[var(--fb-bg)]">
-          <div className="h-3/4">
+          <div className="relative h-3/4">
             <Image
               src={user.avatarUrl}
               alt={user.name}
-              width={120}
-              height={120}
-              className="h-full w-full object-cover"
+              fill
+              sizes="120px"
+              priority
+              className="object-cover"
             />
           </div>
           <div className="flex flex-1 flex-col items-center justify-center gap-1 bg-[var(--fb-card)]">

@@ -7,13 +7,14 @@ export default function ComposerCard({ user }: { user: UserLite }) {
   return (
     <div className="rounded-2xl bg-[var(--fb-card)] p-4 shadow-[var(--fb-shadow)]">
       <div className="flex items-center gap-3">
-        <div className="h-11 w-11 overflow-hidden rounded-full border border-[var(--fb-divider)]">
+        <div className="relative h-11 w-11 overflow-hidden rounded-full border border-[var(--fb-divider)]">
           <Image
             src={user.avatarUrl}
             alt={user.name}
-            width={44}
-            height={44}
-            className="h-full w-full object-cover"
+            fill
+            sizes="44px"
+            priority
+            className="object-cover"
           />
         </div>
         <button className="flex-1 rounded-full bg-[var(--fb-bg)] px-4 py-2 text-left text-sm text-[var(--fb-muted)]">

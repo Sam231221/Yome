@@ -98,18 +98,16 @@ const CommunityCarousel: React.FC<CommunityCarouselProps> = ({
                 >
                   <div className="flex flex-col  border shadow-lg">
                     <div className="w-full h-[220px]">
-                      <Image
-                        src={community.thumbnail || "/avatars/avatarbg.png"}
-                        alt="item"
-                        width={250}
-                        height={500}
-                        loading="lazy"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
+                      <div className="relative h-full w-full">
+                        <Image
+                          src={community.thumbnail || "/avatars/avatarbg.png"}
+                          alt="item"
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 33vw, 33vw"
+                          priority={filteredItems[0]?.id === community.id}
+                          className="object-cover"
+                        />
+                      </div>
                     </div>
                     <div className="my-2 p-2 flex justify-between">
                       <div className="flex flex-col">
