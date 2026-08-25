@@ -8,7 +8,7 @@ import { configCloudinary } from "./lib/cloudinary.js";
 import mediaRoutes from "./routes/media.routes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: join(__dirname, "../../.env") });
+dotenv.config({ path: join(__dirname, "../../../.env") });
 dotenv.config();
 
 configCloudinary();

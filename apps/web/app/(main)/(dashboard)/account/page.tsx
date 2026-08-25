@@ -4,11 +4,12 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { reducerCases } from "@/context/constants";
 import { useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { IoSettingsOutline } from "react-icons/io5";
 import { IoKeyOutline } from "react-icons/io5";
-import { LuClipboard } from "react-icons/lu";
 import axios from "axios";
 import {
+  CHANGE_PASSWORD_ROUTE,
   UPDATE_USER,
 } from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
@@ -21,27 +22,45 @@ import { ensureUserInfo } from "@/lib/auth/userInfo";
 
 interface Values {
   email: string;
+  username: string;
   bio: string;
   firstname: string;
   lastname: string;
   address: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
   [key: string]: string | undefined;
 }
 const Account = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
 
   const [updatedDetails, setUpdatedDetails] = useState(false);
-  const [IsFormFilled, setIsFormFilled] = useState(false);
+  const [isSecurityFormValid, setIsSecurityFormValid] = useState(false);
   const { data: session } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [pic, setPic] = useState(null);
   const [activeTab, setActiveTab] = useState("general");
   const [values, setValues] = useState<Values>({
     email: "",
+    username: "",
     bio: "",
     firstname: "",
     lastname: "",
     address: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
+
+  useEffect(() => {
+    const requestedTab = searchParams.get("tab");
+    if (requestedTab === "security" || requestedTab === "general") {
+      setActiveTab(requestedTab);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -68,6 +87,7 @@ const Account = () => {
     setValues((prev) => ({
       ...prev,
       email: userInfo?.email || "",
+      username: userInfo?.username || "",
       bio: userInfo?.bio || "",
       firstname: userInfo?.firstname || "",
       lastname: userInfo?.lastname || "",
@@ -78,23 +98,36 @@ const Account = () => {
   interface FormInputEvent extends React.ChangeEvent<HTMLInputElement> {}
 
   const onChangeFormInputs = (e: FormInputEvent) => {
-    setValues({ ...values, [e.target.name]: e.target.value });
-    if (
-      values.bio !== userInfo?.bio ||
-      values.address !== userInfo?.address ||
-      values.firstname !== userInfo?.firstname ||
-      values.lastname !== userInfo?.lastname ||
-      values.email !== userInfo?.email
-    ) {
-      setUpdatedDetails(true);
-    }
+    const nextValues = { ...values, [e.target.name]: e.target.value };
+    setValues(nextValues);
+    setUpdatedDetails(
+      nextValues.bio !== (userInfo?.bio || "") ||
+        nextValues.address !== (userInfo?.address || "") ||
+        nextValues.firstname !== (userInfo?.firstname || "") ||
+        nextValues.lastname !== (userInfo?.lastname || "") ||
+        nextValues.email !== (userInfo?.email || "") ||
+        nextValues.username !== (userInfo?.username || "") ||
+        Boolean(pic)
+    );
   };
 
   useEffect(() => {
     setPic(pic);
   }, [pic]);
+  useEffect(() => {
+    setIsSecurityFormValid(
+      Boolean(
+        values.currentPassword &&
+          values.newPassword &&
+          values.confirmPassword &&
+          values.newPassword === values.confirmPassword
+      )
+    );
+  }, [values.currentPassword, values.newPassword, values.confirmPassword]);
+
   const handleTab = (type: string) => {
     setActiveTab(type);
+    router.replace(`/account?tab=${type}`);
   };
   const handleAccountUpdate = async () => {
     try {
@@ -103,6 +136,7 @@ const Account = () => {
         formData.append("avatar", pic);
       }
       formData.append("email", values.email);
+      formData.append("username", values.username);
       formData.append("bio", values.bio);
       formData.append("firstname", values.firstname);
       formData.append("lastname", values.lastname);
@@ -128,6 +162,7 @@ const Account = () => {
         });
         toast.success(data.msg);
         setUpdatedDetails(false);
+        setPic(null);
         return;
       }
       toast.error(data?.error || data?.msg || "Failed to update account");
@@ -135,6 +170,39 @@ const Account = () => {
       console.error("Error uploading file:", error);
     }
   };
+
+  const handlePasswordUpdate = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(
+        CHANGE_PASSWORD_ROUTE,
+        {
+          currentPassword: values.currentPassword,
+          newPassword: values.newPassword,
+          confirmPassword: values.confirmPassword,
+        },
+        { validateStatus: () => true }
+      );
+      const { data, status } = response;
+      if (status === 200 && data?.ok) {
+        toast.success(data.msg || "Password updated successfully");
+        setValues((prev) => ({
+          ...prev,
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        }));
+        return;
+      }
+      toast.error(data?.error || data?.msg || "Failed to update password");
+    } catch (error) {
+      console.error("Error updating password:", error);
+      toast.error("Failed to update password");
+    }
+  };
+
   return (
     <div className="p-2 sm:p-5 relative">
       <div className="bg-white rounded-lg">
@@ -203,8 +271,8 @@ const Account = () => {
                       />
 
                       <form method="POST">
-                        <div className="grid grid-cols-1   gap-3">
-                          {accountInputs.slice(0, 2).map((input) => (
+                        <div className="grid grid-cols-1 gap-3">
+                          {accountInputs.slice(0, 3).map((input) => (
                             <FormInput
                               label={input.name}
                               readOnly={false}
@@ -219,7 +287,7 @@ const Account = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2  gap-3">
-                          {accountInputs.slice(2, 5).map((input) => (
+                          {accountInputs.slice(3).map((input) => (
                             <FormInput
                               readOnly={false}
                               label={input.name}
@@ -260,7 +328,7 @@ const Account = () => {
 
                   <div className="p-3 w-full flex flex-col items-center  ">
                     <div className="w-[200px] mt-3 sm:w-[400px] md:w-[500px] lg:w-[700px]">
-                      <form onSubmit={handleAccountUpdate} method="POST">
+                      <form onSubmit={handlePasswordUpdate} method="POST">
                         <div className="grid grid-cols-1   gap-3">
                           {securityInputs.map((input) => (
                             <FormInput
@@ -275,9 +343,9 @@ const Account = () => {
 
                         <button
                           type="submit"
-                          disabled={IsFormFilled ? false : true}
+                          disabled={!isSecurityFormValid}
                           className={`${
-                            IsFormFilled ? "bg-[#0e24a0]" : "bg-[#b6b6b6]"
+                            isSecurityFormValid ? "bg-[#0e24a0]" : "bg-[#b6b6b6]"
                           } rounded-lg font-medium text-sm text-white py-3 px-2`}
                         >
                           Update

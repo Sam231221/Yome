@@ -4,6 +4,8 @@ import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
 
 type SessionUser = {
   email?: string | null;
+  name?: string | null;
+  image?: string | null;
 };
 
 type ApiUser = {
@@ -73,6 +75,29 @@ export async function ensureUserInfo(params: {
     { email: sessionUser.email },
     { validateStatus: () => true }
   );
+  if (response.status === 404) {
+    const syncResponse = await axios.post(
+      "/api/auth/sync-user",
+      {
+        email: sessionUser.email,
+        name: sessionUser.name,
+        image: sessionUser.image,
+      },
+      { validateStatus: () => true }
+    );
+    if (syncResponse.status === 200 || syncResponse.status === 201) {
+      const syncedUser = syncResponse.data?.user as ApiUser | undefined;
+      if (syncResponse.data?.ok && syncedUser) {
+        const mapped = mapApiUserToAppUser(syncedUser);
+        dispatch({
+          type: reducerCases.SET_USER_INFO,
+          userInfo: mapped,
+        });
+        return mapped;
+      }
+    }
+  }
+
   if (response.status !== 200 || !response.data?.ok || !response.data?.user) {
     return null;
   }

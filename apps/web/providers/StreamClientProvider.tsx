@@ -6,7 +6,6 @@ import { StreamVideoClient, StreamVideo } from "@stream-io/video-react-sdk";
 
 import { tokenProvider } from "@/actions/stream.actions";
 import { useStateProvider } from "@/context/StateContext";
-import Loader from "@/components/common/Loader";
 import { useSession } from "next-auth/react";
 import { ensureUserInfo } from "@/lib/auth/userInfo";
 
@@ -36,8 +35,7 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
   }, [session, userInfo, dispatch]);
 
   useEffect(() => {
-    if (!userInfo) return;
-    if (!API_KEY) throw new Error("Stream API key is missing");
+    if (!userInfo || !API_KEY) return;
 
     // Initialize the Stream Video client
     const client = new StreamVideoClient({
@@ -54,10 +52,13 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
     });
 
     setVideoClient(client);
+    return () => {
+      setVideoClient(undefined);
+      void client.disconnectUser();
+    };
   }, [userInfo]);
 
-  console.log(userInfo, ":adasd:", API_KEY);
-  if (!videoClient) return <Loader />;
+  if (!videoClient) return <>{children}</>;
 
   return <StreamVideo client={videoClient}>{children}</StreamVideo>;
 };

@@ -9,7 +9,7 @@ import userRoutes from "./routes/user.routes.js";
 import { configCloudinary } from "./lib/cloudinary.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: join(__dirname, "../../.env") });
+dotenv.config({ path: join(__dirname, "../../../.env") });
 dotenv.config();
 
 configCloudinary();

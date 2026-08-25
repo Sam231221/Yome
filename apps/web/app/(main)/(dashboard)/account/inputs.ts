@@ -19,6 +19,14 @@ export const accountInputs: FormInputProps[] = [
   },
   {
     id: 1,
+    name: "username",
+    type: "text",
+    placeholder: "Username",
+    errorMessage: "Username is required.",
+    required: true,
+  },
+  {
+    id: 2,
     name: "bio",
     type: "text",
     placeholder: "bio",
@@ -27,7 +35,7 @@ export const accountInputs: FormInputProps[] = [
     required: true,
   },
   {
-    id: 2,
+    id: 3,
     name: "firstname",
     type: "text",
     placeholder: "Your Firstname",
@@ -36,7 +44,7 @@ export const accountInputs: FormInputProps[] = [
     required: true,
   },
   {
-    id: 3,
+    id: 4,
     name: "lastname",
     type: "text",
     placeholder: "Your Lastname",
@@ -45,7 +53,7 @@ export const accountInputs: FormInputProps[] = [
     required: true,
   },
   {
-    id: 4,
+    id: 5,
     name: "address",
     type: "text",
     placeholder: "address",
@@ -56,16 +64,24 @@ export const accountInputs: FormInputProps[] = [
 
 export const securityInputs: FormInputProps[] = [
   {
-    id: 5,
-    name: "password",
+    id: 6,
+    name: "currentPassword",
     type: "password",
-    placeholder: "Password",
+    placeholder: "Current Password",
+    errorMessage: "Current password is required.",
+    required: true,
+  },
+  {
+    id: 7,
+    name: "newPassword",
+    type: "password",
+    placeholder: "New Password",
     errorMessage:
       "Password should be 8-20 characters and include at least 1 letter, 1 number and 1 special character!",
     required: true,
   },
   {
-    id: 6,
+    id: 8,
     name: "confirmPassword",
     type: "password",
     placeholder: "Confirm Password",

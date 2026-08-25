@@ -9,7 +9,7 @@ import authRoutes from "./routes/auth.routes.js";
 import dbRoutes from "./routes/db.routes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: join(__dirname, "../../.env") });
+dotenv.config({ path: join(__dirname, "../../../.env") });
 dotenv.config();
 
 const app = express();

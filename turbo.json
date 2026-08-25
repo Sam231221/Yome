@@ -1,16 +1,23 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
+  "globalEnv": [
+    "DATABASE_URL",
+    "DIRECT_URL",
+    "GATEWAY_SHARED_TOKEN",
+    "NEXTAUTH_SECRET",
+    "GATEWAY_REQUIRE_AUTH",
+    "INTERNAL_TOKEN_GUARD_ENABLED",
+    "NEXT_PUBLIC_BACKEND_API",
+    "NEXT_PUBLIC_CHAT_SOCKET_URL",
+    "FRONTEND_URL",
+    "FRONTEND_CLIENT_PORT"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**",
-        "dist/**",
-        "build/**"
-      ]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "build/**"]
     },
     "lint": {
       "dependsOn": ["^lint"]

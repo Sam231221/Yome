@@ -10,6 +10,8 @@ const MESSAGES_ROUTE = `${HOST}/api/messages`;
 export const REGISTER_USER = `${AUTH_ROUTE}/register-user`;
 export const GET_USER_ROUTE = `${AUTH_ROUTE}/get-user`;
 export const VERIFY_CREDENTIALS_ROUTE = `${AUTH_ROUTE}/verify-credentials`;
+export const UPSERT_OAUTH_USER_ROUTE = `${AUTH_ROUTE}/oauth-user`;
+export const CHANGE_PASSWORD_ROUTE = `${AUTH_ROUTE}/change-password`;
 export const GET_CALL_TOKEN = `${AUTH_ROUTE}/generate-token`;
 
 // User service (profiles, groups, follow)

@@ -67,7 +67,7 @@ export async function updateUser(
       res.status(403).json({ ok: false, error: "Forbidden" });
       return;
     }
-    const { email, bio, lastname, firstname, address } = req.body as Record<
+    const { email, bio, lastname, firstname, address, username } = req.body as Record<
       string,
       string
     >;
@@ -106,10 +106,26 @@ export async function updateUser(
       }
     }
 
+    const normalizedUsername = String(username ?? "").trim();
+    if (!normalizedUsername) {
+      res.status(400).json({ ok: false, error: "Username is required." });
+      return;
+    }
+    if (existingUser.username !== normalizedUsername) {
+      const existingWithUsername = await prisma.user.findFirst({
+        where: { username: normalizedUsername, NOT: { id: userId } },
+      });
+      if (existingWithUsername) {
+        res.status(409).json({ ok: false, error: "Username is already taken." });
+        return;
+      }
+    }
+
     const userUpdateData: Record<string, unknown> = {
-      username: (firstname ?? "") + " " + (lastname ?? ""),
+      username: normalizedUsername,
       firstname: firstname ?? "",
       lastname: lastname ?? "",
+      name: `${firstname ?? ""} ${lastname ?? ""}`.trim(),
       email: email ?? "",
     };
     if (image) userUpdateData.profilePicture = image.secure_url;

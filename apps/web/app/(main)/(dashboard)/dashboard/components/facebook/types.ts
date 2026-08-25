@@ -3,6 +3,8 @@ import { IconType } from "react-icons";
 export type UserLite = {
   name: string;
   avatarUrl: string;
+  email?: string;
+  username?: string;
 };
 
 export type Story = {

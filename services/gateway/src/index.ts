@@ -1,6 +1,6 @@
 import express, { type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
-import jwt from "jsonwebtoken";
+import { getToken } from "next-auth/jwt";
 import crypto from "node:crypto";
 import http from "node:http";
 import https from "node:https";
@@ -10,7 +10,7 @@ import dotenv from "dotenv";
 import { servicePorts } from "@repo/shared";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: join(__dirname, "../../.env") });
+dotenv.config({ path: join(__dirname, "../../../.env") });
 dotenv.config();
 
 const nextAuthSecret = process.env.NEXTAUTH_SECRET || "";
@@ -154,6 +154,16 @@ function readCookie(cookieHeader: string, name: string): string {
   return "";
 }
 
+function parseCookies(cookieHeader: string): Record<string, string> {
+  const cookies: Record<string, string> = {};
+  for (const part of cookieHeader.split(";")) {
+    const [rawKey, ...valueParts] = part.trim().split("=");
+    if (!rawKey || valueParts.length === 0) continue;
+    cookies[rawKey] = decodeURIComponent(valueParts.join("="));
+  }
+  return cookies;
+}
+
 function getAuthToken(req: Request): string {
   const authHeader = (req.headers.authorization as string) || "";
   if (authHeader.startsWith("Bearer ")) {
@@ -170,7 +180,7 @@ function getAuthToken(req: Request): string {
   return "";
 }
 
-app.use((req: Request, res, next) => {
+app.use(async (req: Request, res, next) => {
   const r = req as GatewayRequest;
   if (!authEnabled || isPublicRoute(req.path)) {
     return next();
@@ -184,28 +194,43 @@ app.use((req: Request, res, next) => {
       requestId: r.requestId,
     });
   }
-  // Try JWT first (NextAuth session token)
+
+  if (token === sharedGatewayToken) {
+    return next();
+  }
+
+  // NextAuth owns the browser session cookie format, so use its decoder here
+  // instead of assuming the cookie is a plain jsonwebtoken token.
   if (nextAuthSecret) {
     try {
-      const decoded = jwt.verify(token, nextAuthSecret) as { id?: string; sub?: string; email?: string };
-      const id = decoded.id ?? decoded.sub;
-      if (id) {
-        r.gatewayUser = { id: String(id), email: decoded.email };
+      const decoded = await getToken({
+        req: {
+          headers: req.headers,
+          cookies: parseCookies(
+            typeof req.headers.cookie === "string" ? req.headers.cookie : ""
+          ),
+        } as Parameters<typeof getToken>[0]["req"],
+        secret: nextAuthSecret,
+      });
+      const id = decoded ? decoded.id ?? decoded.sub : undefined;
+      if (decoded && id) {
+        r.gatewayUser = {
+          id: String(id),
+          email: typeof decoded.email === "string" ? decoded.email : undefined,
+        };
         return next();
       }
     } catch {
-      // Not a valid JWT, fall through to shared token
+      // Fall through to the standard unauthorized response below.
     }
   }
-  if (token !== sharedGatewayToken) {
-    return res.status(401).json({
-      ok: false,
-      error: "unauthorized",
-      details: "Invalid token",
-      requestId: r.requestId,
-    });
-  }
-  return next();
+
+  return res.status(401).json({
+    ok: false,
+    error: "unauthorized",
+    details: "Invalid token",
+    requestId: r.requestId,
+  });
 });
 
 app.get("/health", (_req, res: Response) =>
@@ -231,13 +256,20 @@ const hopByHop = new Set([
   "upgrade",
 ]);
 
+const gatewayOwnedHeaders = new Set([
+  "access-control-allow-origin",
+  "access-control-allow-credentials",
+  "access-control-allow-headers",
+  "access-control-allow-methods",
+]);
+
 function copyHeaders(
   inHeaders: Record<string, string | string[] | undefined>,
   setHeader: (k: string, v: string) => void
 ): void {
   for (const key of Object.keys(inHeaders)) {
     const lower = key.toLowerCase();
-    if (hopByHop.has(lower)) continue;
+    if (hopByHop.has(lower) || gatewayOwnedHeaders.has(lower)) continue;
     const value = inHeaders[key];
     if (value !== undefined && value !== "")
       setHeader(key, Array.isArray(value) ? value.join(", ") : String(value));

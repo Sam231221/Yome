@@ -133,7 +133,7 @@ export async function createEducationGroups(
       return;
     }
 
-    const createdGroups: unknown[] = [];
+    const createdGroups: Array<{ group: unknown; status: "created" | "updated" }> = [];
     for (const data of groupData) {
       const { name, about, thumbnail, adminUserIDs, memberUserIDs } = data;
       const mapUserId = (oldId: number) => {
@@ -148,23 +148,45 @@ export async function createEducationGroups(
         continue;
       }
 
-      const newGroup = await prisma.group.create({
-        data: {
-          name,
-          about,
-          thumbnail: thumbnail ?? "",
-          admins:
-            actualAdminIds.length > 0
-              ? { connect: actualAdminIds.map((id) => ({ id })) }
-              : undefined,
-          members:
-            actualMemberIds.length > 0
-              ? { connect: actualMemberIds.map((id) => ({ id })) }
-              : undefined,
-        },
+      const existingGroup = await prisma.group.findUnique({
+        where: { name },
+        select: { id: true },
       });
-      createdGroups.push(newGroup);
-      console.log(`Created group: ${name}`);
+
+      const groupPayload = {
+        name,
+        about,
+        thumbnail: thumbnail ?? "",
+      };
+
+      if (existingGroup) {
+        const updatedGroup = await prisma.group.update({
+          where: { name },
+          data: {
+            ...groupPayload,
+            admins: { set: actualAdminIds.map((id) => ({ id })) },
+            members: { set: actualMemberIds.map((id) => ({ id })) },
+          },
+        });
+        createdGroups.push({ group: updatedGroup, status: "updated" });
+        console.log(`Updated group: ${name}`);
+      } else {
+        const newGroup = await prisma.group.create({
+          data: {
+            ...groupPayload,
+            admins:
+              actualAdminIds.length > 0
+                ? { connect: actualAdminIds.map((id) => ({ id })) }
+                : undefined,
+            members:
+              actualMemberIds.length > 0
+                ? { connect: actualMemberIds.map((id) => ({ id })) }
+                : undefined,
+          },
+        });
+        createdGroups.push({ group: newGroup, status: "created" });
+        console.log(`Created group: ${name}`);
+      }
     }
 
     res.status(201).json({

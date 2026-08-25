@@ -94,6 +94,8 @@ const Home = () => {
       userInfo?.profilePicture ||
       session?.user?.image ||
       "/avatars/userprofile.png",
+    email: userInfo?.email || session?.user?.email || undefined,
+    username: userInfo?.username || undefined,
   };
 
   return (

@@ -12,9 +12,9 @@
     }
   },
   "scripts": {
-    "db:migrate": "prisma migrate deploy --schema ./prisma/schema.prisma",
-    "generate": "prisma generate --schema ./prisma/schema.prisma",
-    "postinstall": "prisma generate --schema ./prisma/schema.prisma"
+    "db:migrate": "bun --env-file=../../.env prisma migrate deploy --schema ./prisma/schema.prisma",
+    "generate": "bun --env-file=../../.env prisma generate --schema ./prisma/schema.prisma",
+    "postinstall": "bun --env-file=../../.env prisma generate --schema ./prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "5.22.0",

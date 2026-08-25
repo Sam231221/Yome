@@ -50,11 +50,16 @@ export default function Chatpage() {
         if (!loaded && !cancelled) {
           toast.error("User not found. Please login again.");
           router.push("/login");
+          return;
+        }
+        if (loaded && !cancelled) {
+          setIsUserLoading(false);
         }
       } catch (error) {
         console.error("Error fetching user info:", error);
         if (!cancelled) {
           toast.error("Failed to load user information");
+          setIsUserLoading(false);
         }
       }
     };
@@ -64,6 +69,12 @@ export default function Chatpage() {
       cancelled = true;
     };
   }, [session, userInfo, dispatch, router]);
+
+  useEffect(() => {
+    if (userInfo?.id) {
+      setIsUserLoading(false);
+    }
+  }, [userInfo?.id]);
 
   const socket = useChatSocket({
     userId: userInfo?.id,

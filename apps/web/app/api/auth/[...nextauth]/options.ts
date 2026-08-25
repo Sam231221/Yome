@@ -4,7 +4,7 @@ import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { VERIFY_CREDENTIALS_ROUTE } from "@/utils/ApiRoutes";
+import { UPSERT_OAUTH_USER_ROUTE, VERIFY_CREDENTIALS_ROUTE } from "@/utils/ApiRoutes";
 
 export const options: AuthOptions = {
   pages: {
@@ -71,6 +71,34 @@ export const options: AuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider === "credentials") return true;
+      if (!user?.email) return false;
+
+      try {
+        const response = await axios.post(
+          UPSERT_OAUTH_USER_ROUTE,
+          {
+            email: user.email,
+            name: user.name,
+            image: user.image,
+          },
+          {
+            headers: process.env.GATEWAY_SHARED_TOKEN
+              ? { Authorization: `Bearer ${process.env.GATEWAY_SHARED_TOKEN}` }
+              : undefined,
+            validateStatus: () => true,
+          }
+        );
+        if (!response.data?.ok || !response.data?.user?.id) return false;
+        user.id = String(response.data.user.id);
+        user.name = response.data.user.name ?? user.name;
+        user.image = response.data.user.profilePicture ?? user.image;
+        return true;
+      } catch {
+        return false;
+      }
+    },
     // Ref: https://authjs.dev/guides/basics/role-based-access-control
     //persisting-the-role
     async jwt({ token, user }) {
