@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import axios from "axios";
 import toast from "react-hot-toast";
 
 import { IoMdPersonAdd } from "react-icons/io";
@@ -10,9 +9,11 @@ import Carousel from "./Carousel";
 import "./styles.css";
 
 import { useStateProvider } from "@/context/StateContext";
-
-import { CONNECT_USER_TO_MENTOR } from "@/utils/ApiRoutes";
 import { MentorSkeleton } from "@/components/Loading/Skeletons";
+import {
+  connectUserToMentor,
+  getDashboardErrorMessage,
+} from "@/lib/dashboard/dashboardApi";
 
 interface Mentor {
   id: string;
@@ -42,21 +43,17 @@ const MentorCarousel: React.FC<MentorCarouselProps> = ({
   const handleConnectClick = async (id: string) => {
     if (!userInfo?.id) return;
     try {
-      const { data } = await axios.post(`${CONNECT_USER_TO_MENTOR}`, {
-        loggedInUserId: userInfo.id,
-        mentorId: id,
-      });
-
-      if (data.status === 200) {
-        setItems((prevPeople) =>
-          prevPeople.map((person) => {
-            return person.id === id ? { ...person, removed: true } : person;
-          })
-        );
-        toast.success("You followed the user.");
-      }
-    } catch {
-      toast.error("Unable to follow this user right now.");
+      const successMessage = await connectUserToMentor(userInfo.id, id);
+      setItems((prevPeople) =>
+        prevPeople.map((person) => {
+          return person.id === id ? { ...person, removed: true } : person;
+        })
+      );
+      toast.success(successMessage || "You followed the user.");
+    } catch (error) {
+      toast.error(
+        getDashboardErrorMessage(error, "Unable to follow this user right now.")
+      );
     }
   };
 

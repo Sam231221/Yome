@@ -2,13 +2,15 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { BsPeople, BsThreeDots } from "react-icons/bs";
-import { CONNECT_USER_TO_GROUP, GET_UNASSOCIATED_GROUPS } from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
 import type { DashboardGroupRecord } from "./types";
-import { getChatErrorMessage } from "@/lib/chat/chatApi";
+import {
+  connectUserToGroup,
+  getDashboardErrorMessage,
+  getGroupSuggestions,
+} from "@/lib/dashboard/dashboardApi";
 
 type SuggestedGroup = {
   id: string;
@@ -34,11 +36,8 @@ export default function GroupSuggestions() {
       if (!userInfo?.id) return;
       setIsLoading(true);
       try {
-        const { data } = await axios.get(
-          `${GET_UNASSOCIATED_GROUPS}/${userInfo.id}`
-        );
-        const unassociatedGroups =
-          (data?.unassociatedGroups as DashboardGroupRecord[] | undefined) ?? [];
+        const unassociatedGroups: DashboardGroupRecord[] =
+          await getGroupSuggestions(userInfo.id);
 
         setGroups(
           unassociatedGroups.map((group) => ({
@@ -51,7 +50,7 @@ export default function GroupSuggestions() {
         setHiddenIds([]);
       } catch (error) {
         toast.error(
-          getChatErrorMessage(error, "Failed to load group suggestions.")
+          getDashboardErrorMessage(error, "Failed to load group suggestions.")
         );
       } finally {
         setIsLoading(false);
@@ -70,19 +69,13 @@ export default function GroupSuggestions() {
 
     setPendingIds((prev) => [...prev, groupId]);
     try {
-      const { data } = await axios.post(CONNECT_USER_TO_GROUP, {
-        loggedInUserId: Number(userInfo.id),
-        groupIdToJoin: groupId,
-      });
-
-      if (data?.status === 200) {
-        toast.success("You joined the group.");
-        hideCard(groupId);
-      } else {
-        toast.error(data?.msg || "Unable to join the group.");
-      }
+      const successMessage = await connectUserToGroup(userInfo.id, groupId);
+      toast.success(successMessage || "You joined the group.");
+      hideCard(groupId);
     } catch (error) {
-      toast.error(getChatErrorMessage(error, "Unable to join the group."));
+      toast.error(
+        getDashboardErrorMessage(error, "Unable to join the group.")
+      );
     } finally {
       setPendingIds((prev) => prev.filter((id) => id !== groupId));
     }

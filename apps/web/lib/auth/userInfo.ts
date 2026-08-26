@@ -41,7 +41,10 @@ export type AppUserInfo = {
   address?: string;
 };
 
-type DispatchFn = (action: { type: string; userInfo: AppUserInfo }) => void;
+type DispatchFn = (action: {
+  type: typeof reducerCases.SET_USER_INFO;
+  userInfo: AppUserInfo;
+}) => void;
 
 const DEFAULT_USER_INFO_ERROR = "Failed to load user information.";
 

@@ -1,7 +1,19 @@
-import { useState } from "react";
+import {
+  useState,
+  type FocusEvent,
+  type InputHTMLAttributes,
+} from "react";
 import "./FormInput.css";
 
-function FormInput(props) {
+type FormInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id"> & {
+  id?: number | string;
+  label?: string;
+  errorMessage?: string;
+  readOnly?: boolean;
+  enableErrorMsg?: boolean;
+};
+
+function FormInput(props: FormInputProps) {
   const [focused, setFocused] = useState(false);
   const {
     label,
@@ -13,7 +25,7 @@ function FormInput(props) {
     ...inputProps
   } = props;
 
-  const handleFocus = (e) => {
+  const handleFocus = (_event: FocusEvent<HTMLInputElement>) => {
     setFocused(true);
   };
 
@@ -37,13 +49,14 @@ function FormInput(props) {
         focus:border-[#0e24a0]`
         } w-full  py-3 px-2 mb-2 text-sm 
         focus:outline-none border border-gray-200 font-medium`}
+        id={typeof id === "undefined" ? undefined : String(id)}
         {...inputProps}
         onChange={onChange}
         onBlur={handleFocus}
         onFocus={() =>
           inputProps.name === "confirmPassword" && setFocused(true)
         }
-        focused={focused.toString()}
+        data-focused={focused.toString()}
       />
       {errorMessage && (
         <span className="text-xs hidden font-medium text-red-600 ">
@@ -55,6 +68,6 @@ function FormInput(props) {
 }
 
 export default FormInput;
-function capitalizeFirstLetter(str) {
+function capitalizeFirstLetter(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }

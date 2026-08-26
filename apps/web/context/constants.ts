@@ -32,4 +32,7 @@ export const reducerCases = {
   SET_MESSAGES_SEARCH: "SET_MESSAGES_SEARCH",
   SET_CONTACT_SEARCH: "SET_CONTACT_SEARCH",
   SET_SEEN_BY_USERS: "SET_SEEN_BY_USERS",
-};
+} as const;
+
+export type ReducerCase =
+  (typeof reducerCases)[keyof typeof reducerCases];

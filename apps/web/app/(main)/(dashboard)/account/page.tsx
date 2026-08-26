@@ -36,6 +36,10 @@ interface Values {
   confirmPassword: string;
   [key: string]: string | undefined;
 }
+
+const PASSWORD_PATTERN =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,64}$/;
+
 const Account = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
 
@@ -119,12 +123,16 @@ const Account = () => {
     setPic(pic);
   }, [pic]);
   useEffect(() => {
+    const passwordsMatch = values.newPassword === values.confirmPassword;
+    const newPasswordIsStrong = PASSWORD_PATTERN.test(values.newPassword);
+
     setIsSecurityFormValid(
       Boolean(
         values.currentPassword &&
           values.newPassword &&
           values.confirmPassword &&
-          values.newPassword === values.confirmPassword
+          passwordsMatch &&
+          newPasswordIsStrong
       )
     );
   }, [values.currentPassword, values.newPassword, values.confirmPassword]);
@@ -164,14 +172,21 @@ const Account = () => {
             address: data.user.userProfile?.address ?? "",
           },
         });
-        toast.success(data.msg);
+        toast.success(data.msg || "Account updated successfully.");
         setUpdatedDetails(false);
         setPic(null);
         return;
       }
-      toast.error(data?.error || data?.msg || "Failed to update account");
+      toast.error(
+        data?.error || data?.msg || "Unable to update your account right now."
+      );
     } catch (error) {
-      toast.error(getUserInfoErrorMessage(error, "Failed to update account"));
+      toast.error(
+        getUserInfoErrorMessage(
+          error,
+          "Unable to update your account right now."
+        )
+      );
     }
   };
 
@@ -184,14 +199,14 @@ const Account = () => {
         CHANGE_PASSWORD_ROUTE,
         {
           currentPassword: values.currentPassword,
-          newPassword: values.newPassword,
+          newPassword: values.newPassword.trim(),
           confirmPassword: values.confirmPassword,
         },
         { validateStatus: () => true }
       );
       const { data, status } = response;
       if (status === 200 && data?.ok) {
-        toast.success(data.msg || "Password updated successfully");
+        toast.success(data.msg || "Password updated successfully.");
         setValues((prev) => ({
           ...prev,
           currentPassword: "",
@@ -200,9 +215,16 @@ const Account = () => {
         }));
         return;
       }
-      toast.error(data?.error || data?.msg || "Failed to update password");
+      toast.error(
+        data?.error || data?.msg || "Unable to update your password right now."
+      );
     } catch (error) {
-      toast.error(getUserInfoErrorMessage(error, "Failed to update password"));
+      toast.error(
+        getUserInfoErrorMessage(
+          error,
+          "Unable to update your password right now."
+        )
+      );
     }
   };
 
@@ -277,7 +299,7 @@ const Account = () => {
                         <div className="grid grid-cols-1 gap-3">
                           {accountInputs.slice(0, 3).map((input) => (
                             <FormInput
-                              label={input.name}
+                              label={input.label ?? input.name}
                               readOnly={false}
                               key={input.id}
                               {...input}
@@ -293,7 +315,7 @@ const Account = () => {
                           {accountInputs.slice(3).map((input) => (
                             <FormInput
                               readOnly={false}
-                              label={input.name}
+                              label={input.label ?? input.name}
                               key={input.id}
                               {...input}
                               value={values[input.name]}
@@ -314,7 +336,7 @@ const Account = () => {
                               : "bg-slate-400"
                           }  rounded-lg font-medium text-sm text-white py-3 px-2`}
                         >
-                          Update
+                          Save changes
                         </button>
                       </form>
                     </div>
@@ -335,7 +357,7 @@ const Account = () => {
                         <div className="grid grid-cols-1   gap-3">
                           {securityInputs.map((input) => (
                             <FormInput
-                              label={input.name}
+                              label={input.label ?? input.name}
                               key={input.id}
                               {...input}
                               value={values[input.name]}
@@ -351,7 +373,7 @@ const Account = () => {
                             isSecurityFormValid ? "bg-[#0e24a0]" : "bg-[#b6b6b6]"
                           } rounded-lg font-medium text-sm text-white py-3 px-2`}
                         >
-                          Update
+                          Update password
                         </button>
                       </form>
                     </div>

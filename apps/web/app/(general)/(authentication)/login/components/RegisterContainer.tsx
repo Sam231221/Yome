@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { FaFacebook, FaGithub } from "react-icons/fa";
@@ -13,125 +13,160 @@ interface RegisterContainerProps {
   setActiveTab: (tab: string) => void;
 }
 
+type RegisterValues = {
+  username: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
+const NAME_PATTERN = "^[A-Za-z][A-Za-z' -]{1,39}$";
+const USERNAME_PATTERN = "^[A-Za-z0-9._@-]{3,24}$";
+const EMAIL_PATTERN = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+const PASSWORD_PATTERN =
+  "^(?=.*[0-9])(?=.*[a-zA-Z])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$";
+
+const emptyValues: RegisterValues = {
+  username: "",
+  firstname: "",
+  lastname: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+};
+
 export default function RegisterContainer({
   activeTab,
   setActiveTab,
 }: RegisterContainerProps) {
-  const [IsFormFilled, setFormFill] = useState(false);
+  const [isFormFilled, setFormFill] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const callbackUrl = searchParams.get("callbackUrl");
-  const [values, setValues] = useState({
-    username: "",
-    firstname: "",
-    lastname: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const inputs = [
-    {
-      id: 1,
-      name: "firstname",
-      type: "text",
-      placeholder: "Your Firstname",
-      errorMessage:
-        "Firstname should be 3-16 characters and shouldn't include any special character!",
-      pattern: "^[A-Za-z0-9]{3,16}$",
-      required: true,
-    },
-    {
-      id: 2,
-      name: "lastname",
-      type: "text",
-      placeholder: "Your Lastname",
-      errorMessage:
-        "Lastname should be 3-16 characters and shouldn't include any special character!",
-      pattern: "^[A-Za-z0-9]{3,16}$",
-      required: true,
-    },
-    {
-      id: 3,
-      name: "username",
-      type: "text",
-      placeholder: "Username",
-      errorMessage:
-        "Username should be 5-10 characters and include a @ in between",
-      pattern: "^[a-zA-Z]{3,}@[0-9]{3,}$",
-      required: true,
-    },
-    {
-      id: 4,
-      name: "email",
-      type: "email",
-      placeholder: "Email",
-      pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$",
-      errorMessage: "It should be a valid email address!",
-      required: true,
-    },
-    {
-      id: 5,
-      name: "password",
-      type: "password",
-      placeholder: "Password",
-      errorMessage:
-        "Password should be 8-20 characters and include at least 1 letter, 1 number and 1 special character!",
-      pattern: `^(?=.*[0-9])(?=.*[a-zA-Z])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$`,
-      required: true,
-    },
-    {
-      id: 6,
-      name: "confirmPassword",
-      type: "password",
-      placeholder: "Confirm Password",
-      errorMessage: "Passwords don't match!",
-      pattern: values.password,
-      required: true,
-    },
-  ];
+  const [values, setValues] = useState<RegisterValues>(emptyValues);
+
+  const inputs = useMemo(
+    () => [
+      {
+        id: 1,
+        name: "firstname",
+        type: "text",
+        placeholder: "First name",
+        errorMessage:
+          "First name must be 2-40 characters and can include letters, spaces, apostrophes, or hyphens.",
+        pattern: NAME_PATTERN,
+        minLength: 2,
+        maxLength: 40,
+        required: true,
+        autoComplete: "given-name",
+      },
+      {
+        id: 2,
+        name: "lastname",
+        type: "text",
+        placeholder: "Last name",
+        errorMessage:
+          "Last name must be 2-40 characters and can include letters, spaces, apostrophes, or hyphens.",
+        pattern: NAME_PATTERN,
+        minLength: 2,
+        maxLength: 40,
+        required: true,
+        autoComplete: "family-name",
+      },
+      {
+        id: 3,
+        name: "username",
+        type: "text",
+        placeholder: "Username",
+        errorMessage:
+          "Username must be 3-24 characters and may include letters, numbers, dots, underscores, @, or hyphens.",
+        pattern: USERNAME_PATTERN,
+        minLength: 3,
+        maxLength: 24,
+        required: true,
+        autoComplete: "username",
+      },
+      {
+        id: 4,
+        name: "email",
+        type: "email",
+        placeholder: "Email address",
+        pattern: EMAIL_PATTERN,
+        errorMessage: "Enter a valid email address.",
+        required: true,
+        autoComplete: "email",
+      },
+      {
+        id: 5,
+        name: "password",
+        type: "password",
+        placeholder: "Password",
+        errorMessage:
+          "Password must be 8-20 characters and include at least one letter, one number, and one special character.",
+        pattern: PASSWORD_PATTERN,
+        minLength: 8,
+        maxLength: 20,
+        required: true,
+        autoComplete: "new-password",
+      },
+      {
+        id: 6,
+        name: "confirmPassword",
+        type: "password",
+        placeholder: "Confirm password",
+        errorMessage: "Confirm password must match the password above.",
+        pattern: values.password,
+        required: true,
+        autoComplete: "new-password",
+      },
+    ],
+    [values.password]
+  );
+
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIsChecked(e.target.checked);
   };
+
   useEffect(() => {
-    if (
+    setFormFill(
       values.firstname !== "" &&
-      values.lastname !== "" &&
-      values.email !== "" &&
-      values.username !== "" &&
-      values.password !== "" &&
-      values.password !== ""
-    ) {
-      setFormFill(true);
-    } else {
-      setFormFill(false);
-    }
+        values.lastname !== "" &&
+        values.email !== "" &&
+        values.username !== "" &&
+        values.password !== "" &&
+        values.confirmPassword !== ""
+    );
   }, [values]);
 
   const onChangeFormInputs = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [e.target.name]: e.target.value });
   };
-  const loginWithNextAuthProvider = (e: React.MouseEvent<HTMLDivElement>) => {
-    let provider = e.currentTarget.getAttribute("data-provider");
 
-    signIn(provider as string, { redirect: false })
-      .then((callback) => {
-        if (callback?.error) {
-          toast.error("Invalid credentials!");
-        }
-        if (callback?.ok) {
-          if (callbackUrl === null) {
-            router.push("/dashboard");
-          } else {
-            window.location.href = callbackUrl;
-          }
-        }
-      })
-      .finally(() => toast.success("Login Successfully"));
+  const loginWithNextAuthProvider = async (
+    e: React.MouseEvent<HTMLDivElement>
+  ) => {
+    const provider = e.currentTarget.getAttribute("data-provider");
+    if (!provider) return;
+
+    const callback = await signIn(provider, { redirect: false });
+    if (callback?.error) {
+      toast.error("Unable to sign in with that provider right now.");
+      return;
+    }
+    if (callback?.ok) {
+      toast.success("Signed in successfully.");
+      if (callbackUrl === null) {
+        router.push("/dashboard");
+      } else {
+        window.location.href = callbackUrl;
+      }
+    }
   };
 
-  //Register Users
   const handleRegisterFormSubmit = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
@@ -140,37 +175,31 @@ export default function RegisterContainer({
       const response = await axios.post(
         REGISTER_USER,
         {
-          email: values.email,
-          firstname: values.firstname,
-          lastname: values.lastname,
-          username: values.username,
+          email: values.email.trim(),
+          firstname: values.firstname.trim(),
+          lastname: values.lastname.trim(),
+          username: values.username.trim(),
           password: values.password,
         },
         { validateStatus: () => true }
       );
       const { data } = response;
       if (response.status === 201) {
-        setValues({
-          firstname: "",
-          lastname: "",
-          username: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-        });
-        toast.success(data.msg || "User created successfully");
+        setValues(emptyValues);
+        toast.success(data.msg || "Account created successfully.");
         setActiveTab("login");
         return;
       }
       if (response.status === 400 || response.status === 409) {
-        toast.error(data.error || data.msg || "Registration failed");
+        toast.error(data.error || data.msg || "Registration failed.");
         return;
       }
-      toast.error(data?.error || data?.msg || "Registration failed");
+      toast.error(data?.error || data?.msg || "Registration failed.");
     } catch {
-      toast.error("Registration failed");
+      toast.error("Registration failed.");
     }
   };
+
   return (
     <div
       className={`${
@@ -179,7 +208,7 @@ export default function RegisterContainer({
     >
       <div
         data-provider="facebook"
-        onClick={(e) => loginWithNextAuthProvider(e)}
+        onClick={loginWithNextAuthProvider}
         className="text-sm border cursor-pointer border-[#0e517e63] flex py-3 px-2  "
       >
         <FaFacebook size={20} className="ml-3 mr-3 text-[#1e5aff] " />
@@ -190,7 +219,7 @@ export default function RegisterContainer({
 
       <div
         data-provider="github"
-        onClick={(e) => loginWithNextAuthProvider(e)}
+        onClick={loginWithNextAuthProvider}
         className="text-sm border cursor-pointer border-[#0e517e63] flex py-3 px-2  "
       >
         <FaGithub size={20} className="ml-3 mr-3  " />
@@ -200,7 +229,7 @@ export default function RegisterContainer({
       </div>
       <div
         data-provider="google"
-        onClick={(e) => loginWithNextAuthProvider(e)}
+        onClick={loginWithNextAuthProvider}
         className="text-sm border cursor-pointer border-[#0e517e63] flex py-3 px-2"
       >
         <FcGoogle size={20} className="ml-3 mr-3 text-[#1e5aff] " />
@@ -210,13 +239,12 @@ export default function RegisterContainer({
       </div>
       <p className="text-center text-sm font-medium">Or</p>
 
-      {/* register form */}
       <form onSubmit={handleRegisterFormSubmit} method="POST">
         {inputs.map((input) => (
           <FormInput
             key={input.id}
             {...input}
-            value={values[input.name as keyof typeof values]}
+            value={values[input.name as keyof RegisterValues]}
             onChange={onChangeFormInputs}
             enableErrorMsg={true}
           />
@@ -232,14 +260,14 @@ export default function RegisterContainer({
             id="terms"
           />
           <label className="text-sm " htmlFor="terms">
-            I agree to the terms of service and privacy
+            I agree to the Terms of Service and Privacy Policy.
           </label>
         </div>
         <button
           type="submit"
-          disabled={IsFormFilled && isChecked ? false : true}
+          disabled={!isFormFilled || !isChecked}
           className={`${
-            IsFormFilled && isChecked ? "bg-[#0e24a0]" : "bg-[#b6b6b6]"
+            isFormFilled && isChecked ? "bg-[#0e24a0]" : "bg-[#b6b6b6]"
           } hover:bg-blue-700 w-full font-medium text-sm text-white py-3 px-2`}
         >
           Continue{" >"}

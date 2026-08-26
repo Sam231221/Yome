@@ -16,7 +16,7 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
 
   const callbackUrl = searchParams.get("callbackUrl");
 
-  const [IsFormFilled, setFormFill] = useState(false);
+  const [isFormFilled, setFormFill] = useState(false);
   const [values, setValues] = useState({
     email: "",
     password: "",
@@ -26,8 +26,9 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
       id: 1,
       name: "email",
       type: "email",
-      placeholder: "Email",
+      placeholder: "Email address",
       required: true,
+      autoComplete: "email",
     },
     {
       id: 2,
@@ -35,52 +36,31 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
       type: "password",
       placeholder: "Password",
       required: true,
+      autoComplete: "current-password",
     },
   ];
+
   useEffect(() => {
-    if (values.email !== "" && values.password !== "") {
-      setFormFill(true);
-    } else {
-      setFormFill(false);
-    }
+    setFormFill(values.email !== "" && values.password !== "");
   }, [values]);
 
   const onChangeFormInputs = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [e.target.name]: e.target.value });
   };
 
-  //Login with  Next Auth Provider
-  const loginWithNextAuthProvider = (e: React.MouseEvent<HTMLDivElement>) => {
-    let provider = e.currentTarget.getAttribute("data-provider");
+  const loginWithNextAuthProvider = async (
+    e: React.MouseEvent<HTMLDivElement>
+  ) => {
+    const provider = e.currentTarget.getAttribute("data-provider");
+    if (!provider) return;
 
-    signIn(provider as string, { redirect: false })
-      .then((callback) => {
-        if (callback?.error) {
-          toast.error("Invalid credentials!");
-        }
-        if (callback?.ok) {
-          if (callbackUrl === null) {
-            router.push("/dashboard");
-          } else {
-            window.location.href = callbackUrl;
-          }
-        }
-      })
-      .finally(() => toast.success("Login Successfully"));
-  };
-
-  //Login with Credentials
-  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const data = await signIn("credentials", {
-      redirect: false,
-      email: values.email,
-      password: values.password,
-    });
-    if (data?.error) {
-      toast.error("Credentials error!");
-    } else {
-      toast.success("Login Successfully");
+    const callback = await signIn(provider, { redirect: false });
+    if (callback?.error) {
+      toast.error("Unable to sign in with that provider right now.");
+      return;
+    }
+    if (callback?.ok) {
+      toast.success("Signed in successfully.");
       if (callbackUrl === null) {
         router.push("/dashboard");
       } else {
@@ -88,6 +68,27 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
       }
     }
   };
+
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = await signIn("credentials", {
+      redirect: false,
+      email: values.email.trim(),
+      password: values.password,
+    });
+    if (data?.error) {
+      toast.error("Sign-in failed. Check your email and password.");
+      return;
+    }
+
+    toast.success("Signed in successfully.");
+    if (callbackUrl === null) {
+      router.push("/dashboard");
+    } else {
+      window.location.href = callbackUrl;
+    }
+  };
+
   return (
     <div
       className={`${
@@ -96,7 +97,7 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
     >
       <div
         data-provider="facebook"
-        onClick={(e) => loginWithNextAuthProvider(e)}
+        onClick={loginWithNextAuthProvider}
         className="text-sm border cursor-pointer border-[#0e517e63] flex py-3 px-2  "
       >
         <FaFacebook size={20} className="ml-3 mr-3 text-[#1e5aff] " />
@@ -107,7 +108,7 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
 
       <div
         data-provider="github"
-        onClick={(e) => loginWithNextAuthProvider(e)}
+        onClick={loginWithNextAuthProvider}
         className="text-sm border cursor-pointer border-[#0e517e63] flex py-3 px-2  "
       >
         <FaGithub size={20} className="ml-3 mr-3  " />
@@ -117,7 +118,7 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
       </div>
       <div
         data-provider="google"
-        onClick={(e) => loginWithNextAuthProvider(e)}
+        onClick={loginWithNextAuthProvider}
         className="text-sm border cursor-pointer border-[#0e517e63] flex py-3 px-2"
       >
         <FcGoogle size={20} className="ml-3 mr-3 text-[#1e5aff] " />
@@ -127,7 +128,6 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
       </div>
       <p className="text-center text-sm font-medium">Or</p>
 
-      {/* login form */}
       <form onSubmit={handleFormSubmit}>
         {inputs.map((input) => (
           <FormInput
@@ -143,9 +143,9 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
         </a>
         <button
           type="submit"
-          disabled={IsFormFilled ? false : true}
+          disabled={!isFormFilled}
           className={`${
-            IsFormFilled ? "bg-[#0e24a0] hover:bg-blue-700" : "bg-[#7599ff]"
+            isFormFilled ? "bg-[#0e24a0] hover:bg-blue-700" : "bg-[#7599ff]"
           }  w-full font-medium text-sm text-white py-3 px-2`}
         >
           Sign In {" >"}

@@ -2,15 +2,16 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import axios from "axios";
-
 import toast from "react-hot-toast";
 import { AiOutlineUsergroupAdd } from "react-icons/ai";
 
 import Carousel from "./Carousel";
-import { CONNECT_USER_TO_GROUP } from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
 import { CommunitySkeleton } from "@/components/Loading/Skeletons";
+import {
+  connectUserToGroup,
+  getDashboardErrorMessage,
+} from "@/lib/dashboard/dashboardApi";
 import "./styles.css";
 
 interface Community {
@@ -40,24 +41,15 @@ const CommunityCarousel: React.FC<CommunityCarouselProps> = ({
   const handleConnectClick = async (id: string) => {
     if (!userInfo?.id) return;
     try {
-      const { data } = await axios.post(`${CONNECT_USER_TO_GROUP}`, {
-        loggedInUserId: userInfo.id,
-        groupIdToJoin: id,
-      });
-      if (data.status === 200) {
-        setItems((prevItems) =>
-          prevItems.map((item) => {
-            return item.id === id ? { ...item, removed: true } : item;
-          })
-        );
-        toast.success("You Joined the group.");
-      }
-    } catch (e) {
-      if (e instanceof Error) {
-        toast.error(e.message);
-      } else {
-        toast.error("An unknown error occurred.");
-      }
+      const successMessage = await connectUserToGroup(userInfo.id, id);
+      setItems((prevItems) =>
+        prevItems.map((item) => {
+          return item.id === id ? { ...item, removed: true } : item;
+        })
+      );
+      toast.success(successMessage || "You joined the group.");
+    } catch (error) {
+      toast.error(getDashboardErrorMessage(error, "Unable to join the group."));
     }
   };
 

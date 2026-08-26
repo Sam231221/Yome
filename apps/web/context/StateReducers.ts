@@ -29,28 +29,135 @@ export interface State {
   filteredContacts: ChatListItem[];
 }
 
-export interface Action {
-  type: string;
-  userInfo?: AppUserInfo;
-  newUser?: boolean;
-  group?: ChatListItem;
-  user?: ChatListItem;
-  socket?: ChatSocketRef;
-  messages?: ChatMessage[];
-  newMessage?: ChatMessage & { groupId?: NumericId | null };
-  userContacts?: ChatListItem[];
-  groupContacts?: ChatListItem[];
-  videoCall?: ActiveCall;
-  voiceCall?: ActiveCall;
-  incomingVoiceCall?: ActiveCall;
-  incomingVideoCall?: ActiveCall;
-  onlineUsers?: NumericId[];
-  contactSearch?: string;
-  id?: NumericId;
-  receiverId?: NumericId;
+type IncomingChatMessage = ChatMessage & { groupId?: NumericId | null };
+
+type SetUserInfoAction = {
+  type: typeof reducerCases.SET_USER_INFO;
+  userInfo: AppUserInfo | undefined;
+};
+
+type SetNewUserAction = {
+  type: typeof reducerCases.SET_NEW_USER;
+  newUser: boolean;
+};
+
+type ToggleAllContactsPageAction = {
+  type: typeof reducerCases.SET_ALL_CONTACTS_PAGE;
+};
+
+type ChangeCurrentChatUserAction = {
+  type: typeof reducerCases.CHANGE_CURRENT_CHAT_USER;
+  user: ChatListItem;
+};
+
+type ChangeCurrentGroupAction = {
+  type: typeof reducerCases.CHANGE_CURRENT_GROUP;
+  group: ChatListItem;
+};
+
+type SetSocketAction = {
+  type: typeof reducerCases.SET_SOCKET;
+  socket: ChatSocketRef | undefined;
+};
+
+type SetUserContactsAction = {
+  type: typeof reducerCases.SET_USER_CONTACTS;
+  userContacts: ChatListItem[];
+};
+
+type SetGroupContactsAction = {
+  type: typeof reducerCases.SET_GROUP_CONTACTS;
+  groupContacts: ChatListItem[];
+};
+
+type SetOnlineUsersAction = {
+  type: typeof reducerCases.SET_ONLINE_USERS;
+  onlineUsers: NumericId[];
+};
+
+type SetVideoCallAction = {
+  type: typeof reducerCases.SET_VIDEO_CALL;
+  videoCall: ActiveCall | undefined;
+};
+
+type SetVoiceCallAction = {
+  type: typeof reducerCases.SET_VOICE_CALL;
+  voiceCall: ActiveCall | undefined;
+};
+
+type EndCallAction = {
+  type: typeof reducerCases.END_CALL;
+};
+
+type SetIncomingVoiceCallAction = {
+  type: typeof reducerCases.SET_INCOMING_VOICE_CALL;
+  incomingVoiceCall: ActiveCall | undefined;
+};
+
+type SetIncomingVideoCallAction = {
+  type: typeof reducerCases.SET_INCOMING_VIDEO_CALL;
+  incomingVideoCall: ActiveCall | undefined;
+};
+
+type SetMessagesAction = {
+  type: typeof reducerCases.SET_MESSAGES;
+  messages: ChatMessage[];
+};
+
+type AddUserMessageAction = {
+  type: typeof reducerCases.ADD_USER_MESSAGE;
+  newMessage: IncomingChatMessage;
   fromSelf?: boolean;
+};
+
+type AddGroupMessageAction = {
+  type: typeof reducerCases.ADD_GROUP_MESSAGE;
+  newMessage: IncomingChatMessage;
   groupId?: NumericId;
-}
+  fromSelf?: boolean;
+};
+
+type SetMessagesReadAction = {
+  type: typeof reducerCases.SET_MESSAGES_READ;
+  id: NumericId;
+  receiverId?: NumericId;
+};
+
+type ToggleMessagesSearchAction = {
+  type: typeof reducerCases.SET_MESSAGES_SEARCH;
+};
+
+type SetContactSearchAction = {
+  type: typeof reducerCases.SET_CONTACT_SEARCH;
+  contactSearch: string;
+};
+
+type ExitChatAction = {
+  type: typeof reducerCases.SET_EXIT_CHAT;
+};
+
+export type Action =
+  | SetUserInfoAction
+  | SetNewUserAction
+  | ToggleAllContactsPageAction
+  | ChangeCurrentChatUserAction
+  | ChangeCurrentGroupAction
+  | SetSocketAction
+  | SetUserContactsAction
+  | SetGroupContactsAction
+  | SetOnlineUsersAction
+  | SetVideoCallAction
+  | SetVoiceCallAction
+  | EndCallAction
+  | SetIncomingVoiceCallAction
+  | SetIncomingVideoCallAction
+  | SetMessagesAction
+  | AddUserMessageAction
+  | AddGroupMessageAction
+  | SetMessagesReadAction
+  | ToggleMessagesSearchAction
+  | SetContactSearchAction
+  | ExitChatAction;
 
 type ContactMessageSnapshot = Pick<
   ChatListItem,
@@ -117,7 +224,7 @@ const reducer = (state: State, action: Action): State => {
     case reducerCases.SET_NEW_USER:
       return {
         ...state,
-        newUser: action.newUser ?? state.newUser,
+        newUser: action.newUser,
       };
     case reducerCases.SET_ALL_CONTACTS_PAGE:
       return {
@@ -130,63 +237,58 @@ const reducer = (state: State, action: Action): State => {
         messageSearch: !state.messageSearch,
       };
     case reducerCases.CHANGE_CURRENT_GROUP: {
-      if (action.group) {
-        if (state.contactsPage) {
-          return {
-            ...state,
-            currentChatGroup: action.group,
-            messages: [],
-          };
-        }
+      if (state.contactsPage) {
         return {
           ...state,
           currentChatGroup: action.group,
+          messages: [],
+        };
+      }
+      return {
+        ...state,
+        currentChatGroup: action.group,
+        messageSearch: false,
+        messages: [],
+      };
+    }
+    case reducerCases.CHANGE_CURRENT_CHAT_USER: {
+      const currentUser = action.user;
+      if (state.contactsPage) {
+        return {
+          ...state,
+          currentChatUser: currentUser,
+          messages: [],
+        };
+      }
+      if (currentUser.type === "user") {
+        state.socket?.current?.emit("mark-read", {
+          id: currentUser.id,
+          receiverId: state.userInfo?.id,
+        });
+        const clonedContacts = [...state.userContacts];
+        const index = clonedContacts.findIndex(
+          (contact) => contact.id === currentUser.id
+        );
+        if (index !== -1) {
+          clonedContacts[index].totalUnreadMessages = 0;
+        }
+        return {
+          ...state,
+          currentChatUser: currentUser,
+          messageSearch: false,
+          messages: [],
+          userContacts: clonedContacts,
+        };
+      }
+
+      if (currentUser.type === "group") {
+        return {
+          ...state,
+          currentChatUser: currentUser,
           messageSearch: false,
           messages: [],
         };
       }
-    }
-    case reducerCases.CHANGE_CURRENT_CHAT_USER: {
-      const currentUser = action.user;
-      if (currentUser) {
-        if (state.contactsPage) {
-          return {
-            ...state,
-            currentChatUser: currentUser,
-            messages: [],
-          };
-        }
-        if (currentUser.type === "user") {
-          state.socket?.current?.emit("mark-read", {
-            id: currentUser.id,
-            receiverId: state.userInfo?.id,
-          });
-          const clonedContacts = [...state.userContacts];
-          const index = clonedContacts.findIndex(
-            (contact) => contact.id === currentUser.id
-          );
-          if (index !== -1) {
-            clonedContacts[index].totalUnreadMessages = 0;
-          }
-          return {
-            ...state,
-            currentChatUser: currentUser,
-            messageSearch: false,
-            messages: [],
-            userContacts: clonedContacts,
-          };
-        }
-
-        if (currentUser.type === "group") {
-          return {
-            ...state,
-            currentChatUser: currentUser,
-            messageSearch: false,
-            messages: [],
-          };
-        }
-      }
-      // If action.user doesn't exist or type doesn't match, return state unchanged
       return state;
     }
     case reducerCases.SET_SOCKET:
@@ -196,12 +298,9 @@ const reducer = (state: State, action: Action): State => {
       };
     case reducerCases.ADD_USER_MESSAGE: {
       const newMessage = action.newMessage;
-      if (!newMessage) {
-        return state;
-      }
       if (
         state.currentChatUser?.id === newMessage.senderId ||
-        action?.fromSelf
+        action.fromSelf
       ) {
         //if the incoming message is either for the person, the logged in user is
         // currently chatting with or if the logged in users themselves sent the message
@@ -304,9 +403,6 @@ const reducer = (state: State, action: Action): State => {
     }
 
     case reducerCases.ADD_GROUP_MESSAGE: {
-      if (!action.newMessage) {
-        return state;
-      }
       const {
         groupId,
         message,
@@ -398,7 +494,7 @@ const reducer = (state: State, action: Action): State => {
     case reducerCases.SET_GROUP_CONTACTS:
       return {
         ...state,
-        groupContacts: action.groupContacts ?? [],
+        groupContacts: action.groupContacts,
       };
     case reducerCases.SET_VIDEO_CALL:
       return {
@@ -481,12 +577,15 @@ const reducer = (state: State, action: Action): State => {
       ];
       return {
         ...state,
-        contactSearch: action.contactSearch ?? "",
+        contactSearch: action.contactSearch,
         filteredContacts,
       };
     }
-    default:
+    default: {
+      const exhaustiveAction: never = action;
+      void exhaustiveAction;
       return state;
+    }
   }
 };
 

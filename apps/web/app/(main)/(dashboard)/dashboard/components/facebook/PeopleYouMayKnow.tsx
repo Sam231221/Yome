@@ -2,19 +2,16 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { BsPeople, BsThreeDots } from "react-icons/bs";
 import { IoMdPersonAdd } from "react-icons/io";
-import {
-  CONNECT_USER_TO_MENTOR,
-  GET_ALL_CONNECTED_USERS,
-  GET_ALL_USERS,
-  GET_UNFOLLOWED_MENTORS,
-} from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
 import type { DashboardUserRecord } from "./types";
-import { getChatErrorMessage } from "@/lib/chat/chatApi";
+import {
+  connectUserToMentor,
+  getDashboardErrorMessage,
+  getPeopleSuggestions,
+} from "@/lib/dashboard/dashboardApi";
 
 type SuggestedUser = {
   id: number;
@@ -41,40 +38,11 @@ export default function PeopleYouMayKnow() {
 
       setIsLoading(true);
       try {
-        const followedResponse = await axios.get(
-          `${GET_ALL_CONNECTED_USERS}/${userInfo.id}`
+        const users: DashboardUserRecord[] = await getPeopleSuggestions(
+          userInfo.id
         );
-        const followedUsers =
-          (followedResponse.data?.followedUsers as DashboardUserRecord[] | undefined) ??
-          [];
-
-        const followedSet = new Set<number>(
-          followedUsers.map((user) => Number(user.id))
-        );
-        const currentUserId = Number(userInfo.id);
-
-        let users: DashboardUserRecord[] = [];
-        try {
-          const allUsersResponse = await axios.get(GET_ALL_USERS);
-          users =
-            (allUsersResponse.data?.users as DashboardUserRecord[] | undefined) ??
-            [];
-        } catch {
-          const mentorsResponse = await axios.get(
-            `${GET_UNFOLLOWED_MENTORS}/${userInfo.id}`
-          );
-          users =
-            (mentorsResponse.data?.mentorsNotFollowed as
-              | DashboardUserRecord[]
-              | undefined) ?? [];
-        }
 
         const suggestions: SuggestedUser[] = users
-          .filter(
-            (user) =>
-              Number(user.id) !== currentUserId &&
-              !followedSet.has(Number(user.id))
-          )
           .map((user) => ({
             id: Number(user.id),
             name:
@@ -92,7 +60,7 @@ export default function PeopleYouMayKnow() {
         setHiddenIds([]);
       } catch (error) {
         toast.error(
-          getChatErrorMessage(error, "Failed to load people suggestions.")
+          getDashboardErrorMessage(error, "Failed to load people suggestions.")
         );
       } finally {
         setIsLoading(false);
@@ -111,19 +79,11 @@ export default function PeopleYouMayKnow() {
 
     setPendingIds((prev) => [...prev, id]);
     try {
-      const { data } = await axios.post(CONNECT_USER_TO_MENTOR, {
-        loggedInUserId: Number(userInfo.id),
-        mentorId: id,
-      });
-
-      if (data?.status === 200) {
-        toast.success("Friend added successfully.");
-        hideCard(id);
-      } else {
-        toast.error(data?.msg || "Unable to add friend.");
-      }
+      const successMessage = await connectUserToMentor(userInfo.id, id);
+      toast.success(successMessage || "Friend added successfully.");
+      hideCard(id);
     } catch (error) {
-      toast.error(getChatErrorMessage(error, "Unable to add friend."));
+      toast.error(getDashboardErrorMessage(error, "Unable to add friend."));
     } finally {
       setPendingIds((prev) => prev.filter((item) => item !== id));
     }

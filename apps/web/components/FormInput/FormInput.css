@@ -1,7 +1,7 @@
-.enable-errorMsg input:invalid[focused="true"] {
+.enable-errorMsg input:invalid[data-focused="true"] {
   border: 1px solid red;
 }
 
-.enable-errorMsg input:invalid[focused="true"] ~ span {
+.enable-errorMsg input:invalid[data-focused="true"] ~ span {
   display: block;
 }
