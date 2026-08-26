@@ -3,7 +3,14 @@ import toast from "react-hot-toast";
 import TopNav from "./TopNav";
 import LeftSidebar from "./LeftSidebar";
 import RightSidebar from "./RightSidebar";
-import { DashboardChatMessage, DashboardChatSession, DashboardContact, UserLite } from "./types";
+import {
+  DashboardChatMessage,
+  DashboardChatSession,
+  DashboardContact,
+  DashboardMessageRecord,
+  DashboardUserRecord,
+  UserLite,
+} from "./types";
 import NotificationsPanel from "./NotificationsPanel";
 import ChatWindow from "./ChatWindow";
 import ChatDrawer from "./ChatDrawer";
@@ -14,21 +21,24 @@ import IncomingVideoCall from "@/components/common/IncomingVideoCall";
 import VoiceCall from "@/app/(communication)/chat/components/Call/VoiceCall";
 import VideoCall from "@/app/(communication)/chat/components/Call/VideoCall";
 import {
+  getChatErrorMessage,
   getConnectedUsers,
   getInitialUserMeta,
   getUserById,
   getUserConversation,
+  logChatConversationError,
   sendAudioMessage,
   sendImageMessage,
   sendTextMessage,
 } from "@/lib/chat/chatApi";
 import { useChatSocket } from "@/hooks/useChatSocket";
 import { playNotificationSound } from "@/lib/chat/notificationSound";
+import type { NumericId } from "@/types/chat";
 
 const DEFAULT_AVATAR = "/avatars/userprofile.png";
 const MAX_OPEN_CHATS = 3;
 
-const normalizeName = (user: any) => {
+const normalizeName = (user: DashboardUserRecord) => {
   const fullName = [user?.firstname, user?.lastname].filter(Boolean).join(" ").trim();
   if (fullName.length) return fullName;
   if (user?.name) return user.name;
@@ -36,13 +46,15 @@ const normalizeName = (user: any) => {
   return "Unknown user";
 };
 
-const normalizeMessage = (message: any): DashboardChatMessage => ({
+const normalizeMessage = (
+  message: DashboardMessageRecord
+): DashboardChatMessage => ({
   id: Number(message?.id),
   senderId: Number(message?.senderId),
-  recieverId:
-    message?.recieverId === null || typeof message?.recieverId === "undefined"
+  receiverId:
+    message?.receiverId === null || typeof message?.receiverId === "undefined"
       ? null
-      : Number(message.recieverId),
+      : Number(message.receiverId),
   message: String(message?.message ?? ""),
   type: String(message?.type ?? "text"),
   messageStatus: String(message?.messageStatus ?? "sent"),
@@ -56,11 +68,11 @@ const normalizeMessage = (message: any): DashboardChatMessage => ({
         profilePicture: message.sender.profilePicture,
       }
     : undefined,
-  reciever: message?.reciever
+  receiver: message?.receiver
     ? {
-        id: Number(message.reciever.id),
-        name: message.reciever.name,
-        profilePicture: message.reciever.profilePicture,
+        id: Number(message.receiver.id),
+        name: message.receiver.name,
+        profilePicture: message.receiver.profilePicture,
       }
     : undefined,
 });
@@ -81,7 +93,7 @@ const mergeMessages = (
 };
 
 const toDashboardContact = (
-  raw: any,
+  raw: DashboardUserRecord,
   onlineUserIds: number[] = []
 ): DashboardContact => ({
   id: Number(raw.id),
@@ -131,6 +143,10 @@ export default function DashboardShell({
     Record<number, DashboardChatSession>
   >({});
   const notificationButtonRef = useRef<HTMLButtonElement>(null);
+  const normalizedOnlineUsers = useMemo(
+    () => (onlineUsers ?? []).map((id) => Number(id)),
+    [onlineUsers]
+  );
 
   const contactsRef = useRef<DashboardContact[]>([]);
   const chatSessionsRef = useRef<Record<number, DashboardChatSession>>({});
@@ -209,7 +225,8 @@ export default function DashboardShell({
             [contactId]: nextSession,
           };
         });
-      } catch (error: any) {
+      } catch (error) {
+        logChatConversationError("dashboard load conversation", error);
         setChatSessionsByContactId((previousSessions) => {
           const currentSession = ensureSession(previousSessions[contactId]);
           const nextSession = {
@@ -226,7 +243,7 @@ export default function DashboardShell({
             [contactId]: nextSession,
           };
         });
-        toast.error(error?.message || "Failed to load conversation.");
+        toast.error(getChatErrorMessage(error, "Failed to load conversation."));
       }
     },
     [userInfo?.id]
@@ -303,7 +320,7 @@ export default function DashboardShell({
             name: message.sender.name,
             profilePicture: message.sender.profilePicture,
           },
-          (onlineUsers ?? []).map((id) => Number(id))
+          normalizedOnlineUsers
         );
         upsertContact(contactFromPayload);
         return contactFromPayload;
@@ -314,7 +331,7 @@ export default function DashboardShell({
         if (!fallbackUser) return null;
         const fallbackContact = toDashboardContact(
           fallbackUser,
-          (onlineUsers ?? []).map((id) => Number(id))
+          normalizedOnlineUsers
         );
         upsertContact(fallbackContact);
         return fallbackContact;
@@ -322,7 +339,7 @@ export default function DashboardShell({
         return null;
       }
     },
-    [onlineUsers, upsertContact, userInfo?.id]
+    [normalizedOnlineUsers, upsertContact, userInfo?.id]
   );
 
   const socket = useChatSocket({
@@ -336,7 +353,7 @@ export default function DashboardShell({
     onOnlineUsers: ({ onlineUsers: socketOnlineUsers }) => {
       dispatch({
         type: reducerCases.SET_ONLINE_USERS,
-        onlineUsers: (socketOnlineUsers ?? []).map((id: any) => Number(id)),
+        onlineUsers: (socketOnlineUsers ?? []).map((id) => Number(id)),
       });
     },
     onPrivateMessageReceived: async ({ message }) => {
@@ -358,12 +375,12 @@ export default function DashboardShell({
       appendMessage(incomingContact.id, normalizedMessage);
       await openChat(incomingContact, { ensureConversation: true });
     },
-    onMarkReadReceived: ({ id, recieverId }) => {
-      if (typeof recieverId === "undefined") return;
+    onMarkReadReceived: ({ id, receiverId }) => {
+      if (typeof receiverId === "undefined") return;
       dispatch({
         type: reducerCases.SET_MESSAGES_READ,
         id,
-        recieverId,
+        receiverId,
       });
     },
     onIncomingVoiceCall: ({ from, roomId, callType }) => {
@@ -404,6 +421,7 @@ export default function DashboardShell({
     async (contactId: number, text: string) => {
       if (!userInfo?.id) return;
       const message = await sendTextMessage({
+        chatType: "user",
         from: userInfo.id,
         to: contactId,
         message: text,
@@ -434,6 +452,7 @@ export default function DashboardShell({
     async (contactId: number, file: File) => {
       if (!userInfo?.id) return;
       const message = await sendImageMessage({
+        chatType: "user",
         from: userInfo.id,
         to: contactId,
         file,
@@ -464,6 +483,7 @@ export default function DashboardShell({
     async (contactId: number, file: File) => {
       if (!userInfo?.id) return;
       const message = await sendAudioMessage({
+        chatType: "user",
         from: userInfo.id,
         to: contactId,
         file,
@@ -535,7 +555,7 @@ export default function DashboardShell({
         ]);
 
         const parsedOnlineUsers = (initialUserMeta.onlineUsers ?? []).map(
-          (id: any) => Number(id)
+          (id) => Number(id)
         );
 
         dispatch({
@@ -544,12 +564,15 @@ export default function DashboardShell({
         });
 
         const normalizedContacts = followedUsers
-          .filter((user: any) => (user?.identifier || "user") === "user")
-          .map((contact: any) => toDashboardContact(contact, parsedOnlineUsers));
+          .filter(
+            (contact): contact is DashboardUserRecord =>
+              (contact?.identifier || "user") === "user"
+          )
+          .map((contact) => toDashboardContact(contact, parsedOnlineUsers));
 
         setContacts(normalizedContacts);
-      } catch (error: any) {
-        toast.error(error?.message || "Failed to load contacts.");
+      } catch (error) {
+        toast.error(getChatErrorMessage(error, "Failed to load contacts."));
       } finally {
         setIsContactsLoading(false);
       }
@@ -564,11 +587,6 @@ export default function DashboardShell({
       triggerRef={notificationButtonRef}
     />
   ) : null;
-
-  const normalizedOnlineUsers = useMemo(
-    () => (onlineUsers ?? []).map((id: any) => Number(id)),
-    [onlineUsers]
-  );
 
   const contactsById = useMemo(() => {
     return contacts.reduce<Record<number, DashboardContact>>((acc, contact) => {

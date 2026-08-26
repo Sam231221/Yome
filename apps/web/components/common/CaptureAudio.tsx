@@ -1,7 +1,6 @@
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { ADD_AUDIO_MESSAGE_ROUTE, ADD_MEDIA_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
-import axios from "axios";
+import toast from "react-hot-toast";
 
 import React, { useState, useRef, useEffect } from "react";
 import {
@@ -13,6 +12,8 @@ import {
 } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
 import WaveSurfer from "wavesurfer.js";
+import type { ChatKind, ChatMessage } from "@/types/chat";
+import { getChatErrorMessage, sendAudioMessage } from "@/lib/chat/chatApi";
 
 type AudioRecorderProps = {
   hide?: React.Dispatch<React.SetStateAction<boolean>>;
@@ -21,13 +22,16 @@ type AudioRecorderProps = {
 
 const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
   const [{ userInfo, currentChatUser, socket }, dispatch] = useStateProvider();
+  const resolvedChatType = (chatType === "group" ? "group" : "user") as ChatKind;
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [currentPlaybackTime, setCurrentPlaybackTime] = useState(0);
   const [totalDuration, setTotalDuration] = useState(0);
 
   const [waveform, setWaveform] = useState<WaveSurfer | null>(null);
-  const [recordedAudio, setRecordedAudio] = useState<HTMLAudioElement | null>(null);
+  const [recordedAudio, setRecordedAudio] = useState<HTMLAudioElement | null>(
+    null
+  );
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -63,7 +67,7 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
     setWaveform(wavesurfer);
 
     wavesurfer.on("finish", () => {
-      setisPlaying(false);
+      setIsPlaying(false);
     });
 
     return () => {
@@ -92,7 +96,8 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
         if (audioRef.current) audioRef.current.srcObject = stream;
 
         const chunks: Blob[] = [];
-        mediaRecorder.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
+        mediaRecorder.ondataavailable = (e) =>
+          e.data.size > 0 && chunks.push(e.data);
         mediaRecorder.onstop = () => {
           const blob = new Blob(chunks, { type: "audio/ogg; codecs=opus" });
           const audioURL = URL.createObjectURL(blob);
@@ -105,7 +110,9 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
         mediaRecorder.start();
       })
       .catch((error) => {
-        console.error("Error accessing microphone:", error);
+        setIsRecording(false);
+        toast.error(getChatErrorMessage(error, "Unable to access microphone."));
+        hide?.(false);
       });
   };
 
@@ -130,21 +137,21 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
     }
   };
 
-  const [isPlaying, setisPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const handlePlayRecordedAudio = () => {
     if (recordedAudio) {
       waveform?.stop();
       waveform?.play();
       recordedAudio.play();
-      setisPlaying(true);
+      setIsPlaying(true);
     }
   };
 
   const handlePauseRecordingAudio = () => {
     waveform?.stop();
     recordedAudio?.pause();
-    setisPlaying(false);
+    setIsPlaying(false);
   };
 
   const formatTime = (time: number) => {
@@ -168,65 +175,56 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
     }
   }, [recordedAudio]);
 
+  const appendMessage = (messagePayload: ChatMessage) => {
+    if (!currentChatUser?.id) return;
+
+    if (resolvedChatType === "user") {
+      dispatch({
+        type: reducerCases.ADD_USER_MESSAGE,
+        newMessage: messagePayload,
+        fromSelf: true,
+      });
+      return;
+    }
+
+    dispatch({
+      type: reducerCases.ADD_GROUP_MESSAGE,
+      newMessage: messagePayload,
+      groupId: currentChatUser.id,
+      fromSelf: true,
+    });
+  };
+
   const sendRecording = async () => {
     if (!renderedAudio || !userInfo?.id || !currentChatUser?.id) return;
     try {
-      const formData = new FormData();
-      formData.append("audio", renderedAudio);
-      const uploadRes = await axios.post(ADD_AUDIO_MESSAGE_ROUTE, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      const { url, type } = uploadRes.data ?? {};
-      if (!url) return;
-      const response = await axios.post(ADD_MEDIA_MESSAGE_ROUTE, {
-        chatType,
+      const sentMessage = await sendAudioMessage({
+        chatType: resolvedChatType,
         from: userInfo.id,
         to: currentChatUser.id,
-        url,
-        type: type ?? "audio",
+        file: renderedAudio,
       });
-      if (response.status === 201) {
-        socket?.current?.emit("send-msg", {
-          chatType: chatType,
-          room: `room-${currentChatUser.id}`,
-          to: currentChatUser.id,
-          from: userInfo.id,
-          message: response.data.message,
-        });
-
-        if (chatType === "user") {
-          dispatch({
-            type: reducerCases.ADD_USER_MESSAGE,
-            newMessage: {
-              ...response.data.message,
-            },
-
-            fromSelf: true,
-          });
-        }
-        if (chatType === "group") {
-          dispatch({
-            type: reducerCases.ADD_GROUP_MESSAGE,
-            newMessage: {
-              ...response.data.message,
-            },
-            groupId: currentChatUser.id,
-
-            fromSelf: true,
-          });
-        }
-
-        hide?.(false);
-      }
-    } catch (err) {
-      console.error(err);
+      socket?.current?.emit("send-msg", {
+        chatType: resolvedChatType,
+        room: `room-${currentChatUser.id}`,
+        to: currentChatUser.id,
+        from: userInfo.id,
+        message: sentMessage,
+      });
+      appendMessage(sentMessage);
+      hide?.(false);
+    } catch (error) {
+      toast.error(getChatErrorMessage(error, "Failed to send audio."));
     }
   };
 
   return (
     <div className="flex text-2xl w-full justify-end items-center">
       <div className="pt-1">
-        <FaTrash className="text-panel-header-icon" onClick={() => hide?.(false)} />
+        <FaTrash
+          className="text-panel-header-icon"
+          onClick={() => hide?.(false)}
+        />
       </div>
       <div className="mx-4 py-2 px-4 text-white text-lg flex gap-3 justify-center items-center bg-search-input-container-background rounded-full drop-shadow-lg">
         {isRecording ? (

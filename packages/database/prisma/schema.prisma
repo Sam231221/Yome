@@ -35,7 +35,7 @@ model User {
   userProfile               UserProfile?            @relation(fields: [userProfileId], references: [id])
   userProfileId             String?                 @unique
   sentMessages              Messages[]              @relation("sentMessages")
-  recievedMessages          Messages[]              @relation("recievedMessages")
+  receivedMessages          Messages[]              @relation("receivedMessages")
   forgotPasswordToken       String?
   forgotPasswordTokenExpiry DateTime?
   verifyToken               String?
@@ -66,8 +66,8 @@ model Messages {
   id            Int      @id @default(autoincrement())
   sender        User?    @relation("sentMessages", fields: [senderId], references: [id])
   senderId      Int
-  reciever      User?    @relation("recievedMessages", fields: [recieverId], references: [id])
-  recieverId    Int?
+  receiver      User?    @relation("receivedMessages", fields: [receiverId], references: [id])
+  receiverId    Int?
   seenBy        User[]   @relation("MessageSeenBy")
   type          String   @default("text")
   message       String

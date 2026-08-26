@@ -100,7 +100,7 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
 
             {chatType === "group" &&
               messages
-                ?.filter((message) => message.recieverId === null)
+                ?.filter((message) => message.receiverId === null)
                 .filter((message) => message.groupId === currentChatUser.id)
                 .map((message: ChatMessage, index) => (
                   <div

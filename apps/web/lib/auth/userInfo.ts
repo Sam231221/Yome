@@ -43,6 +43,38 @@ export type AppUserInfo = {
 
 type DispatchFn = (action: { type: string; userInfo: AppUserInfo }) => void;
 
+const DEFAULT_USER_INFO_ERROR = "Failed to load user information.";
+
+export const getUserInfoErrorMessage = (
+  error: unknown,
+  fallback = DEFAULT_USER_INFO_ERROR
+) => {
+  if (axios.isAxiosError(error)) {
+    const responseMessage =
+      typeof error.response?.data === "string"
+        ? error.response.data
+        : error.response?.data?.error || error.response?.data?.msg;
+
+    if (responseMessage) {
+      return responseMessage;
+    }
+
+    if (error.message) {
+      return error.message;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
+export const logUserInfoLoadError = (context: string, error: unknown) => {
+  console.warn(`[user-info] ${context}: ${getUserInfoErrorMessage(error)}`);
+};
+
 export function mapApiUserToAppUser(user: ApiUser): AppUserInfo {
   return {
     id: user.id,

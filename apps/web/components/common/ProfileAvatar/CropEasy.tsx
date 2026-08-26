@@ -1,4 +1,5 @@
 import Slider from "@/components/common/Slider/Slider";
+import toast from "react-hot-toast";
 import React, { useState } from "react";
 import Cropper from "react-easy-crop";
 
@@ -29,7 +30,7 @@ const CropEasy = ({ photo, setOpenCrop, setPhoto, setFile }) => {
       setFile(file);
       setOpenCrop(false);
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to crop image.");
     }
   };
   return (

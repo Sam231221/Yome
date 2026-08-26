@@ -7,7 +7,7 @@ import { cloudinary } from "../lib/cloudinary.js";
 export async function uploadAudio(
   req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ): Promise<void> {
   try {
     if (!req.file?.buffer) {
@@ -32,9 +32,8 @@ export async function uploadAudio(
     });
 
     res.status(200).json({ ok: true, url: audio.secure_url, type: "audio" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: "Internal server error" });
+  } catch (error) {
+    next(error);
   }
 }
 

@@ -47,10 +47,44 @@ export interface Action {
   onlineUsers?: NumericId[];
   contactSearch?: string;
   id?: NumericId;
-  recieverId?: NumericId;
+  receiverId?: NumericId;
   fromSelf?: boolean;
   groupId?: NumericId;
 }
+
+type ContactMessageSnapshot = Pick<
+  ChatListItem,
+  | "message"
+  | "type"
+  | "messageId"
+  | "messageStatus"
+  | "receiverId"
+  | "senderId"
+  | "createdAt"
+  | "totalUnreadMessages"
+>;
+
+const applyMessageSnapshotToContact = (
+  contact: ChatListItem,
+  snapshot: ContactMessageSnapshot
+): ChatListItem => ({
+  ...contact,
+  ...snapshot,
+});
+
+const buildContactSnapshotFromMessage = (
+  message: ChatMessage,
+  totalUnreadMessages = 0
+): ContactMessageSnapshot => ({
+  message: message.message,
+  type: message.type,
+  messageId: message.id,
+  messageStatus: message.messageStatus,
+  receiverId: message.receiverId,
+  senderId: message.senderId,
+  createdAt: message.createdAt,
+  totalUnreadMessages,
+});
 
 export const initialState: State = {
   userInfo: undefined,
@@ -125,7 +159,7 @@ const reducer = (state: State, action: Action): State => {
         if (currentUser.type === "user") {
           state.socket?.current?.emit("mark-read", {
             id: currentUser.id,
-            recieverId: state.userInfo?.id,
+            receiverId: state.userInfo?.id,
           });
           const clonedContacts = [...state.userContacts];
           const index = clonedContacts.findIndex(
@@ -174,28 +208,22 @@ const reducer = (state: State, action: Action): State => {
         //trigger mark-read event
         state.socket?.current?.emit("mark-read", {
           id: newMessage.senderId,
-          recieverId: newMessage.recieverId,
+          receiverId: newMessage.receiverId,
         });
 
         const clonedContacts = [...state.userContacts];
         // Logic for handling a new message the logged-in user just receives from a chat user/group
-        if (newMessage.recieverId === state.userInfo?.id) {
+        if (newMessage.receiverId === state.userInfo?.id) {
           const index = clonedContacts.findIndex(
             (contact) => contact.id === newMessage.senderId
           );
 
           if (index !== -1) {
-            const data = clonedContacts[index];
-            data.message = newMessage.message;
-            data.type = newMessage.type;
-            data.createdAt = newMessage.createdAt;
-            data.messageId = newMessage.id;
-            data.messageStatus = newMessage.messageStatus;
-            data.recieverId = newMessage.recieverId;
-            data.senderId = newMessage.senderId;
-
+            const data = applyMessageSnapshotToContact(
+              clonedContacts[index],
+              buildContactSnapshotFromMessage(newMessage)
+            );
             clonedContacts.splice(index, 1);
-
             clonedContacts.unshift(data);
           }
           return {
@@ -207,45 +235,24 @@ const reducer = (state: State, action: Action): State => {
           // Logic for handling new message that the loggedin user just sents to chat user/group
 
           const index = clonedContacts.findIndex(
-            (contact) => contact.id === newMessage.recieverId
+            (contact) => contact.id === newMessage.receiverId
           );
           if (index !== -1) {
             //if the contact exist ,update the latest message.
 
-            const newUpdatedContact = clonedContacts[index];
-            newUpdatedContact.message = newMessage.message;
-            newUpdatedContact.type = newMessage.type;
-            newUpdatedContact.messageId = newMessage.id;
-            newUpdatedContact.createdAt = newMessage.createdAt;
-            newUpdatedContact.messageStatus = newMessage.messageStatus;
-            newUpdatedContact.recieverId = newMessage.recieverId;
-            newUpdatedContact.senderId = newMessage.senderId;
-
+            const newUpdatedContact = applyMessageSnapshotToContact(
+              clonedContacts[index],
+              buildContactSnapshotFromMessage(newMessage)
+            );
             clonedContacts.splice(index, 1);
-
             clonedContacts.unshift(newUpdatedContact);
-          } else if (newMessage.reciever) {
-            const {
-              message,
-              type,
-              id,
-              messageStatus,
-              recieverId,
-              senderId,
-              createdAt,
-            } = newMessage;
-            const reciever = newMessage.reciever;
+          } else if (newMessage.receiver) {
+            const receiver = newMessage.receiver;
             const data = {
-              message,
-              type,
-              messageId: id,
-              messageStatus,
-              recieverId,
-              senderId,
-              createdAt,
-              id: reciever.id,
-              name: reciever.name ?? "",
-              profilePicture: reciever.profilePicture,
+              ...buildContactSnapshotFromMessage(newMessage),
+              id: receiver.id,
+              name: receiver.name ?? "",
+              profilePicture: receiver.profilePicture,
               totalUnreadMessages: action.fromSelf ? 0 : 1,
             };
             clonedContacts.unshift(data);
@@ -265,42 +272,27 @@ const reducer = (state: State, action: Action): State => {
           (contact) => contact.id === newMessage.senderId
         );
         if (index !== -1) {
-          const data = clonedContacts[index];
-          data.message = newMessage.message;
-          data.type = newMessage.type;
-          data.messageId = newMessage.id;
-          data.createdAt = newMessage.createdAt;
-          data.messageStatus = newMessage.messageStatus;
-          data.recieverId = newMessage.recieverId;
-          data.senderId = newMessage.senderId;
-          data.totalUnreadMessages = (data.totalUnreadMessages ?? 0) + 1;
+          const data = applyMessageSnapshotToContact(
+            clonedContacts[index],
+            buildContactSnapshotFromMessage(
+              newMessage,
+              (clonedContacts[index].totalUnreadMessages ?? 0) + 1
+            )
+          );
           clonedContacts.splice(index, 1);
           clonedContacts.unshift(data);
         } else if (newMessage.sender) {
           // for the very first time If the sender is not in contacts,
           // add them to contacts for logged in users on left side bar.
-          const {
-            message,
-            type,
-            id,
-            messageStatus,
-            recieverId,
-            senderId,
-            createdAt,
-          } = newMessage;
           const sender = newMessage.sender;
           const data = {
-            message,
-            type,
-            messageId: id,
-            messageStatus,
-              recieverId,
-            senderId,
-            createdAt,
+            ...buildContactSnapshotFromMessage(
+              newMessage,
+              action.fromSelf ? 0 : 1
+            ),
             id: sender.id,
             name: sender.name ?? "",
             profilePicture: sender.profilePicture,
-            totalUnreadMessages: action.fromSelf ? 0 : 1,
           };
           clonedContacts.unshift(data);
         }
@@ -321,7 +313,7 @@ const reducer = (state: State, action: Action): State => {
         type,
         id,
         messageStatus,
-        recieverId,
+        receiverId,
         senderId,
         createdAt,
         group,
@@ -333,17 +325,20 @@ const reducer = (state: State, action: Action): State => {
         );
 
         if (index !== -1) {
-          const updatedGroup = clonedGroupContacts[index];
-          updatedGroup.message = message;
-          updatedGroup.type = type;
-          updatedGroup.messageId = id;
-          updatedGroup.createdAt = createdAt;
-          updatedGroup.messageStatus = messageStatus;
-          updatedGroup.recieverId = recieverId;
-          updatedGroup.senderId = senderId;
-          updatedGroup.totalUnreadMessages =
-            (updatedGroup.totalUnreadMessages ?? 0) + 1;
-
+          const updatedGroup = applyMessageSnapshotToContact(
+            clonedGroupContacts[index],
+            {
+              message,
+              type,
+              messageId: id,
+              messageStatus,
+              receiverId,
+              senderId,
+              createdAt,
+              totalUnreadMessages:
+                (clonedGroupContacts[index].totalUnreadMessages ?? 0) + 1,
+            }
+          );
           clonedGroupContacts.splice(index, 1);
           clonedGroupContacts.unshift(updatedGroup);
         } else if (group) {
@@ -352,7 +347,7 @@ const reducer = (state: State, action: Action): State => {
             type,
             messageId: id,
             messageStatus,
-            recieverId,
+            receiverId,
             senderId,
             createdAt,
             identifier: "group",
@@ -447,7 +442,7 @@ const reducer = (state: State, action: Action): State => {
           (msg, index) => (clonedMessages[index].messageStatus = "read")
         );
         const index = clonedContacts.findIndex(
-          (contact) => contact.id === action.recieverId
+          (contact) => contact.id === action.receiverId
         );
         if (index !== -1) {
           clonedContacts[index].messageStatus = "read";

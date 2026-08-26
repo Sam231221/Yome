@@ -1,4 +1,5 @@
 import { IconType } from "react-icons";
+import type { NumericId } from "@/types/chat";
 
 export type UserLite = {
   name: string;
@@ -54,6 +55,42 @@ export type DashboardContact = {
   online: boolean;
 };
 
+export type DashboardUserRecord = {
+  id: NumericId;
+  name?: string;
+  firstname?: string;
+  lastname?: string;
+  username?: string;
+  role?: string;
+  identifier?: string;
+  profilePicture?: string;
+};
+
+export type DashboardGroupRecord = {
+  id: string;
+  name?: string;
+  about?: string;
+  thumbnail?: string;
+};
+
+export type DashboardMessageParty = {
+  id: NumericId;
+  name?: string;
+  profilePicture?: string;
+};
+
+export type DashboardMessageRecord = {
+  id?: NumericId;
+  senderId?: NumericId;
+  receiverId?: NumericId | null;
+  message?: string;
+  type?: string;
+  messageStatus?: string;
+  createdAt?: string | Date;
+  sender?: DashboardMessageParty;
+  receiver?: DashboardMessageParty;
+};
+
 export type NavItem = {
   id: string;
   label: string;
@@ -91,7 +128,7 @@ export type Message = {
 export type DashboardChatMessage = {
   id: number;
   senderId: number;
-  recieverId: number | null;
+  receiverId: number | null;
   message: string;
   type: string;
   messageStatus: string;
@@ -101,7 +138,7 @@ export type DashboardChatMessage = {
     name?: string;
     profilePicture?: string;
   };
-  reciever?: {
+  receiver?: {
     id: number;
     name?: string;
     profilePicture?: string;

@@ -1,17 +1,21 @@
 import React, { useEffect, useRef } from "react";
-import axios from "axios";
 import { useStateProvider } from "@/context/StateContext";
 
 import ChatListItem from "./ChatListItem";
 
-import {
-  GET_INITIAL_USERS_MESSAGES,
-  GET_INITIAL_GROUP_MESSAGES,
-} from "@/utils/ApiRoutes";
 import { reducerCases } from "@/context/constants";
 import type { ChatListItem as ChatListItemData } from "@/types/chat";
+import {
+  getInitialGroupMeta,
+  getInitialUserMeta,
+  logChatBootstrapError,
+} from "@/lib/chat/chatApi";
 
-export default function List() {
+export default function List({
+  onBootstrapStateChange,
+}: {
+  onBootstrapStateChange?: (loading: boolean) => void;
+}) {
   const [
     { userInfo, userContacts, groupContacts, filteredContacts },
     dispatch,
@@ -22,14 +26,14 @@ export default function List() {
     if (!userInfo?.id || hasLoadedRef.current) return;
 
     hasLoadedRef.current = true;
+    onBootstrapStateChange?.(true);
     let cancelled = false;
 
     const getContacts = async () => {
       try {
         if (!userInfo?.id || cancelled) return;
-        const {
-          data: { usersWithLatestPivateMessages, onlineUsers },
-        } = await axios.get(`${GET_INITIAL_USERS_MESSAGES}/${userInfo.id}`);
+        const { usersWithLatestPivateMessages, onlineUsers } =
+          await getInitialUserMeta(userInfo.id);
         if (cancelled) return;
 
         dispatch({
@@ -39,7 +43,7 @@ export default function List() {
         dispatch({ type: reducerCases.SET_ONLINE_USERS, onlineUsers });
       } catch (error) {
         if (!cancelled) {
-          console.error("Failed to load initial chat contacts:", error);
+          logChatBootstrapError("initial contacts", error);
         }
       }
     };
@@ -47,22 +51,10 @@ export default function List() {
     const getGroups = async () => {
       try {
         if (!userInfo?.id || cancelled) return;
-        const {
-          data: { groupsWithLatestGroupMessages },
-        } = await axios.get(`${GET_INITIAL_GROUP_MESSAGES}/${userInfo.id}`);
+        const groupsWithLatestGroupMessages = await getInitialGroupMeta(
+          userInfo.id
+        );
         if (cancelled) return;
-
-        groupsWithLatestGroupMessages.forEach((group: any) => {
-          group.messages.forEach((message: any) => {
-            const { groupId, ...messageId } = message;
-            messageId.messageId = messageId.id;
-            delete messageId.id;
-
-            group.messages[group.messages.indexOf(message)] = messageId;
-            Object.assign(group, messageId);
-          });
-          delete group.messages;
-        });
 
         dispatch({
           type: reducerCases.SET_GROUP_CONTACTS,
@@ -70,18 +62,25 @@ export default function List() {
         });
       } catch (error) {
         if (!cancelled) {
-          console.error("Failed to load initial group conversations:", error);
+          logChatBootstrapError("initial groups", error);
         }
       }
     };
 
-    void getContacts();
-    void getGroups();
+    const bootstrap = async () => {
+      await Promise.allSettled([getContacts(), getGroups()]);
+      if (!cancelled) {
+        onBootstrapStateChange?.(false);
+      }
+    };
+
+    void bootstrap();
 
     return () => {
       cancelled = true;
+      onBootstrapStateChange?.(false);
     };
-  }, [userInfo, dispatch]);
+  }, [userInfo, dispatch, onBootstrapStateChange]);
 
   return (
     <div className="bg-white flex-auto overflow-auto max-h-full custom-scrollbar lg:pb-4 md:pb-3 pb-2">

@@ -6,6 +6,13 @@ import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import { GET_CALL_TOKEN } from "@/utils/ApiRoutes";
 import type { ActiveCall } from "@/types/chat";
+import toast from "react-hot-toast";
+
+type ZegoCallClient = {
+  destroyStream: (stream: MediaStream) => void;
+  stopPublishingStream: (streamId: string) => void;
+  logoutRoom: (roomId: string) => void;
+};
 
 function Container({ data }: { data: ActiveCall }) {
   const [{ socket, userInfo }, dispatch] = useStateProvider();
@@ -16,7 +23,7 @@ function Container({ data }: { data: ActiveCall }) {
     undefined
   );
   const [token, setToken] = useState<string | undefined>(undefined);
-  const [zgVar, setZgVar] = useState<any>(undefined);
+  const [zgVar, setZgVar] = useState<ZegoCallClient | undefined>(undefined);
   const [callStarted, setCallStarted] = useState(false);
   const [callAccepted, setcallAccepted] = useState(false);
   useEffect(() => {
@@ -37,8 +44,8 @@ function Container({ data }: { data: ActiveCall }) {
           data: { token },
         } = await axios.get(`${GET_CALL_TOKEN}/${userInfo.id}`);
         setToken(token);
-      } catch (err) {
-        console.error(err);
+      } catch {
+        toast.error("Failed to prepare call session.");
       }
     };
     if (callAccepted) {

@@ -13,6 +13,8 @@ import {
   GET_UNFOLLOWED_MENTORS,
 } from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
+import type { DashboardUserRecord } from "./types";
+import { getChatErrorMessage } from "@/lib/chat/chatApi";
 
 type SuggestedUser = {
   id: number;
@@ -42,43 +44,56 @@ export default function PeopleYouMayKnow() {
         const followedResponse = await axios.get(
           `${GET_ALL_CONNECTED_USERS}/${userInfo.id}`
         );
-        const followedUsers = followedResponse.data?.followedUsers ?? [];
+        const followedUsers =
+          (followedResponse.data?.followedUsers as DashboardUserRecord[] | undefined) ??
+          [];
 
-        const followedSet = new Set<number>(followedUsers.map((u: any) => u.id));
+        const followedSet = new Set<number>(
+          followedUsers.map((user) => Number(user.id))
+        );
         const currentUserId = Number(userInfo.id);
 
-        let users: any[] = [];
+        let users: DashboardUserRecord[] = [];
         try {
           const allUsersResponse = await axios.get(GET_ALL_USERS);
-          users = allUsersResponse.data?.users ?? [];
+          users =
+            (allUsersResponse.data?.users as DashboardUserRecord[] | undefined) ??
+            [];
         } catch {
           const mentorsResponse = await axios.get(
             `${GET_UNFOLLOWED_MENTORS}/${userInfo.id}`
           );
-          users = mentorsResponse.data?.mentorsNotFollowed ?? [];
+          users =
+            (mentorsResponse.data?.mentorsNotFollowed as
+              | DashboardUserRecord[]
+              | undefined) ?? [];
         }
 
         const suggestions: SuggestedUser[] = users
-          .filter((u: any) => u.id !== currentUserId && !followedSet.has(u.id))
-          .map((u: any) => ({
-            id: u.id,
+          .filter(
+            (user) =>
+              Number(user.id) !== currentUserId &&
+              !followedSet.has(Number(user.id))
+          )
+          .map((user) => ({
+            id: Number(user.id),
             name:
-              [u.firstname, u.lastname].filter(Boolean).join(" ").trim() ||
-              u.name ||
-              u.username ||
+              [user.firstname, user.lastname].filter(Boolean).join(" ").trim() ||
+              user.name ||
+              user.username ||
               "Unknown user",
-            subtitle: u.role ? `${u.role.toLowerCase()} on Yome` : "Yome user",
-            profilePicture: u.profilePicture || "/avatars/userprofile.png",
+            subtitle: user.role
+              ? `${user.role.toLowerCase()} on Yome`
+              : "Yome user",
+            profilePicture: user.profilePicture || "/avatars/userprofile.png",
           }));
 
         setAllSuggestions(suggestions);
         setHiddenIds([]);
-      } catch (error: any) {
-        const message =
-          error?.response?.data?.msg ||
-          error?.message ||
-          "Failed to load people suggestions.";
-        toast.error(message);
+      } catch (error) {
+        toast.error(
+          getChatErrorMessage(error, "Failed to load people suggestions.")
+        );
       } finally {
         setIsLoading(false);
       }
@@ -107,13 +122,8 @@ export default function PeopleYouMayKnow() {
       } else {
         toast.error(data?.msg || "Unable to add friend.");
       }
-    } catch (error: any) {
-      const message =
-        error?.response?.data ||
-        error?.response?.data?.msg ||
-        error?.message ||
-        "Unable to add friend.";
-      toast.error(typeof message === "string" ? message : "Unable to add friend.");
+    } catch (error) {
+      toast.error(getChatErrorMessage(error, "Unable to add friend."));
     } finally {
       setPendingIds((prev) => prev.filter((item) => item !== id));
     }
@@ -163,7 +173,7 @@ export default function PeopleYouMayKnow() {
       ) : (
         <>
           <div className="custom-scrollbar flex gap-2 overflow-x-auto pb-2 sm:gap-3">
-            {visibleSuggestions.slice(0, 12).map((person) => (
+            {visibleSuggestions.slice(0, 12).map((person, index) => (
               <article
                 key={person.id}
                 className="relative min-w-[130px] overflow-hidden rounded-xl border border-[var(--fb-divider)] bg-[var(--fb-card)] shadow-[var(--fb-shadow)] sm:min-w-[160px] sm:rounded-2xl md:min-w-[190px]"
@@ -180,6 +190,7 @@ export default function PeopleYouMayKnow() {
                     src={person.profilePicture}
                     alt={person.name}
                     fill
+                    priority={index === 0}
                     sizes="(max-width: 640px) 130px, (max-width: 768px) 160px, 190px"
                     className="object-cover"
                   />

@@ -1,11 +1,9 @@
 "use client";
-import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import IncomingCall from "@/components/common/IncomingCall";
 import IncomingVideoCall from "@/components/common/IncomingVideoCall";
-import { GET_MESSAGES_ROUTE } from "@/utils/ApiRoutes";
 import VideoCall from "./components/Call/VideoCall";
 import VoiceCall from "./components/Call/VoiceCall";
 import ChatLeftBar from "./components/ChatLeftBar";
@@ -16,8 +14,13 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useChatSocket } from "@/hooks/useChatSocket";
 import { playNotificationSound } from "@/lib/chat/notificationSound";
-import { ensureUserInfo } from "@/lib/auth/userInfo";
-import type { ActiveCall, NumericId } from "@/types/chat";
+import {
+  ensureUserInfo,
+  getUserInfoErrorMessage,
+  logUserInfoLoadError,
+} from "@/lib/auth/userInfo";
+import { getUserConversation, logChatConversationError } from "@/lib/chat/chatApi";
+import type { ActiveCall, ChatKind, NumericId } from "@/types/chat";
 
 function createIncomingCall(
   from: { id: NumericId; name?: string; profilePicture?: string },
@@ -72,9 +75,11 @@ export default function Chatpage() {
           setIsUserLoading(false);
         }
       } catch (error) {
-        console.error("Error fetching user info:", error);
+        logUserInfoLoadError("chat page session bootstrap", error);
         if (!cancelled) {
-          toast.error("Failed to load user information");
+          toast.error(
+            getUserInfoErrorMessage(error, "Failed to load user information")
+          );
           setIsUserLoading(false);
         }
       }
@@ -126,12 +131,12 @@ export default function Chatpage() {
         onlineUsers,
       });
     },
-    onMarkReadReceived: ({ id, recieverId }) => {
-      if (typeof recieverId === "undefined") return;
+    onMarkReadReceived: ({ id, receiverId }) => {
+      if (typeof receiverId === "undefined") return;
       dispatch({
         type: reducerCases.SET_MESSAGES_READ,
         id,
-        recieverId,
+        receiverId,
       });
     },
     onIncomingVoiceCall: ({ from, roomId, callType }) => {
@@ -189,14 +194,18 @@ export default function Chatpage() {
       if (!userInfo?.id || !currentChatUser?.id) return;
 
       try {
-        const {
-          data: { messages },
-        } = await axios.get(
-          `${GET_MESSAGES_ROUTE}/${userInfo.id}/${currentChatUser.id}/${currentChatUser.type || currentChatUser.identifier || "user"}`
-        );
+        const messages = await getUserConversation({
+          fromUserId: userInfo.id,
+          toUserId: currentChatUser.id,
+          chatType: (
+            currentChatUser.type ||
+            currentChatUser.identifier ||
+            "user"
+          ) as ChatKind,
+        });
         dispatch({ type: reducerCases.SET_MESSAGES, messages });
       } catch (error) {
-        console.error("Error fetching messages:", error);
+        logChatConversationError("load active conversation", error);
       }
     };
 

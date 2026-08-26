@@ -29,8 +29,8 @@ export const useGetCalls = () => {
         });
 
         setCalls(calls);
-      } catch (error) {
-        console.error(error);
+      } catch {
+        setCalls([]);
       } finally {
         setIsLoading(false);
       }

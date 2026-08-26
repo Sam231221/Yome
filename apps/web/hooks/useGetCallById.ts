@@ -17,8 +17,7 @@ export const useGetCallById = (id: string | string[]) => {
         setCall(nextCall);
 
         setIsCallLoading(false);
-      } catch (error) {
-        console.error(error);
+      } catch {
         setIsCallLoading(false);
       }
     };

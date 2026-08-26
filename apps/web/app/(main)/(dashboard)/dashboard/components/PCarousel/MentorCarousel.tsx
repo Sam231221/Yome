@@ -55,8 +55,8 @@ const MentorCarousel: React.FC<MentorCarouselProps> = ({
         );
         toast.success("You followed the user.");
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toast.error("Unable to follow this user right now.");
     }
   };
 

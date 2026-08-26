@@ -18,7 +18,11 @@ import { accountInputs, securityInputs } from "./inputs";
 import toast from "react-hot-toast";
 import Loader from "@/components/common/Loader";
 import ProfileAvatar from "@/components/common/ProfileAvatar/ProfileAvatar";
-import { ensureUserInfo } from "@/lib/auth/userInfo";
+import {
+  ensureUserInfo,
+  getUserInfoErrorMessage,
+  logUserInfoLoadError,
+} from "@/lib/auth/userInfo";
 
 interface Values {
   email: string;
@@ -73,7 +77,7 @@ const Account = () => {
         });
       } catch (error) {
         if (!cancelled) {
-          console.error("Failed to load user info:", error);
+          logUserInfoLoadError("account page session bootstrap", error);
         }
       }
     };
@@ -167,7 +171,7 @@ const Account = () => {
       }
       toast.error(data?.error || data?.msg || "Failed to update account");
     } catch (error) {
-      console.error("Error uploading file:", error);
+      toast.error(getUserInfoErrorMessage(error, "Failed to update account"));
     }
   };
 
@@ -198,8 +202,7 @@ const Account = () => {
       }
       toast.error(data?.error || data?.msg || "Failed to update password");
     } catch (error) {
-      console.error("Error updating password:", error);
-      toast.error("Failed to update password");
+      toast.error(getUserInfoErrorMessage(error, "Failed to update password"));
     }
   };
 

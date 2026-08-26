@@ -49,7 +49,7 @@ export async function getUserById(
 export async function updateUser(
   req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ): Promise<void> {
   try {
     const prisma = getPrismaInstance();
@@ -144,8 +144,7 @@ export async function updateUser(
       msg: "updated successfully",
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ ok: false, error: "Internal Server Error" });
+    next(error);
   }
 }
 

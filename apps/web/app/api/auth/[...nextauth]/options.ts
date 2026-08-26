@@ -114,7 +114,7 @@ export const options: AuthOptions = {
     async session({ session, token }) {
       // if (session?.user) session.user.role = token.role;
       // return session;
-      session.user = token as any;
+      session.user = token as typeof session.user & Record<string, unknown>;
       // Ensure id is always set
       if (session.user) {
         const u = session.user as Record<string, unknown>;

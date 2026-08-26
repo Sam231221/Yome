@@ -1,17 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import axios from "axios";
 import toast from "react-hot-toast";
-import EmojiPicker, { Theme } from "emoji-picker-react";
+import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { BsEmojiSmile, BsPlusLg } from "react-icons/bs";
 import { ImAttachment } from "react-icons/im";
 import { FaMicrophone } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { ADD_IMAGE_MESSAGE_ROUTE, ADD_MEDIA_MESSAGE_ROUTE, ADD_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
 import PhotoPicker from "@/components/common/PhotoPicker";
-import type { NumericId } from "@/types/chat";
+import type { ChatKind, ChatMessage, NumericId } from "@/types/chat";
+import {
+  getChatErrorMessage,
+  sendImageMessage,
+  sendTextMessage as postTextMessage,
+} from "@/lib/chat/chatApi";
 
 const CaptureAudio = dynamic(() => import("@/components/common/CaptureAudio"), {
   ssr: false,
@@ -28,10 +31,11 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
   const [grabImage, setGrabImage] = useState(false);
   const [{ socket, currentChatUser, userInfo }, dispatch] = useStateProvider();
+  const resolvedChatType = (chatType === "group" ? "group" : "user") as ChatKind;
 
-  const emitMessage = (targetId: NumericId, messagePayload: unknown) => {
+  const emitMessage = (targetId: NumericId, messagePayload: ChatMessage) => {
     socket?.current?.emit("send-msg", {
-      chatType,
+      chatType: resolvedChatType,
       room: `room-${targetId}`,
       to: targetId,
       from: userInfo?.id,
@@ -39,7 +43,26 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
     });
   };
 
-  //send image message
+  const appendMessage = (messagePayload: ChatMessage) => {
+    if (!currentChatUser?.id) return;
+
+    if (resolvedChatType === "user") {
+      dispatch({
+        type: reducerCases.ADD_USER_MESSAGE,
+        newMessage: messagePayload,
+        fromSelf: true,
+      });
+      return;
+    }
+
+    dispatch({
+      type: reducerCases.ADD_GROUP_MESSAGE,
+      newMessage: messagePayload,
+      groupId: currentChatUser.id,
+      fromSelf: true,
+    });
+  };
+
   const photoPickerOnChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -47,82 +70,36 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
     if (!file || !userInfo?.id || !currentChatUser?.id) return;
 
     try {
-      const formData = new FormData();
-      formData.append("image", file);
-      const uploadRes = await axios.post(ADD_IMAGE_MESSAGE_ROUTE, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      const { url, type } = uploadRes.data ?? {};
-      if (!url) return;
-      const response = await axios.post(ADD_MEDIA_MESSAGE_ROUTE, {
-        chatType,
+      const sentMessage = await sendImageMessage({
+        chatType: resolvedChatType,
         from: userInfo.id,
         to: currentChatUser.id,
-        url,
-        type: type ?? "image",
+        file,
       });
-
-      if (response.status === 201) {
-        emitMessage(currentChatUser.id, response.data.message);
-
-        if (chatType === "user") {
-          dispatch({
-            type: reducerCases.ADD_USER_MESSAGE,
-            newMessage: {
-              ...response.data.message,
-            },
-            fromSelf: true,
-          });
-        }
-        if (chatType === "group") {
-          dispatch({
-            type: reducerCases.ADD_GROUP_MESSAGE,
-            newMessage: {
-              ...response.data.message,
-            },
-            groupId: currentChatUser.id,
-            fromSelf: true,
-          });
-        }
-      }
-    } catch (err) {
-      console.log(err);
+      emitMessage(currentChatUser.id, sentMessage);
+      appendMessage(sentMessage);
+    } catch (error) {
+      toast.error(getChatErrorMessage(error, "Failed to send image."));
     }
   };
 
-  //Send text message
   const sendTextMessage = async () => {
-    if (!message.trim() || !userInfo?.id || !currentChatUser?.id) return;
+    const nextMessage = message.trim();
+    if (!nextMessage || !userInfo?.id || !currentChatUser?.id) return;
+
     try {
       setMessage("");
-      const { data } = await axios.post(ADD_MESSAGE_ROUTE, {
-        chatType: chatType,
+      const sentMessage = await postTextMessage({
+        chatType: resolvedChatType,
         from: userInfo.id,
         to: currentChatUser.id,
-        message,
+        message: nextMessage,
       });
-      emitMessage(currentChatUser.id, data.message);
-      if (chatType === "user") {
-        dispatch({
-          type: reducerCases.ADD_USER_MESSAGE,
-          newMessage: {
-            ...data.message,
-          },
-          fromSelf: true,
-        });
-      }
-      if (chatType === "group") {
-        dispatch({
-          type: reducerCases.ADD_GROUP_MESSAGE,
-          newMessage: {
-            ...data.message,
-          },
-          groupId: currentChatUser.id,
-          fromSelf: true,
-        });
-      }
-    } catch (err: any) {
-      toast.error(err.message);
+      emitMessage(currentChatUser.id, sentMessage);
+      appendMessage(sentMessage);
+    } catch (error) {
+      setMessage(nextMessage);
+      toast.error(getChatErrorMessage(error, "Failed to send message."));
     }
   };
 
@@ -130,8 +107,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
     setShowEmojiPicker(!showEmojiPicker);
   };
 
-  //just append emoji to text message.
-  const handleEmojiClick = (emoji: any) => {
+  const handleEmojiClick = (emoji: EmojiClickData) => {
     setMessage((prevMessage) => (prevMessage += emoji.emoji));
   };
 
@@ -144,16 +120,15 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
         event.target.id !== "emoji-open"
       ) {
         if (
-          emojiPickerRef.current && // Check if the emoji picker ref exists
-          !emojiPickerRef.current.contains(event.target) // Check if the click is outside of the emoji picker
+          emojiPickerRef.current &&
+          !emojiPickerRef.current.contains(event.target)
         ) {
-          setShowEmojiPicker(false); // Close the emoji picker
+          setShowEmojiPicker(false);
         }
       }
     };
 
     document.addEventListener("click", handleOutsideClick);
-    // Clean up the event listener on component unmount
     return () => {
       document.removeEventListener("click", handleOutsideClick);
     };
@@ -229,7 +204,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
           </div>
           <div className="flex items-center justify-center flex-shrink-0">
             {message.length ? (
-              <button 
+              <button
                 onClick={() => void sendTextMessage()}
                 className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
                 aria-label="Send message"
@@ -249,7 +224,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
         </>
       )}
       {showAudioRecorder && (
-        <CaptureAudio chatType={chatType} hide={setShowAudioRecorder} />
+        <CaptureAudio chatType={resolvedChatType} hide={setShowAudioRecorder} />
       )}
       {grabImage && <PhotoPicker onChange={photoPickerOnChange} />}
     </div>

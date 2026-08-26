@@ -40,7 +40,7 @@ export type ChatGroupRef = {
 export type ChatMessage = {
   id: number;
   senderId: number;
-  recieverId: number | null;
+  receiverId: number | null;
   message: string;
   type: string;
   msgType?: string;
@@ -48,7 +48,7 @@ export type ChatMessage = {
   createdAt: string | Date;
   groupId?: string | null;
   sender?: ChatMessageParty;
-  reciever?: ChatMessageParty;
+  receiver?: ChatMessageParty;
   group?: ChatGroupRef;
 };
 
@@ -58,7 +58,7 @@ export type ChatListItem = ChatIdentity & {
   message?: string;
   messageId?: NumericId;
   messageStatus?: string;
-  recieverId?: NumericId | null;
+  receiverId?: NumericId | null;
   senderId?: NumericId;
   createdAt?: string | Date;
   totalUnreadMessages?: number;
@@ -90,7 +90,7 @@ export type GroupMessageEvent = {
 
 export type MarkReadEvent = {
   id: NumericId;
-  recieverId?: NumericId;
+  receiverId?: NumericId;
 };
 
 export type IncomingCallEvent = {

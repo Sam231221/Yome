@@ -1,13 +1,9 @@
-import axios from "axios";
 import toast from "react-hot-toast";
 import React, { useEffect, useState } from "react";
 import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import {
-  GET_ALL_CONNECTED_USERS,
-  GET_ALL_CONNECTED_GROUPS,
-} from "@/utils/ApiRoutes";
+import { getAllChatContacts, getChatErrorMessage } from "@/lib/chat/chatApi";
 
 import ChatListItem from "./ChatListItem";
 
@@ -27,56 +23,37 @@ function AllContactsList() {
 
   const [searchContacts, setSearchContacts] = useState<Contact[]>([]);
 
-  // Get all contacts
   useEffect(() => {
     if (!userInfo?.id) return;
-    getContacts();
+    void getContacts();
   }, [userInfo?.id]);
 
   const getContacts = async () => {
     try {
       if (!userInfo?.id) return;
-      const {
-        data: { followedUsers },
-      } = await axios.get(`${GET_ALL_CONNECTED_USERS}/${userInfo.id}`);
 
-      const {
-        data: { groups },
-      } = await axios.get(`${GET_ALL_CONNECTED_GROUPS}/${userInfo.id}`);
+      const { followedUsers, groups } = await getAllChatContacts(userInfo.id);
+      const combinedContacts = [...followedUsers, ...groups];
+      const filteredContacts = combinedContacts.filter((obj: Contact) => {
+        if (obj.type === "group") {
+          return obj.name !== userInfo?.name;
+        }
 
-      let combinedContacts = [...followedUsers, ...groups];
-      setAllContacts(
-        combinedContacts.filter((obj: Contact) => {
-          if (obj.type === "group") {
-            return obj.name !== userInfo?.name;
-          } else {
-            return obj.firstname !== userInfo?.firstname;
-          }
-        })
-      );
-      setSearchContacts(
-        combinedContacts.filter((obj: Contact) => {
-          if (obj.type === "group") {
-            return obj.name !== userInfo?.name;
-          } else {
-            return obj.firstname !== userInfo?.firstname;
-          }
-        })
-      );
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to fetch contacts");
+        return obj.firstname !== userInfo?.firstname;
+      });
+
+      setAllContacts(filteredContacts);
+      setSearchContacts(filteredContacts);
+    } catch (error) {
+      toast.error(getChatErrorMessage(error, "Failed to fetch contacts"));
     }
   };
 
   useEffect(() => {
     if (searchTerm.length) {
-      let filteredData: Contact[] = [];
-      filteredData = allContacts.filter((obj: Contact) => {
-        if (obj.type === "group") {
-          return obj.name?.toLowerCase().includes(searchTerm.toLowerCase());
-        } else {
-          return obj.name?.toLowerCase().includes(searchTerm.toLowerCase());
-        }
+      const filteredData = allContacts.filter((obj: Contact) => {
+        const label = obj.name ?? obj.username ?? obj.firstname ?? "";
+        return label.toLowerCase().includes(searchTerm.toLowerCase());
       });
 
       setSearchContacts(filteredData);
@@ -84,6 +61,7 @@ function AllContactsList() {
       setSearchContacts(allContacts);
     }
   }, [searchTerm, allContacts]);
+
   return (
     <div className="h-full flex flex-col">
       <div className="h-24 flex items-end px-3 py-4">

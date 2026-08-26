@@ -49,8 +49,7 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
       const id = crypto.randomUUID();
       router.push(`/chat/${id}`);
       toast.success("Meeting Created");
-    } catch (error) {
-      console.error(error);
+    } catch {
       toast("Failed to create Meeting");
     }
   };

@@ -43,8 +43,8 @@ export async function getMessages(
       const messages = await prisma.messages.findMany({
         where: {
           OR: [
-            { senderId: fromId, recieverId: toId },
-            { senderId: toId, recieverId: fromId },
+            { senderId: fromId, receiverId: toId },
+            { senderId: toId, receiverId: fromId },
           ],
         },
         include: { sender: true },
@@ -119,13 +119,13 @@ export async function getInitialUsersWithMessages(
       where: { id: userId },
       include: {
         sentMessages: {
-          where: { NOT: { recieverId: null } },
-          include: { reciever: true, sender: true },
+          where: { NOT: { receiverId: null } },
+          include: { receiver: true, sender: true },
           orderBy: { createdAt: "desc" },
         },
-        recievedMessages: {
-          where: { NOT: { recieverId: null } },
-          include: { reciever: true, sender: true },
+        receivedMessages: {
+          where: { NOT: { receiverId: null } },
+          include: { receiver: true, sender: true },
           orderBy: { createdAt: "desc" },
         },
       },
@@ -141,7 +141,7 @@ export async function getInitialUsersWithMessages(
 
     const messages = [
       ...userWithPrivateMessages.sentMessages,
-      ...userWithPrivateMessages.recievedMessages,
+      ...userWithPrivateMessages.receivedMessages,
     ];
     messages.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
@@ -153,7 +153,7 @@ export async function getInitialUsersWithMessages(
 
     for (const msg of messages) {
       const isSender = msg.senderId === userId;
-      const calculatedId = isSender ? msg.recieverId! : msg.senderId;
+      const calculatedId = isSender ? msg.receiverId! : msg.senderId;
       if (msg.messageStatus === "sent") {
         messageStatusChange.push(msg.id);
       }
@@ -166,10 +166,10 @@ export async function getInitialUsersWithMessages(
           messageStatus: msg.messageStatus,
           createdAt: msg.createdAt,
           senderId: msg.senderId,
-          recieverId: msg.recieverId,
+          receiverId: msg.receiverId,
         };
-        if (isSender && msg.reciever) {
-          user = { ...user, ...msg.reciever, totalUnreadMessages: 0 };
+        if (isSender && msg.receiver) {
+          user = { ...user, ...msg.receiver, totalUnreadMessages: 0 };
         } else if (msg.sender) {
           user = {
             ...user,
@@ -290,10 +290,10 @@ export async function addMessage(
           message,
           msgType: "user",
           sender: { connect: { id: fromId } },
-          reciever: { connect: { id: toId } },
+          receiver: { connect: { id: toId } },
           messageStatus: getUser ? "delivered" : "sent",
         },
-        include: { sender: true, reciever: true },
+        include: { sender: true, receiver: true },
       });
       res.status(201).send({ message: newMessage });
       return;
@@ -359,8 +359,8 @@ export async function addMediaMessage(
     const getUser = onlineUsers.get(toId);
 
     if (chatType === "user") {
-      const recieverId = parseInt(toId, 10);
-      if (Number.isNaN(recieverId)) {
+      const receiverId = parseInt(toId, 10);
+      if (Number.isNaN(receiverId)) {
         res.status(400).json({ ok: false, error: "Invalid to for user chat" });
         return;
       }
@@ -370,10 +370,10 @@ export async function addMediaMessage(
           type: type || "audio",
           msgType: "user",
           sender: { connect: { id: fromId } },
-          reciever: { connect: { id: recieverId } },
+          receiver: { connect: { id: receiverId } },
           messageStatus: getUser ? "delivered" : "sent",
         },
-        include: { sender: true, reciever: true },
+        include: { sender: true, receiver: true },
       });
       res.status(201).json({ ok: true, message: newMessage });
       return;

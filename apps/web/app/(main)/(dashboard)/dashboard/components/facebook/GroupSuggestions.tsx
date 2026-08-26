@@ -7,6 +7,8 @@ import toast from "react-hot-toast";
 import { BsPeople, BsThreeDots } from "react-icons/bs";
 import { CONNECT_USER_TO_GROUP, GET_UNASSOCIATED_GROUPS } from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
+import type { DashboardGroupRecord } from "./types";
+import { getChatErrorMessage } from "@/lib/chat/chatApi";
 
 type SuggestedGroup = {
   id: string;
@@ -35,10 +37,11 @@ export default function GroupSuggestions() {
         const { data } = await axios.get(
           `${GET_UNASSOCIATED_GROUPS}/${userInfo.id}`
         );
-        const unassociatedGroups = data?.unassociatedGroups ?? [];
+        const unassociatedGroups =
+          (data?.unassociatedGroups as DashboardGroupRecord[] | undefined) ?? [];
 
         setGroups(
-          unassociatedGroups.map((group: any) => ({
+          unassociatedGroups.map((group) => ({
             id: group.id,
             name: group.name || "Untitled group",
             about: group.about || "Community group on Yome",
@@ -46,11 +49,9 @@ export default function GroupSuggestions() {
           }))
         );
         setHiddenIds([]);
-      } catch (error: any) {
+      } catch (error) {
         toast.error(
-          error?.response?.data?.msg ||
-            error?.message ||
-            "Failed to load group suggestions."
+          getChatErrorMessage(error, "Failed to load group suggestions.")
         );
       } finally {
         setIsLoading(false);
@@ -80,13 +81,8 @@ export default function GroupSuggestions() {
       } else {
         toast.error(data?.msg || "Unable to join the group.");
       }
-    } catch (error: any) {
-      const message =
-        error?.response?.data ||
-        error?.response?.data?.msg ||
-        error?.message ||
-        "Unable to join the group.";
-      toast.error(typeof message === "string" ? message : "Unable to join the group.");
+    } catch (error) {
+      toast.error(getChatErrorMessage(error, "Unable to join the group."));
     } finally {
       setPendingIds((prev) => prev.filter((id) => id !== groupId));
     }
@@ -134,7 +130,7 @@ export default function GroupSuggestions() {
       ) : (
         <>
           <div className="custom-scrollbar flex gap-2 overflow-x-auto pb-2 sm:gap-3">
-            {visibleGroups.slice(0, 12).map((group) => (
+            {visibleGroups.slice(0, 12).map((group, index) => (
               <article
                 key={group.id}
                 className="min-w-[160px] overflow-hidden rounded-xl border border-[var(--fb-divider)] bg-[var(--fb-card)] shadow-[var(--fb-shadow)] sm:min-w-[200px] sm:rounded-2xl md:min-w-[240px] lg:min-w-[260px]"
@@ -144,6 +140,7 @@ export default function GroupSuggestions() {
                     src={group.thumbnail}
                     alt={group.name}
                     fill
+                    priority={index === 0}
                     sizes="(max-width: 640px) 160px, (max-width: 768px) 200px, (max-width: 1024px) 240px, 260px"
                     className="object-cover"
                   />
