@@ -2,15 +2,21 @@ import type { MutableRefObject } from "react";
 import type { Socket } from "socket.io-client";
 import type { AppUserInfo } from "@/lib/auth/userInfo";
 
-export type NumericId = number | string;
+export type UserId = number;
+export type MessageId = number;
+export type GroupId = string;
+export type ConversationId = string;
+export type ChatIdentityId = UserId | GroupId;
+export type NumericId = ChatIdentityId;
 export type ChatKind = "user" | "group";
+export type MessageKind = "text" | "image" | "audio";
 export type CallDirection = "out-going" | "in-coming";
 export type CallMode = "audio" | "video";
 
 export type ChatSocketRef = MutableRefObject<Socket | null>;
 
 export type ChatIdentity = {
-  id: NumericId;
+  id: ChatIdentityId;
   name?: string;
   firstname?: string;
   lastname?: string;
@@ -19,6 +25,8 @@ export type ChatIdentity = {
   about?: string;
   profilePicture?: string;
   identifier?: string;
+  type?: string;
+  conversationId?: ConversationId | null;
   userProfile?: {
     bio?: string;
     address?: string;
@@ -26,47 +34,54 @@ export type ChatIdentity = {
 };
 
 export type ChatMessageParty = {
-  id: NumericId;
+  id: UserId;
   name?: string;
   profilePicture?: string;
 };
 
 export type ChatGroupRef = {
-  id: string;
+  id: GroupId;
   name: string;
   thumbnail?: string;
 };
 
+export type ChatConversationRef = {
+  id: ConversationId;
+};
+
 export type ChatMessage = {
-  id: number;
-  senderId: number;
-  receiverId: number | null;
+  id: MessageId;
+  senderId: UserId;
+  receiverId: UserId | null;
+  conversationId?: ConversationId | null;
   message: string;
-  type: string;
-  msgType?: string;
-  messageStatus: string;
+  type: MessageKind;
+  msgType?: ChatKind;
+  messageStatus: "sent" | "delivered" | "read";
   createdAt: string | Date;
-  groupId?: string | null;
+  groupId?: GroupId | null;
   sender?: ChatMessageParty;
   receiver?: ChatMessageParty;
   group?: ChatGroupRef;
+  conversation?: ChatConversationRef;
 };
 
 export type ChatListItem = ChatIdentity & {
   type?: string;
+  identifier?: string;
   thumbnail?: string;
   message?: string;
-  messageId?: NumericId;
-  messageStatus?: string;
-  receiverId?: NumericId | null;
-  senderId?: NumericId;
+  messageId?: MessageId;
+  messageStatus?: ChatMessage["messageStatus"];
+  receiverId?: UserId | null;
+  senderId?: UserId;
   createdAt?: string | Date;
   totalUnreadMessages?: number;
   online?: boolean;
 };
 
 export type ActiveCall = {
-  id: NumericId;
+  id: UserId;
   name?: string;
   profilePicture?: string;
   type?: CallDirection;
@@ -75,26 +90,26 @@ export type ActiveCall = {
 };
 
 export type OnlineUsersEvent = {
-  onlineUsers: NumericId[];
+  onlineUsers: UserId[];
 };
 
 export type PrivateMessageEvent = {
   message: ChatMessage;
-  from?: NumericId;
+  from?: UserId;
 };
 
 export type GroupMessageEvent = {
   message: ChatMessage;
-  groupId?: NumericId;
+  groupId?: GroupId;
 };
 
 export type MarkReadEvent = {
-  id: NumericId;
-  receiverId?: NumericId;
+  id: UserId;
+  receiverId?: UserId;
 };
 
 export type IncomingCallEvent = {
-  from: ChatIdentity & { id: NumericId; name?: string };
+  from: ChatIdentity & { id: UserId; name?: string };
   roomId: number;
   callType: CallMode;
 };

@@ -1,3 +1,4 @@
+import type { ChatKind, ChatListItem as ChatContact } from "@/types/chat";
 import toast from "react-hot-toast";
 import React, { useEffect, useState } from "react";
 import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
@@ -8,12 +9,12 @@ import { getAllChatContacts, getChatErrorMessage } from "@/lib/chat/chatApi";
 import ChatListItem from "./ChatListItem";
 
 interface Contact {
-  id: string;
-  type: string;
+  id: string | number;
+  type: ChatKind;
   name?: string;
   firstname?: string;
   username?: string;
-  identifier: string;
+  identifier: ChatKind;
 }
 
 function AllContactsList() {
@@ -97,11 +98,11 @@ function AllContactsList() {
         {searchContacts?.map((contact) => {
           return (
             <ChatListItem
-              id={contact.id}
+              id={String(contact.id)}
               type={contact.identifier}
-              data={contact}
+              data={contact as ChatContact}
               isContactPage
-              key={contact.id}
+              key={String(contact.id)}
             />
           );
         })}

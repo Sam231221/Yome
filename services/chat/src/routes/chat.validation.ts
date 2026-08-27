@@ -4,8 +4,10 @@ const positiveIntString = z
   .string()
   .trim()
   .regex(/^\d+$/, "must be a positive integer");
+const uuidString = z.string().trim().uuid("must be a valid UUID");
 const messageSchema = z.string().trim().min(1).max(5000);
 const mediaUrlSchema = z.string().trim().min(1).max(2048);
+const chatMediaTypeSchema = z.enum(["image", "audio"]);
 
 export const getMessagesSchema = {
   params: z
@@ -36,7 +38,7 @@ export const addMessageSchema = {
     z.object({
       chatType: z.literal("group"),
       from: z.coerce.number().int().positive(),
-      to: z.string().trim().min(1).max(255),
+      to: uuidString,
       message: messageSchema,
     }),
   ]),
@@ -49,19 +51,26 @@ export const addMediaMessageSchema = {
       from: z.coerce.number().int().positive(),
       to: z.coerce.number().int().positive(),
       url: mediaUrlSchema,
-      type: z.string().trim().min(1).max(50).optional(),
+      type: chatMediaTypeSchema.optional(),
+      conversationId: z.string().trim().min(1).optional(),
     }),
     z.object({
       chatType: z.literal("group"),
       from: z.coerce.number().int().positive(),
-      to: z.string().trim().min(1).max(255),
+      to: uuidString,
       url: mediaUrlSchema,
-      type: z.string().trim().min(1).max(50).optional(),
+      type: chatMediaTypeSchema.optional(),
     }),
   ]),
 };
 
-export const groupMessagesSchema = {
+export const initialGroupMessagesSchema = {
+  params: z.object({
+    userId: positiveIntString,
+  }),
+};
+
+export const legacyInitialGroupMessagesSchema = {
   params: z.object({
     group_id: positiveIntString,
   }),
@@ -70,5 +79,12 @@ export const groupMessagesSchema = {
 export const initialContactsSchema = {
   params: z.object({
     from: positiveIntString,
+  }),
+};
+
+export const directConversationSchema = {
+  body: z.object({
+    from: z.coerce.number().int().positive(),
+    to: z.coerce.number().int().positive(),
   }),
 };

@@ -23,8 +23,8 @@ Yome is a comprehensive communication platform featuring:
 - **Video Calling**: Integrated video communication using Stream.io
 - **Social Features**: Posts, comments, likes, and user interactions
 - **Authentication**: Secure user authentication and authorization
-- **Media Management**: File uploads and media handling
-- **Notifications**: Real-time notification system
+- **Media Management**: File uploads and S3-backed media handling
+- **Notifications**: Stub notification acceptance endpoint for future delivery backends
 
 ## 🏗 Architecture
 
@@ -68,8 +68,9 @@ The backend follows a **microservices pattern** with dedicated services:
    - Media retrieval
 
 6. **Notifications Service** (Port 4105)
-   - Real-time notifications
-   - Notification delivery and management
+   - Stub notification acceptance endpoint
+   - Returns `202 Accepted` for valid send requests
+   - Intended extension point for email, push, or in-app delivery later
 
 ### Communication Flow
 
@@ -257,6 +258,34 @@ yome/
    - Frontend: http://localhost:3000
    - Gateway: http://localhost:4100
    - Individual services on ports 4101-4105
+
+## Notifications Status
+
+The notifications service is currently a stub, not a fully implemented delivery pipeline.
+
+- `POST /api/notifications/send` validates a minimal payload and returns `202 Accepted`.
+- No email, push, retry queue, or persistent notification store is wired in yet.
+- Treat it as a contract placeholder until a real delivery backend is chosen.
+
+## Environment Variables
+
+Use the root [.env.example](/Users/admin/Documents/Developer/FullStackDev/Yome/.env.example:1) as the main source of truth for local setup.
+
+- Copy `.env.example` to `.env` at the repo root for normal local development.
+- Service-level `.env.example` files in `services/*/` are thin references for service-specific overrides.
+- The most important shared variables are:
+  - database: `DATABASE_URL`, `DIRECT_URL`
+  - internal service auth: `GATEWAY_SHARED_TOKEN`, `NEXTAUTH_SECRET`
+  - frontend runtime: `NEXT_PUBLIC_BACKEND_API`, `NEXT_PUBLIC_CHAT_SOCKET_URL`, `FRONTEND_URL`
+  - object storage/video providers: `AWS_*`, `NEXT_PUBLIC_STREAM_API_KEY`, `STREAM_SECRET_KEY`, `ZEGO_*`
+
+Runtime uploads now use AWS S3-compatible object storage.
+
+- `services/media` uploads chat images and audio to S3 and returns direct public URLs.
+- `services/user` uploads profile avatars to S3 and stores the public URL in `profilePicture`.
+- Existing Cloudinary URLs already stored in the database remain supported during the compatibility window.
+- New uploads require valid `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET`, and either `AWS_S3_PUBLIC_BASE_URL` or `AWS_CLOUDFRONT_URL`.
+- New object keys are organized under stable media folders such as `media/chat/messages/audio/YYYY/MM/DD/` and `media/profiles/<userId>/avatars/YYYY/MM/`.
 
 ## 💻 Development
 
@@ -475,50 +504,6 @@ Token was not being properly refreshed after expiration.
 Now using refresh token rotation for better security.
 ```
 
-## 🌍 Environment Variables
-
-### Required Variables
-
-```env
-# Database
-DATABASE_URL=            # Prisma connection URL
-DIRECT_URL=             # Direct database connection
-
-# Services
-AUTH_SERVICE_URL=       # Auth service endpoint
-USER_SERVICE_URL=       # User service endpoint
-CHAT_SERVICE_URL=       # Chat service endpoint
-MEDIA_SERVICE_URL=      # Media service endpoint
-NOTIFICATIONS_SERVICE_URL= # Notifications service endpoint
-
-# Authentication
-NEXTAUTH_SECRET=        # NextAuth.js secret
-NEXTAUTH_URL=          # Frontend URL
-GATEWAY_SHARED_TOKEN=   # Inter-service communication secret
-
-# Stream.io (Video)
-NEXT_PUBLIC_STREAM_API_KEY= # Public API key
-STREAM_SECRET_KEY=          # Secret key
-```
-
-### Optional Variables
-
-```env
-# Redis
-REDIS_URL=             # Redis connection URL (default: localhost:6379)
-
-# Email (for notifications)
-SMTP_HOST=
-SMTP_PORT=
-SMTP_USER=
-SMTP_PASS=
-
-# Node Environment
-NODE_ENV=              # development | production | test
-```
-
----
-
 ## 📞 Support & Contributing
 
 ### Getting Help
@@ -553,4 +538,4 @@ NODE_ENV=              # development | production | test
 
 ---
 
-**Last Updated**: February 2026
+**Last Updated**: August 27, 2026

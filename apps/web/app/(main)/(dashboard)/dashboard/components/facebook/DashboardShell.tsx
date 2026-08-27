@@ -386,7 +386,14 @@ export default function DashboardShell({
     onIncomingVoiceCall: ({ from, roomId, callType }) => {
       dispatch({
         type: reducerCases.SET_INCOMING_VOICE_CALL,
-        incomingVoiceCall: { ...from, roomId, callType },
+        incomingVoiceCall: {
+          id: from.id,
+          name: from.name,
+          profilePicture: from.profilePicture,
+          roomId,
+          callType,
+          type: "in-coming",
+        },
       });
     },
     onVoiceCallRejected: () => {
@@ -402,7 +409,14 @@ export default function DashboardShell({
     onIncomingVideoCall: ({ from, roomId, callType }) => {
       dispatch({
         type: reducerCases.SET_INCOMING_VIDEO_CALL,
-        incomingVideoCall: { ...from, roomId, callType },
+        incomingVideoCall: {
+          id: from.id,
+          name: from.name,
+          profilePicture: from.profilePicture,
+          roomId,
+          callType,
+          type: "in-coming",
+        },
       });
     },
     onVideoCallRejected: () => {

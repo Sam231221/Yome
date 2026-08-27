@@ -34,7 +34,8 @@ const VideoChatOnBoardingContent = () => {
   // get more info about custom call type:  https://getstream.io/video/docs/react/guides/configuring-call-types/
   const notAllowed =
     call.type === "invited" &&
-    (!userInfo || !call.state.members.find((m) => m.user.id === userInfo.id));
+    (!userInfo ||
+      !call.state.members.find((m) => String(m.user.id) === String(userInfo.id)));
 
   if (notAllowed) return <h1>not allowed</h1>;
 

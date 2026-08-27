@@ -49,12 +49,10 @@ export type UploadTarget = "chat-audio" | "chat-image" | "profile-avatar";
 type ChatUploadScope =
   | {
       chatType: "direct";
-      senderId: number;
-      receiverId: number;
+      conversationId: string;
     }
   | {
       chatType: "group";
-      senderId: number;
       groupId: string;
     };
 
@@ -246,18 +244,16 @@ const buildObjectKey = ({
     return `media/chat/groups/group-${groupKey}/messages/${mediaFolder}/${year}/${month}/${day}/${filename}`;
   }
 
-  const orderedUserIds = [chatScope.senderId, chatScope.receiverId].sort(
-    (left, right) => left - right
-  );
-  const directThreadKey = orderedUserIds
-    .map((id) => `user-${id}`)
-    .join("__");
-
-  if (target === "chat-audio") {
-    return `media/chat/direct/${directThreadKey}/messages/audio/${year}/${month}/${day}/${filename}`;
+  const conversationKey = normalizeStorageSegment(chatScope.conversationId);
+  if (!conversationKey) {
+    throw new Error("direct chat uploads require a valid conversationId");
   }
 
-  return `media/chat/direct/${directThreadKey}/messages/images/${year}/${month}/${day}/${filename}`;
+  if (target === "chat-audio") {
+    return `media/chat/direct/conversation-${conversationKey}/messages/audio/${year}/${month}/${day}/${filename}`;
+  }
+
+  return `media/chat/direct/conversation-${conversationKey}/messages/images/${year}/${month}/${day}/${filename}`;
 };
 
 const buildScopedKey = (key: string) => {

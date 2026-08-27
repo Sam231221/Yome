@@ -1,148 +1,49 @@
-# 🚨 Quick Issues Summary
+# Current Issues Summary
 
-## Critical Issues (Fix Immediately!)
+**Updated**: August 27, 2026
 
-1. **Real credentials in .env** - Database password and API keys exposed
-2. **TypeScript `any` everywhere** - No type safety in State, Context, hooks
-3. **Weak default token** - `GATEWAY_SHARED_TOKEN=change-me`
+## Most Important Live Issues
 
-## High Priority
+1. **Dashboard/account request cleanup is still incomplete**
+   - Core reducer/socket `any` debt has been cleaned up, but some dashboard/account flows still use component-local Axios and response parsing.
+   - Biggest files: [apps/web/app/(main)/(dashboard)/dashboard/components/facebook/PeopleYouMayKnow.tsx](/Users/admin/Documents/Developer/FullStackDev/Yome/apps/web/app/(main)/(dashboard)/dashboard/components/facebook/PeopleYouMayKnow.tsx:1), [apps/web/app/(main)/(dashboard)/account/page.tsx](/Users/admin/Documents/Developer/FullStackDev/Yome/apps/web/app/(main)/(dashboard)/account/page.tsx:1)
 
-4. **Spelling errors**: "recieve" instead of "receive" - 20+ files affected
-5. **Empty typo folder**: `FormInut/` should be deleted
-6. **20+ console.log statements** in production code
-7. **Missing .env.example** at project root
-8. **TODO: Notifications not implemented** but service exists
-9. **No input validation** on API routes
-10. **Inconsistent error handling** patterns
+2. **S3 runtime storage migration is implemented and needs AWS smoke validation**
+   - New runtime uploads now use shared S3 helpers for chat media and avatars.
+   - Legacy Cloudinary URLs still remain in seed/demo data and are intentionally supported for compatibility.
+   - Biggest files: [packages/shared/src/storage/s3.ts](/Users/admin/Documents/Developer/FullStackDev/Yome/packages/shared/src/storage/s3.ts:1), [services/media/src/controllers/media.controller.ts](/Users/admin/Documents/Developer/FullStackDev/Yome/services/media/src/controllers/media.controller.ts:1), [services/user/src/controllers/user.controller.ts](/Users/admin/Documents/Developer/FullStackDev/Yome/services/user/src/controllers/user.controller.ts:1), [apps/web/next.config.js](/Users/admin/Documents/Developer/FullStackDev/Yome/apps/web/next.config.js:1)
 
-## Medium Priority
+3. **Debug logging cleanup is still incomplete**
+   - Chat bootstrap/request noise is much better, but there are still frontend and service `console.*` calls worth reviewing.
+   - Representative files: [apps/web/app/(main)/(dashboard)/account/page.tsx](/Users/admin/Documents/Developer/FullStackDev/Yome/apps/web/app/(main)/(dashboard)/account/page.tsx:76), [apps/web/components/common/IncomingCall.tsx](/Users/admin/Documents/Developer/FullStackDev/Yome/apps/web/components/common/IncomingCall.tsx:18)
 
-11. **Mixed naming conventions** - snake_case vs camelCase
-12. **Missing database indexes** on foreign keys
-13. **No unique constraint** on Like table (users can like posts multiple times)
-14. **No Error Boundaries** in React
-15. **No loading states** for many async operations
-16. **Mixed environment variable naming**
-17. **No rate limiting** specifically for auth endpoints
-18. **Commented out code** should be removed
-19. **TypeScript strict mode** not verified
-20. **No CSRF protection** documented
+4. **Notifications implementation is intentionally limited**
+   - The service currently accepts valid requests and returns `202`, but there is still no actual delivery backend.
+   - Biggest files: [services/notifications/src/index.ts](/Users/admin/Documents/Developer/FullStackDev/Yome/services/notifications/src/index.ts:9), [services/notifications/src/routes/notifications.routes.ts](/Users/admin/Documents/Developer/FullStackDev/Yome/services/notifications/src/routes/notifications.routes.ts:13), [README.md](/Users/admin/Documents/Developer/FullStackDev/Yome/README.md:1)
 
-## Files to Fix First
+## Already Fixed Or Stale From The Previous Review
 
-### 1. Database Schema
+- The `FormInut` folder issue is stale; only `FormInput` exists now.
+- Service/package strict typing is already enabled through the shared TypeScript base config.
+- Shared Express error handling already exists.
+- Gateway rate limiting already exists.
+- The root `.env` file does not appear in current git history for this repo.
+- Route validation is now in place for auth, user, and chat services.
+- The `receiver` migration has been completed.
+- The root `.env.example` already exists and the README now points to it.
+- Cloudinary is no longer used for new runtime uploads in the media and user services.
 
-- `packages/database/prisma/schema.prisma`
-  - Fix: recievedMessages → receivedMessages
-  - Fix: reciever → receiver
-  - Fix: recieverId → receiverId
-  - Add: Unique constraint on Like (userId, postId)
-  - Add: Indexes on Messages foreign keys
+## What We Should Do First
 
-### 2. Type Safety
+1. Run real AWS smoke tests for avatar, image, and audio uploads.
+2. Finish standardizing the older dashboard/account request helpers to match the cleaned chat API layer.
+3. Continue debug logging cleanup in dashboard/account/call flows.
+4. Decide whether notifications stay as a stub or get a first real delivery backend.
+5. Revisit stricter web compiler settings after the remaining dashboard typing is tightened.
 
-- `apps/web/context/StateReducers.ts` - Replace all `any` types
-- `apps/web/context/StateContext.tsx` - Update types
-- `apps/web/hooks/useChatSocket.ts` - Define proper SocketPayload type
+## Repo Status Snapshot
 
-### 3. Security
-
-- `/.env` - Verify not in git history, rotate credentials
-- Create `/.env.example` with placeholders
-- Update `GATEWAY_SHARED_TOKEN` to strong value
-
-### 4. Clean Up
-
-- Delete: `apps/web/components/FormInut/`
-- Remove console.log from:
-  - `apps/web/providers/StreamClientProvider.tsx:73`
-  - `apps/web/components/common/IncomingVideoCall.tsx:29`
-  - `apps/web/app/(communication)/chat/page.tsx:70,182`
-  - 15+ more files (see full report)
-
-## Quick Wins (Easy Fixes)
-
-```bash
-# 1. Delete empty typo folder
-rm -rf apps/web/components/FormInut
-
-# 2. Check if .env was committed
-git log --all --full-history -- .env
-
-# 3. Find all console.log statements
-grep -r "console\." apps/web --exclude-dir=node_modules
-
-# 4. Count 'any' types
-grep -r ": any" apps/web --exclude-dir=node_modules | wc -l
-```
-
-## Pattern to Follow for Fixes
-
-### Replace console.log
-
-```typescript
-// ❌ Before
-console.log("Error:", error);
-
-// ✅ After
-import { createLogger } from "@repo/shared";
-const logger = createLogger("ComponentName");
-logger.error("Error occurred", { error });
-```
-
-### Replace any types
-
-```typescript
-// ❌ Before
-const [messages, setMessages] = useState<any[]>([]);
-
-// ✅ After
-interface Message {
-  id: number;
-  senderId: number;
-  message: string;
-  createdAt: Date;
-}
-const [messages, setMessages] = useState<Message[]>([]);
-```
-
-### Add validation
-
-```typescript
-// ❌ Before
-router.post("/send", async (req, res) => {
-  const { message, to } = req.body;
-  // ...
-});
-
-// ✅ After
-import { z } from "zod";
-
-const schema = z.object({
-  message: z.string().min(1).max(5000),
-  to: z.string(),
-});
-
-router.post("/send", async (req, res) => {
-  const validated = schema.parse(req.body);
-  // ...
-});
-```
-
-## Metrics
-
-- **Total Issues**: 29
-- **Critical**: 3 🔴
-- **High**: 8 🟠
-- **Medium**: 13 🟡
-- **Low**: 6 🔵
-- **Files with issues**: 50+
-- **Spelling errors**: 20+ occurrences of "recieve"
-
-## Next Steps
-
-1. Read full report: [CODE_REVIEW.md](CODE_REVIEW.md)
-2. Address critical issues today
-3. Create tickets for high priority items
-4. Schedule cleanup sprint for medium/low priority
+- `bun run check-types:all`: passing
+- `bunx tsc -p apps/web/tsconfig.json --noEmit`: passing
+- Review docs: updated to match current repo state
+- Recommended next code pass: AWS upload smoke verification, then dashboard/account cleanup

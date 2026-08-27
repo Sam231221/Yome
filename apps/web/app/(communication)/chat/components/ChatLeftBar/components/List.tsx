@@ -32,13 +32,13 @@ export default function List({
     const getContacts = async () => {
       try {
         if (!userInfo?.id || cancelled) return;
-        const { usersWithLatestPivateMessages, onlineUsers } =
+        const { usersWithLatestPrivateMessages, onlineUsers } =
           await getInitialUserMeta(userInfo.id);
         if (cancelled) return;
 
         dispatch({
           type: reducerCases.SET_USER_CONTACTS,
-          userContacts: usersWithLatestPivateMessages,
+          userContacts: usersWithLatestPrivateMessages,
         });
         dispatch({ type: reducerCases.SET_ONLINE_USERS, onlineUsers });
       } catch (error) {

@@ -28,6 +28,7 @@ export const CONNECT_USER_TO_MENTOR = `${USER_ROUTE}/connect-user-to-mentor`;
 
 //For user and groups
 export const GET_MESSAGES_ROUTE = `${MESSAGES_ROUTE}/get-messages`;
+export const GET_OR_CREATE_DIRECT_CONVERSATION_ROUTE = `${MESSAGES_ROUTE}/get-or-create-direct-conversation`;
 
 //One to One Message
 export const ADD_MESSAGE_ROUTE = `${MESSAGES_ROUTE}/add-message`;

@@ -42,6 +42,8 @@ model User {
   verifyTokenExpiry         DateTime?
   groupAdmin                Group[]                 @relation("AdminOfGroup")
   group                     Group[]                 @relation("MembersOfGroup")
+  directConversationsA      Conversation[]          @relation("ConversationParticipantA")
+  directConversationsB      Conversation[]          @relation("ConversationParticipantB")
   role                      Role                    @default(USER)
   posts                     Post[]
   comments                  Comment[]
@@ -68,6 +70,8 @@ model Messages {
   senderId      Int
   receiver      User?    @relation("receivedMessages", fields: [receiverId], references: [id])
   receiverId    Int?
+  conversation  Conversation? @relation(fields: [conversationId], references: [id])
+  conversationId String?
   seenBy        User[]   @relation("MessageSeenBy")
   type          String   @default("text")
   message       String
@@ -76,6 +80,8 @@ model Messages {
   group         Group?   @relation(fields: [groupId], references: [id])
   groupId       String?
   createdAt     DateTime @default(now())
+
+  @@index([conversationId])
 }
 
 model Group {
@@ -89,6 +95,21 @@ model Group {
   thumbnail  String     @default("")
   created_at DateTime   @default(now())
   updated_at DateTime   @updatedAt
+}
+
+model Conversation {
+  id             String     @id @default(uuid())
+  participantA   User       @relation("ConversationParticipantA", fields: [participantAId], references: [id])
+  participantAId Int
+  participantB   User       @relation("ConversationParticipantB", fields: [participantBId], references: [id])
+  participantBId Int
+  messages       Messages[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@unique([participantAId, participantBId])
+  @@index([participantAId])
+  @@index([participantBId])
 }
 
 model Post {

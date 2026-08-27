@@ -1,12 +1,115 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
 import { onlineUsers } from "../state/online-users.js";
+import {
+  getDirectConversation,
+  getOrCreateDirectConversation,
+} from "../lib/conversations.js";
+
+type SupportedMessageType = "text" | "image" | "audio";
+type ChatRequestKind = "user" | "group";
 
 function getAuthenticatedUserId(req: Request): number | null {
   const raw = req.headers["x-user-id"];
   const value = Array.isArray(raw) ? raw[0] : raw;
   const id = Number.parseInt(String(value ?? ""), 10);
   return Number.isNaN(id) ? null : id;
+}
+
+function parseRequiredUserId(value: unknown): number | null {
+  const id = Number.parseInt(String(value ?? ""), 10);
+  return Number.isNaN(id) ? null : id;
+}
+
+function buildLegacyDirectConversationKey(
+  leftUserId: number,
+  rightUserId: number
+) {
+  const ordered = [leftUserId, rightUserId].sort((left, right) => left - right);
+  return `direct-${ordered[0]}-${ordered[1]}`;
+}
+
+function normalizeMessageType(type: unknown, fallback: SupportedMessageType) {
+  return type === "image" || type === "audio" || type === "text" ? type : fallback;
+}
+
+async function createDirectMessage(params: {
+  authenticatedUserId: number;
+  fromId: number;
+  toId: number;
+  message: string;
+  type: SupportedMessageType;
+  conversationId?: string;
+}) {
+  const prisma = getPrismaInstance();
+  const { authenticatedUserId, fromId, toId, message, type, conversationId } =
+    params;
+
+  if (fromId !== authenticatedUserId) {
+    throw new Error("Forbidden");
+  }
+
+  const resolvedConversation = conversationId
+    ? await prisma.conversation.findUnique({
+        where: { id: conversationId },
+      })
+    : null;
+
+  const conversation =
+    resolvedConversation ??
+    (await getOrCreateDirectConversation(prisma, fromId, toId));
+
+  const isRecipientOnline = onlineUsers.get(String(toId));
+
+  return prisma.messages.create({
+    data: {
+      message,
+      type,
+      msgType: "user",
+      sender: { connect: { id: fromId } },
+      receiver: { connect: { id: toId } },
+      conversation: { connect: { id: conversation.id } },
+      messageStatus: isRecipientOnline ? "delivered" : "sent",
+    },
+    include: { sender: true, receiver: true, conversation: true },
+  });
+}
+
+export async function getOrCreateConversation(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+
+    const fromId = parseRequiredUserId(req.body?.from);
+    const toId = parseRequiredUserId(req.body?.to);
+
+    if (fromId === null) {
+      res.status(400).json({ ok: false, error: "Invalid from user id" });
+      return;
+    }
+    if (toId === null) {
+      res.status(400).json({ ok: false, error: "Invalid to user id" });
+      return;
+    }
+    if (fromId !== authenticatedUserId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
+
+    const prisma = getPrismaInstance();
+    const conversation = await getOrCreateDirectConversation(prisma, fromId, toId);
+
+    res.status(200).json({ ok: true, conversation });
+  } catch (error) {
+    next(error);
+  }
 }
 
 export async function getMessages(
@@ -21,11 +124,12 @@ export async function getMessages(
       res.status(401).json({ ok: false, error: "Unauthorized" });
       return;
     }
-    const from = String(req.params.from ?? "");
+
+    const fromId = parseRequiredUserId(req.params.from);
     const to = String(req.params.to ?? "");
-    const chatType = String(req.params.chatType ?? "");
-    const fromId = parseInt(from, 10);
-    if (Number.isNaN(fromId)) {
+    const chatType = String(req.params.chatType ?? "") as ChatRequestKind;
+
+    if (fromId === null) {
       res.status(400).json({ ok: false, error: "Invalid from user id" });
       return;
     }
@@ -35,44 +139,50 @@ export async function getMessages(
     }
 
     if (chatType === "user") {
-      const toId = parseInt(to, 10);
-      if (Number.isNaN(toId)) {
+      const toId = parseRequiredUserId(to);
+      if (toId === null) {
         res.status(400).json({ ok: false, error: "Invalid to user id" });
         return;
       }
+
+      const conversation = await getDirectConversation(prisma, fromId, toId);
+      if (!conversation) {
+        res.status(200).json({ messages: [] });
+        return;
+      }
+
       const messages = await prisma.messages.findMany({
-        where: {
-          OR: [
-            { senderId: fromId, receiverId: toId },
-            { senderId: toId, receiverId: fromId },
-          ],
-        },
-        include: { sender: true },
+        where: { conversationId: conversation.id },
+        include: { sender: true, receiver: true, conversation: true },
         orderBy: { id: "asc" },
       });
 
-      const unreadIds: number[] = [];
-      messages.forEach(
-        (
-          message: (typeof messages)[number],
-          index: number
-        ) => {
-          if (
+      const unreadIds = messages
+        .filter(
+          (message: {
+            messageStatus: string;
+            senderId: number;
+            receiverId: number | null;
+          }) =>
             message.messageStatus !== "read" &&
-            message.senderId === toId
-          ) {
-            (messages[index] as typeof message & { messageStatus: string }).messageStatus = "read";
-            unreadIds.push(message.id);
-          }
-        }
-      );
+            message.senderId === toId &&
+            message.receiverId === fromId
+        )
+        .map((message: { id: number }) => message.id);
 
       if (unreadIds.length > 0) {
         await prisma.messages.updateMany({
           where: { id: { in: unreadIds } },
           data: { messageStatus: "read" },
         });
+
+        messages.forEach((message: (typeof messages)[number]) => {
+          if (unreadIds.includes(message.id)) {
+            message.messageStatus = "read";
+          }
+        });
       }
+
       res.status(200).json({ messages });
       return;
     }
@@ -80,7 +190,7 @@ export async function getMessages(
     if (chatType === "group") {
       const messages = await prisma.messages.findMany({
         where: { groupId: to },
-        include: { sender: true },
+        include: { sender: true, group: true },
         orderBy: { id: "asc" },
       });
       res.status(200).json({ messages });
@@ -88,8 +198,8 @@ export async function getMessages(
     }
 
     res.status(400).json({ ok: false, error: "Invalid chatType" });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 }
 
@@ -99,13 +209,14 @@ export async function getInitialUsersWithMessages(
   next: NextFunction
 ): Promise<void> {
   try {
-    const userId = parseInt(String(req.params.from ?? ""), 10);
+    const userId = parseRequiredUserId(req.params.from);
     const authenticatedUserId = getAuthenticatedUserId(req);
+
     if (authenticatedUserId === null) {
       res.status(401).json({ ok: false, error: "Unauthorized" });
       return;
     }
-    if (Number.isNaN(userId)) {
+    if (userId === null) {
       res.status(400).json({ ok: false, error: "Invalid user id" });
       return;
     }
@@ -113,53 +224,44 @@ export async function getInitialUsersWithMessages(
       res.status(403).json({ ok: false, error: "Forbidden" });
       return;
     }
-    const prisma = getPrismaInstance();
 
-    const userWithPrivateMessages = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        sentMessages: {
-          where: { NOT: { receiverId: null } },
-          include: { receiver: true, sender: true },
-          orderBy: { createdAt: "desc" },
-        },
-        receivedMessages: {
-          where: { NOT: { receiverId: null } },
-          include: { receiver: true, sender: true },
-          orderBy: { createdAt: "desc" },
-        },
+    const prisma = getPrismaInstance();
+    const directMessages = await prisma.messages.findMany({
+      where: {
+        receiverId: { not: null },
+        OR: [{ senderId: userId }, { receiverId: userId }],
       },
+      include: {
+        sender: { include: { userProfile: true } },
+        receiver: { include: { userProfile: true } },
+        conversation: true,
+      },
+      orderBy: { createdAt: "desc" },
     });
 
-    if (!userWithPrivateMessages) {
-      res.status(200).json({
-        usersWithLatestPivateMessages: [],
-        onlineUsers: Array.from(onlineUsers.keys()),
-      });
-      return;
-    }
-
-    const messages = [
-      ...userWithPrivateMessages.sentMessages,
-      ...userWithPrivateMessages.receivedMessages,
-    ];
-    messages.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-    const users = new Map<
-      number,
+    const conversations = new Map<
+      string,
       Record<string, unknown> & { totalUnreadMessages?: number }
     >();
     const messageStatusChange: number[] = [];
 
-    for (const msg of messages) {
+    for (const msg of directMessages) {
+      const conversationKey =
+        msg.conversationId ??
+        buildLegacyDirectConversationKey(msg.senderId, msg.receiverId ?? userId);
+
       const isSender = msg.senderId === userId;
-      const calculatedId = isSender ? msg.receiverId! : msg.senderId;
-      if (msg.messageStatus === "sent") {
+      const otherParticipantId = isSender ? msg.receiverId : msg.senderId;
+      if (!otherParticipantId) continue;
+
+      if (msg.messageStatus === "sent" && msg.receiverId === userId) {
         messageStatusChange.push(msg.id);
       }
 
-      if (!users.get(calculatedId)) {
-        let user: Record<string, unknown> & { totalUnreadMessages?: number } = {
+      if (!conversations.has(conversationKey)) {
+        const otherParticipant = isSender ? msg.receiver : msg.sender;
+        conversations.set(conversationKey, {
+          conversationId: msg.conversationId,
           messageId: msg.id,
           type: msg.type,
           message: msg.message,
@@ -167,21 +269,25 @@ export async function getInitialUsersWithMessages(
           createdAt: msg.createdAt,
           senderId: msg.senderId,
           receiverId: msg.receiverId,
-        };
-        if (isSender && msg.receiver) {
-          user = { ...user, ...msg.receiver, totalUnreadMessages: 0 };
-        } else if (msg.sender) {
-          user = {
-            ...user,
-            ...msg.sender,
-            totalUnreadMessages: msg.messageStatus !== "read" ? 1 : 0,
-          };
-        }
-        users.set(calculatedId, user);
-      } else if (msg.messageStatus !== "read" && !isSender) {
-        const existing = users.get(calculatedId)!;
+          id: otherParticipantId,
+          name: otherParticipant?.name ?? "",
+          firstname: otherParticipant?.firstname,
+          lastname: otherParticipant?.lastname,
+          username: otherParticipant?.username,
+          email: otherParticipant?.email,
+          identifier: otherParticipant?.identifier ?? "user",
+          profilePicture: otherParticipant?.profilePicture,
+          userProfile: otherParticipant?.userProfile,
+          totalUnreadMessages:
+            !isSender && msg.messageStatus !== "read" ? 1 : 0,
+        });
+        continue;
+      }
+
+      if (!isSender && msg.messageStatus !== "read") {
+        const existing = conversations.get(conversationKey)!;
         existing.totalUnreadMessages = (existing.totalUnreadMessages ?? 0) + 1;
-        users.set(calculatedId, existing);
+        conversations.set(conversationKey, existing);
       }
     }
 
@@ -192,12 +298,15 @@ export async function getInitialUsersWithMessages(
       });
     }
 
+    const usersWithLatestPrivateMessages = Array.from(conversations.values());
+
     res.status(200).json({
-      usersWithLatestPivateMessages: Array.from(users.values()),
-      onlineUsers: Array.from(onlineUsers.keys()),
+      usersWithLatestPrivateMessages,
+      usersWithLatestPivateMessages: usersWithLatestPrivateMessages,
+      onlineUsers: Array.from(onlineUsers.keys()).map((id) => Number(id)),
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 }
 
@@ -207,13 +316,13 @@ export async function getInitialGroupsWithMessages(
   next: NextFunction
 ): Promise<void> {
   try {
-    const userId = parseInt(String(req.params.group_id ?? ""), 10);
+    const userId = parseRequiredUserId(req.params.userId ?? req.params.group_id);
     const authenticatedUserId = getAuthenticatedUserId(req);
     if (authenticatedUserId === null) {
       res.status(401).json({ ok: false, error: "Unauthorized" });
       return;
     }
-    if (Number.isNaN(userId)) {
+    if (userId === null) {
       res.status(400).json({ ok: false, error: "Invalid user id" });
       return;
     }
@@ -221,6 +330,7 @@ export async function getInitialGroupsWithMessages(
       res.status(403).json({ ok: false, error: "Forbidden" });
       return;
     }
+
     const prisma = getPrismaInstance();
     const groupsWithLatestMessages = await prisma.group.findMany({
       where: {
@@ -245,8 +355,8 @@ export async function getInitialGroupsWithMessages(
     res.status(200).json({
       groupsWithLatestGroupMessages: groupsWithLatestMessages,
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 }
 
@@ -256,20 +366,21 @@ export async function addMessage(
   next: NextFunction
 ): Promise<void> {
   try {
-    const prisma = getPrismaInstance();
     const authenticatedUserId = getAuthenticatedUserId(req);
     if (authenticatedUserId === null) {
       res.status(401).json({ ok: false, error: "Unauthorized" });
       return;
     }
+
     const { chatType, from, to, message } = req.body as {
-      chatType?: string;
-      from?: string;
-      to?: string;
+      chatType?: ChatRequestKind;
+      from?: string | number;
+      to?: string | number;
       message?: string;
     };
-    const fromId = parseInt(String(from ?? ""), 10);
-    if (Number.isNaN(fromId)) {
+
+    const fromId = parseRequiredUserId(from);
+    if (fromId === null) {
       res.status(400).json({ ok: false, error: "Invalid from user id" });
       return;
     }
@@ -277,33 +388,33 @@ export async function addMessage(
       res.status(403).json({ ok: false, error: "Forbidden" });
       return;
     }
-    const getUser = to ? onlineUsers.get(String(to)) : undefined;
 
-    if (message && from && to && chatType === "user") {
-      const toId = parseInt(to, 10);
-      if (Number.isNaN(toId)) {
+    const prisma = getPrismaInstance();
+
+    if (message && to && chatType === "user") {
+      const toId = parseRequiredUserId(to);
+      if (toId === null) {
         res.status(400).json({ ok: false, error: "Invalid to user id" });
         return;
       }
-      const newMessage = await prisma.messages.create({
-        data: {
-          message,
-          msgType: "user",
-          sender: { connect: { id: fromId } },
-          receiver: { connect: { id: toId } },
-          messageStatus: getUser ? "delivered" : "sent",
-        },
-        include: { sender: true, receiver: true },
+
+      const newMessage = await createDirectMessage({
+        authenticatedUserId,
+        fromId,
+        toId,
+        message,
+        type: "text",
       });
       res.status(201).send({ message: newMessage });
       return;
     }
 
-    if (message && from && to && chatType === "group") {
+    if (message && to && chatType === "group") {
       const newMessage = await prisma.messages.create({
         data: {
           message,
-          group: { connect: { id: to } },
+          type: "text",
+          group: { connect: { id: String(to) } },
           msgType: "group",
           sender: { connect: { id: fromId } },
           messageStatus: "sent",
@@ -314,15 +425,16 @@ export async function addMessage(
       return;
     }
 
-    res.status(400).send("From, to and Message is required.");
-  } catch (err) {
-    next(err);
+    res.status(400).json({ ok: false, error: "from, to and message are required" });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Forbidden") {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
+    next(error);
   }
 }
 
-/**
- * Create a message with a media URL (from media service upload). Owns message persistence.
- */
 export async function addMediaMessage(
   req: Request,
   res: Response,
@@ -335,19 +447,22 @@ export async function addMediaMessage(
       res.status(401).json({ ok: false, error: "Unauthorized" });
       return;
     }
-    const { chatType, from, to, url, type } = req.body as {
-      chatType?: string;
+
+    const { chatType, from, to, url, type, conversationId } = req.body as {
+      chatType?: ChatRequestKind;
       from?: number | string;
       to?: number | string;
       url?: string;
       type?: string;
+      conversationId?: string;
     };
     if (!url || !from || !to || !chatType) {
       res.status(400).json({ ok: false, error: "from, to, chatType and url required" });
       return;
     }
-    const fromId = typeof from === "number" ? from : parseInt(String(from), 10);
-    if (Number.isNaN(fromId)) {
+
+    const fromId = parseRequiredUserId(from);
+    if (fromId === null) {
       res.status(400).json({ ok: false, error: "Invalid from user id" });
       return;
     }
@@ -355,25 +470,21 @@ export async function addMediaMessage(
       res.status(403).json({ ok: false, error: "Forbidden" });
       return;
     }
-    const toId = String(to);
-    const getUser = onlineUsers.get(toId);
 
     if (chatType === "user") {
-      const receiverId = parseInt(toId, 10);
-      if (Number.isNaN(receiverId)) {
+      const receiverId = parseRequiredUserId(to);
+      if (receiverId === null) {
         res.status(400).json({ ok: false, error: "Invalid to for user chat" });
         return;
       }
-      const newMessage = await prisma.messages.create({
-        data: {
-          message: url,
-          type: type || "audio",
-          msgType: "user",
-          sender: { connect: { id: fromId } },
-          receiver: { connect: { id: receiverId } },
-          messageStatus: getUser ? "delivered" : "sent",
-        },
-        include: { sender: true, receiver: true },
+
+      const newMessage = await createDirectMessage({
+        authenticatedUserId,
+        fromId,
+        toId: receiverId,
+        message: url,
+        type: normalizeMessageType(type, "audio"),
+        conversationId,
       });
       res.status(201).json({ ok: true, message: newMessage });
       return;
@@ -383,9 +494,9 @@ export async function addMediaMessage(
       const newMessage = await prisma.messages.create({
         data: {
           message: url,
-          type: type || "image",
+          type: normalizeMessageType(type, "image"),
           msgType: "group",
-          group: { connect: { id: toId } },
+          group: { connect: { id: String(to) } },
           sender: { connect: { id: fromId } },
           messageStatus: "sent",
         },
@@ -396,7 +507,7 @@ export async function addMediaMessage(
     }
 
     res.status(400).json({ ok: false, error: "Invalid chatType" });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 }

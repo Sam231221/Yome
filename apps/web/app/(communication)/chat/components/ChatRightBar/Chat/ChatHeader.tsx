@@ -55,7 +55,7 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
   };
 
   const handleVoiceCall = () => {
-    if (!currentChatUser?.id) return;
+    if (!currentChatUser?.id || typeof currentChatUser.id !== "number") return;
     const voiceCall: ActiveCall = {
       id: currentChatUser.id,
       name: currentChatUser.name,

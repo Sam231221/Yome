@@ -26,7 +26,7 @@ type ApiUser = {
 };
 
 export type AppUserInfo = {
-  id: number | string;
+  id: number;
   role?: string;
   email?: string;
   name?: string;
@@ -80,7 +80,7 @@ export const logUserInfoLoadError = (context: string, error: unknown) => {
 
 export function mapApiUserToAppUser(user: ApiUser): AppUserInfo {
   return {
-    id: user.id,
+    id: Number(user.id),
     role: user.role,
     email: user.email,
     name: user.name,

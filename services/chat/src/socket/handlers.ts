@@ -2,6 +2,19 @@ import type { Server, Socket } from "socket.io";
 import getPrismaInstance from "@repo/database";
 import { onlineUsers } from "../state/online-users.js";
 
+type SocketChatMessage = {
+  id: number;
+  senderId: number;
+  receiverId: number | null;
+  conversationId?: string | null;
+  message: string;
+  type: "text" | "image" | "audio";
+  msgType?: "user" | "group";
+  messageStatus: "sent" | "delivered" | "read";
+  createdAt: string | Date;
+  groupId?: string | null;
+};
+
 export function attachSocketHandlers(io: Server): void {
   io.on("connection", (socket: Socket) => {
     const emitOnlineUsers = () => {
@@ -34,7 +47,15 @@ export function attachSocketHandlers(io: Server): void {
       socket.join(room);
     });
 
-    socket.on("send-msg", async (data: { from: string; to: string; chatType: string; message: string; room?: string }) => {
+    socket.on(
+      "send-msg",
+      async (data: {
+        from: string;
+        to: string;
+        chatType: "user" | "group";
+        message: SocketChatMessage;
+        room?: string;
+      }) => {
       const authedUserId = socket.data.userId as string | undefined;
       if (!authedUserId) return;
       if (data.from !== authedUserId) {
@@ -72,7 +93,8 @@ export function attachSocketHandlers(io: Server): void {
           }
         }
       }
-    });
+    }
+    );
 
     socket.on("mark-read", (payload: { id: string; receiverId?: string }) => {
       const { id, receiverId } = payload;

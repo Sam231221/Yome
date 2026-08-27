@@ -11,24 +11,21 @@ const logger = createLogger("media");
 
 const getChatUploadScope = (req: Request) => {
   const chatType = String(req.body?.chatType ?? "").trim();
-  const senderId = Number.parseInt(String(req.body?.from ?? ""), 10);
   const target = String(req.body?.to ?? "").trim();
+  const conversationId = String(req.body?.conversationId ?? "").trim();
 
   if (!chatType) return undefined;
-  if (!Number.isInteger(senderId) || senderId <= 0) return undefined;
 
   if (chatType === "group") {
-    return target ? { chatType: "group" as const, senderId, groupId: target } : undefined;
+    return target ? { chatType: "group" as const, groupId: target } : undefined;
   }
 
-  const receiverId = Number.parseInt(target, 10);
-  if (!Number.isInteger(receiverId) || receiverId <= 0) return undefined;
-
-  return {
-    chatType: "direct" as const,
-    senderId,
-    receiverId,
-  };
+  return conversationId
+    ? {
+        chatType: "direct" as const,
+        conversationId,
+      }
+    : undefined;
 };
 
 /**

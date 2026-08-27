@@ -20,10 +20,10 @@ import {
   logUserInfoLoadError,
 } from "@/lib/auth/userInfo";
 import { getUserConversation, logChatConversationError } from "@/lib/chat/chatApi";
-import type { ActiveCall, ChatKind, NumericId } from "@/types/chat";
+import type { ActiveCall, ChatKind, UserId } from "@/types/chat";
 
 function createIncomingCall(
-  from: { id: NumericId; name?: string; profilePicture?: string },
+  from: { id: UserId; name?: string; profilePicture?: string },
   roomId: number,
   callType: "audio" | "video"
 ): ActiveCall {

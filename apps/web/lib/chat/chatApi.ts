@@ -9,32 +9,44 @@ import {
   GET_INITIAL_GROUP_MESSAGES,
   GET_INITIAL_USERS_MESSAGES,
   GET_MESSAGES_ROUTE,
+  GET_OR_CREATE_DIRECT_CONVERSATION_ROUTE,
   GET_USER_BY_ID_ROUTE,
 } from "@/utils/ApiRoutes";
-import type { ChatKind, ChatListItem } from "@/types/chat";
-
-export type NumericId = number | string;
+import type {
+  ChatKind,
+  ChatListItem,
+  ConversationId,
+  GroupId,
+  MessageId,
+  MessageKind,
+  UserId,
+} from "@/types/chat";
 
 const DEFAULT_ERROR_MESSAGE = "Something went wrong. Please try again.";
 
 type InitialGroupMessageRecord = {
-  id?: NumericId;
-  groupId?: string;
+  id?: MessageId;
+  groupId?: GroupId;
+  conversationId?: ConversationId | null;
   message?: string;
-  type?: string;
-  messageStatus?: string;
-  receiverId?: NumericId | null;
-  senderId?: NumericId;
+  type?: MessageKind;
+  messageStatus?: "sent" | "delivered" | "read";
+  receiverId?: UserId | null;
+  senderId?: UserId;
   createdAt?: string | Date;
 };
 
 type InitialGroupContactRecord = {
-  id: string;
+  id: GroupId;
   name?: string;
-  identifier?: string;
-  type?: string;
+  identifier?: ChatKind;
+  type?: ChatKind;
   thumbnail?: string;
   messages?: InitialGroupMessageRecord[];
+};
+
+type DirectConversationRecord = {
+  id: ConversationId;
 };
 
 const getErrorMessage = (error: unknown, fallback = DEFAULT_ERROR_MESSAGE) => {
@@ -42,7 +54,7 @@ const getErrorMessage = (error: unknown, fallback = DEFAULT_ERROR_MESSAGE) => {
     const responseMessage =
       typeof error.response?.data === "string"
         ? error.response.data
-        : error.response?.data?.msg;
+        : error.response?.data?.msg ?? error.response?.data?.error;
 
     if (responseMessage) {
       return responseMessage;
@@ -66,8 +78,9 @@ const uploadMedia = async (
   file: File,
   metadata: {
     chatType: ChatKind;
-    from: NumericId;
-    to: NumericId;
+    from: UserId;
+    to: UserId | GroupId;
+    conversationId?: ConversationId;
   }
 ) => {
   const formData = new FormData();
@@ -75,6 +88,9 @@ const uploadMedia = async (
   formData.append("chatType", metadata.chatType);
   formData.append("from", String(metadata.from));
   formData.append("to", String(metadata.to));
+  if (metadata.conversationId) {
+    formData.append("conversationId", metadata.conversationId);
+  }
 
   const { data } = await axios.post(route, formData, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -87,7 +103,10 @@ const uploadMedia = async (
 
   return {
     url,
-    type: type ?? (fieldName === "image" ? "image" : "audio"),
+    type: (type ?? (fieldName === "image" ? "image" : "audio")) as Exclude<
+      MessageKind,
+      "text"
+    >,
   };
 };
 
@@ -101,6 +120,7 @@ const normalizeGroupContact = (
     ...latestMessage,
     id: String(group.id),
     type: group.identifier || group.type || "group",
+    identifier: group.identifier || group.type || "group",
     messageId: latestMessage?.id,
   };
 };
@@ -115,24 +135,39 @@ export const logChatConversationError = (context: string, error: unknown) => {
   console.warn(`[chat-conversation] ${context}: ${getErrorMessage(error)}`);
 };
 
-export const getConnectedUsers = async (loggedInUserId: NumericId) => {
+export const getConnectedUsers = async (loggedInUserId: UserId) => {
   const { data } = await axios.get(
     `${GET_ALL_CONNECTED_USERS}/${loggedInUserId}`
   );
   return data?.followedUsers ?? [];
 };
 
-export const getInitialUserMeta = async (loggedInUserId: NumericId) => {
+export const getOrCreateDirectConversation = async (
+  from: UserId,
+  to: UserId
+) => {
+  const { data } = await axios.post(GET_OR_CREATE_DIRECT_CONVERSATION_ROUTE, {
+    from,
+    to,
+  });
+
+  return (data?.conversation ?? null) as DirectConversationRecord | null;
+};
+
+export const getInitialUserMeta = async (loggedInUserId: UserId) => {
   const { data } = await axios.get(
     `${GET_INITIAL_USERS_MESSAGES}/${loggedInUserId}`
   );
+  const usersWithLatestPrivateMessages =
+    data?.usersWithLatestPrivateMessages ?? data?.usersWithLatestPivateMessages ?? [];
+
   return {
-    onlineUsers: data?.onlineUsers ?? [],
-    usersWithLatestPivateMessages: data?.usersWithLatestPivateMessages ?? [],
+    onlineUsers: (data?.onlineUsers ?? []) as UserId[],
+    usersWithLatestPrivateMessages,
   };
 };
 
-export const getInitialGroupMeta = async (loggedInUserId: NumericId) => {
+export const getInitialGroupMeta = async (loggedInUserId: UserId) => {
   const { data } = await axios.get(
     `${GET_INITIAL_GROUP_MESSAGES}/${loggedInUserId}`
   );
@@ -140,7 +175,7 @@ export const getInitialGroupMeta = async (loggedInUserId: NumericId) => {
   return (data?.groupsWithLatestGroupMessages ?? []).map(normalizeGroupContact);
 };
 
-export const getAllChatContacts = async (loggedInUserId: NumericId) => {
+export const getAllChatContacts = async (loggedInUserId: UserId) => {
   const [usersResponse, groupsResponse] = await Promise.all([
     axios.get(`${GET_ALL_CONNECTED_USERS}/${loggedInUserId}`),
     axios.get(`${GET_ALL_CONNECTED_GROUPS}/${loggedInUserId}`),
@@ -157,8 +192,8 @@ export const getUserConversation = async ({
   toUserId,
   chatType = "user",
 }: {
-  fromUserId: NumericId;
-  toUserId: NumericId;
+  fromUserId: UserId;
+  toUserId: UserId | GroupId;
   chatType?: ChatKind;
 }) => {
   const { data } = await axios.get(
@@ -174,10 +209,14 @@ export const sendTextMessage = async ({
   message,
 }: {
   chatType: ChatKind;
-  from: NumericId;
-  to: NumericId;
+  from: UserId;
+  to: UserId | GroupId;
   message: string;
 }) => {
+  if (chatType === "user") {
+    await getOrCreateDirectConversation(from, to as UserId);
+  }
+
   const { data } = await axios.post(ADD_MESSAGE_ROUTE, {
     chatType,
     from,
@@ -193,12 +232,14 @@ export const sendMediaMessage = async ({
   to,
   url,
   type,
+  conversationId,
 }: {
   chatType: ChatKind;
-  from: NumericId;
-  to: NumericId;
+  from: UserId;
+  to: UserId | GroupId;
   url: string;
-  type: string;
+  type: Exclude<MessageKind, "text">;
+  conversationId?: ConversationId;
 }) => {
   const { data } = await axios.post(ADD_MEDIA_MESSAGE_ROUTE, {
     chatType,
@@ -206,6 +247,7 @@ export const sendMediaMessage = async ({
     to,
     url,
     type,
+    conversationId,
   });
   return data?.message;
 };
@@ -217,14 +259,20 @@ export const sendImageMessage = async ({
   file,
 }: {
   chatType: ChatKind;
-  from: NumericId;
-  to: NumericId;
+  from: UserId;
+  to: UserId | GroupId;
   file: File;
 }) => {
+  const conversation =
+    chatType === "user"
+      ? await getOrCreateDirectConversation(from, to as UserId)
+      : null;
+
   const upload = await uploadMedia(ADD_IMAGE_MESSAGE_ROUTE, "image", file, {
     chatType,
     from,
     to,
+    conversationId: conversation?.id,
   });
   return sendMediaMessage({
     chatType,
@@ -232,6 +280,7 @@ export const sendImageMessage = async ({
     to,
     url: upload.url,
     type: upload.type,
+    conversationId: conversation?.id,
   });
 };
 
@@ -242,14 +291,20 @@ export const sendAudioMessage = async ({
   file,
 }: {
   chatType: ChatKind;
-  from: NumericId;
-  to: NumericId;
+  from: UserId;
+  to: UserId | GroupId;
   file: File;
 }) => {
+  const conversation =
+    chatType === "user"
+      ? await getOrCreateDirectConversation(from, to as UserId)
+      : null;
+
   const upload = await uploadMedia(ADD_AUDIO_MESSAGE_ROUTE, "audio", file, {
     chatType,
     from,
     to,
+    conversationId: conversation?.id,
   });
   return sendMediaMessage({
     chatType,
@@ -257,10 +312,11 @@ export const sendAudioMessage = async ({
     to,
     url: upload.url,
     type: upload.type,
+    conversationId: conversation?.id,
   });
 };
 
-export const getUserById = async (userId: NumericId) => {
+export const getUserById = async (userId: UserId) => {
   const { data } = await axios.post(GET_USER_BY_ID_ROUTE, {
     userId,
   });
