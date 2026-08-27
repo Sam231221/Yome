@@ -3,15 +3,22 @@ import cors from "cors";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
-import { servicePorts, errorHandler, internalTokenGuard } from "@repo/shared";
-import { configCloudinary } from "./lib/cloudinary.js";
+import {
+  createLogger,
+  errorHandler,
+  internalTokenGuard,
+  servicePorts,
+  validateObjectStorageEnv,
+} from "@repo/shared";
 import mediaRoutes from "./routes/media.routes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, "../../../.env") });
 dotenv.config();
 
-configCloudinary();
+validateObjectStorageEnv();
+
+const logger = createLogger("media");
 
 const app = express();
 const port = servicePorts.media;
@@ -29,5 +36,8 @@ app.use("/api/media", mediaRoutes);
 app.use(errorHandler);
 
 app.listen(port, () => {
-  console.log(`Media service listening on ${port}`);
+  logger.info("Media service listening", {
+    port,
+    storageProvider: process.env.STORAGE_PROVIDER?.trim() || "s3",
+  });
 });

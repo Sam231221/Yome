@@ -63,10 +63,18 @@ const getErrorMessage = (error: unknown, fallback = DEFAULT_ERROR_MESSAGE) => {
 const uploadMedia = async (
   route: string,
   fieldName: "image" | "audio",
-  file: File
+  file: File,
+  metadata: {
+    chatType: ChatKind;
+    from: NumericId;
+    to: NumericId;
+  }
 ) => {
   const formData = new FormData();
   formData.append(fieldName, file);
+  formData.append("chatType", metadata.chatType);
+  formData.append("from", String(metadata.from));
+  formData.append("to", String(metadata.to));
 
   const { data } = await axios.post(route, formData, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -213,7 +221,11 @@ export const sendImageMessage = async ({
   to: NumericId;
   file: File;
 }) => {
-  const upload = await uploadMedia(ADD_IMAGE_MESSAGE_ROUTE, "image", file);
+  const upload = await uploadMedia(ADD_IMAGE_MESSAGE_ROUTE, "image", file, {
+    chatType,
+    from,
+    to,
+  });
   return sendMediaMessage({
     chatType,
     from,
@@ -234,7 +246,11 @@ export const sendAudioMessage = async ({
   to: NumericId;
   file: File;
 }) => {
-  const upload = await uploadMedia(ADD_AUDIO_MESSAGE_ROUTE, "audio", file);
+  const upload = await uploadMedia(ADD_AUDIO_MESSAGE_ROUTE, "audio", file, {
+    chatType,
+    from,
+    to,
+  });
   return sendMediaMessage({
     chatType,
     from,

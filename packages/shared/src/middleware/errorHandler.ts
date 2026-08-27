@@ -6,12 +6,14 @@ import type { ErrorEnvelope } from "../types/contracts.js";
  * Logs the error and sends a JSON error envelope; preserves statusCode if set on the error.
  */
 export function errorHandler(
-  err: Error & { statusCode?: number },
+  err: Error & { statusCode?: number; code?: string },
   _req: Request,
   res: Response,
   _next: NextFunction
 ): void {
-  const statusCode = err.statusCode ?? 500;
+  const statusCode =
+    err.statusCode ??
+    (err.name === "MulterError" && err.code === "LIMIT_FILE_SIZE" ? 413 : 500);
   const requestId = _req.headers["x-request-id"];
   const envelope: ErrorEnvelope = {
     ok: false,

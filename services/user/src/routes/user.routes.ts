@@ -1,6 +1,11 @@
 import { Router } from "express";
 import multer from "multer";
-import { validateRequest } from "@repo/shared";
+import {
+  ALLOWED_IMAGE_MIME_TYPES,
+  createHttpError,
+  isAllowedMimeType,
+  validateRequest,
+} from "@repo/shared";
 import {
   getUserById,
   updateUser,
@@ -22,7 +27,17 @@ import {
 } from "./user.validation.js";
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, callback) => {
+    if (!isAllowedMimeType(ALLOWED_IMAGE_MIME_TYPES, file.mimetype)) {
+      callback(createHttpError("Unsupported avatar image type.", 400));
+      return;
+    }
+    callback(null, true);
+  },
+});
 const router = Router();
 
 router.post("/get-user-by-id", validateRequest(getUserByIdSchema), getUserById);

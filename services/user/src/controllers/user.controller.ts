@@ -1,7 +1,14 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
-import { cloudinary } from "../lib/cloudinary.js";
-import { groupData } from "@repo/shared";
+import {
+  ALLOWED_IMAGE_MIME_TYPES,
+  assertAllowedMimeType,
+  createLogger,
+  groupData,
+  uploadBufferToS3,
+} from "@repo/shared";
+
+const logger = createLogger("user");
 
 function getAuthenticatedUserId(req: Request): number | null {
   const raw = req.headers["x-user-id"];
@@ -71,19 +78,24 @@ export async function updateUser(
       string,
       string
     >;
-    let image: { secure_url: string } | null = null;
+    let imageUrl: string | null = null;
 
     if (req.file?.buffer) {
-      image = await new Promise((resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream(
-            { folder: "Eduroclass/Uploads/Profiles/" },
-            (error, result) => {
-              if (error) reject(new Error("Failed to upload profile picture"));
-              else resolve(result!);
-            }
-          )
-          .end(req.file!.buffer);
+      assertAllowedMimeType(ALLOWED_IMAGE_MIME_TYPES, req.file.mimetype, "avatar");
+      const upload = await uploadBufferToS3({
+        buffer: req.file.buffer,
+        mimeType: req.file.mimetype,
+        originalFilename: req.file.originalname || "avatar",
+        target: "profile-avatar",
+        entityId: userId,
+      });
+      imageUrl = upload.url;
+      logger.info("Uploaded profile avatar", {
+        bucket: upload.bucket,
+        contentType: upload.contentType,
+        key: upload.key,
+        requestId: req.headers["x-request-id"],
+        userId,
       });
     }
 
@@ -128,7 +140,7 @@ export async function updateUser(
       name: `${firstname ?? ""} ${lastname ?? ""}`.trim(),
       email: email ?? "",
     };
-    if (image) userUpdateData.profilePicture = image.secure_url;
+    if (imageUrl) userUpdateData.profilePicture = imageUrl;
 
     const user = await prisma.user.update({
       where: { id: userId },
@@ -144,6 +156,10 @@ export async function updateUser(
       msg: "updated successfully",
     });
   } catch (error) {
+    logger.error("Failed to update user profile", error, {
+      requestId: req.headers["x-request-id"],
+      userId: req.query.userId,
+    });
     next(error);
   }
 }

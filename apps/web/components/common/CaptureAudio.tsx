@@ -36,6 +36,10 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const waveformRef = useRef<HTMLDivElement | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioUrlRef = useRef<string | null>(null);
+  const pendingSendRef = useRef(false);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
@@ -81,7 +85,28 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
     }
   }, [waveform]);
 
+  useEffect(() => {
+    return () => {
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+      }
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
   const handleStartRecording = () => {
+    if (isRecording || mediaRecorderRef.current?.state === "recording") {
+      return;
+    }
+
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+
+    audioChunksRef.current = [];
+    setRecordedAudio(null);
+    setRenderedAudio(null);
     setRecordingDuration(0);
     setCurrentPlaybackTime(0);
     setTotalDuration(0);
@@ -93,18 +118,45 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
       .then((stream) => {
         const mediaRecorder = new MediaRecorder(stream);
         mediaRecorderRef.current = mediaRecorder;
+        mediaStreamRef.current = stream;
         if (audioRef.current) audioRef.current.srcObject = stream;
 
-        const chunks: Blob[] = [];
-        mediaRecorder.ondataavailable = (e) =>
-          e.data.size > 0 && chunks.push(e.data);
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+
         mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: "audio/ogg; codecs=opus" });
+          const mimeType = mediaRecorder.mimeType || "audio/webm";
+          const blob = new Blob(audioChunksRef.current, { type: mimeType });
+          const extension = mimeType.includes("ogg")
+            ? "ogg"
+            : mimeType.includes("mp3")
+              ? "mp3"
+              : "webm";
+          const audioFile = new File([blob], `recording.${extension}`, {
+            type: mimeType,
+          });
           const audioURL = URL.createObjectURL(blob);
+          audioUrlRef.current = audioURL;
           const audio = new Audio(audioURL);
+
           setRecordedAudio(audio);
+          setRenderedAudio(audioFile);
+          setTotalDuration(audio.duration || recordingDuration);
 
           waveform?.load(audioURL);
+          mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+          mediaStreamRef.current = null;
+          mediaRecorderRef.current = null;
+
+          if (pendingSendRef.current) {
+            pendingSendRef.current = false;
+            void uploadAndSendRecording(audioFile).catch((error) => {
+              toast.error(getChatErrorMessage(error, "Failed to send audio."));
+            });
+          }
         };
 
         mediaRecorder.start();
@@ -118,22 +170,33 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
 
   const [renderedAudio, setRenderedAudio] = useState<File | null>(null);
 
+  const uploadAndSendRecording = async (audioFile: File) => {
+    if (!userInfo?.id || !currentChatUser?.id) return;
+
+    const sentMessage = await sendAudioMessage({
+      chatType: resolvedChatType,
+      from: userInfo.id,
+      to: currentChatUser.id,
+      file: audioFile,
+    });
+
+    socket?.current?.emit("send-msg", {
+      chatType: resolvedChatType,
+      room: `room-${currentChatUser.id}`,
+      to: currentChatUser.id,
+      from: userInfo.id,
+      message: sentMessage,
+    });
+
+    appendMessage(sentMessage);
+    hide?.(false);
+  };
+
   const handleStopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current?.state === "recording" && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       waveform?.stop();
-
-      const audioChunks: Blob[] = [];
-      mediaRecorderRef.current.addEventListener("dataavailable", (event) => {
-        if (event.data.size > 0) audioChunks.push(event.data);
-      });
-
-      mediaRecorderRef.current.addEventListener("stop", () => {
-        const audioBlob = new Blob(audioChunks, { type: "audio/mp3" });
-        const audioFile = new File([audioBlob], "recording.mp3");
-        setRenderedAudio(audioFile);
-      });
     }
   };
 
@@ -196,23 +259,21 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
   };
 
   const sendRecording = async () => {
-    if (!renderedAudio || !userInfo?.id || !currentChatUser?.id) return;
+    if (!userInfo?.id || !currentChatUser?.id) return;
+
+    if (isRecording) {
+      pendingSendRef.current = true;
+      handleStopRecording();
+      return;
+    }
+
+    if (!renderedAudio) {
+      toast.error("Record audio before sending.");
+      return;
+    }
+
     try {
-      const sentMessage = await sendAudioMessage({
-        chatType: resolvedChatType,
-        from: userInfo.id,
-        to: currentChatUser.id,
-        file: renderedAudio,
-      });
-      socket?.current?.emit("send-msg", {
-        chatType: resolvedChatType,
-        room: `room-${currentChatUser.id}`,
-        to: currentChatUser.id,
-        from: userInfo.id,
-        message: sentMessage,
-      });
-      appendMessage(sentMessage);
-      hide?.(false);
+      await uploadAndSendRecording(renderedAudio);
     } catch (error) {
       toast.error(getChatErrorMessage(error, "Failed to send audio."));
     }
@@ -228,10 +289,10 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
       </div>
       <div className="mx-4 py-2 px-4 text-white text-lg flex gap-3 justify-center items-center bg-search-input-container-background rounded-full drop-shadow-lg">
         {isRecording ? (
-          <div className="text-red-500 animate-blink w-60 text-center">
-            Recording <span>({recordingDuration}s)</span>
-          </div>
-        ) : (
+        <div className="text-red-500 animate-blink w-60 text-center">
+          Recording <span>({recordingDuration}s)</span>
+        </div>
+      ) : (
           <div className=" ">
             {recordedAudio && (
               <>
@@ -269,7 +330,11 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
       </div>
       <div>
         <MdSend
-          className="text-panel-header-icon cursor-pointer mr-4 "
+          className={`mr-4 ${
+            renderedAudio
+              ? "text-panel-header-icon cursor-pointer"
+              : "cursor-not-allowed text-gray-400"
+          }`}
           title="Send"
           onClick={sendRecording}
         />
