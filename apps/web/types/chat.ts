@@ -6,8 +6,8 @@ export type UserId = number;
 export type MessageId = number;
 export type GroupId = string;
 export type ConversationId = string;
-export type ChatIdentityId = UserId | GroupId;
-export type NumericId = ChatIdentityId;
+export type ChatTargetId = UserId | GroupId;
+export type ChatIdentityId = ChatTargetId;
 export type ChatKind = "user" | "group";
 export type MessageKind = "text" | "image" | "audio";
 export type CallDirection = "out-going" | "in-coming";
@@ -24,8 +24,8 @@ export type ChatIdentity = {
   email?: string;
   about?: string;
   profilePicture?: string;
-  identifier?: string;
-  type?: string;
+  identifier?: ChatKind;
+  chatType?: ChatKind;
   conversationId?: ConversationId | null;
   userProfile?: {
     bio?: string;
@@ -67,8 +67,7 @@ export type ChatMessage = {
 };
 
 export type ChatListItem = ChatIdentity & {
-  type?: string;
-  identifier?: string;
+  type?: MessageKind;
   thumbnail?: string;
   message?: string;
   messageId?: MessageId;
@@ -115,3 +114,13 @@ export type IncomingCallEvent = {
 };
 
 export type ChatStateUser = AppUserInfo;
+
+export const isUserId = (value: ChatTargetId): value is UserId =>
+  typeof value === "number";
+
+export const isGroupId = (value: ChatTargetId): value is GroupId =>
+  typeof value === "string";
+
+export const resolveChatKind = (
+  value: Pick<ChatIdentity, "chatType" | "identifier"> | null | undefined
+): ChatKind => value?.chatType ?? value?.identifier ?? "user";

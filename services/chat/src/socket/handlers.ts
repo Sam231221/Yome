@@ -15,11 +15,16 @@ type SocketChatMessage = {
   groupId?: string | null;
 };
 
+const parseSocketUserId = (value: unknown) => {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
 export function attachSocketHandlers(io: Server): void {
   io.on("connection", (socket: Socket) => {
     const emitOnlineUsers = () => {
       io.emit("online-users", {
-        onlineUsers: Array.from(onlineUsers.keys()),
+        onlineUsers: Array.from(onlineUsers.keys()).map((id) => Number(id)),
       });
     };
 
@@ -50,55 +55,56 @@ export function attachSocketHandlers(io: Server): void {
     socket.on(
       "send-msg",
       async (data: {
-        from: string;
-        to: string;
+        from: number;
+        to: number | string;
         chatType: "user" | "group";
         message: SocketChatMessage;
         room?: string;
       }) => {
-      const authedUserId = socket.data.userId as string | undefined;
-      if (!authedUserId) return;
-      if (data.from !== authedUserId) {
-        data.from = authedUserId;
-      }
-      const sendUserSocket = onlineUsers.get(data.to);
-      if (data.chatType === "user" && sendUserSocket) {
-        socket.to(sendUserSocket).emit("privateMessageReceived", {
-          from: data.from,
-          msgType: "user",
-          message: data.message,
-        });
-      }
+        const authedUserId = parseSocketUserId(socket.data.userId);
+        if (authedUserId === null) return;
+        if (data.from !== authedUserId) {
+          data.from = authedUserId;
+        }
 
-      if (data.chatType === "group") {
+        if (data.chatType === "user") {
+          const sendUserSocket = onlineUsers.get(String(data.to));
+          if (sendUserSocket) {
+            socket.to(sendUserSocket).emit("privateMessageReceived", {
+              from: data.from,
+              msgType: "user",
+              message: data.message,
+            });
+          }
+          return;
+        }
+
         const prisma = getPrismaInstance();
         const group = await prisma.group.findUnique({
-          where: { id: data.to },
+          where: { id: String(data.to) },
           include: { members: true },
         });
-        if (group) {
-          for (const user of group.members) {
-            if (user.id === parseInt(data.from)) continue;
-            const memberSocketId = onlineUsers.get(String(user.id));
-            if (memberSocketId) {
-              const payload = {
-                from: data.from,
-                message: data.message,
-                msgType: "group",
-                room: data.room,
-                groupId: data.to,
-              };
-              socket.to(memberSocketId).emit("msg-receive", payload);
-            }
+        if (!group) return;
+
+        for (const user of group.members) {
+          if (user.id === data.from) continue;
+          const memberSocketId = onlineUsers.get(String(user.id));
+          if (memberSocketId) {
+            socket.to(memberSocketId).emit("msg-receive", {
+              from: data.from,
+              message: data.message,
+              msgType: "group",
+              room: data.room,
+              groupId: String(data.to),
+            });
           }
         }
       }
-    }
     );
 
-    socket.on("mark-read", (payload: { id: string; receiverId?: string }) => {
+    socket.on("mark-read", (payload: { id: number; receiverId?: number }) => {
       const { id, receiverId } = payload;
-      const sendUserSocket = onlineUsers.get(id);
+      const sendUserSocket = onlineUsers.get(String(id));
       if (sendUserSocket) {
         const data = {
           id,

@@ -8,14 +8,14 @@ import { getAllChatContacts, getChatErrorMessage } from "@/lib/chat/chatApi";
 
 import ChatListItem from "./ChatListItem";
 
-interface Contact {
+type Contact = ChatContact & {
   id: string | number;
-  type: ChatKind;
   name?: string;
   firstname?: string;
   username?: string;
   identifier: ChatKind;
-}
+  chatType: ChatKind;
+};
 
 function AllContactsList() {
   const [{ userInfo }, dispatch] = useStateProvider();
@@ -34,9 +34,20 @@ function AllContactsList() {
       if (!userInfo?.id) return;
 
       const { followedUsers, groups } = await getAllChatContacts(userInfo.id);
-      const combinedContacts = [...followedUsers, ...groups];
+      const combinedContacts: Contact[] = [
+        ...followedUsers.map((user: ChatContact) => ({
+          ...user,
+          chatType: "user" as const,
+          identifier: "user" as const,
+        })),
+        ...groups.map((group: ChatContact) => ({
+          ...group,
+          chatType: "group" as const,
+          identifier: "group" as const,
+        })),
+      ];
       const filteredContacts = combinedContacts.filter((obj: Contact) => {
-        if (obj.type === "group") {
+        if (obj.chatType === "group") {
           return obj.name !== userInfo?.name;
         }
 
@@ -100,7 +111,7 @@ function AllContactsList() {
             <ChatListItem
               id={String(contact.id)}
               type={contact.identifier}
-              data={contact as ChatContact}
+              data={contact}
               isContactPage
               key={String(contact.id)}
             />

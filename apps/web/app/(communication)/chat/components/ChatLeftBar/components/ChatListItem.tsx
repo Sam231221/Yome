@@ -7,16 +7,20 @@ import { reducerCases } from "@/context/constants";
 
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "@/components/common/MessageStatus";
-import type { ChatListItem as ChatContact } from "@/types/chat";
+import {
+  resolveChatKind,
+  type ChatKind,
+  type ChatListItem as ChatContact,
+} from "@/types/chat";
 
 interface ChatListItemProps {
   id: string;
   data: ChatContact;
-  type: string;
+  type: ChatKind;
   isContactPage?: boolean;
 }
 
-const getConversationType = (chat?: ChatContact) => chat?.type || chat?.identifier;
+const getConversationType = (chat?: ChatContact) => resolveChatKind(chat);
 
 const buildSelectedChat = ({
   data,
@@ -24,25 +28,27 @@ const buildSelectedChat = ({
   isContactPage,
 }: {
   data: ChatContact;
-  type: string;
+  type: ChatKind;
   isContactPage: boolean;
-}) => {
+}): ChatContact | null => {
   if (!data?.id) return null;
 
   if (isContactPage) {
+    const resolvedType: ChatKind = type === "group" ? "group" : "user";
     return {
       ...data,
-      type,
-      identifier: data.identifier || type,
+      chatType: resolvedType,
+      identifier: data.identifier || resolvedType,
       profilePicture:
         type === "group" ? data.thumbnail || data.profilePicture : data.profilePicture,
     };
   }
 
+  const resolvedType: ChatKind = type === "group" ? "group" : "user";
   return {
     id: data.id,
-    type,
-    identifier: data.identifier || type,
+    chatType: resolvedType,
+    identifier: data.identifier || resolvedType,
     name: data.name,
     about: data.about,
     profilePicture: type === "group" ? data.thumbnail : data.profilePicture,
@@ -65,7 +71,7 @@ export default function ChatListItem({
 
     const isSameConversation =
       currentChatUser?.id === selectedChat.id &&
-      getConversationType(currentChatUser) === selectedChat.type;
+      getConversationType(currentChatUser) === getConversationType(selectedChat);
 
     if (isSameConversation) {
       if (isContactPage) {
@@ -74,7 +80,7 @@ export default function ChatListItem({
       return;
     }
 
-    if (selectedChat.type === "group") {
+    if (getConversationType(selectedChat) === "group") {
       socket?.current?.emit("join room", `room-${selectedChat.id}`, userInfo?.id);
     }
 
@@ -115,7 +121,11 @@ export default function ChatListItem({
           <AvatarWithStatus
             type="user"
             classNames="pointer-events-none"
-            status={`${onlineUsers.includes(data?.id) ? "online" : "offline"}`}
+            status={`${
+              typeof data?.id === "number" && onlineUsers.includes(data.id)
+                ? "online"
+                : "offline"
+            }`}
             size="sm"
             image={`${data?.profilePicture || "/avatars/userprofile.png"}`}
           />

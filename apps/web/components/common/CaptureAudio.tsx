@@ -12,7 +12,11 @@ import {
 } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
 import WaveSurfer from "wavesurfer.js";
-import type { ChatKind, ChatMessage } from "@/types/chat";
+import {
+  isGroupId,
+  type ChatKind,
+  type ChatMessage,
+} from "@/types/chat";
 import { getChatErrorMessage, sendAudioMessage } from "@/lib/chat/chatApi";
 
 type AudioRecorderProps = {
@@ -253,7 +257,7 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
     dispatch({
       type: reducerCases.ADD_GROUP_MESSAGE,
       newMessage: messagePayload,
-      groupId: currentChatUser.id,
+      groupId: isGroupId(currentChatUser.id) ? currentChatUser.id : undefined,
       fromSelf: true,
     });
   };

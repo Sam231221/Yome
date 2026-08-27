@@ -7,6 +7,17 @@ import { REGISTER_USER } from "@/utils/ApiRoutes";
 import FormInput from "@/components/FormInput/Form";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import {
+  CONFIRM_PASSWORD_ERROR_MESSAGE,
+  EMAIL_PATTERN,
+  NAME_PATTERN,
+  normalizeEmail,
+  normalizeText,
+  PASSWORD_ERROR_MESSAGE,
+  PASSWORD_PATTERN,
+  passwordsMatch,
+  USERNAME_PATTERN,
+} from "@/lib/auth/formValidation";
 
 interface RegisterContainerProps {
   activeTab: string;
@@ -21,12 +32,6 @@ type RegisterValues = {
   password: string;
   confirmPassword: string;
 };
-
-const NAME_PATTERN = "^[A-Za-z][A-Za-z' -]{1,39}$";
-const USERNAME_PATTERN = "^[A-Za-z0-9._@-]{3,24}$";
-const EMAIL_PATTERN = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
-const PASSWORD_PATTERN =
-  "^(?=.*[0-9])(?=.*[a-zA-Z])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$";
 
 const emptyValues: RegisterValues = {
   username: "",
@@ -43,6 +48,7 @@ export default function RegisterContainer({
 }: RegisterContainerProps) {
   const [isFormFilled, setFormFill] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -105,11 +111,10 @@ export default function RegisterContainer({
         name: "password",
         type: "password",
         placeholder: "Password",
-        errorMessage:
-          "Password must be 8-20 characters and include at least one letter, one number, and one special character.",
+        errorMessage: PASSWORD_ERROR_MESSAGE,
         pattern: PASSWORD_PATTERN,
         minLength: 8,
-        maxLength: 20,
+        maxLength: 64,
         required: true,
         autoComplete: "new-password",
       },
@@ -118,8 +123,7 @@ export default function RegisterContainer({
         name: "confirmPassword",
         type: "password",
         placeholder: "Confirm password",
-        errorMessage: "Confirm password must match the password above.",
-        pattern: values.password,
+        errorMessage: CONFIRM_PASSWORD_ERROR_MESSAGE,
         required: true,
         autoComplete: "new-password",
       },
@@ -133,12 +137,13 @@ export default function RegisterContainer({
 
   useEffect(() => {
     setFormFill(
-      values.firstname !== "" &&
-        values.lastname !== "" &&
-        values.email !== "" &&
-        values.username !== "" &&
+      values.firstname.trim() !== "" &&
+        values.lastname.trim() !== "" &&
+        values.email.trim() !== "" &&
+        values.username.trim() !== "" &&
         values.password !== "" &&
-        values.confirmPassword !== ""
+        values.confirmPassword !== "" &&
+        passwordsMatch(values.password, values.confirmPassword)
     );
   }, [values]);
 
@@ -171,14 +176,20 @@ export default function RegisterContainer({
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
+    if (!passwordsMatch(values.password, values.confirmPassword)) {
+      toast.error(CONFIRM_PASSWORD_ERROR_MESSAGE);
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
       const response = await axios.post(
         REGISTER_USER,
         {
-          email: values.email.trim(),
-          firstname: values.firstname.trim(),
-          lastname: values.lastname.trim(),
-          username: values.username.trim(),
+          email: normalizeEmail(values.email),
+          firstname: normalizeText(values.firstname),
+          lastname: normalizeText(values.lastname),
+          username: normalizeText(values.username),
           password: values.password,
         },
         { validateStatus: () => true }
@@ -196,7 +207,9 @@ export default function RegisterContainer({
       }
       toast.error(data?.error || data?.msg || "Registration failed.");
     } catch {
-      toast.error("Registration failed.");
+      toast.error("We couldn't create your account right now.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -265,12 +278,14 @@ export default function RegisterContainer({
         </div>
         <button
           type="submit"
-          disabled={!isFormFilled || !isChecked}
+          disabled={!isFormFilled || !isChecked || isSubmitting}
           className={`${
-            isFormFilled && isChecked ? "bg-[#0e24a0]" : "bg-[#b6b6b6]"
+            isFormFilled && isChecked && !isSubmitting
+              ? "bg-[#0e24a0]"
+              : "bg-[#b6b6b6]"
           } hover:bg-blue-700 w-full font-medium text-sm text-white py-3 px-2`}
         >
-          Continue{" >"}
+          {isSubmitting ? "Creating account..." : "Create account"}
         </button>
       </form>
     </div>

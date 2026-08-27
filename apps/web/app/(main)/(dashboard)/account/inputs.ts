@@ -1,3 +1,12 @@
+import {
+  BIO_PATTERN,
+  CONFIRM_PASSWORD_ERROR_MESSAGE,
+  NAME_PATTERN,
+  PASSWORD_ERROR_MESSAGE,
+  PASSWORD_PATTERN,
+  USERNAME_PATTERN,
+} from "@/lib/auth/formValidation";
+
 export interface FormInputProps {
   id: number;
   name: string;
@@ -11,10 +20,6 @@ export interface FormInputProps {
   maxLength?: number;
   autoComplete?: string;
 }
-
-const NAME_PATTERN = "^[A-Za-z][A-Za-z' -]{1,39}$";
-const USERNAME_PATTERN = "^[A-Za-z0-9._@-]{3,24}$";
-const BIO_PATTERN = "^.{0,160}$";
 
 export const accountInputs: FormInputProps[] = [
   {
@@ -86,9 +91,9 @@ export const accountInputs: FormInputProps[] = [
     label: "Address",
     type: "text",
     placeholder: "Address",
-    errorMessage: "Address must be 200 characters or fewer.",
+    errorMessage: "Address must be 255 characters or fewer.",
     required: false,
-    maxLength: 200,
+    maxLength: 255,
     autoComplete: "street-address",
   },
 ];
@@ -110,13 +115,11 @@ export const securityInputs: FormInputProps[] = [
     label: "New password",
     type: "password",
     placeholder: "New Password",
-    errorMessage:
-      "Password must be 8-20 characters and include at least one letter, one number, and one special character.",
+    errorMessage: PASSWORD_ERROR_MESSAGE,
     required: true,
-    pattern:
-      "^(?=.*[0-9])(?=.*[a-zA-Z])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$",
+    pattern: PASSWORD_PATTERN,
     minLength: 8,
-    maxLength: 20,
+    maxLength: 64,
     autoComplete: "new-password",
   },
   {
@@ -125,7 +128,7 @@ export const securityInputs: FormInputProps[] = [
     label: "Confirm password",
     type: "password",
     placeholder: "Confirm Password",
-    errorMessage: "Confirm password must match the new password.",
+    errorMessage: CONFIRM_PASSWORD_ERROR_MESSAGE,
     required: true,
     autoComplete: "new-password",
   },

@@ -6,23 +6,16 @@ import toast from "react-hot-toast";
 import { BsPeople, BsThreeDots } from "react-icons/bs";
 import { IoMdPersonAdd } from "react-icons/io";
 import { useStateProvider } from "@/context/StateContext";
-import type { DashboardUserRecord } from "./types";
 import {
   connectUserToMentor,
   getDashboardErrorMessage,
   getPeopleSuggestions,
+  type SuggestedDashboardUser,
 } from "@/lib/dashboard/dashboardApi";
-
-type SuggestedUser = {
-  id: number;
-  name: string;
-  subtitle: string;
-  profilePicture: string;
-};
 
 export default function PeopleYouMayKnow() {
   const [{ userInfo }] = useStateProvider();
-  const [allSuggestions, setAllSuggestions] = useState<SuggestedUser[]>([]);
+  const [allSuggestions, setAllSuggestions] = useState<SuggestedDashboardUser[]>([]);
   const [hiddenIds, setHiddenIds] = useState<number[]>([]);
   const [pendingIds, setPendingIds] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,24 +31,7 @@ export default function PeopleYouMayKnow() {
 
       setIsLoading(true);
       try {
-        const users: DashboardUserRecord[] = await getPeopleSuggestions(
-          userInfo.id
-        );
-
-        const suggestions: SuggestedUser[] = users
-          .map((user) => ({
-            id: Number(user.id),
-            name:
-              [user.firstname, user.lastname].filter(Boolean).join(" ").trim() ||
-              user.name ||
-              user.username ||
-              "Unknown user",
-            subtitle: user.role
-              ? `${user.role.toLowerCase()} on Yome`
-              : "Yome user",
-            profilePicture: user.profilePicture || "/avatars/userprofile.png",
-          }));
-
+        const suggestions = await getPeopleSuggestions(userInfo.id);
         setAllSuggestions(suggestions);
         setHiddenIds([]);
       } catch (error) {

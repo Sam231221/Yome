@@ -1,27 +1,27 @@
-import { useState } from "react";
 import { IoMdCrop } from "react-icons/io";
 import CropEasy from "./CropEasy";
-import { absoluteUrl } from "@/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import Image from "next/image";
-import { userInfo } from "os";
 import { useStateProvider } from "@/context/StateContext";
 
-const ProfileAvatar = ({ pic, setPic }) => {
+type ProfileAvatarProps = {
+  pic: string;
+  setPic: Dispatch<SetStateAction<File | null>>;
+};
+
+const ProfileAvatar = ({ pic, setPic }: ProfileAvatarProps) => {
   const [{ userInfo }] = useStateProvider();
   const [photo, setPhoto] = useState("");
-
-  const [file, setFile] = useState(null);
-
+  const [file, setFile] = useState<File | null>(null);
   const [openCrop, setOpenCrop] = useState(false);
 
-  const handleChange = (e) => {
-    const file = e.target.files[0];
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nextFile = e.target.files?.[0] ?? null;
 
-    if (file) {
-      setFile(file);
-      setPic(file);
-      setPhoto(URL.createObjectURL(file));
+    if (nextFile) {
+      setFile(nextFile);
+      setPic(nextFile);
+      setPhoto(URL.createObjectURL(nextFile));
       setOpenCrop(true);
     }
   };
@@ -73,7 +73,12 @@ const ProfileAvatar = ({ pic, setPic }) => {
           </div>
           <div>
             <button
-              onClick={() => { setPic(""); setOpenCrop(false); }}
+              onClick={() => {
+                setFile(null);
+                setPic(null);
+                setPhoto("/avatars/userprofile.png");
+                setOpenCrop(false);
+              }}
               className="bg-red-500 text-sm rounded-lg px-3 py-2 text-white  "
             >
               Remove photo

@@ -4,6 +4,7 @@ import Empty from "@/components/Empty";
 import { useStateProvider } from "@/context/StateContext";
 import Chat from "./Chat";
 import SearchMessagesRightMostChatContainer from "./SearchMessagesRightMostChatContainer";
+import { resolveChatKind } from "@/types/chat";
 export default function ChatRightBar() {
   const [
     {
@@ -24,7 +25,7 @@ export default function ChatRightBar() {
         >
           <Chat
             id={String(currentChatUser.id)}
-            chatType={currentChatUser.type || currentChatUser.identifier || "user"}
+            chatType={resolveChatKind(currentChatUser)}
           />
           {/* Hide search panel on medium and smaller screens when message search is active */}
           {messageSearch && (

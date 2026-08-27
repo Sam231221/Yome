@@ -8,7 +8,7 @@ import { IoVideocam } from "react-icons/io5";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import ContextMenu from "@/components/common/ContextMenu";
-import type { ActiveCall } from "@/types/chat";
+import { resolveChatKind, type ActiveCall } from "@/types/chat";
 
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -97,7 +97,10 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
             <AvatarWithStatus
               type="user"
               status={`${
-                onlineUsers.includes(currentChatUser?.id ?? "") ? "online" : "offline"
+                typeof currentChatUser?.id === "number" &&
+                onlineUsers.includes(currentChatUser.id)
+                  ? "online"
+                  : "offline"
               }`}
               size="lg"
               image={`${
@@ -115,6 +118,7 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
       <div className="flex lg:gap-4 md:gap-3 gap-2 relative flex-shrink-0">
         <button
           onClick={handleVoiceCall}
+          disabled={resolveChatKind(currentChatUser) !== "user"}
           className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
           aria-label="Voice call"
         >

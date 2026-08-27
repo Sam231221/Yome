@@ -20,7 +20,7 @@ import {
   logUserInfoLoadError,
 } from "@/lib/auth/userInfo";
 import { getUserConversation, logChatConversationError } from "@/lib/chat/chatApi";
-import type { ActiveCall, ChatKind, UserId } from "@/types/chat";
+import { resolveChatKind, type ActiveCall, type ChatKind, type UserId } from "@/types/chat";
 
 function createIncomingCall(
   from: { id: UserId; name?: string; profilePicture?: string },
@@ -197,11 +197,7 @@ export default function Chatpage() {
         const messages = await getUserConversation({
           fromUserId: userInfo.id,
           toUserId: currentChatUser.id,
-          chatType: (
-            currentChatUser.type ||
-            currentChatUser.identifier ||
-            "user"
-          ) as ChatKind,
+          chatType: resolveChatKind(currentChatUser) as ChatKind,
         });
         dispatch({ type: reducerCases.SET_MESSAGES, messages });
       } catch (error) {

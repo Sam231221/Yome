@@ -16,7 +16,7 @@ import {
 } from "@/lib/dashboard/dashboardApi";
 
 interface Mentor {
-  id: string;
+  id: number;
   profilePicture: string;
   firstname: string;
   lastname: string;
@@ -40,7 +40,7 @@ const MentorCarousel: React.FC<MentorCarouselProps> = ({
   const [items, setItems] = useState<Mentor[]>([]);
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
-  const handleConnectClick = async (id: string) => {
+  const handleConnectClick = async (id: number) => {
     if (!userInfo?.id) return;
     try {
       const successMessage = await connectUserToMentor(userInfo.id, id);

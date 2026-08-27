@@ -204,7 +204,7 @@ export function inferExtensionFromMimeType(mimeType: SupportedUploadMimeType) {
   return extension;
 }
 
-const buildObjectKey = ({
+export const buildObjectKey = ({
   target,
   entityId,
   chatScope,

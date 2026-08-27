@@ -4,7 +4,10 @@ import { useStateProvider } from "@/context/StateContext";
 import ChatListItem from "./ChatListItem";
 
 import { reducerCases } from "@/context/constants";
-import type { ChatListItem as ChatListItemData } from "@/types/chat";
+import {
+  resolveChatKind,
+  type ChatListItem as ChatListItemData,
+} from "@/types/chat";
 import {
   getInitialGroupMeta,
   getInitialUserMeta,
@@ -89,7 +92,7 @@ export default function List({
             return (
               <ChatListItem
                 id={String(contact.id)}
-                type={contact.identifier || contact.type || "user"}
+                type={resolveChatKind(contact)}
                 data={contact}
                 key={String(contact.id)}
               />
@@ -105,7 +108,7 @@ export default function List({
               return (
                 <ChatListItem
                   id={String(contact.id)}
-                  type={contact.identifier || contact.type || "user"}
+                  type={resolveChatKind(contact)}
                   data={contact}
                   key={String(contact.id)}
                 />

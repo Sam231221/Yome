@@ -40,13 +40,19 @@ type InitialGroupContactRecord = {
   id: GroupId;
   name?: string;
   identifier?: ChatKind;
-  type?: ChatKind;
+  chatType?: ChatKind;
   thumbnail?: string;
   messages?: InitialGroupMessageRecord[];
 };
 
 type DirectConversationRecord = {
   id: ConversationId;
+};
+
+type InitialDirectContactRecord = ChatListItem & {
+  id: UserId;
+  identifier?: ChatKind;
+  chatType?: ChatKind;
 };
 
 const getErrorMessage = (error: unknown, fallback = DEFAULT_ERROR_MESSAGE) => {
@@ -116,14 +122,33 @@ const normalizeGroupContact = (
   const latestMessage = group?.messages?.[0];
 
   return {
-    ...group,
-    ...latestMessage,
+    name: group.name,
+    thumbnail: group.thumbnail,
+    message: latestMessage?.message,
+    type: latestMessage?.type,
+    messageStatus: latestMessage?.messageStatus,
+    createdAt: latestMessage?.createdAt,
+    receiverId: latestMessage?.receiverId,
+    senderId: latestMessage?.senderId,
+    conversationId: latestMessage?.conversationId,
     id: String(group.id),
-    type: group.identifier || group.type || "group",
-    identifier: group.identifier || group.type || "group",
+    chatType: group.identifier || group.chatType || "group",
+    identifier: group.identifier || group.chatType || "group",
     messageId: latestMessage?.id,
   };
 };
+
+const normalizeDirectContact = (
+  contact: InitialDirectContactRecord
+): ChatListItem => ({
+  ...contact,
+  id: Number(contact.id),
+  chatType: contact.chatType || contact.identifier || "user",
+  identifier: contact.identifier || contact.chatType || "user",
+  receiverId:
+    typeof contact.receiverId === "number" ? contact.receiverId : null,
+  senderId: typeof contact.senderId === "number" ? contact.senderId : undefined,
+});
 
 export const getChatErrorMessage = getErrorMessage;
 
@@ -159,7 +184,7 @@ export const getInitialUserMeta = async (loggedInUserId: UserId) => {
     `${GET_INITIAL_USERS_MESSAGES}/${loggedInUserId}`
   );
   const usersWithLatestPrivateMessages =
-    data?.usersWithLatestPrivateMessages ?? data?.usersWithLatestPivateMessages ?? [];
+    (data?.usersWithLatestPrivateMessages ?? []).map(normalizeDirectContact);
 
   return {
     onlineUsers: (data?.onlineUsers ?? []) as UserId[],

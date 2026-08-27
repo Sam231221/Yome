@@ -14,7 +14,6 @@ import {
   directConversationSchema,
   getMessagesSchema,
   initialGroupMessagesSchema,
-  legacyInitialGroupMessagesSchema,
   initialContactsSchema,
 } from "./chat.validation.js";
 
@@ -31,11 +30,6 @@ router.post("/add-media-message", validateRequest(addMediaMessageSchema), addMed
 router.get(
   "/get-initial-group-messages/:userId",
   validateRequest(initialGroupMessagesSchema),
-  getInitialGroupsWithMessages
-);
-router.get(
-  "/get-initial-group-messages/:group_id",
-  validateRequest(legacyInitialGroupMessagesSchema),
   getInitialGroupsWithMessages
 );
 router.get(

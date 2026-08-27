@@ -5,6 +5,7 @@ import { FcGoogle } from "react-icons/fc";
 import FormInput from "@/components/FormInput/Form";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
+import { normalizeEmail } from "@/lib/auth/formValidation";
 
 interface LoginContainerProps {
   activeTab: string;
@@ -17,6 +18,7 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
   const callbackUrl = searchParams.get("callbackUrl");
 
   const [isFormFilled, setFormFill] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [values, setValues] = useState({
     email: "",
     password: "",
@@ -41,7 +43,7 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
   ];
 
   useEffect(() => {
-    setFormFill(values.email !== "" && values.password !== "");
+    setFormFill(values.email.trim() !== "" && values.password !== "");
   }, [values]);
 
   const onChangeFormInputs = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,21 +73,26 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const data = await signIn("credentials", {
-      redirect: false,
-      email: values.email.trim(),
-      password: values.password,
-    });
-    if (data?.error) {
-      toast.error("Sign-in failed. Check your email and password.");
-      return;
-    }
+    setIsSubmitting(true);
+    try {
+      const data = await signIn("credentials", {
+        redirect: false,
+        email: normalizeEmail(values.email),
+        password: values.password,
+      });
+      if (data?.error) {
+        toast.error("Sign-in failed. Check your email and password.");
+        return;
+      }
 
-    toast.success("Signed in successfully.");
-    if (callbackUrl === null) {
-      router.push("/dashboard");
-    } else {
-      window.location.href = callbackUrl;
+      toast.success("Signed in successfully.");
+      if (callbackUrl === null) {
+        router.push("/dashboard");
+      } else {
+        window.location.href = callbackUrl;
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -143,12 +150,14 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
         </a>
         <button
           type="submit"
-          disabled={!isFormFilled}
+          disabled={!isFormFilled || isSubmitting}
           className={`${
-            isFormFilled ? "bg-[#0e24a0] hover:bg-blue-700" : "bg-[#7599ff]"
+            isFormFilled && !isSubmitting
+              ? "bg-[#0e24a0] hover:bg-blue-700"
+              : "bg-[#7599ff]"
           }  w-full font-medium text-sm text-white py-3 px-2`}
         >
-          Sign In {" >"}
+          {isSubmitting ? "Signing in..." : "Sign in"}
         </button>
       </form>
     </div>

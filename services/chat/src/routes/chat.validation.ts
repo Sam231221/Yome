@@ -70,12 +70,6 @@ export const initialGroupMessagesSchema = {
   }),
 };
 
-export const legacyInitialGroupMessagesSchema = {
-  params: z.object({
-    group_id: positiveIntString,
-  }),
-};
-
 export const initialContactsSchema = {
   params: z.object({
     from: positiveIntString,

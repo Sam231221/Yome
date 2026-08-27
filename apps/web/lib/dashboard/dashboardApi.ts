@@ -7,13 +7,12 @@ import {
   GET_UNASSOCIATED_GROUPS,
   GET_UNFOLLOWED_MENTORS,
 } from "@/utils/ApiRoutes";
+import { getClientErrorMessage } from "@/lib/api/clientErrors";
 import type {
   DashboardGroupRecord,
   DashboardUserRecord,
 } from "@/app/(main)/(dashboard)/dashboard/components/facebook/types";
-import type { NumericId } from "@/types/chat";
-
-const DEFAULT_ERROR_MESSAGE = "Something went wrong. Please try again.";
+import type { UserId } from "@/types/chat";
 
 type ConnectResponse = {
   status?: number;
@@ -21,31 +20,27 @@ type ConnectResponse = {
   error?: string;
 };
 
+export type SuggestedDashboardUser = {
+  id: number;
+  name: string;
+  subtitle: string;
+  profilePicture: string;
+};
+
+export type SuggestedDashboardGroup = {
+  id: string;
+  name: string;
+  about: string;
+  thumbnail: string;
+};
+
+const DEFAULT_USER_AVATAR = "/avatars/userprofile.png";
+const DEFAULT_GROUP_AVATAR = "/avatars/groupprofile.png";
+
 const getDashboardErrorMessage = (
   error: unknown,
-  fallback = DEFAULT_ERROR_MESSAGE
-) => {
-  if (axios.isAxiosError(error)) {
-    const responseMessage =
-      typeof error.response?.data === "string"
-        ? error.response.data
-        : error.response?.data?.error || error.response?.data?.msg;
-
-    if (responseMessage) {
-      return responseMessage;
-    }
-
-    if (error.message) {
-      return error.message;
-    }
-  }
-
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  return fallback;
-};
+  fallback = "Something went wrong. Please try again."
+) => getClientErrorMessage(error, fallback);
 
 const expectSuccessfulConnectResponse = (
   data: ConnectResponse | undefined,
@@ -60,7 +55,31 @@ const expectSuccessfulConnectResponse = (
 
 export { getDashboardErrorMessage };
 
-export const getPeopleSuggestions = async (loggedInUserId: NumericId) => {
+export const getSuggestedUserName = (user: DashboardUserRecord) =>
+  [user.firstname, user.lastname].filter(Boolean).join(" ").trim() ||
+  user.name ||
+  user.username ||
+  "Unknown user";
+
+export const normalizeSuggestedUser = (
+  user: DashboardUserRecord
+): SuggestedDashboardUser => ({
+  id: Number(user.id),
+  name: getSuggestedUserName(user),
+  subtitle: user.role ? `${user.role.toLowerCase()} on Yome` : "Yome user",
+  profilePicture: user.profilePicture || DEFAULT_USER_AVATAR,
+});
+
+export const normalizeSuggestedGroup = (
+  group: DashboardGroupRecord
+): SuggestedDashboardGroup => ({
+  id: group.id,
+  name: group.name || "Untitled group",
+  about: group.about || "Community group on Yome",
+  thumbnail: group.thumbnail || DEFAULT_GROUP_AVATAR,
+});
+
+export const getPeopleSuggestions = async (loggedInUserId: UserId) => {
   const followedResponse = await axios.get(
     `${GET_ALL_CONNECTED_USERS}/${loggedInUserId}`
   );
@@ -89,23 +108,28 @@ export const getPeopleSuggestions = async (loggedInUserId: NumericId) => {
         | undefined) ?? [];
   }
 
-  return users.filter(
-    (user) =>
-      Number(user.id) !== currentUserId && !followedSet.has(Number(user.id))
-  );
+  return users
+    .filter(
+      (user) =>
+        Number(user.id) !== currentUserId && !followedSet.has(Number(user.id))
+    )
+    .map(normalizeSuggestedUser);
 };
 
-export const getGroupSuggestions = async (loggedInUserId: NumericId) => {
+export const getGroupSuggestions = async (loggedInUserId: UserId) => {
   const { data } = await axios.get(
     `${GET_UNASSOCIATED_GROUPS}/${loggedInUserId}`
   );
 
-  return (data?.unassociatedGroups as DashboardGroupRecord[] | undefined) ?? [];
+  const groups =
+    (data?.unassociatedGroups as DashboardGroupRecord[] | undefined) ?? [];
+
+  return groups.map(normalizeSuggestedGroup);
 };
 
 export const connectUserToMentor = async (
-  loggedInUserId: NumericId,
-  mentorId: NumericId
+  loggedInUserId: UserId,
+  mentorId: UserId
 ) => {
   const { data } = await axios.post<ConnectResponse>(CONNECT_USER_TO_MENTOR, {
     loggedInUserId: Number(loggedInUserId),
@@ -116,7 +140,7 @@ export const connectUserToMentor = async (
 };
 
 export const connectUserToGroup = async (
-  loggedInUserId: NumericId,
+  loggedInUserId: UserId,
   groupIdToJoin: string
 ) => {
   const { data } = await axios.post<ConnectResponse>(CONNECT_USER_TO_GROUP, {

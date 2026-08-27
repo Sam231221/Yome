@@ -5,8 +5,12 @@ import {
   getDirectConversation,
   getOrCreateDirectConversation,
 } from "../lib/conversations.js";
-
-type SupportedMessageType = "text" | "image" | "audio";
+import {
+  buildInitialDirectConversationSummaries,
+  isMatchingDirectConversation,
+  normalizeMessageType,
+  type SupportedMessageType,
+} from "../lib/direct-messages.js";
 type ChatRequestKind = "user" | "group";
 
 function getAuthenticatedUserId(req: Request): number | null {
@@ -19,18 +23,6 @@ function getAuthenticatedUserId(req: Request): number | null {
 function parseRequiredUserId(value: unknown): number | null {
   const id = Number.parseInt(String(value ?? ""), 10);
   return Number.isNaN(id) ? null : id;
-}
-
-function buildLegacyDirectConversationKey(
-  leftUserId: number,
-  rightUserId: number
-) {
-  const ordered = [leftUserId, rightUserId].sort((left, right) => left - right);
-  return `direct-${ordered[0]}-${ordered[1]}`;
-}
-
-function normalizeMessageType(type: unknown, fallback: SupportedMessageType) {
-  return type === "image" || type === "audio" || type === "text" ? type : fallback;
 }
 
 async function createDirectMessage(params: {
@@ -54,6 +46,13 @@ async function createDirectMessage(params: {
         where: { id: conversationId },
       })
     : null;
+
+  if (
+    resolvedConversation &&
+    !isMatchingDirectConversation(resolvedConversation, fromId, toId)
+  ) {
+    throw new Error("Conversation mismatch");
+  }
 
   const conversation =
     resolvedConversation ??
@@ -239,70 +238,18 @@ export async function getInitialUsersWithMessages(
       orderBy: { createdAt: "desc" },
     });
 
-    const conversations = new Map<
-      string,
-      Record<string, unknown> & { totalUnreadMessages?: number }
-    >();
-    const messageStatusChange: number[] = [];
+    const { usersWithLatestPrivateMessages, deliveredMessageIds } =
+      buildInitialDirectConversationSummaries(directMessages, userId);
 
-    for (const msg of directMessages) {
-      const conversationKey =
-        msg.conversationId ??
-        buildLegacyDirectConversationKey(msg.senderId, msg.receiverId ?? userId);
-
-      const isSender = msg.senderId === userId;
-      const otherParticipantId = isSender ? msg.receiverId : msg.senderId;
-      if (!otherParticipantId) continue;
-
-      if (msg.messageStatus === "sent" && msg.receiverId === userId) {
-        messageStatusChange.push(msg.id);
-      }
-
-      if (!conversations.has(conversationKey)) {
-        const otherParticipant = isSender ? msg.receiver : msg.sender;
-        conversations.set(conversationKey, {
-          conversationId: msg.conversationId,
-          messageId: msg.id,
-          type: msg.type,
-          message: msg.message,
-          messageStatus: msg.messageStatus,
-          createdAt: msg.createdAt,
-          senderId: msg.senderId,
-          receiverId: msg.receiverId,
-          id: otherParticipantId,
-          name: otherParticipant?.name ?? "",
-          firstname: otherParticipant?.firstname,
-          lastname: otherParticipant?.lastname,
-          username: otherParticipant?.username,
-          email: otherParticipant?.email,
-          identifier: otherParticipant?.identifier ?? "user",
-          profilePicture: otherParticipant?.profilePicture,
-          userProfile: otherParticipant?.userProfile,
-          totalUnreadMessages:
-            !isSender && msg.messageStatus !== "read" ? 1 : 0,
-        });
-        continue;
-      }
-
-      if (!isSender && msg.messageStatus !== "read") {
-        const existing = conversations.get(conversationKey)!;
-        existing.totalUnreadMessages = (existing.totalUnreadMessages ?? 0) + 1;
-        conversations.set(conversationKey, existing);
-      }
-    }
-
-    if (messageStatusChange.length > 0) {
+    if (deliveredMessageIds.length > 0) {
       await prisma.messages.updateMany({
-        where: { id: { in: messageStatusChange } },
+        where: { id: { in: deliveredMessageIds } },
         data: { messageStatus: "delivered" },
       });
     }
 
-    const usersWithLatestPrivateMessages = Array.from(conversations.values());
-
     res.status(200).json({
       usersWithLatestPrivateMessages,
-      usersWithLatestPivateMessages: usersWithLatestPrivateMessages,
       onlineUsers: Array.from(onlineUsers.keys()).map((id) => Number(id)),
     });
   } catch (error) {
@@ -316,7 +263,7 @@ export async function getInitialGroupsWithMessages(
   next: NextFunction
 ): Promise<void> {
   try {
-    const userId = parseRequiredUserId(req.params.userId ?? req.params.group_id);
+    const userId = parseRequiredUserId(req.params.userId);
     const authenticatedUserId = getAuthenticatedUserId(req);
     if (authenticatedUserId === null) {
       res.status(401).json({ ok: false, error: "Unauthorized" });
@@ -431,6 +378,10 @@ export async function addMessage(
       res.status(403).json({ ok: false, error: "Forbidden" });
       return;
     }
+    if (error instanceof Error && error.message === "Conversation mismatch") {
+      res.status(400).json({ ok: false, error: "Invalid direct conversation" });
+      return;
+    }
     next(error);
   }
 }
@@ -508,6 +459,10 @@ export async function addMediaMessage(
 
     res.status(400).json({ ok: false, error: "Invalid chatType" });
   } catch (error) {
+    if (error instanceof Error && error.message === "Conversation mismatch") {
+      res.status(400).json({ ok: false, error: "Invalid direct conversation" });
+      return;
+    }
     next(error);
   }
 }

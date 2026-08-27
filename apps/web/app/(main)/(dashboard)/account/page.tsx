@@ -1,28 +1,32 @@
 "use client";
-import Image from "next/image";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { reducerCases } from "@/context/constants";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IoSettingsOutline } from "react-icons/io5";
 import { IoKeyOutline } from "react-icons/io5";
-import axios from "axios";
-import {
-  CHANGE_PASSWORD_ROUTE,
-  UPDATE_USER,
-} from "@/utils/ApiRoutes";
 import { useStateProvider } from "@/context/StateContext";
 import FormInput from "@/components/FormInput/Form";
 import { accountInputs, securityInputs } from "./inputs";
 import toast from "react-hot-toast";
-import Loader from "@/components/common/Loader";
 import ProfileAvatar from "@/components/common/ProfileAvatar/ProfileAvatar";
 import {
   ensureUserInfo,
-  getUserInfoErrorMessage,
   logUserInfoLoadError,
 } from "@/lib/auth/userInfo";
+import {
+  changeAccountPassword,
+  getAccountErrorMessage,
+  updateAccountDetails,
+} from "@/lib/account/accountApi";
+import {
+  CONFIRM_PASSWORD_ERROR_MESSAGE,
+  normalizeEmail,
+  normalizeText,
+  PASSWORD_ERROR_MESSAGE,
+  PASSWORD_PATTERN,
+  passwordsMatch,
+} from "@/lib/auth/formValidation";
 
 interface Values {
   email: string;
@@ -37,18 +41,17 @@ interface Values {
   [key: string]: string | undefined;
 }
 
-const PASSWORD_PATTERN =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,64}$/;
-
 const Account = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
 
   const [updatedDetails, setUpdatedDetails] = useState(false);
   const [isSecurityFormValid, setIsSecurityFormValid] = useState(false);
+  const [isSavingAccount, setIsSavingAccount] = useState(false);
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [pic, setPic] = useState(null);
+  const [pic, setPic] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("general");
   const [values, setValues] = useState<Values>({
     email: "",
@@ -103,9 +106,7 @@ const Account = () => {
     }));
   }, [userInfo]);
 
-  interface FormInputEvent extends React.ChangeEvent<HTMLInputElement> {}
-
-  const onChangeFormInputs = (e: FormInputEvent) => {
+  const onChangeFormInputs = (e: ChangeEvent<HTMLInputElement>) => {
     const nextValues = { ...values, [e.target.name]: e.target.value };
     setValues(nextValues);
     setUpdatedDetails(
@@ -120,18 +121,17 @@ const Account = () => {
   };
 
   useEffect(() => {
-    setPic(pic);
-  }, [pic]);
-  useEffect(() => {
-    const passwordsMatch = values.newPassword === values.confirmPassword;
-    const newPasswordIsStrong = PASSWORD_PATTERN.test(values.newPassword);
+    const passwordFieldsMatch = values.newPassword === values.confirmPassword;
+    const newPasswordIsStrong = new RegExp(PASSWORD_PATTERN).test(
+      values.newPassword
+    );
 
     setIsSecurityFormValid(
       Boolean(
         values.currentPassword &&
           values.newPassword &&
           values.confirmPassword &&
-          passwordsMatch &&
+          passwordFieldsMatch &&
           newPasswordIsStrong
       )
     );
@@ -142,89 +142,72 @@ const Account = () => {
     router.replace(`/account?tab=${type}`);
   };
   const handleAccountUpdate = async () => {
+    if (!userInfo?.id) return;
     try {
-      const formData = new FormData();
-      if (pic) {
-        formData.append("avatar", pic);
-      }
-      formData.append("email", values.email);
-      formData.append("username", values.username);
-      formData.append("bio", values.bio);
-      formData.append("firstname", values.firstname);
-      formData.append("lastname", values.lastname);
-      formData.append("address", values.address);
-      const response = await axios.post(UPDATE_USER, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        params: { userId: userInfo?.id },
-        validateStatus: () => true,
+      setIsSavingAccount(true);
+      const { user, message } = await updateAccountDetails({
+        userId: userInfo.id,
+        avatarFile: pic,
+        email: normalizeEmail(values.email),
+        username: normalizeText(values.username),
+        bio: values.bio.trim(),
+        firstname: normalizeText(values.firstname),
+        lastname: normalizeText(values.lastname),
+        address: values.address.trim(),
       });
-      const { data, status } = response;
-
-      if (status === 200 && data?.ok && data?.user) {
-        dispatch({
-          type: reducerCases.SET_USER_INFO,
-          userInfo: {
-            ...userInfo,
-            ...data.user,
-            bio: data.user.userProfile?.bio ?? "",
-            address: data.user.userProfile?.address ?? "",
-          },
-        });
-        toast.success(data.msg || "Account updated successfully.");
-        setUpdatedDetails(false);
-        setPic(null);
-        return;
-      }
-      toast.error(
-        data?.error || data?.msg || "Unable to update your account right now."
-      );
+      dispatch({
+        type: reducerCases.SET_USER_INFO,
+        userInfo: user,
+      });
+      toast.success(message);
+      setUpdatedDetails(false);
+      setPic(null);
     } catch (error) {
       toast.error(
-        getUserInfoErrorMessage(
+        getAccountErrorMessage(
           error,
           "Unable to update your account right now."
         )
       );
+    } finally {
+      setIsSavingAccount(false);
     }
   };
 
-  const handlePasswordUpdate = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
+  const handlePasswordUpdate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!passwordsMatch(values.newPassword, values.confirmPassword)) {
+      toast.error(CONFIRM_PASSWORD_ERROR_MESSAGE);
+      return;
+    }
+    if (!new RegExp(PASSWORD_PATTERN).test(values.newPassword)) {
+      toast.error(PASSWORD_ERROR_MESSAGE);
+      return;
+    }
+
     try {
-      const response = await axios.post(
-        CHANGE_PASSWORD_ROUTE,
-        {
-          currentPassword: values.currentPassword,
-          newPassword: values.newPassword.trim(),
-          confirmPassword: values.confirmPassword,
-        },
-        { validateStatus: () => true }
-      );
-      const { data, status } = response;
-      if (status === 200 && data?.ok) {
-        toast.success(data.msg || "Password updated successfully.");
-        setValues((prev) => ({
-          ...prev,
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        }));
-        return;
-      }
-      toast.error(
-        data?.error || data?.msg || "Unable to update your password right now."
-      );
+      setIsSavingPassword(true);
+      const { message } = await changeAccountPassword({
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword.trim(),
+        confirmPassword: values.confirmPassword,
+      });
+      toast.success(message);
+      setValues((prev) => ({
+        ...prev,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      }));
     } catch (error) {
       toast.error(
-        getUserInfoErrorMessage(
+        getAccountErrorMessage(
           error,
           "Unable to update your password right now."
         )
       );
+    } finally {
+      setIsSavingPassword(false);
     }
   };
 
@@ -304,9 +287,7 @@ const Account = () => {
                               key={input.id}
                               {...input}
                               value={values[input.name]}
-                              onChange={(
-                                e: React.ChangeEvent<HTMLInputElement>
-                              ) => onChangeFormInputs(e)}
+                              onChange={onChangeFormInputs}
                             />
                           ))}
                         </div>
@@ -319,9 +300,7 @@ const Account = () => {
                               key={input.id}
                               {...input}
                               value={values[input.name]}
-                              onChange={(
-                                e: React.ChangeEvent<HTMLInputElement>
-                              ) => onChangeFormInputs(e)}
+                              onChange={onChangeFormInputs}
                             />
                           ))}
                         </div>
@@ -329,14 +308,14 @@ const Account = () => {
                         <button
                           type="button"
                           onClick={() => handleAccountUpdate()}
-                          disabled={updatedDetails ? false : true}
+                          disabled={!updatedDetails || isSavingAccount}
                           className={`${
-                            updatedDetails
+                            updatedDetails && !isSavingAccount
                               ? "bg-sky-500 hover:bg-sky-600"
                               : "bg-slate-400"
                           }  rounded-lg font-medium text-sm text-white py-3 px-2`}
                         >
-                          Save changes
+                          {isSavingAccount ? "Saving..." : "Save changes"}
                         </button>
                       </form>
                     </div>
@@ -368,12 +347,16 @@ const Account = () => {
 
                         <button
                           type="submit"
-                          disabled={!isSecurityFormValid}
+                          disabled={!isSecurityFormValid || isSavingPassword}
                           className={`${
-                            isSecurityFormValid ? "bg-[#0e24a0]" : "bg-[#b6b6b6]"
+                            isSecurityFormValid && !isSavingPassword
+                              ? "bg-[#0e24a0]"
+                              : "bg-[#b6b6b6]"
                           } rounded-lg font-medium text-sm text-white py-3 px-2`}
                         >
-                          Update password
+                          {isSavingPassword
+                            ? "Updating password..."
+                            : "Update password"}
                         </button>
                       </form>
                     </div>

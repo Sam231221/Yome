@@ -16,6 +16,9 @@ function stripPassword<T extends { password: string }>(user: T): Omit<T, "passwo
   return safeUser;
 }
 
+const STRONG_PASSWORD_PATTERN =
+  /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,64}$/;
+
 export async function getUserByEmail(
   req: Request,
   res: Response,
@@ -54,7 +57,7 @@ export async function verifyCredentials(
   try {
     const { email, password } = req.body as { email?: string; password?: string };
     if (!email || !password) {
-      res.status(400).json({ ok: false, error: "email and password required" });
+      res.status(400).json({ ok: false, error: "Email and password are required." });
       return;
     }
     const prisma = getPrismaInstance();
@@ -92,10 +95,10 @@ export async function registerUser(
       firstname?: string;
       password?: string;
     };
-    if (!email || !username || !password) {
+    if (!email || !username || !password || !firstname || !lastname) {
       res.status(400).json({
         ok: false,
-        error: "Email, Name and Password are required",
+        error: "Email, username, first name, last name, and password are required.",
       });
       return;
     }
@@ -106,15 +109,17 @@ export async function registerUser(
       where: { username },
     });
     if (existingByName || existingByEmail) {
-      res.status(409).json({ ok: false, error: "User already exists" });
+      res
+        .status(409)
+        .json({ ok: false, error: "An account with that email or username already exists." });
       return;
     }
     const salt = await bcryptjs.genSalt(10);
     const hashedPassword = await bcryptjs.hash(password, salt);
     const userProfile = await prisma.userProfile.create({
       data: {
-        bio: "Bio for " + (firstname ?? ""),
-        address: "Address for " + (firstname ?? ""),
+        bio: "",
+        address: "",
       },
     });
     const user = await prisma.user.create({
@@ -233,22 +238,22 @@ export async function changePassword(
     };
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      res.status(400).json({ ok: false, error: "All password fields are required" });
+      res.status(400).json({ ok: false, error: "All password fields are required." });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      res.status(400).json({ ok: false, error: "Passwords do not match" });
+      res
+        .status(400)
+        .json({ ok: false, error: "Confirmation must match the new password exactly." });
       return;
     }
 
-    const passwordPattern =
-      /^(?=.*[0-9])(?=.*[a-zA-Z])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$/;
-    if (!passwordPattern.test(newPassword)) {
+    if (!STRONG_PASSWORD_PATTERN.test(newPassword)) {
       res.status(400).json({
         ok: false,
         error:
-          "Password should be 8-20 characters and include at least 1 letter, 1 number and 1 special character",
+          "Password must be 8-64 characters and include at least one letter, one number, and one special character.",
       });
       return;
     }
@@ -265,7 +270,7 @@ export async function changePassword(
 
     const matches = await bcryptjs.compare(currentPassword, user.password);
     if (!matches) {
-      res.status(400).json({ ok: false, error: "Current password is incorrect" });
+      res.status(400).json({ ok: false, error: "Current password is incorrect." });
       return;
     }
 
@@ -273,7 +278,7 @@ export async function changePassword(
     if (sameAsCurrent) {
       res.status(400).json({
         ok: false,
-        error: "New password must be different from the current password",
+        error: "New password must be different from the current password.",
       });
       return;
     }

@@ -9,7 +9,12 @@ import { MdSend } from "react-icons/md";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import PhotoPicker from "@/components/common/PhotoPicker";
-import type { ChatKind, ChatMessage, NumericId } from "@/types/chat";
+import {
+  isGroupId,
+  type ChatKind,
+  type ChatMessage,
+  type ChatTargetId,
+} from "@/types/chat";
 import {
   getChatErrorMessage,
   sendImageMessage,
@@ -33,7 +38,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
   const [{ socket, currentChatUser, userInfo }, dispatch] = useStateProvider();
   const resolvedChatType = (chatType === "group" ? "group" : "user") as ChatKind;
 
-  const emitMessage = (targetId: NumericId, messagePayload: ChatMessage) => {
+  const emitMessage = (targetId: ChatTargetId, messagePayload: ChatMessage) => {
     socket?.current?.emit("send-msg", {
       chatType: resolvedChatType,
       room: `room-${targetId}`,
@@ -58,7 +63,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
     dispatch({
       type: reducerCases.ADD_GROUP_MESSAGE,
       newMessage: messagePayload,
-      groupId: currentChatUser.id,
+      groupId: isGroupId(currentChatUser.id) ? currentChatUser.id : undefined,
       fromSelf: true,
     });
   };

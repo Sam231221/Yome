@@ -5,23 +5,16 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 import { BsPeople, BsThreeDots } from "react-icons/bs";
 import { useStateProvider } from "@/context/StateContext";
-import type { DashboardGroupRecord } from "./types";
 import {
   connectUserToGroup,
   getDashboardErrorMessage,
   getGroupSuggestions,
+  type SuggestedDashboardGroup,
 } from "@/lib/dashboard/dashboardApi";
-
-type SuggestedGroup = {
-  id: string;
-  name: string;
-  about: string;
-  thumbnail: string;
-};
 
 export default function GroupSuggestions() {
   const [{ userInfo }] = useStateProvider();
-  const [groups, setGroups] = useState<SuggestedGroup[]>([]);
+  const [groups, setGroups] = useState<SuggestedDashboardGroup[]>([]);
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
   const [pendingIds, setPendingIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,17 +29,7 @@ export default function GroupSuggestions() {
       if (!userInfo?.id) return;
       setIsLoading(true);
       try {
-        const unassociatedGroups: DashboardGroupRecord[] =
-          await getGroupSuggestions(userInfo.id);
-
-        setGroups(
-          unassociatedGroups.map((group) => ({
-            id: group.id,
-            name: group.name || "Untitled group",
-            about: group.about || "Community group on Yome",
-            thumbnail: group.thumbnail || "/avatars/groupprofile.png",
-          }))
-        );
+        setGroups(await getGroupSuggestions(userInfo.id));
         setHiddenIds([]);
       } catch (error) {
         toast.error(

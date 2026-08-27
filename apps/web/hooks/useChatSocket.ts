@@ -8,13 +8,13 @@ import type {
   GroupMessageEvent,
   IncomingCallEvent,
   MarkReadEvent,
-  NumericId,
   OnlineUsersEvent,
   PrivateMessageEvent,
+  UserId,
 } from "@/types/chat";
 
 type UseChatSocketParams = {
-  userId?: NumericId;
+  userId?: UserId;
   onSocketReady?: (socketRef: ChatSocketRef) => void;
   onPrivateMessageReceived?: (payload: PrivateMessageEvent) => void;
   onGroupMessageReceived?: (payload: GroupMessageEvent) => void;

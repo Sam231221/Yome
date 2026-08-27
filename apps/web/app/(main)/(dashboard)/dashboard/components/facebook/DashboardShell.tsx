@@ -33,7 +33,6 @@ import {
 } from "@/lib/chat/chatApi";
 import { useChatSocket } from "@/hooks/useChatSocket";
 import { playNotificationSound } from "@/lib/chat/notificationSound";
-import type { NumericId } from "@/types/chat";
 
 const DEFAULT_AVATAR = "/avatars/userprofile.png";
 const MAX_OPEN_CHATS = 3;

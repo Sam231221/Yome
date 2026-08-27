@@ -1,6 +1,7 @@
 import axios from "axios";
 import { reducerCases } from "@/context/constants";
 import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
+import { getClientErrorMessage } from "@/lib/api/clientErrors";
 
 type SessionUser = {
   email?: string | null;
@@ -51,28 +52,7 @@ const DEFAULT_USER_INFO_ERROR = "Failed to load user information.";
 export const getUserInfoErrorMessage = (
   error: unknown,
   fallback = DEFAULT_USER_INFO_ERROR
-) => {
-  if (axios.isAxiosError(error)) {
-    const responseMessage =
-      typeof error.response?.data === "string"
-        ? error.response.data
-        : error.response?.data?.error || error.response?.data?.msg;
-
-    if (responseMessage) {
-      return responseMessage;
-    }
-
-    if (error.message) {
-      return error.message;
-    }
-  }
-
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  return fallback;
-};
+) => getClientErrorMessage(error, fallback);
 
 export const logUserInfoLoadError = (context: string, error: unknown) => {
   console.warn(`[user-info] ${context}: ${getUserInfoErrorMessage(error)}`);

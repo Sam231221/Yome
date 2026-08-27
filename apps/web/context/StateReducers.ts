@@ -2,10 +2,13 @@ import { reducerCases } from "./constants";
 import type {
   ActiveCall,
   ChatListItem,
+  ChatKind,
   ChatMessage,
   ChatSocketRef,
-  NumericId,
+  GroupId,
+  UserId,
 } from "@/types/chat";
+import { resolveChatKind } from "@/types/chat";
 import type { AppUserInfo } from "@/lib/auth/userInfo";
 
 export interface State {
@@ -24,12 +27,12 @@ export interface State {
   voiceCall: ActiveCall | undefined;
   incomingVoiceCall: ActiveCall | undefined;
   incomingVideoCall: ActiveCall | undefined;
-  onlineUsers: NumericId[];
+  onlineUsers: UserId[];
   contactSearch: string;
   filteredContacts: ChatListItem[];
 }
 
-type IncomingChatMessage = ChatMessage & { groupId?: NumericId | null };
+type IncomingChatMessage = ChatMessage & { groupId?: GroupId | null };
 
 type SetUserInfoAction = {
   type: typeof reducerCases.SET_USER_INFO;
@@ -72,7 +75,7 @@ type SetGroupContactsAction = {
 
 type SetOnlineUsersAction = {
   type: typeof reducerCases.SET_ONLINE_USERS;
-  onlineUsers: NumericId[];
+  onlineUsers: UserId[];
 };
 
 type SetVideoCallAction = {
@@ -113,14 +116,14 @@ type AddUserMessageAction = {
 type AddGroupMessageAction = {
   type: typeof reducerCases.ADD_GROUP_MESSAGE;
   newMessage: IncomingChatMessage;
-  groupId?: NumericId;
+  groupId?: GroupId;
   fromSelf?: boolean;
 };
 
 type SetMessagesReadAction = {
   type: typeof reducerCases.SET_MESSAGES_READ;
-  id: NumericId;
-  receiverId?: NumericId;
+  id: UserId;
+  receiverId?: UserId;
 };
 
 type ToggleMessagesSearchAction = {
@@ -170,6 +173,15 @@ type ContactMessageSnapshot = Pick<
   | "createdAt"
   | "totalUnreadMessages"
 >;
+
+const buildCurrentChatSelection = (
+  current: ChatListItem,
+  chatKind: ChatKind
+): ChatListItem => ({
+  ...current,
+  chatType: chatKind,
+  identifier: current.identifier || chatKind,
+});
 
 const applyMessageSnapshotToContact = (
   contact: ChatListItem,
@@ -252,7 +264,10 @@ const reducer = (state: State, action: Action): State => {
       };
     }
     case reducerCases.CHANGE_CURRENT_CHAT_USER: {
-      const currentUser = action.user;
+      const currentUser = buildCurrentChatSelection(
+        action.user,
+        resolveChatKind(action.user)
+      );
       if (state.contactsPage) {
         return {
           ...state,
@@ -260,7 +275,10 @@ const reducer = (state: State, action: Action): State => {
           messages: [],
         };
       }
-      if (currentUser.type === "user") {
+      if (resolveChatKind(currentUser) === "user") {
+        if (typeof currentUser.id !== "number") {
+          return state;
+        }
         state.socket?.current?.emit("mark-read", {
           id: currentUser.id,
           receiverId: state.userInfo?.id,
@@ -281,7 +299,7 @@ const reducer = (state: State, action: Action): State => {
         };
       }
 
-      if (currentUser.type === "group") {
+      if (resolveChatKind(currentUser) === "group") {
         return {
           ...state,
           currentChatUser: currentUser,
@@ -347,14 +365,16 @@ const reducer = (state: State, action: Action): State => {
             clonedContacts.unshift(newUpdatedContact);
           } else if (newMessage.receiver) {
             const receiver = newMessage.receiver;
-            const data = {
-              ...buildContactSnapshotFromMessage(newMessage),
-              id: receiver.id,
-              name: receiver.name ?? "",
-              profilePicture: receiver.profilePicture,
-              totalUnreadMessages: action.fromSelf ? 0 : 1,
-            };
-            clonedContacts.unshift(data);
+          const data = {
+            ...buildContactSnapshotFromMessage(newMessage),
+            id: receiver.id,
+            name: receiver.name ?? "",
+            profilePicture: receiver.profilePicture,
+            chatType: "user" as const,
+            identifier: "user" as const,
+            totalUnreadMessages: action.fromSelf ? 0 : 1,
+          };
+          clonedContacts.unshift(data);
           }
           return {
             ...state,
@@ -392,6 +412,8 @@ const reducer = (state: State, action: Action): State => {
             id: sender.id,
             name: sender.name ?? "",
             profilePicture: sender.profilePicture,
+            chatType: "user" as const,
+            identifier: "user" as const,
           };
           clonedContacts.unshift(data);
         }
@@ -438,7 +460,7 @@ const reducer = (state: State, action: Action): State => {
           clonedGroupContacts.splice(index, 1);
           clonedGroupContacts.unshift(updatedGroup);
         } else if (group) {
-          const newGroupData = {
+          const newGroupData: ChatListItem = {
             message,
             type,
             messageId: id,
@@ -446,6 +468,7 @@ const reducer = (state: State, action: Action): State => {
             receiverId,
             senderId,
             createdAt,
+            chatType: "group",
             identifier: "group",
             id: group.id,
             name: group.name,

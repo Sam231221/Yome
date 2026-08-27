@@ -5,15 +5,7 @@ import { NextResponse } from "next/server";
 export default withAuth(
   // `withAuth` augments your `Request` with the user's token.
   function middleware(request: NextRequestWithAuth) {
-    // console.log(request.nextUrl.pathname)
-    // console.log(request.nextauth.token)
-    //For extra Page, only admin can have access to it
-    // if (
-    //   request.nextUrl.pathname.startsWith("/extra") &&
-    //   request.nextauth.token?.role !== "admin"
-    // ) {
-    //   return NextResponse.rewrite(new URL("/denied", request.url));
-    // }
+    void request;
   },
   {
     callbacks: {

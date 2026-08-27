@@ -2,6 +2,21 @@ import { z } from "zod";
 
 const positiveInt = z.coerce.number().int().positive();
 const nonEmptyString = z.string().trim().min(1);
+const nameSchema = z
+  .string()
+  .trim()
+  .min(2)
+  .max(40)
+  .regex(/^[A-Za-z][A-Za-z' -]{1,39}$/, "Name must be 2-40 valid characters.");
+const usernameSchema = z
+  .string()
+  .trim()
+  .min(3)
+  .max(24)
+  .regex(
+    /^[A-Za-z0-9._@-]{3,24}$/,
+    "Username must be 3-24 characters and may include letters, numbers, dots, underscores, @, or hyphens."
+  );
 const userIdParamsSchema = z.object({
   loggedInUserId: z.coerce.string().regex(/^\d+$/, "loggedInUserId must be a positive integer"),
 });
@@ -17,11 +32,11 @@ export const updateUserSchema = {
     userId: positiveInt,
   }),
   body: z.object({
-    email: z.string().trim().email(),
-    username: nonEmptyString.max(50),
-    firstname: z.string().trim().max(100).optional().default(""),
-    lastname: z.string().trim().max(100).optional().default(""),
-    bio: z.string().trim().max(500).optional().default(""),
+    email: z.string().trim().toLowerCase().email(),
+    username: usernameSchema,
+    firstname: nameSchema,
+    lastname: nameSchema,
+    bio: z.string().trim().max(160).optional().default(""),
     address: z.string().trim().max(255).optional().default(""),
   }),
 };
