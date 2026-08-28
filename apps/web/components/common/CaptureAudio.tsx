@@ -19,6 +19,29 @@ import {
 } from "@/types/chat";
 import { getChatErrorMessage, sendAudioMessage } from "@/lib/chat/chatApi";
 
+const AUDIO_RECORDING_MIME_CANDIDATES = [
+  "audio/mp4;codecs=mp4a.40.2",
+  "audio/mp4",
+  "audio/ogg;codecs=opus",
+  "audio/ogg",
+  "audio/webm;codecs=opus",
+  "audio/webm",
+] as const;
+
+const getSupportedRecordingMimeType = () => {
+  if (typeof window === "undefined" || typeof MediaRecorder === "undefined") {
+    return "";
+  }
+
+  for (const mimeType of AUDIO_RECORDING_MIME_CANDIDATES) {
+    if (MediaRecorder.isTypeSupported(mimeType)) {
+      return mimeType;
+    }
+  }
+
+  return "";
+};
+
 type AudioRecorderProps = {
   hide?: React.Dispatch<React.SetStateAction<boolean>>;
   chatType?: string;
@@ -120,7 +143,10 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
     navigator.mediaDevices
       .getUserMedia({ audio: true })
       .then((stream) => {
-        const mediaRecorder = new MediaRecorder(stream);
+        const preferredMimeType = getSupportedRecordingMimeType();
+        const mediaRecorder = preferredMimeType
+          ? new MediaRecorder(stream, { mimeType: preferredMimeType })
+          : new MediaRecorder(stream);
         mediaRecorderRef.current = mediaRecorder;
         mediaStreamRef.current = stream;
         if (audioRef.current) audioRef.current.srcObject = stream;
@@ -136,8 +162,12 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
           const blob = new Blob(audioChunksRef.current, { type: mimeType });
           const extension = mimeType.includes("ogg")
             ? "ogg"
+            : mimeType.includes("mp4") || mimeType.includes("m4a")
+              ? "m4a"
             : mimeType.includes("mp3")
               ? "mp3"
+              : mimeType.includes("wav")
+                ? "wav"
               : "webm";
           const audioFile = new File([blob], `recording.${extension}`, {
             type: mimeType,
@@ -146,9 +176,17 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
           audioUrlRef.current = audioURL;
           const audio = new Audio(audioURL);
 
+          audio.addEventListener(
+            "loadedmetadata",
+            () => {
+              setTotalDuration(audio.duration || recordingDuration);
+            },
+            { once: true }
+          );
+
           setRecordedAudio(audio);
           setRenderedAudio(audioFile);
-          setTotalDuration(audio.duration || recordingDuration);
+          setTotalDuration(recordingDuration);
 
           waveform?.load(audioURL);
           mediaStreamRef.current?.getTracks().forEach((track) => track.stop());

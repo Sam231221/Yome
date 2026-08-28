@@ -22,9 +22,11 @@ const logger = createLogger("media");
 
 const app = express();
 const port = servicePorts.media;
+const legacyUploadsDir = join(__dirname, "../uploads");
 
 app.use(cors());
 app.use(express.json());
+app.use("/uploads", express.static(legacyUploadsDir));
 
 app.get("/health", (_req, res) =>
   res.status(200).json({ ok: true, service: "media" })

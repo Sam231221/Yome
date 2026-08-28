@@ -169,9 +169,6 @@ export default function ChatListItem({
               </span>
             )}
           </span>
-          {type === "user" && (data.totalUnreadMessages ?? 0) > 0 && (
-            <span className="conversation-badge">{data.totalUnreadMessages}</span>
-          )}
         </div>
       </div>
       {!isContactPage && (

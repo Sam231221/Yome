@@ -30,6 +30,7 @@ function VoiceMessage({ message }: VoiceMessageProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPlaybackTime, setCurrentPlaybackTime] = useState(0);
   const [totalDuration, setTotalDuration] = useState(0);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const audioUrl = String(message.message ?? "").trim();
 
   const progressPercent = useMemo(() => {
@@ -45,7 +46,13 @@ function VoiceMessage({ message }: VoiceMessageProps) {
     if (!audio) return;
 
     const handleLoadedMetadata = () => {
+      setPlaybackError(null);
       setTotalDuration(audio.duration || 0);
+    };
+    const handleDurationChange = () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        setTotalDuration(audio.duration);
+      }
     };
     const handleTimeUpdate = () => {
       setCurrentPlaybackTime(audio.currentTime);
@@ -61,19 +68,28 @@ function VoiceMessage({ message }: VoiceMessageProps) {
     const handlePlay = () => {
       setIsPlaying(true);
     };
+    const handleError = () => {
+      setIsPlaying(false);
+      setCurrentPlaybackTime(0);
+      setPlaybackError("Audio preview is unavailable in this browser.");
+    };
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("durationchange", handleDurationChange);
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("ended", handleEnded);
     audio.addEventListener("pause", handlePause);
     audio.addEventListener("play", handlePlay);
+    audio.addEventListener("error", handleError);
 
     return () => {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("durationchange", handleDurationChange);
       audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("pause", handlePause);
       audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("error", handleError);
     };
   }, []);
 
@@ -87,6 +103,7 @@ function VoiceMessage({ message }: VoiceMessageProps) {
     setIsPlaying(false);
     setCurrentPlaybackTime(0);
     setTotalDuration(0);
+    setPlaybackError(audioUrl ? null : "Audio file is missing.");
   }, [audioUrl]);
 
   const handlePlayAudio = async () => {
@@ -95,8 +112,10 @@ function VoiceMessage({ message }: VoiceMessageProps) {
 
     try {
       await audio.play();
+      setPlaybackError(null);
     } catch {
       setIsPlaying(false);
+      setPlaybackError("Audio playback could not start.");
     }
   };
 
@@ -108,11 +127,12 @@ function VoiceMessage({ message }: VoiceMessageProps) {
   if (!currentChatUser || !userInfo) return null;
 
   const isOwnMessage = message.senderId === userInfo.id;
+  const durationLabel = formatTime(isPlaying ? currentPlaybackTime : totalDuration);
 
   return (
     <div className={`chat-message voice-message ${isOwnMessage ? "mine" : ""}`}>
       <audio ref={audioRef} preload="metadata" className="hidden" />
-      <div className="flex items-center gap-3">
+      <div className="voice-message-shell">
         <button
           type="button"
           onClick={isPlaying ? handlePauseAudio : () => void handlePlayAudio()}
@@ -121,13 +141,13 @@ function VoiceMessage({ message }: VoiceMessageProps) {
           disabled={!audioUrl}
         >
           {isPlaying ? (
-            <FaStop className="text-sm" />
+            <FaStop className="voice-message-icon" />
           ) : (
-            <FaPlay className="text-sm ml-0.5" />
+            <FaPlay className="voice-message-icon voice-message-icon-play" />
           )}
         </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex h-9 items-end gap-[3px] overflow-hidden">
+        <div className="voice-message-content">
+          <div className="voice-message-waveform">
             {WAVEFORM_BARS.map((height, index) => {
               const threshold = ((index + 1) / WAVEFORM_BARS.length) * 100;
               const isActive = progressPercent >= threshold;
@@ -144,15 +164,23 @@ function VoiceMessage({ message }: VoiceMessageProps) {
               );
             })}
           </div>
-          <div className="chat-message-meta mt-1.5">
-            <span className="text-[12px] font-semibold tabular-nums">
-              {formatTime(isPlaying ? currentPlaybackTime : totalDuration)}
-            </span>
-            <div className="flex items-center gap-1.5">
+          <div className={`chat-message-meta voice-message-meta ${isOwnMessage ? "mine" : ""}`}>
+            <span className="voice-message-duration">{durationLabel}</span>
+            <div className="voice-message-meta-right">
               <span>{calculateTime(String(message.createdAt))}</span>
               {isOwnMessage && <MessageStatus messageStatus={message.messageStatus} />}
             </div>
           </div>
+          {playbackError ? (
+            <div className={`voice-message-error ${isOwnMessage ? "mine" : ""}`}>
+              <span>{playbackError}</span>
+              {audioUrl ? (
+                <a href={audioUrl} target="_blank" rel="noreferrer">
+                  Open audio
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
