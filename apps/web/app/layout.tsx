@@ -1,5 +1,6 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
+import "./yome.css";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { StateProvider } from "@/context/StateContext";
 import { ReactNode } from "react";
@@ -11,7 +12,7 @@ import { Toaster } from "react-hot-toast";
 export const metadata = {
   title: "Yome",
   description:
-    "Experience seamless communication with our cutting-edge video calling and chat platform",
+    "Yome is a learning-first social network for students, educators, and STEM communities.",
   icons: {
     icon: [
       { url: "/favicon.ico" },

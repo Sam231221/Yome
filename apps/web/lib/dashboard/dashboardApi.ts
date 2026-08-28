@@ -11,7 +11,7 @@ import { getClientErrorMessage } from "@/lib/api/clientErrors";
 import type {
   DashboardGroupRecord,
   DashboardUserRecord,
-} from "@/app/(main)/(dashboard)/dashboard/components/facebook/types";
+} from "@/lib/dashboard/types";
 import type { UserId } from "@/types/chat";
 
 type ConnectResponse = {

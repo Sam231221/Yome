@@ -1,19 +1,18 @@
 import React from "react";
 import {
+  FiBookOpen,
   FiBell,
   FiMessageSquare,
   FiSettings,
-  FiShoppingBag,
   FiUsers,
 } from "react-icons/fi";
-import { FaFacebookMessenger } from "react-icons/fa";
 import Avatar from "@/components/common/Avatar";
 import { useStateProvider } from "@/context/StateContext";
 
 const navItems = [
   { id: "messages", icon: FiMessageSquare, active: true },
   { id: "people", icon: FiUsers },
-  { id: "shop", icon: FiShoppingBag },
+  { id: "resources", icon: FiBookOpen },
   { id: "alerts", icon: FiBell },
 ];
 
@@ -21,9 +20,9 @@ export default function ChatSideNav() {
   const [{ userInfo }] = useStateProvider();
 
   return (
-    <div className="w-[72px] bg-[#F5F6FA] border-r border-[#E6E8EE] flex flex-col items-center py-4 gap-4">
-      <div className="h-11 w-11 rounded-2xl bg-white shadow-sm border border-[#E9ECF3] flex items-center justify-center">
-        <FaFacebookMessenger className="text-[#1877F2] text-xl" />
+    <div className="w-[72px] bg-[var(--yome-surface-2)] border-r border-[var(--yome-border)] flex flex-col items-center py-4 gap-4">
+      <div className="h-11 w-11 rounded-[14px_14px_14px_4px] bg-[#2563eb] text-white shadow-sm flex items-center justify-center font-black">
+        Y
       </div>
 
       <div className="flex flex-col items-center gap-4 mt-2">

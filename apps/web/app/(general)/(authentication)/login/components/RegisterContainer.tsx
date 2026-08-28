@@ -196,8 +196,17 @@ export default function RegisterContainer({
       );
       const { data } = response;
       if (response.status === 201) {
+        const callback = await signIn("credentials", {
+          redirect: false,
+          email: normalizeEmail(values.email),
+          password: values.password,
+        });
         setValues(emptyValues);
         toast.success(data.msg || "Account created successfully.");
+        if (callback?.ok) {
+          router.push("/onboarding");
+          return;
+        }
         setActiveTab("login");
         return;
       }
@@ -217,12 +226,12 @@ export default function RegisterContainer({
     <div
       className={`${
         activeTab === "register" ? "flex flex-col" : "hidden"
-      }  p-3 gap-y-2`}
+      } gap-y-3`}
     >
       <div
         data-provider="facebook"
         onClick={loginWithNextAuthProvider}
-        className="text-sm border cursor-pointer border-[#0e517e63] flex py-3 px-2  "
+        className="yome-button-secondary w-full justify-start"
       >
         <FaFacebook size={20} className="ml-3 mr-3 text-[#1e5aff] " />
         <span className="text-sm pointer-events-none font-medium">
@@ -233,7 +242,7 @@ export default function RegisterContainer({
       <div
         data-provider="github"
         onClick={loginWithNextAuthProvider}
-        className="text-sm border cursor-pointer border-[#0e517e63] flex py-3 px-2  "
+        className="yome-button-secondary w-full justify-start"
       >
         <FaGithub size={20} className="ml-3 mr-3  " />
         <span className="text-sm pointer-events-none font-medium">
@@ -243,14 +252,14 @@ export default function RegisterContainer({
       <div
         data-provider="google"
         onClick={loginWithNextAuthProvider}
-        className="text-sm border cursor-pointer border-[#0e517e63] flex py-3 px-2"
+        className="yome-button-secondary w-full justify-start"
       >
         <FcGoogle size={20} className="ml-3 mr-3 text-[#1e5aff] " />
         <span className="text-sm pointer-events-none font-medium">
           Continue With Google
         </span>
       </div>
-      <p className="text-center text-sm font-medium">Or</p>
+      <p className="text-center text-[10px] font-bold uppercase tracking-wider text-[var(--yome-muted)]">or continue with email</p>
 
       <form onSubmit={handleRegisterFormSubmit} method="POST">
         {inputs.map((input) => (
@@ -279,11 +288,7 @@ export default function RegisterContainer({
         <button
           type="submit"
           disabled={!isFormFilled || !isChecked || isSubmitting}
-          className={`${
-            isFormFilled && isChecked && !isSubmitting
-              ? "bg-[#0e24a0]"
-              : "bg-[#b6b6b6]"
-          } hover:bg-blue-700 w-full font-medium text-sm text-white py-3 px-2`}
+          className="yome-button-primary w-full"
         >
           {isSubmitting ? "Creating account..." : "Create account"}
         </button>

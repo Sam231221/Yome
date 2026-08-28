@@ -40,12 +40,12 @@ export const ProfileDropDown = ({
       document.removeEventListener("mousedown", handler);
     };
   });
-  const handleSignOut = () => {
-    signOut();
+  const handleSignOut = async () => {
     if (socket?.current && userInfo?.id) {
       socket.current.emit("signout", userInfo.id);
     }
-    router.push("/login");
+    await signOut({ redirect: false });
+    router.replace("/login");
   };
   return (
     <>
@@ -135,7 +135,7 @@ export const ProfileDropDown = ({
                   <BsQuestionCircle /> Need Help?
                 </a>
               </li>
-              <li className="cursor-pointer" onClick={() => handleSignOut()}>
+              <li className="cursor-pointer" onClick={() => void handleSignOut()}>
                 <span className="px-3 py-2 bg-none hover:bg-secondaryBgColor transition-all duration-500 ease-out flex items-center gap-2 text-xs">
                   {" "}
                   <BsBoxArrowRight /> Sign Out

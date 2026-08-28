@@ -30,11 +30,11 @@ export default function ChatListHeader({
       name: "Logout",
       icon: "BsBoxArrowRight",
       callBack: async () => {
-        signOut();
         if (socket?.current && userInfo?.id) {
           socket.current.emit("signout", userInfo.id);
         }
-        router.push("/login");
+        await signOut({ redirect: false });
+        router.replace("/login");
       },
     },
   ];

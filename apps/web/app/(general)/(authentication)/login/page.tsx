@@ -1,17 +1,23 @@
 "use client";
-import Image from "next/image";
 import React, { Suspense, useEffect, useState } from "react";
 
-import { MessageCircle, Users, Video } from "lucide-react";
+import { BookOpen, FlaskConical, HelpCircle, UsersRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import LoginContainer from "./components/LoginContainer";
 import RegisterContainer from "./components/RegisterContainer";
+import { Badge, Brand, ToneSymbol } from "@/components/yome/YomeUI";
 
 export default function Login() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("login");
   const session = useSession();
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "register") {
+      setActiveTab("register");
+    }
+  }, []);
 
   useEffect(() => {
     if (session?.status === "authenticated") {
@@ -20,110 +26,47 @@ export default function Login() {
   }, [session?.status, router]);
 
   return (
-    <div className="grid grid-cols-6">
-      <div className="hidden xl:flex xl:col-span-4 min-h-screen relative overflow-hidden bg-gradient-to-br from-[#0b1b3a] via-[#0f2d63] to-[#1e40af]">
-        <div className="absolute top-[-80px] right-[-80px] w-64 h-64 bg-[#2c4fd9]/20 blur-3xl rounded-full" />
-        <div className="absolute bottom-[-120px] left-[-120px] w-80 h-80 bg-[#2c4fd9]/20 blur-3xl rounded-full" />
-
-        <div className="relative z-10 flex flex-col h-full p-14 text-white">
-          <div className="flex items-center gap-2">
-            <Image src={"/logos/LogoWhiteT.png"} width={40} height={40} alt="logo" />
-            <h1 className="text-3xl font-bold">Yome</h1>
-          </div>
-
-          <div className="mt-16">
-            <h2 className="text-5xl font-bold leading-tight">
-              Connect. Chat. Call.
-            </h2>
-            <p className="mt-4 text-lg text-white/80 max-w-xl">
-              A social space for real-time conversations, video hangouts, and
-              shared communities.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-4 max-w-xl">
-            <div className="flex gap-4 items-start bg-white/10 border border-white/15 rounded-xl p-4 backdrop-blur-sm">
-              <div className="w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center">
-                <MessageCircle className="w-5 h-5 text-white" />
+    <div className="yome-auth-shell">
+      <section className="yome-auth-story">
+        <Brand href="/" light />
+        <div className="yome-auth-message">
+          <Badge tone="blue">A social network built for learning</Badge>
+          <h1>Find your people.<br />Learn together.</h1>
+          <p>Connect with students, educators, and STEM communities that make every question a starting point.</p>
+          <div className="mt-8 grid max-w-xl gap-3">
+            {[
+              ["Focused communities", UsersRound],
+              ["Questions that matter", HelpCircle],
+              ["Resources and projects", BookOpen],
+              ["Live study rooms", FlaskConical],
+            ].map(([label, Icon]) => (
+              <div key={String(label)} className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 p-4">
+                <ToneSymbol tone="blue"><Icon className="text-white" size={18} /></ToneSymbol>
+                <strong>{String(label)}</strong>
               </div>
-              <div>
-                <p className="text-lg font-semibold">Instant Messaging</p>
-                <p className="text-white/75">
-                  Fast, reliable chats with rich media.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4 items-start bg-white/10 border border-white/15 rounded-xl p-4 backdrop-blur-sm">
-              <div className="w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center">
-                <Video className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="text-lg font-semibold">Audio & Video Calls</p>
-                <p className="text-white/75">
-                  HD calls with low-latency connections.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4 items-start bg-white/10 border border-white/15 rounded-xl p-4 backdrop-blur-sm">
-              <div className="w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center">
-                <Users className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="text-lg font-semibold">Communities & Groups</p>
-                <p className="text-white/75">
-                  Stay close to the people that matter.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="h-screen w-full col-span-6 xl:col-span-2 flex justify-center items-center p-10">
-        <div className=" md:w-[400px] lg:w-[600px] xl:w-full flex flex-col p-3">
-          <div className="xl:hidden flex mb-5 w-full justify-center">
-            <Image src={"/LogoB.png"} width={40} height={40} alt="logo" />
-            <h1 className="ml-2 text-4xl font-bold">Yome</h1>
+      <section className="yome-auth-panel">
+        <div className="yome-auth-form-wrap">
+          <div className="mb-8 xl:hidden">
+            <Brand href="/" />
           </div>
-
-          {/*Tabs */}
-          <div className="max-h-screen overflow-y-auto">
-            <div className="flex w-full">
-              <div
-                className={`${
-                  activeTab === "login"
-                    ? "font-bold border-b-[#006cfa]"
-                    : "border-b-[#d6d6d6]"
-                } border-b-[2px] w-[50%] uppercase cursor-pointer  text-center px-3 py-2`}
-                onClick={() => setActiveTab("login")}
-              >
-                <span>Login</span>
-              </div>
-
-              <div
-                className={`${
-                  activeTab === "register"
-                    ? "font-bold border-b-[#006cfa]"
-                    : "border-b-[#d6d6d6]"
-                } border-b-[2px] w-[50%] uppercase cursor-pointer text-center px-3 py-2`}
-                onClick={() => setActiveTab("register")}
-              >
-                <span>Register</span>
-              </div>
-            </div>
-
-            <Suspense fallback={<div className="p-4">Loading...</div>}>
-              <LoginContainer activeTab={activeTab} />
-              <RegisterContainer
-                setActiveTab={setActiveTab}
-                activeTab={activeTab}
-              />
-            </Suspense>
+          <p className="yome-eyebrow">Welcome to Yome</p>
+          <h2>{activeTab === "register" ? "Create your learning profile" : "Welcome back"}</h2>
+          <p className="mb-6 text-[13px] text-[#64748b]">{activeTab === "register" ? "Join a community where curiosity connects us." : "Continue learning with your communities."}</p>
+          <div className="yome-auth-tabs">
+            <button className={activeTab === "login" ? "active" : ""} onClick={() => setActiveTab("login")}>Sign in</button>
+            <button className={activeTab === "register" ? "active" : ""} onClick={() => setActiveTab("register")}>Sign up</button>
           </div>
+          <Suspense fallback={<div className="p-4">Loading...</div>}>
+            <LoginContainer activeTab={activeTab} />
+            <RegisterContainer setActiveTab={setActiveTab} activeTab={activeTab} />
+          </Suspense>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

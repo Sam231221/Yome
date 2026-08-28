@@ -100,12 +100,12 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
     <div
       className={`${
         activeTab === "login" ? "flex flex-col" : "hidden"
-      } mt-5 gap-y-2`}
+      } gap-y-3`}
     >
       <div
         data-provider="facebook"
         onClick={loginWithNextAuthProvider}
-        className="text-sm border cursor-pointer border-[#0e517e63] flex py-3 px-2  "
+        className="yome-button-secondary w-full justify-start"
       >
         <FaFacebook size={20} className="ml-3 mr-3 text-[#1e5aff] " />
         <span className="text-sm pointer-events-none font-medium">
@@ -116,7 +116,7 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
       <div
         data-provider="github"
         onClick={loginWithNextAuthProvider}
-        className="text-sm border cursor-pointer border-[#0e517e63] flex py-3 px-2  "
+        className="yome-button-secondary w-full justify-start"
       >
         <FaGithub size={20} className="ml-3 mr-3  " />
         <span className="text-sm pointer-events-none font-medium">
@@ -126,14 +126,14 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
       <div
         data-provider="google"
         onClick={loginWithNextAuthProvider}
-        className="text-sm border cursor-pointer border-[#0e517e63] flex py-3 px-2"
+        className="yome-button-secondary w-full justify-start"
       >
         <FcGoogle size={20} className="ml-3 mr-3 text-[#1e5aff] " />
         <span className="text-sm pointer-events-none font-medium">
           Continue With Google
         </span>
       </div>
-      <p className="text-center text-sm font-medium">Or</p>
+      <p className="text-center text-[10px] font-bold uppercase tracking-wider text-[var(--yome-muted)]">or continue with email</p>
 
       <form onSubmit={handleFormSubmit}>
         {inputs.map((input) => (
@@ -151,11 +151,7 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
         <button
           type="submit"
           disabled={!isFormFilled || isSubmitting}
-          className={`${
-            isFormFilled && !isSubmitting
-              ? "bg-[#0e24a0] hover:bg-blue-700"
-              : "bg-[#7599ff]"
-          }  w-full font-medium text-sm text-white py-3 px-2`}
+          className="yome-button-primary w-full"
         >
           {isSubmitting ? "Signing in..." : "Sign in"}
         </button>

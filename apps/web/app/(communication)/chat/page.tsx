@@ -235,8 +235,8 @@ export default function Chatpage() {
       )}
 
       {!videoCall && !voiceCall && (
-        <div className="h-screen w-screen bg-[#E9EDF5] lg:px-4 lg:py-4 md:px-0 md:py-0 px-0 py-0">
-          <div className="h-full w-full lg:rounded-2xl md:rounded-none rounded-none bg-white/90 lg:shadow-[0_25px_60px_rgba(15,23,42,0.18)] md:shadow-none shadow-none lg:border md:border-none border-none border-[#E6E8EE] overflow-hidden flex">
+        <div className="h-screen w-screen bg-[var(--yome-bg)] lg:px-4 lg:py-4 md:px-0 md:py-0 px-0 py-0">
+          <div className="h-full w-full overflow-hidden border-[var(--yome-border)] bg-[var(--yome-surface)] shadow-[0_25px_60px_rgba(15,23,42,0.12)] lg:rounded-2xl lg:border md:rounded-none md:border-none md:shadow-none rounded-none border-none shadow-none flex">
             {/* Hide ChatSideNav on medium and smaller screens */}
             <div className="hidden lg:block">
               <ChatSideNav />

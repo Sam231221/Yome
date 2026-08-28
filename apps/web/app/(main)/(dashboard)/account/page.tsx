@@ -2,7 +2,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { reducerCases } from "@/context/constants";
 import { useSession } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { IoSettingsOutline } from "react-icons/io5";
 import { IoKeyOutline } from "react-icons/io5";
 import { useStateProvider } from "@/context/StateContext";
@@ -27,6 +27,7 @@ import {
   PASSWORD_PATTERN,
   passwordsMatch,
 } from "@/lib/auth/formValidation";
+import { Badge, PageHeading } from "@/components/yome/YomeUI";
 
 interface Values {
   email: string;
@@ -50,7 +51,6 @@ const Account = () => {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [pic, setPic] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("general");
   const [values, setValues] = useState<Values>({
@@ -66,11 +66,11 @@ const Account = () => {
   });
 
   useEffect(() => {
-    const requestedTab = searchParams.get("tab");
+    const requestedTab = new URLSearchParams(window.location.search).get("tab");
     if (requestedTab === "security" || requestedTab === "general") {
       setActiveTab(requestedTab);
     }
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -212,160 +212,100 @@ const Account = () => {
   };
 
   return (
-    <div className="p-2 sm:p-5 relative">
-      <div className="bg-white rounded-lg">
-        <div className="flex">
-          {/* Sidebar */}
-          <div className="h-full w-[60px] sm:w-[95px]">
-            {/* Sidebar */}
-            <ul className="h-full p-1 sm:p-3 rounded-l-lg rouned-b-lg border-gray-200 shadow-lg rouned-lg  ">
-              <h2 className="text-lg hidden sm:block font-semibold text-gray-700">
-                Settings
-              </h2>
-              <hr className="mb-3" />
+    <div className="yome-page">
+      <PageHeading
+        eyebrow="Account"
+        title="Profile and security"
+        subtitle="Keep your learning identity, avatar, and password up to date."
+        action={<Badge tone="blue">{activeTab === "general" ? "General" : "Security"}</Badge>}
+      />
+      <div className="grid gap-4 md:grid-cols-[220px_1fr]">
+        <aside className="yome-card yome-section yome-list">
+          <button
+            onClick={() => handleTab("general")}
+            className={activeTab === "general" ? "yome-nav-item active" : "yome-nav-item"}
+          >
+            <IoSettingsOutline className="text-xl" />
+            <span>General</span>
+          </button>
+          <button
+            onClick={() => handleTab("security")}
+            className={activeTab === "security" ? "yome-nav-item active" : "yome-nav-item"}
+          >
+            <IoKeyOutline className="text-xl" />
+            <span>Security</span>
+          </button>
+        </aside>
 
-              <li
-                onClick={() => handleTab("general")}
-                className={`${
-                  activeTab === "general"
-                    ? " bg-[#EEF2FA] text-primaryTextColor"
-                    : " text-ternaryTextColor "
-                } relative group  cursor-pointer `}
+        <section className="yome-card yome-section">
+          {activeTab === "general" && (
+            <div className="mx-auto max-w-3xl">
+              <div className="mb-6">
+                <ProfileAvatar
+                  pic={`${userInfo?.profilePicture || "/avatars/userprofile.png"}`}
+                  setPic={setPic}
+                />
+              </div>
+              <form method="POST" className="grid gap-4">
+                <div className="grid grid-cols-1 gap-3">
+                  {accountInputs.slice(0, 3).map((input) => (
+                    <FormInput
+                      label={input.label ?? input.name}
+                      readOnly={false}
+                      key={input.id}
+                      {...input}
+                      value={values[input.name]}
+                      onChange={onChangeFormInputs}
+                    />
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {accountInputs.slice(3).map((input) => (
+                    <FormInput
+                      readOnly={false}
+                      label={input.label ?? input.name}
+                      key={input.id}
+                      {...input}
+                      value={values[input.name]}
+                      onChange={onChangeFormInputs}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleAccountUpdate()}
+                  disabled={!updatedDetails || isSavingAccount}
+                  className="yome-button-primary w-max"
+                >
+                  {isSavingAccount ? "Saving..." : "Save changes"}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {activeTab === "security" && (
+            <form onSubmit={handlePasswordUpdate} method="POST" className="mx-auto grid max-w-2xl gap-4">
+              <div className="grid grid-cols-1 gap-3">
+                {securityInputs.map((input) => (
+                  <FormInput
+                    label={input.label ?? input.name}
+                    key={input.id}
+                    {...input}
+                    value={values[input.name]}
+                    onChange={onChangeFormInputs}
+                  />
+                ))}
+              </div>
+              <button
+                type="submit"
+                disabled={!isSecurityFormValid || isSavingPassword}
+                className="yome-button-primary w-max"
               >
-                <span className="icon relative py-2 block px-3 text-center">
-                  <IoSettingsOutline className=" group-hover:text-secondaryTextColor text-2xl" />
-                </span>
-                <span className="hidden sm:block group-hover:text-secondaryTextColor font-semibold relative py-2 px-2 whitespace-nowrap text-sm">
-                  General
-                </span>
-              </li>
-
-              <li
-                onClick={() => handleTab("security")}
-                className={`${
-                  activeTab === "security"
-                    ? " bg-[#EEF2FA] text-primaryTextColor"
-                    : " text-ternaryTextColor "
-                } relative group cursor-pointer hover:bg-[#EEF2FA]`}
-              >
-                <span className="icon relative py-2 block px-3 text-center">
-                  <IoKeyOutline className=" group-hover:text-secondaryTextColor text-2xl" />
-                </span>
-                <span className="hidden sm:block py-2 px-2 group-hover:text-secondaryTextColor font-semibold relative  whitespace-nowrap text-sm">
-                  Security
-                </span>
-              </li>
-            </ul>
-          </div>
-          {/*Rightbar*/}
-          <div className="flex flex-col p-1 sm:p-5 w-full items-center justify-center">
-            <>
-              {activeTab === "general" && (
-                <>
-                  <h2 className="text-lg sm:text-2xl font-semibold text-gray-700">
-                    General Settings
-                  </h2>
-
-                  <hr />
-
-                  <div className="p-3 w-full flex flex-col items-center  ">
-                    <div className="w-[200px] mt-3 sm:w-[400px] md:w-[500px] lg:w-[700px]">
-                      {/* Avatar */}
-                      <ProfileAvatar
-                        pic={`${
-                          userInfo?.profilePicture || "/avatars/userprofile.png"
-                        }`}
-                        setPic={setPic}
-                      />
-
-                      <form method="POST">
-                        <div className="grid grid-cols-1 gap-3">
-                          {accountInputs.slice(0, 3).map((input) => (
-                            <FormInput
-                              label={input.label ?? input.name}
-                              readOnly={false}
-                              key={input.id}
-                              {...input}
-                              value={values[input.name]}
-                              onChange={onChangeFormInputs}
-                            />
-                          ))}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2  gap-3">
-                          {accountInputs.slice(3).map((input) => (
-                            <FormInput
-                              readOnly={false}
-                              label={input.label ?? input.name}
-                              key={input.id}
-                              {...input}
-                              value={values[input.name]}
-                              onChange={onChangeFormInputs}
-                            />
-                          ))}
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleAccountUpdate()}
-                          disabled={!updatedDetails || isSavingAccount}
-                          className={`${
-                            updatedDetails && !isSavingAccount
-                              ? "bg-sky-500 hover:bg-sky-600"
-                              : "bg-slate-400"
-                          }  rounded-lg font-medium text-sm text-white py-3 px-2`}
-                        >
-                          {isSavingAccount ? "Saving..." : "Save changes"}
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {activeTab === "security" && (
-                <>
-                  <h2 className="text-lg sm:text-2xl font-semibold text-gray-700">
-                    Security
-                  </h2>
-                  <hr />
-
-                  <div className="p-3 w-full flex flex-col items-center  ">
-                    <div className="w-[200px] mt-3 sm:w-[400px] md:w-[500px] lg:w-[700px]">
-                      <form onSubmit={handlePasswordUpdate} method="POST">
-                        <div className="grid grid-cols-1   gap-3">
-                          {securityInputs.map((input) => (
-                            <FormInput
-                              label={input.label ?? input.name}
-                              key={input.id}
-                              {...input}
-                              value={values[input.name]}
-                              onChange={onChangeFormInputs}
-                            />
-                          ))}
-                        </div>
-
-                        <button
-                          type="submit"
-                          disabled={!isSecurityFormValid || isSavingPassword}
-                          className={`${
-                            isSecurityFormValid && !isSavingPassword
-                              ? "bg-[#0e24a0]"
-                              : "bg-[#b6b6b6]"
-                          } rounded-lg font-medium text-sm text-white py-3 px-2`}
-                        >
-                          {isSavingPassword
-                            ? "Updating password..."
-                            : "Update password"}
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-                </>
-              )}
-            </>
-          </div>
-        </div>
+                {isSavingPassword ? "Updating password..." : "Update password"}
+              </button>
+            </form>
+          )}
+        </section>
       </div>
     </div>
   );

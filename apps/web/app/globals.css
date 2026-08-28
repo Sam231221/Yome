@@ -34,14 +34,6 @@
     --ring: 221.2 83.2% 53.3%;
 
     --radius: 0.5rem;
-
-    --fb-bg: #f0f2f5;
-    --fb-card: #ffffff;
-    --fb-blue: #1877f2;
-    --fb-text: #1c1e21;
-    --fb-muted: #65676b;
-    --fb-divider: #e4e6eb;
-    --fb-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   }
 
   .dark {

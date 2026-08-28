@@ -1,59 +1,11 @@
 "use client";
 import React, { useEffect } from "react";
-import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { useStateProvider } from "@/context/StateContext";
 import { ensureUserInfo } from "@/lib/auth/userInfo";
-import DashboardShell from "./components/facebook/DashboardShell";
-import ComposerCard from "./components/facebook/ComposerCard";
-import { UserLite } from "./components/facebook/types";
-import PeopleYouMayKnow from "./components/facebook/PeopleYouMayKnow";
-import GroupSuggestions from "./components/facebook/GroupSuggestions";
-
-function TraySkeleton() {
-  return (
-    <div className="rounded-2xl bg-[var(--fb-card)] p-3 shadow-[var(--fb-shadow)]">
-      <div className="flex gap-3 overflow-hidden">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div
-            key={`tray-skeleton-${index}`}
-            className="h-44 min-w-[120px] animate-pulse rounded-2xl bg-[var(--fb-bg)]"
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function FeedSkeleton() {
-  return (
-    <div className="space-y-4">
-      {Array.from({ length: 2 }).map((_, index) => (
-        <div
-          key={`feed-skeleton-${index}`}
-          className="rounded-2xl bg-[var(--fb-card)] p-4 shadow-[var(--fb-shadow)]"
-        >
-          <div className="h-4 w-1/3 animate-pulse rounded bg-[var(--fb-bg)]" />
-          <div className="mt-3 h-56 animate-pulse rounded-2xl bg-[var(--fb-bg)]" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const StoriesTray = dynamic(
-  () => import("./components/facebook/StoriesTray"),
-  {
-    loading: () => <TraySkeleton />,
-  }
-);
-const ReelsTray = dynamic(() => import("./components/facebook/ReelsTray"), {
-  loading: () => <TraySkeleton />,
-});
-const Feed = dynamic(() => import("./components/facebook/Feed"), {
-  loading: () => <FeedSkeleton />,
-});
+import { ComposerCard, FeedPostCard, PageHeading, RightRail, Badge, ToneSymbol } from "@/components/yome/YomeUI";
+import { events, feedPosts, resources } from "@/lib/yome/data";
 
 const Home = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
@@ -88,27 +40,48 @@ const Home = () => {
     ? `${userInfo.firstname} ${userInfo.lastname ?? ""}`.trim()
     : userInfo?.name || session?.user?.name || "Friend";
 
-  const user: UserLite = {
-    name: fullName,
-    avatarUrl:
-      userInfo?.profilePicture ||
-      session?.user?.image ||
-      "/avatars/userprofile.png",
-    email: userInfo?.email || session?.user?.email || undefined,
-    username: userInfo?.username || undefined,
-  };
-
   return (
-    <DashboardShell user={user}>
-      <div className="space-y-4">
-        <ComposerCard user={user} />
-        <StoriesTray user={user} />
-        <ReelsTray />
-        <PeopleYouMayKnow />
-        <GroupSuggestions />
-        <Feed />
+    <div className="yome-page">
+      <PageHeading
+        eyebrow={new Intl.DateTimeFormat("en", { weekday: "long" }).format(new Date())}
+        title={`Good afternoon, ${fullName.split(" ")[0] || "Friend"}`}
+        subtitle="What will you learn today?"
+        action={<Badge tone="blue">12 day learning streak</Badge>}
+      />
+      <div className="yome-feed-layout">
+        <div className="yome-feed-main">
+          <ComposerCard userName={fullName} />
+          <div className="flex items-end gap-6 border-b border-[var(--yome-border)]">
+            {["For you", "Following", "Groups"].map((item, index) => (
+              <button key={item} className={`h-11 border-b-2 bg-transparent text-[12px] font-bold ${index === 0 ? "border-[var(--yome-blue)] text-[var(--yome-blue)]" : "border-transparent text-[var(--yome-muted)]"}`}>
+                {item}
+              </button>
+            ))}
+          </div>
+          {feedPosts.map((post) => <FeedPostCard key={post.id} post={post} />)}
+          <section className="yome-card yome-section grid justify-items-center text-center">
+            <span className="yome-brand-mark mb-3">Y</span>
+            <strong>You are all caught up</strong>
+            <p className="yome-muted mt-1">Explore a new topic or join a study room.</p>
+          </section>
+        </div>
+        <RightRail />
       </div>
-    </DashboardShell>
+      <div className="yome-grid mt-6">
+        {resources.slice(0, 2).map((resource) => (
+          <article key={resource.id} className="yome-card yome-section">
+            <ToneSymbol tone={resource.tone}>{resource.type}</ToneSymbol>
+            <h2 className="yome-card-title mt-4">{resource.title}</h2>
+            <p className="yome-card-copy">{resource.summary}</p>
+          </article>
+        ))}
+        <article className="yome-card yome-section">
+          <ToneSymbol tone="violet">{events[0].day}</ToneSymbol>
+          <h2 className="yome-card-title mt-4">{events[0].title}</h2>
+          <p className="yome-card-copy">{events[0].meta} · {events[0].group}</p>
+        </article>
+      </div>
+    </div>
   );
 };
 
