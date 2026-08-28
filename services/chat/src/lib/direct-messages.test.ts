@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildInitialDirectConversationSummaries,
+  buildLegacyDirectConversationKey,
   isMatchingDirectConversation,
   normalizeMessageType,
 } from "./direct-messages.js";
@@ -109,4 +110,31 @@ test("buildInitialDirectConversationSummaries groups by conversation and counts 
     userProfile: { bio: "hello", address: "world" },
     totalUnreadMessages: 2,
   });
+});
+
+test("buildInitialDirectConversationSummaries keeps a deterministic fallback conversation id for legacy rows", () => {
+  const result = buildInitialDirectConversationSummaries(
+    [
+      {
+        id: 11,
+        conversationId: null,
+        senderId: 8,
+        receiverId: 3,
+        message: "legacy row",
+        type: "text",
+        messageStatus: "sent",
+        createdAt: new Date("2026-08-27T12:00:00.000Z"),
+        sender: {
+          name: "Legacy Sender",
+          identifier: "user",
+        },
+      },
+    ],
+    3
+  );
+
+  assert.equal(
+    result.usersWithLatestPrivateMessages[0]?.conversationId,
+    buildLegacyDirectConversationKey(8, 3)
+  );
 });

@@ -6,7 +6,12 @@ import { Server } from "socket.io";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
-import { servicePorts, errorHandler, internalTokenGuard } from "@repo/shared";
+import {
+  createLogger,
+  servicePorts,
+  errorHandler,
+  internalTokenGuard,
+} from "@repo/shared";
 
 import chatRoutes from "./routes/chat.routes.js";
 import { attachSocketHandlers } from "./socket/handlers.js";
@@ -17,6 +22,7 @@ dotenv.config();
 
 const app = express();
 const port = servicePorts.chat;
+const logger = createLogger("chat");
 
 app.use(cors());
 app.use(express.json());
@@ -64,5 +70,5 @@ io.use((socket, next) => {
 attachSocketHandlers(io);
 
 httpServer.listen(port, () => {
-  console.log(`Chat service listening on ${port}`);
+  logger.info("Chat service listening", { port });
 });

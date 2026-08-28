@@ -3,7 +3,12 @@ import cors from "cors";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
-import { servicePorts, errorHandler, internalTokenGuard } from "@repo/shared";
+import {
+  createLogger,
+  servicePorts,
+  errorHandler,
+  internalTokenGuard,
+} from "@repo/shared";
 
 import authRoutes from "./routes/auth.routes.js";
 import dbRoutes from "./routes/db.routes.js";
@@ -14,6 +19,7 @@ dotenv.config();
 
 const app = express();
 const port = servicePorts.auth;
+const logger = createLogger("auth");
 
 app.use(cors());
 app.use(express.json());
@@ -29,5 +35,5 @@ app.use("/api/db", dbRoutes);
 app.use(errorHandler);
 
 app.listen(port, () => {
-  console.log(`Auth service listening on ${port}`);
+  logger.info("Auth service listening", { port });
 });

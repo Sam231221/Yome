@@ -14,7 +14,7 @@ type AccountMutationResponse = {
 
 type UpdateUserResponse = AccountMutationResponse & {
   user?: {
-    id: number | string;
+    id: number;
     role?: string;
     email?: string;
     name?: string;

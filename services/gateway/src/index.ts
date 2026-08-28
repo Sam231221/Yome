@@ -7,7 +7,7 @@ import https from "node:https";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
-import { servicePorts } from "@repo/shared";
+import { createLogger, servicePorts } from "@repo/shared";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, "../../../.env") });
@@ -49,6 +49,7 @@ const services = {
   notifications:
     process.env.NOTIFICATIONS_SERVICE_URL || "http://127.0.0.1:4105",
 };
+const logger = createLogger("gateway");
 
 app.use(
   cors({
@@ -315,15 +316,13 @@ async function proxyRequest(
         );
         res.status(upstream.statusCode ?? 500);
         upstream.pipe(res, { end: true });
-        console.log(
-          JSON.stringify({
-            requestId: req.requestId,
-            method: req.method,
-            path: req.originalUrl,
-            status: upstream.statusCode,
-            upstream: upstreamBase,
-          })
-        );
+        logger.info("Forwarded upstream request", {
+          requestId: req.requestId,
+          method: req.method,
+          path: req.originalUrl,
+          status: upstream.statusCode,
+          upstream: upstreamBase,
+        });
         resolve();
       }
     );
@@ -332,7 +331,7 @@ async function proxyRequest(
       const details = error.cause
         ? `${error.message} (${(error.cause as Error).message ?? error.cause})`
         : error.message;
-      console.error("[gateway] upstream request failed", {
+      logger.error("Upstream request failed", error, {
         requestId: req.requestId,
         path: req.originalUrl,
         target: target.href,
@@ -396,5 +395,5 @@ app.use("/api/messages", (req, res) =>
 );
 
 app.listen(port, () => {
-  console.log(`Gateway service listening on ${port}`);
+  logger.info("Gateway service listening", { port });
 });

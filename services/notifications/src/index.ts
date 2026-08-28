@@ -3,7 +3,12 @@ import cors from "cors";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
-import { servicePorts, errorHandler, internalTokenGuard } from "@repo/shared";
+import {
+  createLogger,
+  servicePorts,
+  errorHandler,
+  internalTokenGuard,
+} from "@repo/shared";
 import notificationRoutes from "./routes/notifications.routes.js";
 
 // Stub notifications service. Real delivery can be wired later.
@@ -14,6 +19,7 @@ dotenv.config();
 
 const app = express();
 const port = servicePorts.notifications;
+const logger = createLogger("notifications");
 
 app.use(cors());
 app.use(express.json());
@@ -28,5 +34,5 @@ app.use("/api/notifications", notificationRoutes);
 app.use(errorHandler);
 
 app.listen(port, () => {
-  console.log(`Notifications service listening on ${port}`);
+  logger.info("Notifications service listening", { port });
 });

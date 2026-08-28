@@ -42,6 +42,33 @@ type DirectMessageRecord = {
   } | null;
 };
 
+export type DirectConversationSummary = {
+  conversationId: string;
+  messageId: number;
+  type: SupportedMessageType;
+  message: string;
+  messageStatus: "sent" | "delivered" | "read";
+  createdAt: Date;
+  senderId: number;
+  receiverId: number | null;
+  id: number;
+  name: string;
+  firstname?: string;
+  lastname?: string;
+  username?: string;
+  email?: string;
+  identifier: "user" | "group";
+  chatType: "user";
+  profilePicture?: string;
+  userProfile?:
+    | {
+        bio?: string | null;
+        address?: string | null;
+      }
+    | null;
+  totalUnreadMessages: number;
+};
+
 export function normalizeMessageType(
   type: unknown,
   fallback: SupportedMessageType
@@ -75,10 +102,7 @@ export function buildInitialDirectConversationSummaries(
   messages: DirectMessageRecord[],
   userId: number
 ) {
-  const conversations = new Map<
-    string,
-    Record<string, unknown> & { totalUnreadMessages?: number }
-  >();
+  const conversations = new Map<string, DirectConversationSummary>();
   const deliveredMessageIds: number[] = [];
 
   for (const msg of messages) {
@@ -98,7 +122,7 @@ export function buildInitialDirectConversationSummaries(
       const otherParticipant = isSender ? msg.receiver : msg.sender;
 
       conversations.set(conversationKey, {
-        conversationId: msg.conversationId,
+        conversationId: conversationKey,
         messageId: msg.id,
         type: msg.type,
         message: msg.message,
@@ -117,15 +141,14 @@ export function buildInitialDirectConversationSummaries(
         chatType: "user",
         profilePicture: otherParticipant?.profilePicture ?? undefined,
         userProfile: otherParticipant?.userProfile ?? undefined,
-        totalUnreadMessages:
-          !isSender && msg.messageStatus !== "read" ? 1 : 0,
+        totalUnreadMessages: !isSender && msg.messageStatus !== "read" ? 1 : 0,
       });
       continue;
     }
 
     if (!isSender && msg.messageStatus !== "read") {
       const existing = conversations.get(conversationKey)!;
-      existing.totalUnreadMessages = (existing.totalUnreadMessages ?? 0) + 1;
+      existing.totalUnreadMessages += 1;
     }
   }
 

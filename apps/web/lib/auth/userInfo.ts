@@ -2,6 +2,7 @@ import axios from "axios";
 import { reducerCases } from "@/context/constants";
 import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
 import { getClientErrorMessage } from "@/lib/api/clientErrors";
+import { logBrowserWarning } from "@/lib/debug/browserLogger";
 
 type SessionUser = {
   email?: string | null;
@@ -10,7 +11,7 @@ type SessionUser = {
 };
 
 type ApiUser = {
-  id: number | string;
+  id: number;
   role?: string;
   email?: string;
   name?: string;
@@ -55,12 +56,14 @@ export const getUserInfoErrorMessage = (
 ) => getClientErrorMessage(error, fallback);
 
 export const logUserInfoLoadError = (context: string, error: unknown) => {
-  console.warn(`[user-info] ${context}: ${getUserInfoErrorMessage(error)}`);
+  logBrowserWarning(
+    `[user-info] ${context}: ${getUserInfoErrorMessage(error)}`
+  );
 };
 
 export function mapApiUserToAppUser(user: ApiUser): AppUserInfo {
   return {
-    id: Number(user.id),
+    id: user.id,
     role: user.role,
     email: user.email,
     name: user.name,

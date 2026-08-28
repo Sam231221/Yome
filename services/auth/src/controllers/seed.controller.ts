@@ -1,8 +1,10 @@
 import type { Request, Response } from "express";
 import getPrismaInstance from "@repo/database";
+import { createLogger, groupData } from "@repo/shared";
 import { usersData } from "../data/users.js";
-import { groupData } from "@repo/shared";
 import bcryptjs from "bcryptjs";
+
+const logger = createLogger("auth-seed");
 
 function canRunSeedMutations(): boolean {
   return (
@@ -105,7 +107,7 @@ export async function createMultipleUsersWithProfiles(
     }
     res.status(201).json({ createdUsers });
   } catch (error) {
-    console.error("Error creating users and profiles:", error);
+    logger.error("Failed to create users and profiles", error);
     res.status(500).json({
       error: "Unable to create users and profiles",
       details: error instanceof Error ? error.message : String(error),
@@ -144,7 +146,7 @@ export async function createEducationGroups(
       const actualMemberIds = memberUserIDs.map(mapUserId).filter((id): id is number => id !== null);
 
       if (actualAdminIds.length === 0 && actualMemberIds.length === 0) {
-        console.warn(`Skipping group "${name}" - no valid user IDs`);
+        logger.warn("Skipping group with no valid user IDs", { name });
         continue;
       }
 
@@ -169,7 +171,7 @@ export async function createEducationGroups(
           },
         });
         createdGroups.push({ group: updatedGroup, status: "updated" });
-        console.log(`Updated group: ${name}`);
+        logger.info("Updated group", { name });
       } else {
         const newGroup = await prisma.group.create({
           data: {
@@ -185,7 +187,7 @@ export async function createEducationGroups(
           },
         });
         createdGroups.push({ group: newGroup, status: "created" });
-        console.log(`Created group: ${name}`);
+        logger.info("Created group", { name });
       }
     }
 
@@ -194,7 +196,7 @@ export async function createEducationGroups(
       message: `Successfully created ${createdGroups.length} groups`,
     });
   } catch (error) {
-    console.error("Error creating education groups:", error);
+    logger.error("Failed to create education groups", error);
     res.status(500).json({
       error: "Unable to create education groups",
       details: error instanceof Error ? error.message : String(error),
@@ -215,7 +217,7 @@ export async function deleteAllRecords(
     await prisma.group.deleteMany();
     res.status(200).json({ message: "All records deleted successfully" });
   } catch (error) {
-    console.error("Error deleting records:", error);
+    logger.error("Failed to delete seed records", error);
     res.status(500).json({ error: "Unable to delete records" });
   }
 }

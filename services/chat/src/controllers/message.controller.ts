@@ -227,7 +227,7 @@ export async function getInitialUsersWithMessages(
     const prisma = getPrismaInstance();
     const directMessages = await prisma.messages.findMany({
       where: {
-        receiverId: { not: null },
+        msgType: "user",
         OR: [{ senderId: userId }, { receiverId: userId }],
       },
       include: {

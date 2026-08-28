@@ -21,6 +21,8 @@ import type {
   MessageKind,
   UserId,
 } from "@/types/chat";
+import { getClientErrorMessage } from "@/lib/api/clientErrors";
+import { logBrowserWarning } from "@/lib/debug/browserLogger";
 
 const DEFAULT_ERROR_MESSAGE = "Something went wrong. Please try again.";
 
@@ -55,28 +57,8 @@ type InitialDirectContactRecord = ChatListItem & {
   chatType?: ChatKind;
 };
 
-const getErrorMessage = (error: unknown, fallback = DEFAULT_ERROR_MESSAGE) => {
-  if (axios.isAxiosError(error)) {
-    const responseMessage =
-      typeof error.response?.data === "string"
-        ? error.response.data
-        : error.response?.data?.msg ?? error.response?.data?.error;
-
-    if (responseMessage) {
-      return responseMessage;
-    }
-
-    if (error.message) {
-      return error.message;
-    }
-  }
-
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  return fallback;
-};
+const getErrorMessage = (error: unknown, fallback = DEFAULT_ERROR_MESSAGE) =>
+  getClientErrorMessage(error, fallback);
 
 const uploadMedia = async (
   route: string,
@@ -153,11 +135,13 @@ const normalizeDirectContact = (
 export const getChatErrorMessage = getErrorMessage;
 
 export const logChatBootstrapError = (context: string, error: unknown) => {
-  console.warn(`[chat-bootstrap] ${context}: ${getErrorMessage(error)}`);
+  logBrowserWarning(`[chat-bootstrap] ${context}: ${getErrorMessage(error)}`);
 };
 
 export const logChatConversationError = (context: string, error: unknown) => {
-  console.warn(`[chat-conversation] ${context}: ${getErrorMessage(error)}`);
+  logBrowserWarning(
+    `[chat-conversation] ${context}: ${getErrorMessage(error)}`
+  );
 };
 
 export const getConnectedUsers = async (loggedInUserId: UserId) => {
