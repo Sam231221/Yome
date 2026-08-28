@@ -43,11 +43,16 @@ export default function ChatLeftBar({
     !shouldShowLoadingState && !hasContacts && showHistoryRecovery;
 
   return (
-    <div className="bg-white flex flex-col h-full z-20 lg:border-r border-[#E6E8EE] w-full">
+    <div className="inbox-panel bg-white flex flex-col h-full z-20 lg:border-r border-[#E6E8EE] w-full">
       {pageType === "default" && (
         <>
           <ChatListHeader isUserLoading={isUserLoading} />
           <SearchBar />
+          <div className="messages-filter-tabs">
+            <button type="button" className="active">All</button>
+            <button type="button">Unread</button>
+            <button type="button">Groups</button>
+          </div>
           {shouldShowLoadingState ? (
             <div className="lg:px-5 md:px-4 px-4 pb-3">
               <div className="space-y-3 rounded-2xl border border-[#E8ECF3] bg-[#F7F9FC] px-3 py-3 shadow-sm md:px-4">
@@ -98,6 +103,9 @@ export default function ChatLeftBar({
             </div>
           ) : null}
           <List onBootstrapStateChange={setIsBootstrapLoading} />
+          <div className="messages-inbox-footer">
+            <button type="button">Message preferences</button>
+          </div>
         </>
       )}
       {pageType === "all-contacts" && <AllContactsList />}

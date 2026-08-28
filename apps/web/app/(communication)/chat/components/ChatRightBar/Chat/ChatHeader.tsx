@@ -15,10 +15,18 @@ import { useRouter } from "next/navigation";
 
 interface ChatHeaderProps {
   chatType: string;
+  detailsOpen: boolean;
+  onToggleDetails: () => void;
+  onOpenDetails: () => void;
 }
 
-export default function ChatHeader({ chatType }: ChatHeaderProps) {
-  const [{ currentChatUser, userInfo, onlineUsers }, dispatch] =
+export default function ChatHeader({
+  chatType,
+  detailsOpen,
+  onToggleDetails,
+  onOpenDetails,
+}: ChatHeaderProps) {
+  const [{ currentChatUser, userInfo, onlineUsers, messageSearch }, dispatch] =
     useStateProvider();
   const router = useRouter();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
@@ -34,6 +42,16 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
   };
 
   const contextMenuOptions = [
+    {
+      name: detailsOpen ? "Hide details" : "Show details",
+      callBack: async () => {
+        setIsContextMenuVisible(false);
+        if (messageSearch) {
+          dispatch({ type: reducerCases.SET_MESSAGES_SEARCH });
+        }
+        onToggleDetails();
+      },
+    },
     {
       name: "Exit",
       callBack: async () => {
@@ -75,17 +93,17 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
   };
 
   return (
-    <div className="h-16 lg:px-6 md:px-4 px-4 py-3 flex justify-between items-center bg-white border-b border-[#E6E8EE] z-10">
-      <div className="flex items-center lg:gap-4 md:gap-3 gap-2 flex-1 min-w-0">
-        {/* Back button for small screens only (mobile) */}
+    <div className="chat-header">
+      <div className="chat-header-main">
         <button
           onClick={handleBackToList}
-          className="md:hidden flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors flex-shrink-0"
+          className="chat-header-icon mobile-only"
           aria-label="Back to chat list"
+          type="button"
         >
-          <MdArrowBack className="text-[#7C3AED] text-xl" />
+          <MdArrowBack />
         </button>
-        <div className="flex-shrink-0">
+        <div className="chat-header-avatar">
           {chatType === "group" ? (
             <Avatar
               size="lg"
@@ -109,42 +127,65 @@ export default function ChatHeader({ chatType }: ChatHeaderProps) {
             />
           )}
         </div>
-        <div className="flex flex-col min-w-0 flex-1">
-          <span className="font-semibold text-[#111827] truncate lg:text-base md:text-base text-sm">
-            {currentChatUser?.name}
-          </span>
+        <div className="chat-header-copy">
+          <strong>{currentChatUser?.name}</strong>
+          <small>
+            {chatType === "group"
+              ? currentChatUser?.about || "Collaborative study space"
+              : typeof currentChatUser?.id === "number" &&
+                  onlineUsers.includes(currentChatUser.id)
+                ? "Online now"
+                : "Available for messages"}
+          </small>
         </div>
       </div>
-      <div className="flex lg:gap-4 md:gap-3 gap-2 relative flex-shrink-0">
+      <div className="chat-header-actions relative">
         <button
           onClick={handleVoiceCall}
           disabled={resolveChatKind(currentChatUser) !== "user"}
-          className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          className="chat-header-icon"
           aria-label="Voice call"
+          type="button"
         >
-          <MdCall className="text-[#7C3AED] text-xl" />
+          <MdCall />
         </button>
         <button
           onClick={handleVideoCall}
-          className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          className="chat-header-icon"
           aria-label="Video call"
+          type="button"
         >
-          <IoVideocam className="text-[#7C3AED] text-xl" />
+          <IoVideocam />
         </button>
         <button
-          onClick={() => dispatch({ type: reducerCases.SET_MESSAGES_SEARCH })}
-          className="h-9 w-9 hidden md:flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          onClick={() => {
+            onOpenDetails();
+            if (!messageSearch) {
+              dispatch({ type: reducerCases.SET_MESSAGES_SEARCH });
+            }
+          }}
+          className="chat-header-icon desktop-only"
           aria-label="Search messages"
+          type="button"
         >
-          <BiSearchAlt2 className="text-[#7C3AED] text-xl" />
+          <BiSearchAlt2 />
+        </button>
+        <button
+          onClick={onToggleDetails}
+          className={`chat-header-icon desktop-only ${detailsOpen ? "is-active" : ""}`}
+          aria-label={detailsOpen ? "Hide details panel" : "Show details panel"}
+          type="button"
+        >
+          <BsThreeDotsVertical />
         </button>
         <button
           onClick={(e) => showContextMenu(e)}
-          className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          className="chat-header-icon"
           aria-label="More options"
           id="context-opener"
+          type="button"
         >
-          <BsThreeDotsVertical className="text-[#7C3AED] text-xl" />
+          <BsThreeDotsVertical />
         </button>
         {isContextMenuVisible && (
           <ContextMenu

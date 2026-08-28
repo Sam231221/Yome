@@ -108,34 +108,22 @@ function VoiceMessage({ message }: VoiceMessageProps) {
   if (!currentChatUser || !userInfo) return null;
 
   const isOwnMessage = message.senderId === userInfo.id;
-  const bubbleClass = isOwnMessage
-    ? "bg-[#2F80ED] text-white shadow-[0_10px_24px_rgba(47,128,237,0.24)]"
-    : "bg-white text-[#111827] border border-[#E5E7EB] shadow-[0_10px_24px_rgba(15,23,42,0.06)]";
-  const secondaryTextClass = isOwnMessage ? "text-blue-100/95" : "text-[#6B7280]";
-  const buttonClass = isOwnMessage
-    ? "bg-white/16 hover:bg-white/22"
-    : "bg-[#EFF4FF] hover:bg-[#E4EDFF]";
-  const iconClass = isOwnMessage ? "text-white" : "text-[#2563EB]";
-  const inactiveBarClass = isOwnMessage ? "bg-white/28" : "bg-[#D7DFEC]";
-  const activeBarClass = isOwnMessage ? "bg-white" : "bg-[#2563EB]";
 
   return (
-    <div
-      className={`px-3 py-2.5 rounded-[22px] max-w-[280px] sm:max-w-[320px] min-w-[220px] ${bubbleClass}`}
-    >
+    <div className={`chat-message voice-message ${isOwnMessage ? "mine" : ""}`}>
       <audio ref={audioRef} preload="metadata" className="hidden" />
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={isPlaying ? handlePauseAudio : () => void handlePlayAudio()}
-          className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${buttonClass}`}
+          className="voice-message-button"
           aria-label={isPlaying ? "Pause audio message" : "Play audio message"}
           disabled={!audioUrl}
         >
           {isPlaying ? (
-            <FaStop className={`${iconClass} text-sm`} />
+            <FaStop className="text-sm" />
           ) : (
-            <FaPlay className={`${iconClass} text-sm ml-0.5`} />
+            <FaPlay className="text-sm ml-0.5" />
           )}
         </button>
         <div className="flex-1 min-w-0">
@@ -147,9 +135,7 @@ function VoiceMessage({ message }: VoiceMessageProps) {
               return (
                 <span
                   key={`${message.id}-wave-${index}`}
-                  className={`block w-1.5 rounded-full transition-all duration-150 ${
-                    isActive ? activeBarClass : inactiveBarClass
-                  }`}
+                  className={`voice-message-bar ${isActive ? "active" : ""}`}
                   style={{
                     height: `${Math.max(8, Math.round(height * 0.72))}px`,
                     opacity: isActive ? 1 : 0.92,
@@ -158,17 +144,13 @@ function VoiceMessage({ message }: VoiceMessageProps) {
               );
             })}
           </div>
-          <div className="mt-1.5 flex items-center justify-between gap-3">
-            <span className={`text-[12px] font-semibold tabular-nums ${secondaryTextClass}`}>
+          <div className="chat-message-meta mt-1.5">
+            <span className="text-[12px] font-semibold tabular-nums">
               {formatTime(isPlaying ? currentPlaybackTime : totalDuration)}
             </span>
             <div className="flex items-center gap-1.5">
-              <span className={`text-[11px] ${secondaryTextClass}`}>
-                {calculateTime(String(message.createdAt))}
-              </span>
-              {isOwnMessage && (
-                <MessageStatus messageStatus={message.messageStatus} />
-              )}
+              <span>{calculateTime(String(message.createdAt))}</span>
+              {isOwnMessage && <MessageStatus messageStatus={message.messageStatus} />}
             </div>
           </div>
         </div>

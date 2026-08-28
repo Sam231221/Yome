@@ -284,19 +284,21 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
   };
 
   return (
-    <div className="flex text-2xl w-full justify-end items-center">
-      <div className="pt-1">
-        <FaTrash
-          className="text-panel-header-icon"
-          onClick={() => hide?.(false)}
-        />
-      </div>
-      <div className="mx-4 py-2 px-4 text-white text-lg flex gap-3 justify-center items-center bg-search-input-container-background rounded-full drop-shadow-lg">
+    <div className="audio-recorder-shell">
+      <button
+        type="button"
+        className="composer-icon-button"
+        onClick={() => hide?.(false)}
+        aria-label="Discard recording"
+      >
+        <FaTrash />
+      </button>
+      <div className="audio-recorder-panel">
         {isRecording ? (
-        <div className="text-red-500 animate-blink w-60 text-center">
-          Recording <span>({recordingDuration}s)</span>
-        </div>
-      ) : (
+          <div className="audio-recorder-status">
+            Recording <span>({recordingDuration}s)</span>
+          </div>
+        ) : (
           <div className=" ">
             {recordedAudio && (
               <>
@@ -309,7 +311,7 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
             )}
           </div>
         )}
-        <div className="w-60" ref={waveformRef} hidden={isRecording} />
+        <div className="audio-recorder-wave" ref={waveformRef} hidden={isRecording} />
         {recordedAudio && isPlaying && (
           <span>{formatTime(currentPlaybackTime)}</span>
         )}
@@ -319,25 +321,25 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
         <audio ref={audioRef} hidden />
       </div>
 
-      <div className="mr-4 ">
+      <div>
         {!isRecording ? (
           <FaMicrophone
-            className="text-red-500"
+            className="audio-recorder-action"
             onClick={handleStartRecording}
           />
         ) : (
           <FaPauseCircle
-            className="text-red-500"
+            className="audio-recorder-action"
             onClick={handleStopRecording}
           />
         )}
       </div>
-      <div>
+      <div className="ml-auto">
         <MdSend
-          className={`mr-4 ${
+          className={`audio-recorder-send ${
             renderedAudio
-              ? "text-panel-header-icon cursor-pointer"
-              : "cursor-not-allowed text-gray-400"
+              ? "is-ready"
+              : "is-disabled"
           }`}
           title="Send"
           onClick={sendRecording}

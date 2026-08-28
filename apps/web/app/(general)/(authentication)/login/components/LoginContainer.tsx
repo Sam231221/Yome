@@ -2,13 +2,28 @@ import React, { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { FaFacebook, FaGithub } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-import FormInput from "@/components/FormInput/Form";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { normalizeEmail } from "@/lib/auth/formValidation";
 
 interface LoginContainerProps {
   activeTab: string;
+}
+
+function SocialAuthButton({
+  provider,
+  children,
+  onClick,
+}: {
+  provider: string;
+  children: React.ReactNode;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+}) {
+  return (
+    <button type="button" data-provider={provider} onClick={onClick}>
+      {children}
+    </button>
+  );
 }
 
 export default function LoginContainer({ activeTab }: LoginContainerProps) {
@@ -19,28 +34,11 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
 
   const [isFormFilled, setFormFill] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [values, setValues] = useState({
     email: "",
     password: "",
   });
-  const inputs = [
-    {
-      id: 1,
-      name: "email",
-      type: "email",
-      placeholder: "Email address",
-      required: true,
-      autoComplete: "email",
-    },
-    {
-      id: 2,
-      name: "password",
-      type: "password",
-      placeholder: "Password",
-      required: true,
-      autoComplete: "current-password",
-    },
-  ];
 
   useEffect(() => {
     setFormFill(values.email.trim() !== "" && values.password !== "");
@@ -51,7 +49,7 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
   };
 
   const loginWithNextAuthProvider = async (
-    e: React.MouseEvent<HTMLDivElement>
+    e: React.MouseEvent<HTMLButtonElement>
   ) => {
     const provider = e.currentTarget.getAttribute("data-provider");
     if (!provider) return;
@@ -97,65 +95,65 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
   };
 
   return (
-    <div
-      className={`${
-        activeTab === "login" ? "flex flex-col" : "hidden"
-      } gap-y-3`}
-    >
-      <div
-        data-provider="facebook"
-        onClick={loginWithNextAuthProvider}
-        className="yome-button-secondary w-full justify-start"
-      >
-        <FaFacebook size={20} className="ml-3 mr-3 text-[#1e5aff] " />
-        <span className="text-sm pointer-events-none font-medium">
-          Continue With Facebook
-        </span>
-      </div>
-
-      <div
-        data-provider="github"
-        onClick={loginWithNextAuthProvider}
-        className="yome-button-secondary w-full justify-start"
-      >
-        <FaGithub size={20} className="ml-3 mr-3  " />
-        <span className="text-sm pointer-events-none font-medium">
-          Continue With Github
-        </span>
-      </div>
-      <div
-        data-provider="google"
-        onClick={loginWithNextAuthProvider}
-        className="yome-button-secondary w-full justify-start"
-      >
-        <FcGoogle size={20} className="ml-3 mr-3 text-[#1e5aff] " />
-        <span className="text-sm pointer-events-none font-medium">
-          Continue With Google
-        </span>
-      </div>
-      <p className="text-center text-[10px] font-bold uppercase tracking-wider text-[var(--yome-muted)]">or continue with email</p>
-
+    <div className={activeTab === "login" ? "" : "hidden"}>
       <form onSubmit={handleFormSubmit}>
-        {inputs.map((input) => (
-          <FormInput
-            key={input.id}
-            {...input}
-            value={values[input.name as keyof typeof values]}
+        <label>
+          <span>Email address</span>
+          <input
+            name="email"
+            type="email"
+            placeholder="maya@example.com"
+            required
+            autoComplete="email"
+            value={values.email}
             onChange={onChangeFormInputs}
           />
-        ))}
-
-        <a className="mb-3 block text-sm focus:underline" href="#">
-          Forgot your password?
-        </a>
+        </label>
+        <label>
+          <span>Password</span>
+          <div className="password-field">
+            <input
+              name="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="At least 8 characters"
+              required
+              autoComplete="current-password"
+              value={values.password}
+              onChange={onChangeFormInputs}
+            />
+            <button type="button" onClick={() => setShowPassword((value) => !value)}>
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+        </label>
+        <button className="forgot-link" type="button">
+          Forgot password?
+        </button>
         <button
           type="submit"
           disabled={!isFormFilled || isSubmitting}
-          className="yome-button-primary w-full"
+          className="primary-button auth-submit"
         >
           {isSubmitting ? "Signing in..." : "Sign in"}
         </button>
       </form>
+      <div className="auth-divider">
+        <span>or continue with</span>
+      </div>
+      <div className="social-auth">
+        <SocialAuthButton provider="google" onClick={loginWithNextAuthProvider}>
+          <strong><FcGoogle size={15} /></strong> Google
+        </SocialAuthButton>
+        <SocialAuthButton provider="github" onClick={loginWithNextAuthProvider}>
+          <strong><FaGithub size={15} /></strong> Github
+        </SocialAuthButton>
+        <SocialAuthButton provider="facebook" onClick={loginWithNextAuthProvider}>
+          <strong><FaFacebook size={15} color="#1e5aff" /></strong> Facebook
+        </SocialAuthButton>
+      </div>
+      <p className="auth-terms">
+        By continuing, you agree to Yome&apos;s Terms and acknowledge the Privacy Policy.
+      </p>
     </div>
   );
 }

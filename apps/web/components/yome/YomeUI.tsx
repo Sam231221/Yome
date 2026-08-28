@@ -24,15 +24,15 @@ import { groups, studyRooms, topics, yomeNavItems, type FeedPost, type YomeTone 
 
 export function Brand({ href = "/dashboard", light = false }: { href?: string; light?: boolean }) {
   return (
-    <Link className="yome-brand" href={href} style={light ? { color: "#fff" } : undefined}>
-      <span className="yome-brand-mark">Y</span>
+    <Link className="yome-brand brand" href={href} style={light ? { color: "#fff" } : undefined}>
+      <span className="yome-brand-mark brand-mark">Y</span>
       <span>yome</span>
     </Link>
   );
 }
 
 export function Badge({ children, tone = "blue" }: { children: React.ReactNode; tone?: YomeTone }) {
-  return <span className={`yome-badge yome-tone-${tone}`}>{children}</span>;
+  return <span className={`yome-badge badge yome-tone-${tone} badge-${tone}`}>{children}</span>;
 }
 
 export function Avatar({
@@ -49,7 +49,7 @@ export function Avatar({
   const safeTone = tone === "neutral" ? "blue" : tone;
   const sizeClass = size === "md" ? "" : ` yome-avatar-${size}`;
   return (
-    <span className={`yome-avatar yome-avatar-${safeTone}${sizeClass}`}>
+    <span className={`yome-avatar avatar avatar-${safeTone} yome-avatar-${safeTone}${sizeClass} avatar-${size}`}>
       {image ? <Image src={image} alt={initials || "Avatar"} fill sizes="86px" className="object-cover" /> : initials}
     </span>
   );
@@ -115,38 +115,39 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={dark ? "yome-app dark" : "yome-app"}>
-      <header className="yome-topbar">
+      <header className="yome-topbar topbar">
         <Brand />
-        <label className="yome-searchbox">
+        <label className="yome-searchbox searchbox">
           <Search size={19} />
           <input placeholder="Search people, groups, topics..." />
           <kbd>⌘ K</kbd>
         </label>
-        <div className="yome-top-actions">
-          <button className="yome-icon-button" onClick={() => setDark((value) => !value)} aria-label="Toggle theme">
+        <div className="yome-top-actions top-actions">
+          <button className="yome-icon-button icon-button" onClick={() => setDark((value) => !value)} aria-label="Toggle theme">
             {dark ? <Sun size={20} /> : <Moon size={20} />}
           </button>
-          <Link className="yome-icon-button" href="/notifications" aria-label="Notifications">
+          <Link className="yome-icon-button icon-button notification-button" href="/notifications" aria-label="Notifications">
             <Bell size={20} />
+            <span className="notification-dot">3</span>
           </Link>
-          <Link className="yome-profile-button" href="/account">
+          <Link className="yome-profile-button profile-button" href="/account">
             <Avatar initials={initials} image={userInfo?.profilePicture || session?.user?.image || undefined} tone="violet" size="sm" />
             <span>
               <strong>{name}</strong>
               <small>{userInfo?.role === "TEACHER" ? "Educator" : "Student"}</small>
             </span>
-            <ChevronDown size={16} />
+            <ChevronDown size={16} className="chevron" />
           </Link>
         </div>
       </header>
 
-      <aside className="yome-sidebar">
+      <aside className="yome-sidebar sidebar">
         <nav aria-label="Primary navigation">
           {yomeNavItems.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
             return (
-              <Link key={item.href} className={active ? "yome-nav-item active" : "yome-nav-item"} href={item.href}>
+              <Link key={item.href} className={active ? "yome-nav-item nav-item active" : "yome-nav-item nav-item"} href={item.href}>
                 <Icon size={20} />
                 <span>{item.label}</span>
                 {item.badge && <em>{item.badge}</em>}
@@ -154,20 +155,23 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="yome-sidebar-divider" />
-        <div className="yome-sidebar-heading">
+        <div className="yome-sidebar-divider sidebar-divider" />
+        <div className="yome-sidebar-heading sidebar-heading">
           <span>Your groups</span>
           <Plus size={17} />
         </div>
-        <div className="yome-list">
+        <div className="yome-list group-list">
           {groups.slice(0, 3).map((group) => (
-            <Link key={group.id} href={`/groups/${group.id}`} className="yome-group-item">
+            <Link key={group.id} href={`/groups/${group.id}`} className="yome-group-item group-item">
               <ToneSymbol tone={group.tone}>{group.symbol}</ToneSymbol>
               <span>{group.name}</span>
             </Link>
           ))}
         </div>
-        <button className="yome-group-item mt-auto" onClick={handleSignOut}>
+        <button className="view-all" onClick={() => router.push("/groups")}>
+          View all groups <Send size={16} />
+        </button>
+        <button className="yome-group-item group-item mt-auto" onClick={handleSignOut}>
           <Send size={18} />
           <span>Sign out</span>
         </button>
@@ -198,25 +202,62 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
 }
 
 export function ComposerCard({ userName = "there" }: { userName?: string }) {
+  const [type, setType] = useState("Post");
+  const [value, setValue] = useState("");
+  const [sent, setSent] = useState(false);
+  const initials = userName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  const publish = () => {
+    if (!value.trim()) return;
+    setSent(true);
+    setValue("");
+    window.setTimeout(() => setSent(false), 2200);
+  };
+
   return (
-    <section className="yome-card yome-composer" aria-label="Create a post">
-      <div className="yome-composer-row">
-        <Avatar initials={userName.slice(0, 2).toUpperCase()} tone="violet" />
-        <button className="yome-composer-prompt">Share what you are learning, {userName.split(" ")[0]}...</button>
+    <section className="yome-card yome-composer composer card" aria-label="Create a post">
+      <div className="yome-composer-row composer-row">
+        <Avatar initials={initials || "Y"} tone="violet" />
+        <button className="yome-composer-prompt composer-prompt" onClick={() => document.getElementById("composer-input")?.focus()}>
+          Share what you&apos;re learning, {userName.split(" ")[0]}...
+        </button>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--yome-border)] pt-3">
+      <textarea
+        id="composer-input"
+        className={value ? "composer-input visible" : "composer-input"}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        placeholder={`Write a ${type.toLowerCase()}...`}
+        aria-label="Post content"
+      />
+      <div className="composer-actions">
         {[
           ["Post", MessageCircle],
           ["Question", HelpCircle],
           ["Project", Check],
           ["Resource", Bookmark],
         ].map(([label, Icon]) => (
-          <button key={String(label)} className="yome-button-secondary min-h-8 text-[11px]">
+          <button
+            key={String(label)}
+            className={type === label ? "composer-type selected" : "composer-type"}
+            onClick={() => setType(String(label))}
+          >
             <Icon size={17} />
             <span>{String(label)}</span>
           </button>
         ))}
+        {value ? (
+          <button className="primary-button small" onClick={publish}>
+            Publish
+          </button>
+        ) : null}
       </div>
+      {sent ? <div className="toast"><Check size={17} /> Your post was published</div> : null}
     </section>
   );
 }
@@ -224,18 +265,20 @@ export function ComposerCard({ userName = "there" }: { userName?: string }) {
 export function FeedPostCard({ post }: { post: FeedPost }) {
   const accent = post.tone === "amber" ? "var(--yome-amber)" : post.tone === "teal" ? "var(--yome-teal)" : post.tone === "violet" ? "var(--yome-violet)" : "var(--yome-blue)";
   return (
-    <article className="yome-card yome-post">
-      <div className="yome-post-accent" style={{ background: accent }} />
-      <header className="yome-post-header">
+    <article className="yome-card yome-post post card">
+      <div className="yome-post-accent post-accent" style={{ background: accent }} />
+      <header className="yome-post-header post-header">
         <Avatar initials={post.initials} tone={post.tone === "neutral" ? "blue" : post.tone} />
-        <div className="yome-author">
-          <strong>{post.author}</strong>
-          <small>{post.type} · {post.time}</small>
+        <div className="yome-author author">
+          <div>
+            <strong>{post.author}</strong>
+          </div>
+          <small>{post.type === "Question" ? "Mathematics student" : "Engineering student"} · {post.time}</small>
         </div>
         <Badge tone={post.tone}>{post.type}</Badge>
       </header>
-      <div className="yome-post-content">
-        <div className="yome-tags">
+      <div className="yome-post-content post-content">
+        <div className="yome-tags topic-row">
           {post.tags.map((tag) => (
             <Badge key={tag} tone="neutral">{tag}</Badge>
           ))}
@@ -244,27 +287,39 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
         <p>{post.body}</p>
       </div>
       {post.type === "Project" && (
-        <div className="yome-visual mx-[18px] mb-4">
-          <div className="yome-visual-grid" />
-          <div className="relative z-[1] grid h-full min-h-[180px] content-end p-4">
-            <span className="font-mono text-[9px] font-bold tracking-[0.14em] text-blue-100">ARDUINO / ENVIRONMENTAL MONITOR</span>
-            <div className="mt-4 grid grid-cols-3 gap-2 text-[10px]">
-              <span className="rounded-lg bg-white/10 p-2">moisture <strong className="block text-base">42%</strong></span>
-              <span className="rounded-lg bg-white/10 p-2">temperature <strong className="block text-base">24C</strong></span>
-              <span className="rounded-lg bg-white/10 p-2">pump <strong className="block text-base text-green-300">active</strong></span>
-            </div>
+        <div className="project-visual" role="img" aria-label="Stylized diagram of the smart greenhouse project">
+          <div className="grid-lines" />
+          <div className="greenhouse">
+            <span className="roof" />
+            <span className="plant one">♧</span>
+            <span className="plant two">♧</span>
+            <span className="plant three">♧</span>
+            <span className="sensor">●<i>soil sensor</i></span>
           </div>
+          <div className="code-panel">
+            <span>moisture</span><strong>42%</strong>
+            <span>temperature</span><strong>24°C</strong>
+            <span>pump</span><strong className="online">ACTIVE</strong>
+          </div>
+          <span className="visual-label">ARDUINO / ENVIRONMENTAL MONITOR</span>
         </div>
       )}
-      <div className="yome-post-stats">
-        <span>{post.stat}</span>
+      {post.type === "Project" ? (
+        <div className="project-meta">
+          <div><span>Team</span><strong>4 students</strong></div>
+          <div><span>Progress</span><strong>Prototype complete</strong></div>
+          <div><span>Stack</span><strong>Arduino · C++</strong></div>
+        </div>
+      ) : null}
+      <div className="yome-post-stats post-stats">
+        <span><strong>{post.stat.split(" ")[0]}</strong> {post.stat.split(" ").slice(1).join(" ")}</span>
         <span>{post.detail} · 3 shares</span>
       </div>
-      <footer className="yome-post-actions">
-        <button><HelpCircle size={17} /> <span>Helpful</span></button>
-        <button><MessageCircle size={17} /> <span>Answer</span></button>
-        <button><Share2 size={17} /> <span>Share</span></button>
-        <button><Bookmark size={17} /> <span>Save</span></button>
+      <footer className="yome-post-actions post-actions">
+        <button className="post-action"><HelpCircle size={17} /> <span>{post.type === "Project" ? "Inspiring" : "Helpful"}</span></button>
+        <button className="post-action"><MessageCircle size={17} /> <span>{post.type === "Project" ? "Comment" : "Answer"}</span></button>
+        <button className="post-action"><Share2 size={17} /> <span>Share</span></button>
+        <button className="post-action"><Bookmark size={17} /> <span>Save</span></button>
       </footer>
     </article>
   );
@@ -272,31 +327,59 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
 
 export function RightRail() {
   return (
-    <aside className="yome-right-rail">
-      <section className="yome-section yome-card">
-        <div className="yome-section-title">
-          <h3 className="flex items-center gap-2"><span className="yome-live-dot" />Live study rooms</h3>
+    <aside className="yome-right-rail right-rail">
+      <section className="right-section">
+        <div className="right-heading">
+          <div><span className="yome-live-dot live-dot" />Live study rooms</div>
           <Link href="/study-rooms">View all</Link>
         </div>
-        <div className="yome-list">
+        <div>
           {studyRooms.slice(0, 2).map((room) => (
-            <article key={room.id} className="flex items-center gap-3">
-              <ToneSymbol tone={room.tone}>{room.symbol}</ToneSymbol>
-              <div className="min-w-0 flex-1">
-                <strong className="block truncate text-[11px]">{room.title}</strong>
-                <small className="text-[9px] text-green-600">{room.meta}</small>
+            <article key={room.id} className="room-card">
+              <div className={`room-icon ${room.tone}`}>{room.symbol}</div>
+              <div className="room-copy">
+                <strong>{room.title}</strong>
+                <small>{room.meta}</small>
+                <div className="stacked-avatars">
+                  <Avatar initials="AL" tone="blue" size="xs" />
+                  <Avatar initials="SC" tone="teal" size="xs" />
+                  <Avatar initials="MP" tone="violet" size="xs" />
+                  <span>+11</span>
+                </div>
               </div>
-              <Link className="yome-button-secondary min-h-8 px-3 text-[10px]" href="/study-rooms">Join</Link>
+              <Link className="join-button" href="/study-rooms">Join</Link>
             </article>
           ))}
         </div>
       </section>
-      <section className="yome-section yome-card">
-        <div className="yome-section-title">
-          <h3>Trending topics</h3>
+      <section className="right-section">
+        <div className="right-heading">
+          <div>Upcoming sessions</div>
+          <Link href="/events">See calendar</Link>
+        </div>
+        {[
+          { day: "28", month: "AUG", title: "Calculus Revision Session", meta: "Today · 4:00 PM", group: "Mathematics Study Group", tone: "violet" },
+          { day: "30", month: "AUG", title: "Intro to Machine Learning", meta: "Sat · 2:30 PM", group: "AI & ML Community", tone: "amber" },
+        ].map((event) => (
+          <article key={event.title} className="event-card">
+            <div className={event.tone === "amber" ? "date-tile amber" : "date-tile"}>
+              <strong>{event.day}</strong>
+              <span>{event.month}</span>
+            </div>
+            <div>
+              <strong>{event.title}</strong>
+              <small>{event.meta}</small>
+              <p>{event.group}</p>
+            </div>
+          </article>
+        ))}
+      </section>
+      <section className="right-section topics">
+        <div className="right-heading">
+          <div>Trending topics</div>
           <Link href="/explore">Explore</Link>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div>
           {topics.map((topic) => <Badge key={topic.title} tone={topic.tone}># {topic.title}</Badge>)}
         </div>
       </section>

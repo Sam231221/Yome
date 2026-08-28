@@ -44,37 +44,39 @@ export default function ChatListHeader({
   };
 
   return (
-    <div className="lg:px-5 md:px-4 px-4 lg:pt-5 md:pt-4 pt-4 pb-3 flex justify-between items-center">
+    <div className="messages-inbox-header">
       {isUserLoading ? (
         <ProfileSkeleton />
       ) : (
-        <div className="flex flex-col">
-          <span className="lg:text-2xl md:text-xl text-xl font-semibold text-[#111827]">Chats</span>
-          <span className="text-xs text-[#6B7280]">
+        <div className="messages-title-group">
+          <strong>Messages</strong>
+          <small>
             {userInfo?.firstname
               ? `Hi, ${userInfo.firstname.charAt(0).toUpperCase()}${userInfo.firstname.slice(
                   1
                 )}`
-              : "Messenger"}
-          </span>
+              : "Learning network"}
+          </small>
         </div>
       )}
 
-      <div className="flex lg:gap-2 md:gap-2 gap-2 relative">
+      <div className="messages-header-actions relative">
         <button
-          className="h-9 w-9 rounded-full bg-[#F1F3F9] border border-[#E6E8EE] flex items-center justify-center text-[#3F3F3F] flex-shrink-0"
+          className="messages-icon-button"
           title="New chat"
           onClick={handleAllContactsPage}
+          type="button"
         >
-          <BsFillChatLeftTextFill className="text-lg" />
+          <BsFillChatLeftTextFill />
         </button>
         <button
-          className="h-9 w-9 rounded-full bg-[#F1F3F9] border border-[#E6E8EE] flex items-center justify-center text-[#3F3F3F] flex-shrink-0"
+          className="messages-icon-button"
           title="Menu"
           onClick={(e) => showContextMenu(e)}
           id="context-opener"
+          type="button"
         >
-          <BsThreeDotsVertical className="text-lg" />
+          <BsThreeDotsVertical />
         </button>
         {isContextMenuVisible && (
           <ContextMenu

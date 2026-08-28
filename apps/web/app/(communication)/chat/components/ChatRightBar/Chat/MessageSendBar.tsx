@@ -156,27 +156,29 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
   }, [grabImage]);
 
   return (
-    <div className="bg-white lg:h-20 md:h-18 h-16 lg:px-6 md:px-4 px-4 flex items-center gap-2 md:gap-3 lg:gap-4 border-t border-[#E6E8EE] relative">
+    <div className="message-composer-shell relative">
       {!showAudioRecorder && (
         <>
-          <div className="flex gap-2 md:gap-3 items-center flex-shrink-0">
+          <div className="message-composer-actions">
             <button
-              className="h-9 w-9 rounded-full bg-[#1877F2] text-white flex items-center justify-center flex-shrink-0 active:bg-[#1565D8] transition-colors"
+              className="composer-icon-button composer-icon-button-primary"
               title="More"
+              type="button"
             >
-              <BsPlusLg className="text-sm" />
+              <BsPlusLg />
             </button>
             <button
-              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors flex-shrink-0"
+              className="composer-icon-button"
               title="Emoji"
               onClick={handleEmojiModal}
               id="emoji-open"
+              type="button"
             >
-              <BsEmojiSmile className="text-[#6B7280] text-xl" />
+              <BsEmojiSmile />
             </button>
             {showEmojiPicker && (
               <div
-                className="absolute bottom-20 lg:left-16 md:left-12 left-4 z-40"
+                className="composer-emoji-picker"
                 ref={emojiPickerRef}
               >
                 <EmojiPicker
@@ -186,18 +188,19 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
               </div>
             )}
             <button
-              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors flex-shrink-0"
+              className="composer-icon-button"
               title="Attach"
               onClick={() => setGrabImage(true)}
+              type="button"
             >
-              <ImAttachment className="text-[#6B7280] text-xl" />
+              <ImAttachment />
             </button>
           </div>
-          <div className="flex-1 rounded-2xl h-10 flex items-center min-w-0">
+          <div className="message-composer">
             <input
               type="text"
               placeholder="Type a message"
-              className="bg-[#F3F5FA] text-sm focus:outline-none h-10 rounded-2xl lg:px-4 md:px-4 px-3 w-full"
+              className="message-composer-input"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={(e) => {
@@ -206,23 +209,23 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
                 }
               }}
             />
-          </div>
-          <div className="flex items-center justify-center flex-shrink-0">
             {message.length ? (
               <button
                 onClick={() => void sendTextMessage()}
-                className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                className="send-button"
                 aria-label="Send message"
+                type="button"
               >
-                <MdSend className="text-[#1877F2] text-xl" />
+                <MdSend />
               </button>
             ) : (
               <button
                 onClick={() => setShowAudioRecorder(true)}
-                className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                className="send-button send-button-muted"
                 aria-label="Record audio"
+                type="button"
               >
-                <FaMicrophone className="text-[#1877F2] text-xl" />
+                <FaMicrophone />
               </button>
             )}
           </div>

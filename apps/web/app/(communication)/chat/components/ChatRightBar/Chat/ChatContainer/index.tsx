@@ -31,67 +31,40 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
     }
   }, [messages]);
 
+  const renderMessageMeta = (message: ChatMessage, isOwnMessage: boolean) => (
+    <div className="chat-message-meta">
+      <span>{calculateTime(String(message.createdAt))}</span>
+      {isOwnMessage && <MessageStatus messageStatus={message.messageStatus} />}
+    </div>
+  );
+
   return (
-    <div className="flex-1 w-full relative overflow-auto bg-[#F7F8FC] custom-scrollbar" ref={containerRef}>
-      <div className="pointer-events-none absolute inset-0 bg-chat-background opacity-[0.04]"></div>
-      <div className="lg:mx-8 md:mx-5 mx-4 lg:my-6 md:my-5 my-4 relative bottom-0 left-0 z-[1]">
-        <div className="flex w-full">
-          <div className="flex flex-col z-[2] justify-end w-full lg:gap-1 md:gap-1 gap-1 overflow-auto">
+    <div className="message-thread custom-scrollbar" ref={containerRef}>
+      <div className="day-divider">
+        <span>Today</span>
+      </div>
+      <div className="message-stack">
             {chatType === "user" &&
               messages.map((message: ChatMessage, index) => (
-                // decide whether to display the message left or right at the right sidebar of chat.
                 <div
                   key={index}
-                  className={`flex ${
-                    message.senderId === currentChatUser.id
-                      ? "justify-start"
-                      : "justify-end"
+                  className={`chat-message-row ${
+                    message.senderId === currentChatUser.id ? "" : "mine"
                   }`}
                 >
-                  {/* text message display */}
                   {message.type === "text" && (
                     <div
-                      className={`text-white lg:px-3 md:px-3 px-2 lg:py-2 md:py-2 py-[5px] text-sm rounded-lg flex gap-2 max-w-[85%] md:max-w-[70%] lg:max-w-[45%]	
-                     ${
-                       message.senderId === currentChatUser.id
-                         ? "bg-incoming-background"
-                         : "bg-outgoing-background"
-                     }`}
+                      className={`chat-message ${
+                        message.senderId === currentChatUser.id ? "" : "mine"
+                      }`}
                     >
-                      <span
-                        className={` ${
-                          message.senderId === currentChatUser.id
-                            ? "text-black"
-                            : "bg-outgoing-background"
-                        } break-words lg:text-sm md:text-sm text-[13px] font-medium flex-1`}
-                      >
-                        {message.message}
-                      </span>
-                      <div className="flex items-end gap-1 flex-shrink-0">
-                        <span
-                          className={` ${
-                            message.senderId === currentChatUser.id
-                              ? "text-gray-800"
-                              : "text-white"
-                          } text-[9px] min-w-fit`}
-                        >
-                          {calculateTime(String(message.createdAt))}
-                        </span>
-                        <span>
-                          {message.senderId === userInfo.id && (
-                            <MessageStatus
-                              messageStatus={message.messageStatus}
-                            />
-                          )}
-                        </span>
-                      </div>
+                      <p>{message.message}</p>
+                      {renderMessageMeta(message, message.senderId === userInfo.id)}
                     </div>
                   )}
-                  {/* image message display */}
                   {message.type === "image" && (
                     <ImageMessage message={message} />
                   )}
-                  {/* audio message display */}
                   {message.type === "audio" && (
                     <VoiceMessage message={message} />
                   )}
@@ -105,72 +78,47 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
                 .map((message: ChatMessage, index) => (
                   <div
                     key={index}
-                    className={`flex ${
-                      message.senderId !== userInfo.id
-                        ? "justify-start"
-                        : "justify-end"
+                    className={`chat-message-row ${
+                      message.senderId === userInfo.id ? "mine" : ""
                     }`}
                   >
-                    {/* text message display */}
                     {message.type === "text" && (
-                      <div className="flex gap-2">
-                        <Avatar
-                          type="sm"
-                          image={`${
-                            message?.sender?.profilePicture ||
-                            "/avatars/userprofile.png"
-                          }`}
-                        />
-                        <div
-                          className={`text-white lg:px-3 md:px-3 px-2 lg:py-2 md:py-2 py-[5px] text-sm rounded-lg flex gap-2 max-w-[85%] md:max-w-[70%] lg:max-w-[70%]	
-                     ${
-                       message.senderId !== userInfo.id
-                         ? "bg-incoming-background"
-                         : "bg-outgoing-background"
-                     }`}
-                        >
-                          <span
-                            className={` ${
-                              message.senderId !== userInfo.id
-                                ? "text-black"
-                                : "bg-outgoing-background"
-                            } break-words lg:text-sm md:text-sm text-[13px] font-medium flex-1`}
-                          >
-                            {message.message}
-                          </span>
-                          <div className="flex items-end gap-1 flex-shrink-0">
-                            <span
-                              className={` ${
-                                message.senderId !== userInfo.id
-                                  ? "text-gray-800"
-                                  : "text-white"
-                              } text-[9px] min-w-fit`}
-                            >
-                              {calculateTime(String(message.createdAt))}
-                            </span>
-                            <span>
-                              {message.senderId !== userInfo.id && (
-                                <MessageStatus
-                                  messageStatus={message.messageStatus}
-                                />
-                              )}
-                            </span>
+                      <div className="group-chat-message">
+                        {message.senderId !== userInfo.id && (
+                          <div className="group-chat-avatar">
+                            <Avatar
+                              type="sm"
+                              size="sm"
+                              image={`${
+                                message?.sender?.profilePicture ||
+                                "/avatars/userprofile.png"
+                              }`}
+                            />
                           </div>
+                        )}
+                        <div
+                          className={`chat-message ${
+                            message.senderId === userInfo.id ? "mine" : ""
+                          }`}
+                        >
+                          {message.senderId !== userInfo.id && (
+                            <strong className="group-chat-name">
+                              {message.sender?.name || "Member"}
+                            </strong>
+                          )}
+                          <p>{message.message}</p>
+                          {renderMessageMeta(message, message.senderId === userInfo.id)}
                         </div>
                       </div>
                     )}
-                    {/* image message display */}
                     {message.type === "image" && (
                       <ImageMessage message={message} />
                     )}
-                    {/* audio message display */}
                     {message.type === "audio" && (
                       <VoiceMessage message={message} />
                     )}
                   </div>
                 ))}
-          </div>
-        </div>
       </div>
     </div>
   );

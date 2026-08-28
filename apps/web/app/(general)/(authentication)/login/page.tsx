@@ -1,16 +1,35 @@
 "use client";
 import React, { Suspense, useEffect, useState } from "react";
 
-import { BookOpen, FlaskConical, HelpCircle, UsersRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import LoginContainer from "./components/LoginContainer";
 import RegisterContainer from "./components/RegisterContainer";
-import { Badge, Brand, ToneSymbol } from "@/components/yome/YomeUI";
+import Link from "next/link";
+
+function Avatar({
+  initials,
+  tone = "blue",
+}: {
+  initials: string;
+  tone?: "blue" | "teal" | "amber" | "violet";
+}) {
+  return <span className={`avatar avatar-${tone} avatar-md`}>{initials}</span>;
+}
+
+function Badge({
+  children,
+  tone = "blue",
+}: {
+  children: React.ReactNode;
+  tone?: "blue" | "teal" | "amber" | "violet" | "neutral";
+}) {
+  return <span className={`badge badge-${tone}`}>{children}</span>;
+}
 
 export default function Login() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("login");
+  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const session = useSession();
 
   useEffect(() => {
@@ -26,40 +45,64 @@ export default function Login() {
   }, [session?.status, router]);
 
   return (
-    <div className="yome-auth-shell">
-      <section className="yome-auth-story">
-        <Brand href="/" light />
-        <div className="yome-auth-message">
+    <div className="auth-shell">
+      <section className="auth-story">
+        <Link className="auth-brand" href="/">
+          <span className="brand-mark">Y</span>
+          <span>yome</span>
+        </Link>
+        <div className="auth-orbit" aria-hidden="true">
+          <span className="orbit orbit-one" />
+          <span className="orbit orbit-two" />
+          <span className="orbit-dot dot-one">S</span>
+          <span className="orbit-dot dot-two">&lt;/&gt;</span>
+          <span className="orbit-dot dot-three">A</span>
+          <span className="orbit-dot dot-four">E</span>
+        </div>
+        <div className="auth-message">
           <Badge tone="blue">A social network built for learning</Badge>
-          <h1>Find your people.<br />Learn together.</h1>
-          <p>Connect with students, educators, and STEM communities that make every question a starting point.</p>
-          <div className="mt-8 grid max-w-xl gap-3">
-            {[
-              ["Focused communities", UsersRound],
-              ["Questions that matter", HelpCircle],
-              ["Resources and projects", BookOpen],
-              ["Live study rooms", FlaskConical],
-            ].map(([label, Icon]) => (
-              <div key={String(label)} className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 p-4">
-                <ToneSymbol tone="blue"><Icon className="text-white" size={18} /></ToneSymbol>
-                <strong>{String(label)}</strong>
-              </div>
-            ))}
+          <h1>
+            Find your people.
+            <br />
+            Learn together.
+          </h1>
+          <p>
+            Connect with students, educators, and STEM communities that make every
+            question a starting point.
+          </p>
+          <div className="auth-proof">
+            <div className="proof-avatars">
+              <Avatar initials="SC" tone="teal" />
+              <Avatar initials="AN" tone="amber" />
+              <Avatar initials="PS" tone="violet" />
+            </div>
+            <span>
+              <strong>12,000+ learners</strong>
+              <small>sharing knowledge every day</small>
+            </span>
           </div>
         </div>
       </section>
 
-      <section className="yome-auth-panel">
-        <div className="yome-auth-form-wrap">
-          <div className="mb-8 xl:hidden">
-            <Brand href="/" />
-          </div>
-          <p className="yome-eyebrow">Welcome to Yome</p>
+      <section className="auth-panel">
+        <Link className="auth-close" href="/" aria-label="Close authentication">
+          <span>x</span>
+        </Link>
+        <div className="auth-form-wrap">
+          <p className="eyebrow">Welcome to Yome</p>
           <h2>{activeTab === "register" ? "Create your learning profile" : "Welcome back"}</h2>
-          <p className="mb-6 text-[13px] text-[#64748b]">{activeTab === "register" ? "Join a community where curiosity connects us." : "Continue learning with your communities."}</p>
-          <div className="yome-auth-tabs">
-            <button className={activeTab === "login" ? "active" : ""} onClick={() => setActiveTab("login")}>Sign in</button>
-            <button className={activeTab === "register" ? "active" : ""} onClick={() => setActiveTab("register")}>Sign up</button>
+          <p className="auth-subtitle">
+            {activeTab === "register"
+              ? "Join a community where curiosity connects us."
+              : "Continue learning with your communities."}
+          </p>
+          <div className="auth-tabs">
+            <button className={activeTab === "register" ? "active" : ""} onClick={() => setActiveTab("register")}>
+              Sign up
+            </button>
+            <button className={activeTab === "login" ? "active" : ""} onClick={() => setActiveTab("login")}>
+              Sign in
+            </button>
           </div>
           <Suspense fallback={<div className="p-4">Loading...</div>}>
             <LoginContainer activeTab={activeTab} />

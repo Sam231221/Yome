@@ -8,7 +8,6 @@ import VideoCall from "./components/Call/VideoCall";
 import VoiceCall from "./components/Call/VoiceCall";
 import ChatLeftBar from "./components/ChatLeftBar";
 import ChatRightBar from "./components/ChatRightBar";
-import ChatSideNav from "./components/ChatSideNav";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -19,6 +18,7 @@ import {
   getUserInfoErrorMessage,
   logUserInfoLoadError,
 } from "@/lib/auth/userInfo";
+import { YomeAppShell } from "@/components/yome/YomeUI";
 import { getUserConversation, logChatConversationError } from "@/lib/chat/chatApi";
 import { resolveChatKind, type ActiveCall, type ChatKind, type UserId } from "@/types/chat";
 
@@ -235,28 +235,18 @@ export default function Chatpage() {
       )}
 
       {!videoCall && !voiceCall && (
-        <div className="h-screen w-screen bg-[var(--yome-bg)] lg:px-4 lg:py-4 md:px-0 md:py-0 px-0 py-0">
-          <div className="h-full w-full overflow-hidden border-[var(--yome-border)] bg-[var(--yome-surface)] shadow-[0_25px_60px_rgba(15,23,42,0.12)] lg:rounded-2xl lg:border md:rounded-none md:border-none md:shadow-none rounded-none border-none shadow-none flex">
-            {/* Hide ChatSideNav on medium and smaller screens */}
-            <div className="hidden lg:block">
-              <ChatSideNav />
-            </div>
-            <div className="flex-1 grid md:grid-cols-[340px_1fr] lg:grid-cols-[360px_1fr] grid-cols-1 min-h-0 min-w-0">
-              {/* On small screens (<768px): show only ChatLeftBar OR ChatRightBar, not both */}
-              {/* On medium+ screens (>=768px): show both side by side via grid */}
-              <div className={`${
-                currentChatUser ? 'hidden md:block' : 'block'
-              } h-full overflow-hidden`}>
+        <YomeAppShell>
+          <section className="messages-board">
+            <div className="messages-page flex-1 min-h-0 min-w-0">
+              <div className={`${currentChatUser ? "hidden md:block" : "block"} h-full overflow-hidden`}>
                 <ChatLeftBar isUserLoading={isUserLoading} />
               </div>
-              <div className={`${
-                currentChatUser ? 'block' : 'hidden md:block'
-              } h-full overflow-hidden`}>
+              <div className={`${currentChatUser ? "block" : "hidden md:block"} h-full overflow-hidden`}>
                 <ChatRightBar />
               </div>
             </div>
-          </div>
-        </div>
+          </section>
+        </YomeAppShell>
       )}
     </>
   );

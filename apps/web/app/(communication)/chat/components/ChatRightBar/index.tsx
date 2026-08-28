@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Empty from "@/components/Empty";
 import { useStateProvider } from "@/context/StateContext";
 import Chat from "./Chat";
@@ -9,30 +9,34 @@ export default function ChatRightBar() {
   const [
     {
       currentChatUser,
-
       messageSearch,
     },
   ] = useStateProvider();
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  useEffect(() => {
+    setDetailsOpen(false);
+  }, [currentChatUser?.id]);
+
+  useEffect(() => {
+    if (messageSearch) {
+      setDetailsOpen(true);
+    }
+  }, [messageSearch]);
   return (
     <>
       {currentChatUser ? (
-        <div
-          className={
-            messageSearch
-              ? "grid h-full w-full lg:grid-cols-[1fr_320px] grid-cols-1"
-              : "h-full w-full"
-          }
-        >
+        <div className={`chat-panel chat-layout-grid h-full w-full ${detailsOpen ? "details-open" : ""}`}>
           <Chat
             id={String(currentChatUser.id)}
             chatType={resolveChatKind(currentChatUser)}
+            detailsOpen={detailsOpen}
+            onToggleDetails={() => setDetailsOpen((value) => !value)}
+            onOpenDetails={() => setDetailsOpen(true)}
           />
-          {/* Hide search panel on medium and smaller screens when message search is active */}
-          {messageSearch && (
-            <div className="hidden lg:block">
-              <SearchMessagesRightMostChatContainer />
-            </div>
-          )}
+          <div className={`chat-details-slot ${detailsOpen ? "is-open" : ""}`}>
+            <SearchMessagesRightMostChatContainer onClose={() => setDetailsOpen(false)} />
+          </div>
         </div>
       ) : (
         <div className="h-full w-full">

@@ -4,7 +4,6 @@ import { toast } from "react-hot-toast";
 import { FaFacebook, FaGithub } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { REGISTER_USER } from "@/utils/ApiRoutes";
-import FormInput from "@/components/FormInput/Form";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import {
@@ -21,7 +20,7 @@ import {
 
 interface RegisterContainerProps {
   activeTab: string;
-  setActiveTab: (tab: string) => void;
+  setActiveTab: (tab: "login" | "register") => void;
 }
 
 type RegisterValues = {
@@ -42,6 +41,22 @@ const emptyValues: RegisterValues = {
   confirmPassword: "",
 };
 
+function SocialAuthButton({
+  provider,
+  children,
+  onClick,
+}: {
+  provider: string;
+  children: React.ReactNode;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+}) {
+  return (
+    <button type="button" data-provider={provider} onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
 export default function RegisterContainer({
   activeTab,
   setActiveTab,
@@ -49,6 +64,8 @@ export default function RegisterContainer({
   const [isFormFilled, setFormFill] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -56,79 +73,32 @@ export default function RegisterContainer({
   const [values, setValues] = useState<RegisterValues>(emptyValues);
 
   const inputs = useMemo(
-    () => [
-      {
-        id: 1,
-        name: "firstname",
-        type: "text",
-        placeholder: "First name",
-        errorMessage:
-          "First name must be 2-40 characters and can include letters, spaces, apostrophes, or hyphens.",
+    () => ({
+      firstname: {
         pattern: NAME_PATTERN,
         minLength: 2,
         maxLength: 40,
-        required: true,
-        autoComplete: "given-name",
       },
-      {
-        id: 2,
-        name: "lastname",
-        type: "text",
-        placeholder: "Last name",
-        errorMessage:
-          "Last name must be 2-40 characters and can include letters, spaces, apostrophes, or hyphens.",
+      lastname: {
         pattern: NAME_PATTERN,
         minLength: 2,
         maxLength: 40,
-        required: true,
-        autoComplete: "family-name",
       },
-      {
-        id: 3,
-        name: "username",
-        type: "text",
-        placeholder: "Username",
-        errorMessage:
-          "Username must be 3-24 characters and may include letters, numbers, dots, underscores, @, or hyphens.",
+      username: {
         pattern: USERNAME_PATTERN,
         minLength: 3,
         maxLength: 24,
-        required: true,
-        autoComplete: "username",
       },
-      {
-        id: 4,
-        name: "email",
-        type: "email",
-        placeholder: "Email address",
+      email: {
         pattern: EMAIL_PATTERN,
-        errorMessage: "Enter a valid email address.",
-        required: true,
-        autoComplete: "email",
       },
-      {
-        id: 5,
-        name: "password",
-        type: "password",
-        placeholder: "Password",
-        errorMessage: PASSWORD_ERROR_MESSAGE,
+      password: {
         pattern: PASSWORD_PATTERN,
         minLength: 8,
         maxLength: 64,
-        required: true,
-        autoComplete: "new-password",
       },
-      {
-        id: 6,
-        name: "confirmPassword",
-        type: "password",
-        placeholder: "Confirm password",
-        errorMessage: CONFIRM_PASSWORD_ERROR_MESSAGE,
-        required: true,
-        autoComplete: "new-password",
-      },
-    ],
-    [values.password]
+    }),
+    []
   );
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,7 +122,7 @@ export default function RegisterContainer({
   };
 
   const loginWithNextAuthProvider = async (
-    e: React.MouseEvent<HTMLDivElement>
+    e: React.MouseEvent<HTMLButtonElement>
   ) => {
     const provider = e.currentTarget.getAttribute("data-provider");
     if (!provider) return;
@@ -223,76 +193,140 @@ export default function RegisterContainer({
   };
 
   return (
-    <div
-      className={`${
-        activeTab === "register" ? "flex flex-col" : "hidden"
-      } gap-y-3`}
-    >
-      <div
-        data-provider="facebook"
-        onClick={loginWithNextAuthProvider}
-        className="yome-button-secondary w-full justify-start"
-      >
-        <FaFacebook size={20} className="ml-3 mr-3 text-[#1e5aff] " />
-        <span className="text-sm pointer-events-none font-medium">
-          Continue With Facebook
-        </span>
-      </div>
-
-      <div
-        data-provider="github"
-        onClick={loginWithNextAuthProvider}
-        className="yome-button-secondary w-full justify-start"
-      >
-        <FaGithub size={20} className="ml-3 mr-3  " />
-        <span className="text-sm pointer-events-none font-medium">
-          Continue With Github
-        </span>
-      </div>
-      <div
-        data-provider="google"
-        onClick={loginWithNextAuthProvider}
-        className="yome-button-secondary w-full justify-start"
-      >
-        <FcGoogle size={20} className="ml-3 mr-3 text-[#1e5aff] " />
-        <span className="text-sm pointer-events-none font-medium">
-          Continue With Google
-        </span>
-      </div>
-      <p className="text-center text-[10px] font-bold uppercase tracking-wider text-[var(--yome-muted)]">or continue with email</p>
-
+    <div className={activeTab === "register" ? "" : "hidden"}>
       <form onSubmit={handleRegisterFormSubmit} method="POST">
-        {inputs.map((input) => (
-          <FormInput
-            key={input.id}
-            {...input}
-            value={values[input.name as keyof RegisterValues]}
+        <label>
+          <span>First name</span>
+          <input
+            name="firstname"
+            type="text"
+            placeholder="Maya"
+            required
+            autoComplete="given-name"
+            pattern={inputs.firstname.pattern}
+            minLength={inputs.firstname.minLength}
+            maxLength={inputs.firstname.maxLength}
+            value={values.firstname}
             onChange={onChangeFormInputs}
-            enableErrorMsg={true}
           />
-        ))}
-
-        <div className="flex my-3">
+        </label>
+        <label>
+          <span>Last name</span>
+          <input
+            name="lastname"
+            type="text"
+            placeholder="Patel"
+            required
+            autoComplete="family-name"
+            pattern={inputs.lastname.pattern}
+            minLength={inputs.lastname.minLength}
+            maxLength={inputs.lastname.maxLength}
+            value={values.lastname}
+            onChange={onChangeFormInputs}
+          />
+        </label>
+        <label>
+          <span>Username</span>
+          <input
+            name="username"
+            type="text"
+            placeholder="mayacodes"
+            required
+            autoComplete="username"
+            pattern={inputs.username.pattern}
+            minLength={inputs.username.minLength}
+            maxLength={inputs.username.maxLength}
+            value={values.username}
+            onChange={onChangeFormInputs}
+          />
+        </label>
+        <label>
+          <span>Email address</span>
+          <input
+            name="email"
+            type="email"
+            placeholder="maya@example.com"
+            required
+            autoComplete="email"
+            pattern={inputs.email.pattern}
+            value={values.email}
+            onChange={onChangeFormInputs}
+          />
+        </label>
+        <label>
+          <span>Password</span>
+          <div className="password-field">
+            <input
+              name="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="At least 8 characters"
+              required
+              autoComplete="new-password"
+              pattern={inputs.password.pattern}
+              minLength={inputs.password.minLength}
+              maxLength={inputs.password.maxLength}
+              value={values.password}
+              onChange={onChangeFormInputs}
+            />
+            <button type="button" onClick={() => setShowPassword((value) => !value)}>
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+        </label>
+        <label>
+          <span>Confirm password</span>
+          <div className="password-field">
+            <input
+              name="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirm your password"
+              required
+              autoComplete="new-password"
+              value={values.confirmPassword}
+              onChange={onChangeFormInputs}
+            />
+            <button type="button" onClick={() => setShowConfirmPassword((value) => !value)}>
+              {showConfirmPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+        </label>
+        <label className="auth-checkbox">
           <input
             checked={isChecked}
             onChange={handleCheckboxChange}
             type="checkbox"
-            className="mr-2 "
             name="terms"
             id="terms"
           />
-          <label className="text-sm " htmlFor="terms">
+          <span>
             I agree to the Terms of Service and Privacy Policy.
-          </label>
-        </div>
+          </span>
+        </label>
         <button
           type="submit"
           disabled={!isFormFilled || !isChecked || isSubmitting}
-          className="yome-button-primary w-full"
+          className="primary-button auth-submit"
         >
           {isSubmitting ? "Creating account..." : "Create account"}
         </button>
       </form>
+      <div className="auth-divider">
+        <span>or continue with</span>
+      </div>
+      <div className="social-auth">
+        <SocialAuthButton provider="google" onClick={loginWithNextAuthProvider}>
+          <strong><FcGoogle size={15} /></strong> Google
+        </SocialAuthButton>
+        <SocialAuthButton provider="github" onClick={loginWithNextAuthProvider}>
+          <strong><FaGithub size={15} /></strong> Github
+        </SocialAuthButton>
+        <SocialAuthButton provider="facebook" onClick={loginWithNextAuthProvider}>
+          <strong><FaFacebook size={15} color="#1e5aff" /></strong> Facebook
+        </SocialAuthButton>
+      </div>
+      <p className="auth-terms">
+        By continuing, you agree to Yome&apos;s Terms and acknowledge the Privacy Policy.
+      </p>
     </div>
   );
 }

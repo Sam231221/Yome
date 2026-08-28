@@ -100,16 +100,15 @@ export default function ChatListItem({
     getConversationType(currentChatUser) === type;
 
   return (
-    <div
+    <button
       id={id}
-      className={`lg:mx-3 md:mx-2 mx-2 my-1 rounded-2xl flex cursor-pointer justify-center items-center transition ${
-        isActiveConversation
-          ? "bg-[#F3F5FA]"
-          : "hover:bg-[#F7F8FC]"
+      type="button"
+      className={`conversation-item ${
+        isActiveConversation ? "active" : ""
       }`}
       onClick={handleContactClick}
     >
-      <div className="min-w-fit pointer-events-none lg:px-4 md:px-3 px-3 py-3">
+      <div className="conversation-avatar">
         {type === "group" ? (
           <Avatar
             type="group"
@@ -131,82 +130,59 @@ export default function ChatListItem({
           />
         )}
       </div>
-      <div className="min-h-full flex pointer-events-none flex-col justify-center lg:pr-4 md:pr-3 pr-3 w-full min-w-0">
-        <div className="flex pointer-events-none justify-between items-center">
-          <div className="flex-1 min-w-0">
-            <span className="pointer-events-none font-semibold text-sm text-[#111827] truncate block">
-              {data?.name}
-            </span>
-          </div>
-
+      <div className="conversation-copy">
+        <div className="conversation-meta">
+          <strong>{data?.name}</strong>
           {!isContactPage && (
-            <div className="pointer-events-none flex-shrink-0 ml-2">
-              <span
-                className={`${
-                  !((data.totalUnreadMessages ?? 0) > 0)
-                    ? "text-[#9CA3AF]"
-                    : "text-[#1877F2]"
-                } text-[11px] font-medium`}
-              >
-                {calculateTime(String(data.createdAt ?? ""))}
-              </span>
-            </div>
+            <span
+              className={`conversation-time ${
+                (data.totalUnreadMessages ?? 0) > 0 ? "unread" : ""
+              }`}
+            >
+              {calculateTime(String(data.createdAt ?? ""))}
+            </span>
           )}
         </div>
-        <div className="flex pb-2 pt-1 pr-2">
-          <div className="flex justify-between w-full items-center gap-2">
-            <span className="text-[#6B7280] line-clamp-1 text-xs flex-1 min-w-0">
-              {isContactPage ? (
-                <>
-                  {type === "group" ? (
-                    <> {data?.about || "\u00A0"}</>
-                  ) : (
-                    <>{data?.userProfile?.bio || "\u00A0"}</>
-                  )}
-                </>
-              ) : (
-                <div className="flex items-center gap-1 min-w-0">
-                  {userInfo && data.senderId === userInfo.id && (
-                    <MessageStatus messageStatus={data.messageStatus} />
-                  )}
-                  {data.type === "text" && (
-                    <span className="truncate text-xs">{data.message}</span>
-                  )}
-                  {data.type === "audio" && (
-                    <span className="flex gap-1 text-xs items-center">
-                      <FaMicrophone className="text-panel-header-icon flex-shrink-0" />
-                      <span className="truncate">
-                        {userInfo && data.senderId === userInfo.id ? (
-                          <>You sent an Audio</>
-                        ) : (
-                          <>sent an Audio</>
-                        )}
-                      </span>
+        <div className="conversation-preview-row">
+          <span className="conversation-preview">
+            {isContactPage ? (
+              <>
+                {type === "group" ? data?.about || "\u00A0" : data?.userProfile?.bio || "\u00A0"}
+              </>
+            ) : (
+              <span className="conversation-snippet">
+                {userInfo && data.senderId === userInfo.id && (
+                  <MessageStatus messageStatus={data.messageStatus} />
+                )}
+                {data.type === "text" && <span>{data.message}</span>}
+                {data.type === "audio" && (
+                  <>
+                    <FaMicrophone />
+                    <span>
+                      {userInfo && data.senderId === userInfo.id
+                        ? "You sent an audio clip"
+                        : "Sent an audio clip"}
                     </span>
-                  )}
-                  {data.type === "image" && (
-                    <span className="flex text-xs gap-1 items-center">
-                      <FaCamera className="text-panel-header-icon flex-shrink-0" />
-                      <span className="truncate">
-                        {userInfo && data.senderId === userInfo.id ? (
-                          <>You sent an Image</>
-                        ) : (
-                          <>sent an Image</>
-                        )}
-                      </span>
+                  </>
+                )}
+                {data.type === "image" && (
+                  <>
+                    <FaCamera />
+                    <span>
+                      {userInfo && data.senderId === userInfo.id
+                        ? "You sent an image"
+                        : "Sent an image"}
                     </span>
-                  )}
-                </div>
-              )}
-            </span>
-            {type === "user" && (data.totalUnreadMessages ?? 0) > 0 && (
-              <span className="bg-[#1877F2] px-[6px] rounded-full text-[11px] text-white font-semibold flex-shrink-0">
-                {data.totalUnreadMessages}
+                  </>
+                )}
               </span>
             )}
-          </div>
+          </span>
+          {type === "user" && (data.totalUnreadMessages ?? 0) > 0 && (
+            <span className="conversation-badge">{data.totalUnreadMessages}</span>
+          )}
         </div>
       </div>
-    </div>
+    </button>
   );
 }

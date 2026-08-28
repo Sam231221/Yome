@@ -2,12 +2,17 @@ import { useStateProvider } from "@/context/StateContext";
 import React, { useEffect, useState } from "react";
 import { IoClose } from "react-icons/io5";
 import { BiFilter, BiSearchAlt2, BiArrowBack } from "react-icons/bi";
+import { FiBellOff, FiSearch, FiUser } from "react-icons/fi";
 import { reducerCases } from "@/context/constants";
 import { calculateTime } from "@/utils/CalculateTime";
 import type { ChatMessage } from "@/types/chat";
 
-function SearchMessagesRightMostChatContainer() {
-  const [{ currentChatUser, messages }, dispatch] = useStateProvider();
+function SearchMessagesRightMostChatContainer({
+  onClose,
+}: {
+  onClose: () => void;
+}) {
+  const [{ currentChatUser, messages, messageSearch }, dispatch] = useStateProvider();
   const [searchBarFocus, setSearchBarFocus] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchedMessages, setSearchedMessages] = useState<ChatMessage[]>([]);
@@ -17,81 +22,154 @@ function SearchMessagesRightMostChatContainer() {
       setSearchedMessages(
         messages.filter(
           (message) =>
-            message.type === "text" && message.message.includes(searchTerm)
+            message.type === "text" &&
+            message.message.toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
     } else {
       setSearchedMessages([]);
     }
-  }, [searchTerm]);
+  }, [messages, searchTerm]);
+
+  const sharedFiles = messages
+    .filter((message) => message.type === "image" || message.type === "audio")
+    .slice(-4)
+    .reverse();
+
+  const profileInitials = (currentChatUser?.name ?? "Y")
+    .split(" ")
+    .map((part) => part.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
-    <div className="border-conversation-border drop-shadow-lg border-l w-full  flex flex-col  z-10 max-h-screen ">
-      {/* header */}
-      <div className="h-16 px-4 py-5 flex  gap-10 items-center bg-white ">
-        <IoClose
-          className="cursor-pointer font-semibold text-2xl"
-          onClick={() => dispatch({ type: reducerCases.SET_MESSAGES_SEARCH })}
-        />
-        <span className="text-lg font-semibold">Search Messages</span>
-      </div>
+    <aside className="chat-details chat-search-panel">
+      {currentChatUser && !messageSearch && (
+        <>
+          <div className="chat-profile">
+            <div className="chat-profile-avatar">{profileInitials}</div>
+            <strong>{currentChatUser.name}</strong>
+            <span>
+              {currentChatUser.about || "AI student · Imperial College"}
+            </span>
+          </div>
 
-      {/* body */}
-      <div className="overflow-auto  custom-scrollbar h-full">
-        <div className="flex items-center flex-col w-full">
-          <div className=" flex  px-5 items-center gap-3 h-14 w-full">
-            {/* search bar messages */}
-            <div className="bg-panel-header-background flex items-center gap-5 px-3 py-[6px] rounded-lg flex-grow">
-              <div>
+          <div className="chat-detail-actions">
+            <button type="button" onClick={() => dispatch({ type: reducerCases.SET_MESSAGES_SEARCH })}>
+              <FiSearch />
+              <span>Search</span>
+            </button>
+            <button type="button">
+              <FiBellOff />
+              <span>Mute</span>
+            </button>
+            <button type="button">
+              <FiUser />
+              <span>Profile</span>
+            </button>
+          </div>
+
+          <div className="chat-section-header">
+            <strong>Shared files</strong>
+            <button
+              type="button"
+              onClick={() => dispatch({ type: reducerCases.SET_MESSAGES_SEARCH })}
+            >
+              View all
+            </button>
+          </div>
+
+          <div className="chat-details-body custom-scrollbar">
+            <div className="chat-search-results">
+              {sharedFiles.length ? (
+                sharedFiles.map((message) => (
+                  <article className="shared-file" key={message.id}>
+                    <div className="shared-file-badge">
+                      {message.type === "image" ? "IMG" : "AUD"}
+                    </div>
+                    <div>
+                      <strong>
+                        {message.type === "image" ? "Image attachment" : "Audio clip"}
+                      </strong>
+                      <span>{calculateTime(String(message.createdAt))}</span>
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <p className="chat-search-hint">No shared files yet.</p>
+              )}
+            </div>
+            <div className="chat-safety">Privacy &amp; safety</div>
+          </div>
+        </>
+      )}
+
+      {messageSearch && (
+        <>
+          <div className="chat-details-header">
+            <button
+              className="messages-icon-button"
+              onClick={() => {
+                setSearchTerm("");
+                setSearchBarFocus(false);
+                dispatch({ type: reducerCases.SET_MESSAGES_SEARCH });
+                onClose();
+              }}
+              type="button"
+              aria-label="Close message search"
+            >
+              <IoClose />
+            </button>
+            <strong>Search Messages</strong>
+          </div>
+          <div className="chat-details-body custom-scrollbar">
+            <div className="chat-search-controls">
+              <label className="messages-search compact">
                 {searchBarFocus ? (
-                  <BiArrowBack className="text-icon-green cursor-pointer text-l" />
+                  <BiArrowBack className="messages-search-icon" />
                 ) : (
-                  <BiSearchAlt2 className="text-panel-header-icon cursor-pointer text-l" />
+                  <BiSearchAlt2 className="messages-search-icon" />
                 )}
-              </div>
-              <div>
                 <input
                   type="text"
                   placeholder="Search messages"
-                  className="bg-transparent text-sm focus:outline-none  w-full"
                   onFocus={() => setSearchBarFocus(true)}
                   onBlur={() => setSearchBarFocus(false)}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   value={searchTerm}
                 />
-              </div>
+              </label>
+              <button className="messages-icon-button" type="button" aria-label="Filters">
+                <BiFilter />
+              </button>
+            </div>
+
+            {!searchTerm.length && (
+              <p className="chat-search-hint">
+                Search for messages with {currentChatUser?.name ?? "this chat"}
+              </p>
+            )}
+
+            {searchTerm.length > 0 && !searchedMessages.length && (
+              <p className="chat-search-hint">No messages found</p>
+            )}
+
+            <div className="chat-search-results">
+              {searchedMessages.map((message) => (
+                <article className="shared-file" key={message.id}>
+                  <div className="shared-file-badge">TXT</div>
+                  <div>
+                    <strong>{calculateTime(String(message.createdAt))}</strong>
+                    <span>{message.message}</span>
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
-
-          <span className="mt-10 text-secondary">
-            {!searchTerm.length &&
-              ` Search for messages with ${currentChatUser?.name ?? "this chat"}`}
-          </span>
-        </div>
-        <div className="flex justify-center h-full flex-col">
-          {searchTerm.length > 0 && !searchedMessages.length && (
-            <span className="text-secondary w-full flex justify-center">
-              No messages found
-            </span>
-          )}
-          <div className="flex flex-col w-full h-full  ">
-            {searchedMessages.map((message) => (
-              <div
-                className="flex cursor-pointer flex-col
-              font-medium justify-center hover:bg-background-default-hover w-full px-4  border-b-[0.1px]  border-secondary py-5"
-              >
-                <div className="text-xs text-secondary">
-                  {calculateTime(String(message.createdAt))}
-                </div>
-                <div className="text-sm text-icon-skyblue">
-                  {message.message}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    </aside>
   );
 }
 

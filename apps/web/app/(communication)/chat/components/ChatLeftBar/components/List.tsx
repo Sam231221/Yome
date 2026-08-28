@@ -86,7 +86,7 @@ export default function List({
   }, [userInfo, dispatch, onBootstrapStateChange]);
 
   return (
-    <div className="bg-white flex-auto overflow-auto max-h-full custom-scrollbar lg:pb-4 md:pb-3 pb-2">
+    <div className="conversation-list custom-scrollbar">
       {filteredContacts && filteredContacts.length > 0
         ? filteredContacts.map((contact: ChatListItemData) => {
             return (

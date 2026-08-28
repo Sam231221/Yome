@@ -11,30 +11,25 @@ interface ImageMessageProps {
 function ImageMessage({ message }: ImageMessageProps) {
   const [{ currentChatUser, userInfo }] = useStateProvider();
   if (!currentChatUser || !userInfo) return null;
+  const isOwnMessage = message.senderId === userInfo.id;
   return (
-    <div
-      className={`p-1 rounded-lg ${
-        message.senderId === currentChatUser.id
-          ? "bg-incoming-background"
-          : "bg-outgoing-background"
-      }`}
-    >
+    <div className={`chat-message chat-message-media ${isOwnMessage ? "mine" : ""}`}>
       <div className="relative">
-        <div className=" h-40 sm:h-72 lg:w-80 lg:h-60">
+        <div className="chat-media-frame">
           <Image
             src={message.message}
-            className="rounded-lg w-full h-full object-cover"
+            className="rounded-[18px] w-full h-full object-cover"
             alt="asset"
             height={800}
             width={800}
           />
         </div>
-        <div className="absolute bottom-1 right-1 flex items-end gap-1">
-          <span className="text-bubble-meta text-[11px] pt-1 min-w-fit">
+        <div className="chat-media-meta">
+          <span>
             {calculateTime(String(message.createdAt))}
           </span>
-          <span className="text-bubble-meta">
-            {message.senderId === userInfo.id && (
+          <span>
+            {isOwnMessage && (
               <MessageStatus messageStatus={message.messageStatus} />
             )}
           </span>
