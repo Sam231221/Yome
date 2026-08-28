@@ -1,5 +1,4 @@
 import {
-  Bell,
   BookOpen,
   CalendarDays,
   Compass,
@@ -32,7 +31,6 @@ export const yomeNavItems: YomeNavItem[] = [
   { label: "Resources", href: "/resources", icon: BookOpen },
   { label: "Projects", href: "/projects", icon: FlaskConical },
   { label: "Events", href: "/events", icon: CalendarDays },
-  { label: "Notifications", href: "/notifications", icon: Bell },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 

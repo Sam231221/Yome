@@ -1,7 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Bookmark, Check, Headphones, MessageCircle, MoreHorizontal, Plus, Search, Share2, UsersRound } from "lucide-react";
+import {
+  ArrowRight,
+  Bookmark,
+  CalendarDays,
+  Check,
+  FileText,
+  Headphones,
+  HelpCircle,
+  MessageCircle,
+  Mic,
+  MicOff,
+  MonitorUp,
+  MoreHorizontal,
+  Phone,
+  Plus,
+  Search,
+  Settings,
+  Share2,
+  Users,
+  UsersRound,
+  Video,
+} from "lucide-react";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { Avatar, Badge } from "@/components/yome/YomeUI";
 import { groups, onboardingGoals, onboardingInterests, type YomeTone } from "@/lib/yome/data";
@@ -641,127 +662,960 @@ export function ConnectionsContent() {
 }
 
 export function StudyRoomsContent() {
+  const [filter, setFilter] = useState("All rooms");
+  const [openRoom, setOpenRoom] = useState(false);
+  const rooms = [
+    {
+      id: "calculus-revision-room",
+      title: "Calculus Revision Room",
+      topic: "Mathematics · Calculus",
+      description: "Integration techniques, exam practice, and a shared focus timer.",
+      symbol: "Σ",
+      tone: "violet" as YomeTone,
+      active: 8,
+    },
+    {
+      id: "python-help-room",
+      title: "Python Help Room",
+      topic: "Technology · Programming",
+      description: "Debug together, compare approaches, and unblock tricky exercises.",
+      symbol: "</>",
+      tone: "blue" as YomeTone,
+      active: 14,
+    },
+    {
+      id: "physics-problem-solving",
+      title: "Physics Problem Solving",
+      topic: "Science · Physics",
+      description: "Work first-principles questions with voice, chat, and screen share.",
+      symbol: "φ",
+      tone: "teal" as YomeTone,
+      active: 7,
+    },
+    {
+      id: "arduino-build-clinic",
+      title: "Arduino Build Clinic",
+      topic: "Engineering · Electronics",
+      description: "Bring wiring questions, sensor issues, and prototype feedback.",
+      symbol: "⚙",
+      tone: "amber" as YomeTone,
+      active: 11,
+    },
+  ];
+  const visibleRooms = rooms.filter((room) => filter === "All rooms" || room.topic.startsWith(filter));
+
+  if (openRoom) {
+    return <StudyRoomDetail onLeave={() => setOpenRoom(false)} />;
+  }
+
   return (
-    <div className="yome-page">
-      <div className="yome-page-heading">
+    <main className="study-rooms-page">
+      <header className="study-heading">
         <div>
-          <p>Study Rooms</p>
-          <h1>Focused rooms for live learning</h1>
-          <span>Join active rooms or schedule quiet study blocks with your communities.</span>
+          <p className="eyebrow">Live collaboration</p>
+          <h1>Study Rooms</h1>
+          <span>Focused spaces to study, ask questions, and work alongside other learners.</span>
         </div>
+        <button className="primary-button">
+          <Plus size={17} /> Create room
+        </button>
+      </header>
+
+      <section className="study-feature card">
+        <div className="study-feature-copy">
+          <div className="live-badge">
+            <span className="live-dot" /> Live now
+          </div>
+          <Badge tone="violet">Mathematics · Calculus</Badge>
+          <h2>Calculus Revision Room</h2>
+          <p>Integration techniques, exam practice, and a shared focus timer. Join with audio, video, or chat only.</p>
+          <div className="feature-participants">
+            <div className="proof-avatars">
+              <Avatar initials="SC" tone="teal" />
+              <Avatar initials="MP" tone="violet" />
+              <Avatar initials="JL" tone="blue" />
+              <Avatar initials="AN" tone="amber" />
+            </div>
+            <span>
+              <strong>8 studying now</strong>
+              <small>Hosted by Sarah Chen</small>
+            </span>
+          </div>
+          <div className="feature-room-actions">
+            <button className="primary-button" onClick={() => setOpenRoom(true)}>
+              <Headphones size={17} /> Join room
+            </button>
+            <button className="secondary-button">
+              <Phone size={16} /> Preview incoming call
+            </button>
+          </div>
+        </div>
+        <div className="focus-timer">
+          <div className="timer-ring">
+            <span>24:18</span>
+            <small>FOCUS</small>
+          </div>
+          <div className="timer-marks">
+            {Array.from({ length: 20 }).map((_, index) => (
+              <i key={index} style={{ transform: `rotate(${index * 18}deg)` }} />
+            ))}
+          </div>
+          <p>Shared Pomodoro timer</p>
+        </div>
+      </section>
+
+      <div className="room-toolbar">
+        <nav>
+          {["All rooms", "Science", "Technology", "Engineering", "Mathematics"].map((item) => (
+            <button key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>
+              {item}
+            </button>
+          ))}
+        </nav>
+        <label>
+          <Search size={16} />
+          <input placeholder="Find a room..." />
+        </label>
       </div>
-      <div className="yome-grid">
-        {["Python Help Room", "Physics Problem Solving", "Calculus Revision"].map((title, index) => (
-          <article key={title} className="yome-card yome-section">
-            <h2 className="yome-card-title">{title}</h2>
-            <p className="yome-card-copy">{index + 6} learners studying now.</p>
-            <button className="yome-button-primary mt-4">Join room</button>
+
+      <section className="rooms-grid">
+        {visibleRooms.map((room) => (
+          <article className="study-room-card card" key={room.id}>
+            <header>
+              <div className={`study-room-symbol ${room.tone}`}>{room.symbol}</div>
+              <span className="live-badge">
+                <i className="live-dot" /> Live
+              </span>
+              <button className="more-button">
+                <MoreHorizontal size={18} />
+              </button>
+            </header>
+            <Badge tone={room.tone}>{room.topic.split(" · ")[0]}</Badge>
+            <h3>{room.title}</h3>
+            <p>{room.description}</p>
+            <div className="room-features">
+              <span><Mic size={13} /> Audio</span>
+              <span><MessageCircle size={13} /> Chat</span>
+              <span><MonitorUp size={13} /> Share</span>
+            </div>
+            <footer>
+              <div>
+                <div className="stacked-avatars">
+                  <Avatar initials="SC" tone="teal" size="xs" />
+                  <Avatar initials="AN" tone="amber" size="xs" />
+                  <Avatar initials="MP" tone="violet" size="xs" />
+                </div>
+                <span>{room.active} studying</span>
+              </div>
+              <button onClick={() => setOpenRoom(true)}>
+                Join <ArrowRight size={14} />
+              </button>
+            </footer>
           </article>
         ))}
-      </div>
-    </div>
+      </section>
+
+      <section className="scheduled-rooms">
+        <div className="discover-section-title">
+          <div>
+            <h2>Scheduled sessions</h2>
+            <p>Plan ahead and get a reminder before rooms open.</p>
+          </div>
+          <button>
+            View calendar <ArrowRight size={14} />
+          </button>
+        </div>
+        <div>
+          <article className="card">
+            <div className="date-tile">
+              <strong>30</strong>
+              <span>AUG</span>
+            </div>
+            <div>
+              <Badge tone="blue">Technology</Badge>
+              <h3>Intro to machine learning</h3>
+              <p>2:30 PM · 42 interested</p>
+            </div>
+            <button className="secondary-button">Set reminder</button>
+          </article>
+          <article className="card">
+            <div className="date-tile amber">
+              <strong>02</strong>
+              <span>SEP</span>
+            </div>
+            <div>
+              <Badge tone="amber">Engineering</Badge>
+              <h3>Arduino build clinic</h3>
+              <p>5:00 PM · 28 interested</p>
+            </div>
+            <button className="secondary-button">Set reminder</button>
+          </article>
+        </div>
+      </section>
+    </main>
   );
 }
 
 export function ResourcesContent() {
+  const [subject, setSubject] = useState("All");
+  const [query, setQuery] = useState("");
+  const [saved, setSaved] = useState<string[]>([]);
+  const resourcesData = [
+    { id: "visual-guide-to-integration-techniques", title: "A visual guide to integration techniques", subject: "Mathematics", topic: "Calculus", level: "Undergraduate", type: "PDF", tone: "violet" as YomeTone, author: "Sarah Chen", saves: "2.4k", rating: "4.9", description: "Clear diagrams and worked examples for substitution, parts, and partial fractions." },
+    { id: "python-data-structures-reference", title: "Python data structures reference", subject: "Technology", topic: "Programming", level: "Beginner", type: "GUIDE", tone: "blue" as YomeTone, author: "Maya Patel", saves: "1.8k", rating: "4.8", description: "A compact reference for lists, dictionaries, sets, tuples, and common patterns." },
+    { id: "mechanics-problem-solving-workbook", title: "Mechanics problem-solving workbook", subject: "Science", topic: "Physics", level: "A Level", type: "PDF", tone: "teal" as YomeTone, author: "Leo Martins", saves: "980", rating: "4.7", description: "Practice questions with structured hints for forces, momentum, and energy." },
+    { id: "arduino-sensor-examples", title: "Arduino sensor examples", subject: "Engineering", topic: "Electronics", level: "Beginner", type: "CODE", tone: "amber" as YomeTone, author: "Robotics Club", saves: "1.5k", rating: "4.9", description: "Reusable wiring diagrams and code examples for common environmental sensors." },
+    { id: "neural-networks-from-first-principles", title: "Neural networks from first principles", subject: "Technology", topic: "AI", level: "Intermediate", type: "VIDEO", tone: "blue" as YomeTone, author: "Dr. James Liu", saves: "3.1k", rating: "4.9", description: "A concept-first lesson on layers, activations, gradients, and training." },
+    { id: "biology-revision-maps", title: "Biology revision maps", subject: "Science", topic: "Biology", level: "GCSE", type: "NOTES", tone: "teal" as YomeTone, author: "Sofia Rossi", saves: "760", rating: "4.6", description: "Linked concept maps for cells, genetics, ecology, and human systems." },
+  ];
+  const visible = resourcesData.filter(
+    (item) =>
+      (subject === "All" || item.subject === subject) &&
+      `${item.title} ${item.topic} ${item.author}`.toLowerCase().includes(query.toLowerCase())
+  );
+
   return (
-    <div className="yome-page">
-      <div className="yome-page-heading">
+    <main className="resource-library-page">
+      <header className="page-heading">
         <div>
-          <p>Resources</p>
-          <h1>A library shaped by useful explanations</h1>
-          <span>Guides, notes, and examples saved by the Yome community.</span>
+          <p className="eyebrow">Shared knowledge</p>
+          <h1>Resource Library</h1>
+          <span>Useful notes, guides, code, diagrams, and lessons organized for learning.</span>
         </div>
+        <button className="primary-button">
+          <Plus size={17} /> Share resource
+        </button>
+      </header>
+
+      <section className="resource-search-hero">
+        <div>
+          <Search size={21} />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search guides, notes, subjects, or topics..." />
+          <button>Search</button>
+        </div>
+        <p>
+          Popular:
+          <button onClick={() => setQuery("Python")}>Python</button>
+          <button onClick={() => setQuery("Calculus")}>Calculus</button>
+          <button onClick={() => setQuery("Arduino")}>Arduino</button>
+          <button onClick={() => setQuery("AI")}>Artificial Intelligence</button>
+        </p>
+      </section>
+
+      <div className="library-layout">
+        <aside className="library-filters card">
+          <div className="section-title">
+            <h3>Filters</h3>
+            <button onClick={() => { setSubject("All"); setQuery(""); }}>Clear</button>
+          </div>
+          <label>Subject</label>
+          {["All", "Science", "Technology", "Engineering", "Mathematics"].map((item) => (
+            <button key={item} className={subject === item ? "active" : ""} onClick={() => setSubject(item)}>
+              <span className={`filter-dot ${item.toLowerCase()}`} />
+              {item}
+              <i>{item === "All" ? resourcesData.length : resourcesData.filter((resource) => resource.subject === item).length}</i>
+            </button>
+          ))}
+          <label>Resource type</label>
+          {["PDF & documents", "Videos", "Code repositories", "Study notes"].map((item) => (
+            <button key={item}>
+              <span /> {item}
+            </button>
+          ))}
+          <label>Level</label>
+          <select>
+            <option>All levels</option>
+            <option>GCSE</option>
+            <option>A Level</option>
+            <option>Undergraduate</option>
+            <option>Postgraduate</option>
+          </select>
+        </aside>
+
+        <section className="resource-results">
+          <div className="results-heading">
+            <div>
+              <h2>{subject === "All" ? "Recommended resources" : subject}</h2>
+              <p>{visible.length} useful resources</p>
+            </div>
+            <select>
+              <option>Most helpful</option>
+              <option>Most recent</option>
+              <option>Most saved</option>
+            </select>
+          </div>
+
+          <div className="resource-library-grid">
+            {visible.map((item, index) => {
+              const isSaved = saved.includes(item.id);
+              return (
+                <article className="library-resource-card card" key={item.id}>
+                  <Link className={`resource-preview ${item.tone}`} href={`/resources/${item.id}`}>
+                    <span className="resource-preview-type">{item.type}</span>
+                    <div className="resource-preview-lines"><i /><i /><i /><i /></div>
+                    <strong>{item.topic}</strong>
+                  </Link>
+                  <div className="library-resource-body">
+                    <div className="resource-labels">
+                      <Badge tone={item.tone}>{item.subject}</Badge>
+                      <Badge tone="neutral">{item.level}</Badge>
+                    </div>
+                    <Link className="resource-title-link" href={`/resources/${item.id}`}>
+                      {item.title}
+                    </Link>
+                    <p>{item.description}</p>
+                    <div className="resource-author">
+                      <Avatar initials={item.author.split(" ").map((name) => name[0]).join("").slice(0, 2)} tone={item.tone} size="xs" />
+                      <span>
+                        <strong>{item.author}</strong>
+                        <small>Uploaded {index + 1}d ago</small>
+                      </span>
+                    </div>
+                    <footer>
+                      <span>★ {item.rating} · {item.saves} saves</span>
+                      <button className={isSaved ? "saved" : ""} onClick={() => setSaved((current) => isSaved ? current.filter((value) => value !== item.id) : [...current, item.id])}>
+                        <Bookmark size={16} fill={isSaved ? "currentColor" : "none"} />
+                      </button>
+                    </footer>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
       </div>
-      <div className="yome-grid">
-        {[...groups.slice(0, 1), ...groups.slice(1, 3)].map((item, index) => (
-          <article key={item.id} className="yome-card yome-section">
-            <Badge tone={index === 0 ? "violet" : index === 1 ? "blue" : "amber"}>Guide</Badge>
-            <h2 className="yome-card-title mt-3">{item.name} Starter Notes</h2>
-            <p className="yome-card-copy">{item.about}</p>
-          </article>
-        ))}
-      </div>
-    </div>
+    </main>
   );
 }
 
 export function ResourceDetailContent({ id }: { id: string }) {
+  const [saved, setSaved] = useState(false);
+  const [helpful, setHelpful] = useState(false);
+  const resourcesData = [
+    { id: "visual-guide-to-integration-techniques", title: "A visual guide to integration techniques", subject: "Mathematics", topic: "Calculus", level: "Undergraduate", type: "PDF", tone: "violet" as YomeTone, author: "Sarah Chen", saves: "2.4k", rating: "4.9", description: "Clear diagrams and worked examples for substitution, parts, and partial fractions." },
+    { id: "python-data-structures-reference", title: "Python data structures reference", subject: "Technology", topic: "Programming", level: "Beginner", type: "GUIDE", tone: "blue" as YomeTone, author: "Maya Patel", saves: "1.8k", rating: "4.8", description: "A compact reference for lists, dictionaries, sets, tuples, and common patterns." },
+    { id: "mechanics-problem-solving-workbook", title: "Mechanics problem-solving workbook", subject: "Science", topic: "Physics", level: "A Level", type: "PDF", tone: "teal" as YomeTone, author: "Leo Martins", saves: "980", rating: "4.7", description: "Practice questions with structured hints for forces, momentum, and energy." },
+    { id: "arduino-sensor-examples", title: "Arduino sensor examples", subject: "Engineering", topic: "Electronics", level: "Beginner", type: "CODE", tone: "amber" as YomeTone, author: "Robotics Club", saves: "1.5k", rating: "4.9", description: "Reusable wiring diagrams and code examples for common environmental sensors." },
+    { id: "neural-networks-from-first-principles", title: "Neural networks from first principles", subject: "Technology", topic: "AI", level: "Intermediate", type: "VIDEO", tone: "blue" as YomeTone, author: "Dr. James Liu", saves: "3.1k", rating: "4.9", description: "A concept-first lesson on layers, activations, gradients, and training." },
+    { id: "biology-revision-maps", title: "Biology revision maps", subject: "Science", topic: "Biology", level: "GCSE", type: "NOTES", tone: "teal" as YomeTone, author: "Sofia Rossi", saves: "760", rating: "4.6", description: "Linked concept maps for cells, genetics, ecology, and human systems." },
+  ];
+  const resource = resourcesData.find((item) => item.id === id) ?? resourcesData[0];
+
   return (
-    <div className="yome-page yome-page-narrow">
-      <Link className="yome-button-secondary mb-4" href="/resources">
-        Back to resources
-      </Link>
-      <article className="yome-card yome-section">
-        <Badge tone="violet">Resource</Badge>
-        <h1 className="mt-5 text-3xl font-black tracking-[-1px] text-[var(--yome-navy)]">{id}</h1>
-        <p className="mt-3 text-sm leading-7 text-[var(--yome-muted)]">Detailed resource content remains available for the next pass.</p>
-      </article>
-    </div>
+    <main className="resource-detail-page">
+      <Link className="back-link" href="/resources">← Resource Library</Link>
+      <div className="resource-detail-layout">
+        <section>
+          <article className="resource-document card">
+            <header>
+              <div>
+                <Badge tone={resource.tone}>{resource.subject}</Badge>
+                <Badge tone="neutral">{resource.level}</Badge>
+              </div>
+              <span>{resource.type}</span>
+            </header>
+            <div className="document-page">
+              <p>YOME LEARNING RESOURCE</p>
+              <h1>{resource.title}</h1>
+              <div className="document-rule" />
+              <h3>Key idea</h3>
+              <p>{resource.description}</p>
+              <div className="document-diagram">
+                <div className="diagram-axis"><i /><i /><i /></div>
+                <span>concept</span>
+                <span>example</span>
+                <span>practice</span>
+              </div>
+              <h3>Learning objectives</h3>
+              <ul>
+                <li>Build an intuitive understanding of the core idea.</li>
+                <li>Connect the concept to clear worked examples.</li>
+                <li>Apply the method independently and check the result.</li>
+              </ul>
+            </div>
+            <footer>
+              <span>Preview page 1 of 18</span>
+              <button className="primary-button">
+                <FileText size={15} /> Open resource
+              </button>
+            </footer>
+          </article>
+
+          <article className="resource-discussion card">
+            <h2>About this resource</h2>
+            <p>{resource.description} This resource was reviewed by the community and tagged for clear explanations and practical examples.</p>
+            <div className="resource-topics">
+              <Badge tone={resource.tone}>{resource.topic}</Badge>
+              <Badge tone="neutral">Visual learning</Badge>
+              <Badge tone="neutral">Practice included</Badge>
+            </div>
+            <footer>
+              <button className={helpful ? "active" : ""} onClick={() => setHelpful((value) => !value)}>
+                <HelpCircle size={16} /> {helpful ? "Marked helpful" : "Was this helpful?"}
+              </button>
+              <button><Share2 size={16} /> Share</button>
+              <button>Report</button>
+            </footer>
+          </article>
+        </section>
+
+        <aside>
+          <section className="card resource-side">
+            <div className="resource-side-author">
+              <Avatar initials={resource.author.split(" ").map((name) => name[0]).join("").slice(0, 2)} tone={resource.tone} size="lg" />
+              <div>
+                <strong>{resource.author}</strong>
+                <p>Helpful contributor</p>
+              </div>
+            </div>
+            <button className="secondary-button">View profile</button>
+          </section>
+
+          <section className="card resource-side">
+            <h3>Resource details</h3>
+            <div><span>Format</span><strong>{resource.type}</strong></div>
+            <div><span>Pages</span><strong>18</strong></div>
+            <div><span>Uploaded</span><strong>3 days ago</strong></div>
+            <div><span>Rating</span><strong>★ {resource.rating}</strong></div>
+            <div><span>Saves</span><strong>{resource.saves}</strong></div>
+            <button className={saved ? "secondary-button saved" : "primary-button"} onClick={() => setSaved((value) => !value)}>
+              <Bookmark size={16} fill={saved ? "currentColor" : "none"} /> {saved ? "Saved" : "Save resource"}
+            </button>
+          </section>
+
+          <section className="card resource-side">
+            <h3>Related resources</h3>
+            <button className="related-resource">
+              <span>PDF</span>
+              <div><strong>Calculus formula reference</strong><small>1.1k saves</small></div>
+            </button>
+            <button className="related-resource">
+              <span>VID</span>
+              <div><strong>Integration walkthrough</strong><small>840 saves</small></div>
+            </button>
+          </section>
+        </aside>
+      </div>
+    </main>
   );
 }
 
 export function ProjectsContent() {
+  const [filter, setFilter] = useState("Featured");
+  const projectsData = [
+    { id: "arduino-smart-greenhouse", title: "Arduino Smart Greenhouse", subject: "Engineering", tags: ["Arduino", "C++", "Electronics"], tone: "amber" as YomeTone, team: "4 students", progress: "Prototype complete", initials: "SG", description: "An automated greenhouse that monitors soil, light, and temperature." },
+    { id: "accessible-campus-navigator", title: "Accessible Campus Navigator", subject: "Technology", tags: ["Computer Vision", "Python", "Accessibility"], tone: "blue" as YomeTone, team: "3 students", progress: "Testing", initials: "CN", description: "Indoor navigation assistance for visually impaired students." },
+    { id: "open-source-air-quality-map", title: "Open-source Air Quality Map", subject: "Science", tags: ["Data Science", "Sensors", "Environment"], tone: "teal" as YomeTone, team: "6 contributors", progress: "Live beta", initials: "AQ", description: "Community sensors visualized as an open local air-quality map." },
+    { id: "visual-calculus-explorer", title: "Visual Calculus Explorer", subject: "Mathematics", tags: ["React", "Graphs", "Calculus"], tone: "violet" as YomeTone, team: "2 students", progress: "In progress", initials: "VC", description: "Interactive graphs that connect calculus notation to geometric intuition." },
+  ];
+
   return (
-    <div className="yome-page">
-      <div className="yome-page-heading">
+    <main className="projects-page">
+      <header className="page-heading">
         <div>
-          <p>Projects</p>
-          <h1>Learn by building in public</h1>
-          <span>Share progress, find collaborators, and collect helpful feedback.</span>
+          <p className="eyebrow">Learn by building</p>
+          <h1>Projects</h1>
+          <span>Discover student work, share progress, and find collaborators.</span>
         </div>
-      </div>
-      <div className="yome-grid">
-        {discoveryGroups.slice(0, 3).map((group) => (
-          <article key={group.id} className="yome-card yome-section">
-            <Badge tone={group.tone}>{group.title}</Badge>
-            <h2 className="yome-card-title mt-3">{group.detail}</h2>
-            <p className="yome-card-copy">Project details stay wired in the existing routes.</p>
+        <button className="primary-button">
+          <Plus size={17} /> Add project
+        </button>
+      </header>
+
+      <section className="project-feature card">
+        <div>
+          <Badge tone="blue">Project of the week</Badge>
+          <h2>Accessible Campus Navigator</h2>
+          <p>A student team is combining computer vision, accessible design, and indoor mapping to help visually impaired learners navigate unfamiliar university buildings.</p>
+          <div className="project-feature-tags">
+            <Badge tone="blue">Computer Vision</Badge>
+            <Badge tone="violet">Accessibility</Badge>
+            <Badge tone="neutral">Python</Badge>
+          </div>
+          <div className="project-team-row">
+            <div className="proof-avatars">
+              <Avatar initials="MP" tone="violet" />
+              <Avatar initials="AN" tone="amber" />
+              <Avatar initials="PS" tone="teal" />
+            </div>
+            <span>
+              <strong>3 collaborators</strong>
+              <small>University of Manchester</small>
+            </span>
+          </div>
+          <Link className="primary-button" href="/projects/accessible-campus-navigator">
+            View project <ArrowRight size={16} />
+          </Link>
+        </div>
+        <div className="campus-map-art">
+          <div className="map-grid" />
+          <span className="map-building b1">A</span>
+          <span className="map-building b2">B</span>
+          <span className="map-building b3">C</span>
+          <div className="map-route"><i /><i /><i /><i /></div>
+          <span className="map-you">YOU</span>
+          <small>ACCESSIBLE ROUTE · 4 MIN</small>
+        </div>
+      </section>
+
+      <nav className="project-filters">
+        {["Featured", "Recently updated", "Seeking collaborators", "Following"].map((item) => (
+          <button key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>
+            {item}
+          </button>
+        ))}
+        <span />
+        <select>
+          <option>All subjects</option>
+          <option>Science</option>
+          <option>Technology</option>
+          <option>Engineering</option>
+          <option>Mathematics</option>
+        </select>
+      </nav>
+
+      <div className="projects-grid">
+        {projectsData.map((project, index) => (
+          <article className="project-card-full card" key={project.id}>
+            <Link className={`project-card-art ${project.tone}`} href={`/projects/${project.id}`}>
+              <span>{project.initials}</span>
+              <div className="project-art-grid" />
+              <i className="project-art-node n1" />
+              <i className="project-art-node n2" />
+              <i className="project-art-node n3" />
+            </Link>
+            <div>
+              <Badge tone={project.tone}>{project.subject}</Badge>
+              <Link className="project-title-link" href={`/projects/${project.id}`}>
+                {project.title}
+              </Link>
+              <p>{project.description}</p>
+              <div className="project-tags">{project.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
+              <footer>
+                <div>
+                  <Avatar initials={["AN", "MP", "AO", "SC"][index]} tone={project.tone} size="xs" />
+                  <span>{project.team}</span>
+                </div>
+                <Badge tone="neutral">{project.progress}</Badge>
+              </footer>
+            </div>
           </article>
         ))}
       </div>
-    </div>
+    </main>
   );
 }
 
 export function ProjectDetailContent({ id }: { id: string }) {
+  const [follow, setFollow] = useState(false);
+  const [tab, setTab] = useState("Overview");
+  const projectsData = [
+    { id: "arduino-smart-greenhouse", title: "Arduino Smart Greenhouse", subject: "Engineering", tags: ["Arduino", "C++", "Electronics"], tone: "amber" as YomeTone, team: "4 students", progress: "Prototype complete", initials: "SG", description: "An automated greenhouse that monitors soil, light, and temperature." },
+    { id: "accessible-campus-navigator", title: "Accessible Campus Navigator", subject: "Technology", tags: ["Computer Vision", "Python", "Accessibility"], tone: "blue" as YomeTone, team: "3 students", progress: "Testing", initials: "CN", description: "Indoor navigation assistance for visually impaired students." },
+    { id: "open-source-air-quality-map", title: "Open-source Air Quality Map", subject: "Science", tags: ["Data Science", "Sensors", "Environment"], tone: "teal" as YomeTone, team: "6 contributors", progress: "Live beta", initials: "AQ", description: "Community sensors visualized as an open local air-quality map." },
+    { id: "visual-calculus-explorer", title: "Visual Calculus Explorer", subject: "Mathematics", tags: ["React", "Graphs", "Calculus"], tone: "violet" as YomeTone, team: "2 students", progress: "In progress", initials: "VC", description: "Interactive graphs that connect calculus notation to geometric intuition." },
+  ];
+  const project = projectsData.find((item) => item.id === id) ?? projectsData[0];
+
   return (
-    <div className="yome-page yome-page-narrow">
-      <Link className="yome-button-secondary mb-4" href="/projects">
-        Back to projects
-      </Link>
-      <article className="yome-card yome-section">
-        <Badge tone="amber">Project</Badge>
-        <h1 className="mt-5 text-3xl font-black tracking-[-1px] text-[var(--yome-navy)]">{id}</h1>
-        <p className="mt-3 text-sm leading-7 text-[var(--yome-muted)]">Project detail redesign is preserved and will be tightened in a follow-up pass.</p>
-      </article>
-    </div>
+    <main className="project-detail-page">
+      <Link className="back-link" href="/projects">← All projects</Link>
+      <section className="project-detail-hero card">
+        <div className={`project-detail-art ${project.tone}`}>
+          <div className="project-art-grid" />
+          <span className="project-device"><i /><i /><i /></span>
+          <div className="project-readout">
+            <span>STATUS</span>
+            <strong>ONLINE</strong>
+            <span>PROGRESS</span>
+            <strong>82%</strong>
+          </div>
+        </div>
+        <div className="project-detail-copy">
+          <Badge tone={project.tone}>{project.subject}</Badge>
+          <h1>{project.title}</h1>
+          <p>{project.description} The team is documenting every stage so other learners can reproduce and improve the work.</p>
+          <div className="project-tags">{project.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
+          <div className="project-detail-team">
+            <div className="proof-avatars">
+              <Avatar initials="MP" tone="violet" />
+              <Avatar initials="AN" tone="amber" />
+              <Avatar initials="PS" tone="teal" />
+            </div>
+            <span>
+              <strong>{project.team}</strong>
+              <small>Updated 2 days ago</small>
+            </span>
+          </div>
+          <div className="project-detail-actions">
+            <button className={follow ? "secondary-button" : "primary-button"} onClick={() => setFollow((value) => !value)}>
+              {follow ? <><Check size={16} /> Following</> : <><Plus size={16} /> Follow project</>}
+            </button>
+            <button className="secondary-button">
+              <MessageCircle size={16} /> Contact team
+            </button>
+            <button className="icon-button">
+              <Share2 size={18} />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <nav className="project-detail-tabs">
+        {["Overview", "Updates", "Team", "Resources", "Feedback"].map((item) => (
+          <button key={item} className={tab === item ? "active" : ""} onClick={() => setTab(item)}>
+            {item}
+          </button>
+        ))}
+      </nav>
+
+      <div className="project-detail-layout">
+        <section>
+          {tab === "Overview" ? (
+            <>
+              <article className="card project-story">
+                <h2>The problem</h2>
+                <p>Small learning projects often stop at a prototype because documentation, testing, and collaboration are scattered. This team is making each decision visible and reusable.</p>
+                <h2>How it works</h2>
+                <div className="project-process">
+                  <div><span>01</span><strong>Sense</strong><p>Collect environmental measurements.</p></div>
+                  <i />
+                  <div><span>02</span><strong>Decide</strong><p>Compare values with safe thresholds.</p></div>
+                  <i />
+                  <div><span>03</span><strong>Act</strong><p>Trigger the right response and log it.</p></div>
+                </div>
+                <h2>Current progress</h2>
+                <div className="project-progress"><span><b style={{ width: "82%" }} /></span><strong>82% · Prototype testing</strong></div>
+              </article>
+
+              <article className="card project-update">
+                <header>
+                  <Avatar initials="AN" tone="amber" />
+                  <div>
+                    <strong>Alex Nguyen</strong>
+                    <small>Project update · 2 days ago</small>
+                  </div>
+                </header>
+                <h3>Sensor calibration is complete</h3>
+                <p>We ran three test cycles and reduced the average measurement error. Next, we&apos;re documenting the enclosure design.</p>
+                <footer>
+                  <button><HelpCircle size={15} /> Helpful</button>
+                  <button><MessageCircle size={15} /> 8 comments</button>
+                </footer>
+              </article>
+            </>
+          ) : (
+            <div className="groups-tab-state card">
+              <div className="empty-icon">
+                {tab === "Team" ? <Users size={29} /> : tab === "Resources" ? <Bookmark size={29} /> : <MessageCircle size={29} />}
+              </div>
+              <h2>{tab}</h2>
+              <p>This project section is ready for team records and ongoing contributions.</p>
+            </div>
+          )}
+        </section>
+
+        <aside>
+          <section className="card project-side">
+            <h3>Project details</h3>
+            <div><span>Status</span><strong>{project.progress}</strong></div>
+            <div><span>Started</span><strong>May 2026</strong></div>
+            <div><span>License</span><strong>Open source</strong></div>
+            <div><span>Feedback</span><strong>Welcome</strong></div>
+          </section>
+          <section className="card project-side">
+            <h3>Looking for</h3>
+            <Badge tone="blue">UI feedback</Badge>
+            <Badge tone="teal">Testing partners</Badge>
+            <Badge tone="amber">Electronics mentor</Badge>
+            <button className="primary-button">Offer to help</button>
+          </section>
+          <section className="card project-side">
+            <h3>External links</h3>
+            <button className="project-link"><FileText size={16} /> Source repository <ArrowRight size={14} /></button>
+            <button className="project-link"><FileText size={16} /> Project documentation <ArrowRight size={14} /></button>
+          </section>
+        </aside>
+      </div>
+    </main>
   );
 }
 
 export function EventsContent() {
+  const [tab, setTab] = useState("Discover");
+  const [joined, setJoined] = useState<string[]>([]);
+  const events = [
+    { title: "Calculus Revision Session", date: "28", month: "AUG", time: "Today · 4:00 PM", host: "Mathematics Study Group", attending: 24, tone: "violet" as YomeTone, type: "Study session" },
+    { title: "Intro to Machine Learning", date: "30", month: "AUG", time: "Saturday · 2:30 PM", host: "AI & ML Community", attending: 42, tone: "blue" as YomeTone, type: "Live lesson" },
+    { title: "Arduino Build Clinic", date: "02", month: "SEP", time: "Tuesday · 5:00 PM", host: "Robotics Club", attending: 28, tone: "amber" as YomeTone, type: "Workshop" },
+    { title: "Quantum Physics Q&A", date: "04", month: "SEP", time: "Thursday · 6:30 PM", host: "Physics Problem Solvers", attending: 67, tone: "teal" as YomeTone, type: "STEM talk" },
+  ];
+
   return (
-    <div className="yome-page">
-      <div className="yome-page-heading">
+    <main className="events-page">
+      <header className="page-heading">
         <div>
-          <p>Events</p>
-          <h1>Learning sessions worth showing up for</h1>
-          <span>Follow revision sessions, workshops, demos, and community events.</span>
+          <p className="eyebrow">Learn live</p>
+          <h1>Events & Study Sessions</h1>
+          <span>Join revision sessions, workshops, talks, and collaborative project meetings.</span>
         </div>
-      </div>
-      <div className="yome-list">
-        {[
-          { day: "28", month: "AUG", title: "Calculus Revision Session" },
-          { day: "30", month: "AUG", title: "Intro to Machine Learning" },
-        ].map((event) => (
-          <article key={event.title} className="yome-card yome-section grid gap-4 md:grid-cols-[70px_1fr_auto] md:items-center">
-            <div className="date-tile"><strong>{event.day}</strong><span>{event.month}</span></div>
-            <div><h2 className="yome-card-title mb-1">{event.title}</h2><p className="yome-card-copy">Upcoming community event</p></div>
-            <button className="yome-button-secondary">Add to calendar</button>
-          </article>
+        <button className="primary-button">
+          <Plus size={17} /> Create event
+        </button>
+      </header>
+
+      <nav className="page-tabs">
+        {["Discover", "Your events", "Hosting", "Past"].map((item) => (
+          <button key={item} className={tab === item ? "active" : ""} onClick={() => setTab(item)}>
+            {item}
+          </button>
         ))}
+      </nav>
+
+      <section className="events-calendar-strip card">
+        <button>‹</button>
+        {["Thu 27", "Fri 28", "Sat 29", "Sun 30", "Mon 31", "Tue 01", "Wed 02"].map((day, index) => (
+          <button key={day} className={index === 1 ? "active" : ""}>
+            <span>{day.split(" ")[0]}</span>
+            <strong>{day.split(" ")[1]}</strong>
+            {[1, 3, 6].includes(index) ? <i /> : null}
+          </button>
+        ))}
+        <button>›</button>
+      </section>
+
+      {tab === "Discover" ? (
+        <>
+          <section className="event-feature card">
+            <div>
+              <Badge tone="blue">Featured live lesson</Badge>
+              <h2>How machines learn: a visual introduction</h2>
+              <p>Build an intuitive understanding of datasets, models, loss, and training with no advanced mathematics required.</p>
+              <div className="event-host">
+                <Avatar initials="JL" tone="blue" />
+                <span>
+                  <strong>Dr. James Liu</strong>
+                  <small>Educator · AI & Machine Learning</small>
+                </span>
+              </div>
+              <div className="event-feature-meta">
+                <span><CalendarDays size={16} /><b>Saturday, 2:30 PM</b></span>
+                <span><Video size={16} /><b>Live video session</b></span>
+                <span><Users size={16} /><b>42 attending</b></span>
+              </div>
+              <button className="primary-button">Reserve a place</button>
+            </div>
+            <div className="event-lesson-art">
+              <div className="lesson-network"><span>DATA</span><i /><span>MODEL</span><i /><span>IDEA</span></div>
+              <small>LIVE · 30 AUG · 14:30</small>
+            </div>
+          </section>
+
+          <div className="events-list-heading">
+            <div>
+              <h2>Upcoming for you</h2>
+              <p>Based on your groups and interests</p>
+            </div>
+            <select>
+              <option>All event types</option>
+              <option>Study sessions</option>
+              <option>Workshops</option>
+              <option>Talks</option>
+            </select>
+          </div>
+
+          <div className="events-grid">
+            {events.map((event) => {
+              const isJoined = joined.includes(event.title);
+              return (
+                <article className="event-card-full card" key={event.title}>
+                  <div className={`event-date-large ${event.tone}`}>
+                    <strong>{event.date}</strong>
+                    <span>{event.month}</span>
+                  </div>
+                  <div>
+                    <Badge tone={event.tone}>{event.type}</Badge>
+                    <h3>{event.title}</h3>
+                    <p>{event.time}</p>
+                    <small>Hosted by {event.host}</small>
+                    <div className="event-attendees">
+                      <div className="stacked-avatars">
+                        <Avatar initials="SC" tone="teal" size="xs" />
+                        <Avatar initials="AN" tone="amber" size="xs" />
+                        <Avatar initials="MP" tone="violet" size="xs" />
+                      </div>
+                      <span>{event.attending} attending</span>
+                    </div>
+                  </div>
+                  <button className={isJoined ? "secondary-button joined" : "primary-button"} onClick={() => setJoined((current) => isJoined ? current.filter((value) => value !== event.title) : [...current, event.title])}>
+                    {isJoined ? <><Check size={15} /> Joined</> : "Join event"}
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <div className="groups-tab-state card">
+          <div className="empty-icon"><CalendarDays size={30} /></div>
+          <h2>{tab}</h2>
+          <p>Your event schedule and hosting tools will appear here.</p>
+          <button className="primary-button">Browse events</button>
+        </div>
+      )}
+    </main>
+  );
+}
+
+function StudyRoomDetail({ onLeave }: { onLeave: () => void }) {
+  const [muted, setMuted] = useState(false);
+  const [chat, setChat] = useState([
+    "Sarah: Welcome! We’re working through question 4.",
+    "James: I added my notes to the shared resources.",
+  ]);
+  const [draft, setDraft] = useState("");
+
+  const send = () => {
+    if (!draft.trim()) return;
+    setChat((items) => [...items, `You: ${draft.trim()}`]);
+    setDraft("");
+  };
+
+  return (
+    <main className="study-room-detail">
+      <header>
+        <button className="back-link" onClick={onLeave}>← Leave room</button>
+        <div>
+          <span className="live-dot" />
+          <strong>Calculus Revision Room</strong>
+          <small>Mathematics · 8 studying</small>
+        </div>
+        <button className="secondary-button"><Settings size={16} /> Room settings</button>
+      </header>
+      <div className="study-room-workspace">
+        <section className="study-stage">
+          <div className="study-stage-top">
+            <Badge tone="violet">Focus session 2 of 4</Badge>
+            <div className="stage-timer"><strong>24:18</strong><span>remaining</span></div>
+            <button><MoreHorizontal size={18} /></button>
+          </div>
+          <div className="participant-grid">
+            <ParticipantTile name="Sarah Chen" initials="SC" tone="teal" speaking />
+            <ParticipantTile name="Maya Patel (You)" initials="MP" tone="violet" muted={muted} />
+            <ParticipantTile name="James Liu" initials="JL" tone="blue" />
+            <ParticipantTile name="Alex Nguyen" initials="AN" tone="amber" muted />
+          </div>
+          <div className="stage-note">
+            <span>Σ</span>
+            <div>
+              <strong>Current focus: Integration by parts</strong>
+              <p>Work independently until the timer ends, then compare approaches.</p>
+            </div>
+            <button>Open whiteboard</button>
+          </div>
+        </section>
+        <aside className="room-collab">
+          <nav>
+            <button className="active">Chat</button>
+            <button>People 8</button>
+            <button>Resources 3</button>
+          </nav>
+          <div className="room-chat">
+            <div className="room-chat-day">Today</div>
+            {chat.map((item, index) => {
+              const [author, ...rest] = item.split(":");
+              const initials = author === "You" ? "MP" : author === "Sarah" ? "SC" : "JL";
+              const tone = author === "You" ? "violet" : author === "Sarah" ? "teal" : "blue";
+              return (
+                <div className="room-chat-message" key={`${author}-${index}`}>
+                  <Avatar initials={initials} tone={tone} size="xs" />
+                  <span>
+                    <strong>{author}</strong>
+                    <p>{rest.join(":")}</p>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="room-chat-compose">
+            <input
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") send();
+              }}
+              placeholder="Message the room..."
+            />
+            <button onClick={send}><ArrowRight size={15} /></button>
+          </div>
+        </aside>
       </div>
-    </div>
+      <footer className="room-control-bar">
+        <div className="room-status">
+          <span className="live-dot" />
+          <div>
+            <strong>Connected</strong>
+            <small>Good connection</small>
+          </div>
+        </div>
+        <div className="room-controls">
+          <CallControl active={muted} icon={muted ? <MicOff size={20} /> : <Mic size={20} />} label={muted ? "Unmute" : "Mute"} onClick={() => setMuted((value) => !value)} />
+          <CallControl icon={<Video size={20} />} label="Start video" />
+          <CallControl icon={<MonitorUp size={20} />} label="Share screen" />
+          <CallControl icon={<Users size={20} />} label="Raise hand" />
+          <CallControl icon={<MessageCircle size={20} />} label="Chat" />
+        </div>
+        <button className="leave-room-button" onClick={onLeave}>Leave room</button>
+      </footer>
+    </main>
+  );
+}
+
+function ParticipantTile({
+  name,
+  initials,
+  tone,
+  speaking = false,
+  muted = false,
+}: {
+  name: string;
+  initials: string;
+  tone: YomeTone;
+  speaking?: boolean;
+  muted?: boolean;
+}) {
+  return (
+    <article className={`participant-tile ${speaking ? "speaking" : ""}`}>
+      <div className="participant-bg">
+        <span>{initials}</span>
+        <i />
+        <i />
+      </div>
+      <div className="participant-name">
+        <span className={speaking ? "speaking-dot" : ""} />
+        <strong>{name}</strong>
+        {muted ? <MicOff size={13} /> : null}
+      </div>
+    </article>
+  );
+}
+
+function CallControl({
+  icon,
+  label,
+  active = false,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button className={active ? "call-control active" : "call-control"} onClick={onClick}>
+      <span>{icon}</span>
+      <small>{label}</small>
+    </button>
   );
 }
 

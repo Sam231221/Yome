@@ -17,6 +17,7 @@ import {
   Send,
   Share2,
   Sun,
+  MoreHorizontal,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useStateProvider } from "@/context/StateContext";
@@ -107,6 +108,9 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
         .join("") || "Y",
     [name]
   );
+  const handleProfileClick = () => {
+    router.push("/account");
+  };
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
@@ -171,7 +175,15 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
         <button className="view-all" onClick={() => router.push("/groups")}>
           View all groups <Send size={16} />
         </button>
-        <button className="yome-group-item group-item mt-auto" onClick={handleSignOut}>
+        <button className="user-card-mini" onClick={handleProfileClick}>
+          <Avatar initials={initials} image={userInfo?.profilePicture || session?.user?.image || undefined} tone="violet" size="sm" />
+          <div>
+            <strong>{name}</strong>
+            <small>@{name.toLowerCase().split(" ").join("").slice(0, 14) || "yomelearner"}</small>
+          </div>
+          <MoreHorizontal size={18} />
+        </button>
+        <button className="yome-group-item group-item yome-signout-button" onClick={handleSignOut}>
           <Send size={18} />
           <span>Sign out</span>
         </button>
@@ -189,8 +201,9 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
         ].map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href;
+          const className = `${active ? "active " : ""}${item.label === "Create" ? "create-mobile" : ""}`.trim();
           return (
-            <Link key={`${item.href}-${item.label}`} className={active ? "active" : ""} href={item.href}>
+            <Link key={`${item.href}-${item.label}`} className={className} href={item.href}>
               <Icon size={21} />
               <span>{item.label}</span>
             </Link>
@@ -326,6 +339,12 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
 }
 
 export function RightRail() {
+  const [connected, setConnected] = useState<string[]>([]);
+  const people = [
+    { name: "Priya Sharma", detail: "AI · Robotics", initials: "PS", tone: "violet" as YomeTone },
+    { name: "Leo Martins", detail: "Physics · Astronomy", initials: "LM", tone: "teal" as YomeTone },
+  ];
+
   return (
     <aside className="yome-right-rail right-rail">
       <section className="right-section">
@@ -373,6 +392,36 @@ export function RightRail() {
             </div>
           </article>
         ))}
+      </section>
+      <section className="right-section">
+        <div className="right-heading">
+          <div>People to learn with</div>
+          <Link href="/connections">View all</Link>
+        </div>
+        {people.map((person) => {
+          const isConnected = connected.includes(person.name);
+          return (
+            <article className="person-row" key={person.name}>
+              <Avatar initials={person.initials} tone={person.tone} />
+              <div>
+                <strong>{person.name}</strong>
+                <small>{person.detail}</small>
+                <p>3 mutual groups</p>
+              </div>
+              <button
+                className={isConnected ? "connect-button connected" : "connect-button"}
+                onClick={() =>
+                  setConnected((current) =>
+                    isConnected ? current.filter((value) => value !== person.name) : [...current, person.name]
+                  )
+                }
+              >
+                {isConnected ? <Check size={15} /> : <Plus size={15} />}
+                <span>{isConnected ? "Sent" : "Connect"}</span>
+              </button>
+            </article>
+          );
+        })}
       </section>
       <section className="right-section topics">
         <div className="right-heading">
