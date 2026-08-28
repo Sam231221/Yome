@@ -5,6 +5,7 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { BiSearchAlt2 } from "react-icons/bi";
 import { MdCall, MdArrowBack } from "react-icons/md";
 import { IoVideocam } from "react-icons/io5";
+import { FiUser } from "react-icons/fi";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import ContextMenu from "@/components/common/ContextMenu";
@@ -42,16 +43,6 @@ export default function ChatHeader({
   };
 
   const contextMenuOptions = [
-    {
-      name: detailsOpen ? "Hide details" : "Show details",
-      callBack: async () => {
-        setIsContextMenuVisible(false);
-        if (messageSearch) {
-          dispatch({ type: reducerCases.SET_MESSAGES_SEARCH });
-        }
-        onToggleDetails();
-      },
-    },
     {
       name: "Exit",
       callBack: async () => {
@@ -176,7 +167,7 @@ export default function ChatHeader({
           aria-label={detailsOpen ? "Hide details panel" : "Show details panel"}
           type="button"
         >
-          <BsThreeDotsVertical />
+          <FiUser />
         </button>
         <button
           onClick={(e) => showContextMenu(e)}

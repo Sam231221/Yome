@@ -133,15 +133,6 @@ export default function ChatListItem({
       <div className="conversation-copy">
         <div className="conversation-meta">
           <strong>{data?.name}</strong>
-          {!isContactPage && (
-            <span
-              className={`conversation-time ${
-                (data.totalUnreadMessages ?? 0) > 0 ? "unread" : ""
-              }`}
-            >
-              {calculateTime(String(data.createdAt ?? ""))}
-            </span>
-          )}
         </div>
         <div className="conversation-preview-row">
           <span className="conversation-preview">
@@ -183,6 +174,20 @@ export default function ChatListItem({
           )}
         </div>
       </div>
+      {!isContactPage && (
+        <div className="conversation-side">
+          <span
+            className={`conversation-time ${
+              (data.totalUnreadMessages ?? 0) > 0 ? "unread" : ""
+            }`}
+          >
+            {calculateTime(String(data.createdAt ?? ""))}
+          </span>
+          {type === "user" && (data.totalUnreadMessages ?? 0) > 0 && (
+            <span className="conversation-badge">{data.totalUnreadMessages}</span>
+          )}
+        </div>
+      )}
     </button>
   );
 }

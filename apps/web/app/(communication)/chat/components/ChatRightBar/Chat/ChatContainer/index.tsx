@@ -32,7 +32,7 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
   }, [messages]);
 
   const renderMessageMeta = (message: ChatMessage, isOwnMessage: boolean) => (
-    <div className="chat-message-meta">
+    <div className={`chat-message-meta ${isOwnMessage ? "mine" : ""}`}>
       <span>{calculateTime(String(message.createdAt))}</span>
       {isOwnMessage && <MessageStatus messageStatus={message.messageStatus} />}
     </div>
@@ -53,11 +53,7 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
                   }`}
                 >
                   {message.type === "text" && (
-                    <div
-                      className={`chat-message ${
-                        message.senderId === currentChatUser.id ? "" : "mine"
-                      }`}
-                    >
+                    <div className={`chat-message ${message.senderId === currentChatUser.id ? "" : "mine"}`}>
                       <p>{message.message}</p>
                       {renderMessageMeta(message, message.senderId === userInfo.id)}
                     </div>

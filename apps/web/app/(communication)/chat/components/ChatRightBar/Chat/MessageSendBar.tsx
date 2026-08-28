@@ -159,56 +159,59 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
     <div className="message-composer-shell relative">
       {!showAudioRecorder && (
         <>
-          <div className="message-composer-actions">
-            <button
-              className="composer-icon-button composer-icon-button-primary"
-              title="More"
-              type="button"
-            >
-              <BsPlusLg />
-            </button>
-            <button
-              className="composer-icon-button"
-              title="Emoji"
-              onClick={handleEmojiModal}
-              id="emoji-open"
-              type="button"
-            >
-              <BsEmojiSmile />
-            </button>
-            {showEmojiPicker && (
-              <div
-                className="composer-emoji-picker"
-                ref={emojiPickerRef}
-              >
-                <EmojiPicker
-                  onEmojiClick={handleEmojiClick}
-                  theme={Theme.LIGHT}
-                />
-              </div>
-            )}
-            <button
-              className="composer-icon-button"
-              title="Attach"
-              onClick={() => setGrabImage(true)}
-              type="button"
-            >
-              <ImAttachment />
-            </button>
-          </div>
+          <button
+            className="composer-plus-button"
+            title="More"
+            type="button"
+          >
+            <BsPlusLg />
+          </button>
           <div className="message-composer">
-            <input
-              type="text"
+            <div className="message-composer-box">
+            <textarea
               placeholder="Type a message"
               className="message-composer-input"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && message.trim()) {
+                if (e.key === "Enter" && !e.shiftKey && message.trim()) {
+                  e.preventDefault();
                   void sendTextMessage();
                 }
               }}
             />
+            <div className="message-composer-actions">
+              <button
+                className="composer-icon-button"
+                title="Emoji"
+                onClick={handleEmojiModal}
+                id="emoji-open"
+                type="button"
+              >
+                <BsEmojiSmile />
+              </button>
+              {showEmojiPicker && (
+                <div
+                  className="composer-emoji-picker"
+                  ref={emojiPickerRef}
+                >
+                  <EmojiPicker
+                    onEmojiClick={handleEmojiClick}
+                    theme={Theme.LIGHT}
+                  />
+                </div>
+              )}
+              <button
+                className="composer-icon-button"
+                title="Attach"
+                onClick={() => setGrabImage(true)}
+                type="button"
+              >
+                <ImAttachment />
+              </button>
+              <span>Enter to send</span>
+            </div>
+            </div>
             {message.length ? (
               <button
                 onClick={() => void sendTextMessage()}
