@@ -22,13 +22,19 @@ const VideoChatOnBoardingContent = () => {
   const { call, isCallLoading } = useGetCallById(callId);
   const [isSetupComplete, setIsSetupComplete] = useState(false);
 
-  if (isCallLoading) return <Loader />;
+  if (isCallLoading) {
+    return (
+      <main className="grid min-h-screen w-full place-items-center bg-[#080d1b] text-white">
+        <Loader className="size-8 animate-spin" />
+      </main>
+    );
+  }
 
   if (!call)
     return (
-      <p className="text-center text-3xl font-bold text-white">
-        Call Not Found
-      </p>
+      <main className="grid min-h-screen w-full place-items-center bg-[#080d1b] px-6 text-center text-white">
+        <p className="text-3xl font-bold">Call Not Found</p>
+      </main>
     );
 
   // get more info about custom call type:  https://getstream.io/video/docs/react/guides/configuring-call-types/
@@ -37,7 +43,13 @@ const VideoChatOnBoardingContent = () => {
     (!userInfo ||
       !call.state.members.find((m) => String(m.user.id) === String(userInfo.id)));
 
-  if (notAllowed) return <h1>not allowed</h1>;
+  if (notAllowed) {
+    return (
+      <main className="grid min-h-screen w-full place-items-center bg-[#080d1b] px-6 text-center text-white">
+        <h1 className="text-2xl font-semibold">Not allowed</h1>
+      </main>
+    );
+  }
 
   return (
     <main className="h-screen w-full bg-dropdown-background">

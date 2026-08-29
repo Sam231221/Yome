@@ -11,9 +11,6 @@ import { reducerCases } from "@/context/constants";
 import ContextMenu from "@/components/common/ContextMenu";
 import { resolveChatKind, type ActiveCall } from "@/types/chat";
 
-import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
-
 interface ChatHeaderProps {
   chatType: string;
   detailsOpen: boolean;
@@ -27,9 +24,8 @@ export default function ChatHeader({
   onToggleDetails,
   onOpenDetails,
 }: ChatHeaderProps) {
-  const [{ currentChatUser, userInfo, onlineUsers, messageSearch }, dispatch] =
+  const [{ currentChatUser, onlineUsers, messageSearch }, dispatch] =
     useStateProvider();
-  const router = useRouter();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,
     y: 0,
@@ -52,15 +48,20 @@ export default function ChatHeader({
     },
   ];
 
-  const handleVideoCall = async () => {
-    if (!userInfo) return;
-    try {
-      const id = crypto.randomUUID();
-      router.push(`/chat/${id}`);
-      toast.success("Meeting Created");
-    } catch {
-      toast("Failed to create Meeting");
-    }
+  const handleVideoCall = () => {
+    if (!currentChatUser?.id || typeof currentChatUser.id !== "number") return;
+    const videoCall: ActiveCall = {
+      id: currentChatUser.id,
+      name: currentChatUser.name,
+      profilePicture: currentChatUser.profilePicture,
+      type: "out-going",
+      callType: "video",
+      roomId: Date.now(),
+    };
+    dispatch({
+      type: reducerCases.SET_VIDEO_CALL,
+      videoCall,
+    });
   };
 
   const handleVoiceCall = () => {
@@ -142,6 +143,7 @@ export default function ChatHeader({
         </button>
         <button
           onClick={handleVideoCall}
+          disabled={resolveChatKind(currentChatUser) !== "user"}
           className="chat-header-icon"
           aria-label="Video call"
           type="button"

@@ -1,11 +1,12 @@
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import Image from "next/image";
 import React, { useEffect, useState } from "react";
+import { IncomingChatCallSurface } from "@/features/chat/components/Call/YomeCallUI";
 
 function IncomingVideoCall() {
   const [{ incomingVideoCall, socket }, dispatch] = useStateProvider();
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [videoEnabled, setVideoEnabled] = useState(true);
   if (!incomingVideoCall) return null;
 
   useEffect(() => {
@@ -25,11 +26,11 @@ function IncomingVideoCall() {
     }
   }, [audioElement]);
 
-  const acceptCall = () => {
+  const acceptCall = (acceptAsVideo: boolean) => {
     const call = incomingVideoCall;
     dispatch({
       type: reducerCases.SET_VIDEO_CALL,
-      videoCall: { ...call, type: "in-coming" },
+      videoCall: { ...call, type: "in-coming", callType: acceptAsVideo ? "video" : "audio" },
     });
     dispatch({
       type: reducerCases.SET_INCOMING_VIDEO_CALL,
@@ -50,37 +51,13 @@ function IncomingVideoCall() {
   };
 
   return (
-    <div className="h-24 w-80 fixed bottom-8 mb-0 right-6 z-50 rounded-sm flex gap-5 items-center justify-start p-4 bg-conversation-panel-background text-white drop-shadow-2xl border-icon-green border-2 py-14">
-      <div>
-        <Image
-          src={incomingVideoCall.profilePicture || "/avatars/userprofile.png"}
-          alt="avatar"
-          width={50}
-          height={50}
-          className="rounded-full"
-        />
-      </div>
-      <div>
-        <div className="text-sm text-gray-700 font-bold">
-          {incomingVideoCall.name}
-        </div>
-        <div className="text-xs text-gray-700">Incoming Video Call</div>
-        <div className="flex gap-2 mt-2">
-          <button
-            className="bg-red-500 p-1 px-3 text-sm rounded-full"
-            onClick={rejectCall}
-          >
-            Reject
-          </button>
-          <button
-            className="bg-green-500 p-1 px-3 text-sm rounded-full"
-            onClick={acceptCall}
-          >
-            Accept
-          </button>
-        </div>
-      </div>
-    </div>
+    <IncomingChatCallSurface
+      call={incomingVideoCall}
+      videoEnabled={videoEnabled}
+      onToggleVideo={() => setVideoEnabled((value) => !value)}
+      onAccept={acceptCall}
+      onDecline={rejectCall}
+    />
   );
 }
 

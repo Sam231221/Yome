@@ -1,12 +1,11 @@
 import axios from "axios";
-import Image from "next/image";
-import React, { useEffect, useRef, useState } from "react";
-import { MdOutlineCallEnd } from "react-icons/md";
+import React, { useEffect, useState } from "react";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import { GET_CALL_TOKEN } from "@/utils/ApiRoutes";
 import type { ActiveCall } from "@/types/chat";
 import toast from "react-hot-toast";
+import { ActiveChatCallSurface } from "./YomeCallUI";
 
 type ZegoCallClient = {
   destroyStream: (stream: MediaStream) => void;
@@ -26,6 +25,10 @@ function Container({ data }: { data: ActiveCall }) {
   const [zgVar, setZgVar] = useState<ZegoCallClient | undefined>(undefined);
   const [callStarted, setCallStarted] = useState(false);
   const [callAccepted, setcallAccepted] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [speaker, setSpeaker] = useState(true);
+  const [camera, setCamera] = useState(data.callType === "video");
+  const [handRaised, setHandRaised] = useState(false);
   useEffect(() => {
     if (data.type === "out-going" && socket?.current) {
       socket.current.on("accept-call", () => setcallAccepted(true));
@@ -63,7 +66,7 @@ function Container({ data }: { data: ActiveCall }) {
 
   const endCall = () => {
     const id = data.id;
-    socket?.current?.emit("reject-voice-call", {
+    socket?.current?.emit(data.callType === "video" ? "reject-video-call" : "reject-voice-call", {
       from: id,
     });
     if (zgVar && localStream && publishStream && typeof data.roomId === "number") {
@@ -75,39 +78,31 @@ function Container({ data }: { data: ActiveCall }) {
   };
 
   return (
-    <div className="border-conversation-border border-l w-full bg-conversation-panel-background flex flex-col h-[100vh] overflow-hidden items-center justify-center  ">
-      <div className="flex flex-col gap-3 items-center">
-        <span className="text-5xl text-gray-700 font-bold">
-          {data.name ?? "Unknown caller"}
-        </span>
-        <span className="text-lg">
-          {callAccepted && data.callType !== "video"
-            ? "On going call"
-            : "Calling"}
-        </span>
-      </div>
-      {(!callAccepted || data.callType === "audio") && (
-        <div className="my-10">
-          <Image
-            src={data?.profilePicture || "/avatars/userprofile.png"}
-            alt="avatar"
-            height={200}
-            width={200}
-            className="rounded-full"
-          />
-        </div>
-      )}
-      <div className="my-5 relative" id="remote-video">
-        <div className="absolute bottom-5 right-5" id="local-video"></div>
-      </div>
-
-      <div
-        className="rounded-full h-16 w-16 bg-red-600 flex items-center justify-center"
-        onClick={endCall}
-      >
-        <MdOutlineCallEnd className="text-3xl text-white cursor-pointer" />
-      </div>
-    </div>
+    <ActiveChatCallSurface
+      call={data}
+      mode={data.callType === "video" ? "video" : "audio"}
+      callAccepted={callAccepted}
+      muted={muted}
+      onToggleMute={() => setMuted((value) => !value)}
+      onEnd={endCall}
+      speaker={speaker}
+      onToggleSpeaker={() => setSpeaker((value) => !value)}
+      onSwitchToVideo={() => {
+        dispatch({
+          type: reducerCases.SET_VIDEO_CALL,
+          videoCall: { ...data, callType: "video" },
+        });
+        dispatch({
+          type: reducerCases.SET_VOICE_CALL,
+          voiceCall: undefined,
+        });
+        setCamera(true);
+      }}
+      camera={camera}
+      onToggleCamera={() => setCamera((value) => !value)}
+      handRaised={handRaised}
+      onToggleHand={() => setHandRaised((value) => !value)}
+    />
   );
 }
 

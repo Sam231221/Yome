@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   Bookmark,
+  ChevronLeft,
   CalendarDays,
   Check,
   FileText,
@@ -22,6 +23,7 @@ import {
   Users,
   UsersRound,
   Video,
+  VideoOff,
 } from "lucide-react";
 import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { Avatar, Badge } from "@/components/ui";
@@ -30,7 +32,8 @@ import { discoveryGroups, GroupCard, MembersGrid, QuestionCard } from "./shared"
 
 export function StudyRoomsContent() {
   const [filter, setFilter] = useState("All rooms");
-  const [openRoom, setOpenRoom] = useState(false);
+  const [screen, setScreen] = useState<"rooms" | "detail" | "incoming" | "audio" | "video">("rooms");
+  const [callReturnTarget, setCallReturnTarget] = useState<"rooms" | "detail">("rooms");
   const rooms = [
     {
       id: "calculus-revision-room",
@@ -71,8 +74,33 @@ export function StudyRoomsContent() {
   ];
   const visibleRooms = rooms.filter((room) => filter === "All rooms" || room.topic.startsWith(filter));
 
-  if (openRoom) {
-    return <StudyRoomDetail onLeave={() => setOpenRoom(false)} />;
+  if (screen === "detail") {
+    return <StudyRoomDetail onLeave={() => setScreen("rooms")} onStartVideo={() => {
+      setCallReturnTarget("detail");
+      setScreen("video");
+    }} />;
+  }
+
+  if (screen === "incoming") {
+    return (
+      <IncomingCallPage
+        onAccept={(video) => setScreen(video ? "video" : "audio")}
+        onDecline={() => setScreen(callReturnTarget)}
+      />
+    );
+  }
+
+  if (screen === "audio") {
+    return (
+      <AudioCallPage
+        onEnd={() => setScreen(callReturnTarget)}
+        onVideo={() => setScreen("video")}
+      />
+    );
+  }
+
+  if (screen === "video") {
+    return <VideoCallPage onEnd={() => setScreen(callReturnTarget)} />;
   }
 
   return (
@@ -109,10 +137,16 @@ export function StudyRoomsContent() {
             </span>
           </div>
           <div className="feature-room-actions flex flex-wrap items-center gap-2">
-            <button className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white" onClick={() => setOpenRoom(true)}>
+            <button className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white" onClick={() => setScreen("detail")}>
               <Headphones size={17} /> Join room
             </button>
-            <button className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue">
+            <button
+              className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue"
+              onClick={() => {
+                setCallReturnTarget("rooms");
+                setScreen("incoming");
+              }}
+            >
               <Phone size={16} /> Preview incoming call
             </button>
           </div>
@@ -174,7 +208,7 @@ export function StudyRoomsContent() {
                 </div>
                 <span>{room.active} studying</span>
               </div>
-              <button onClick={() => setOpenRoom(true)}>
+              <button onClick={() => setScreen("detail")}>
                 Join <ArrowRight size={14} />
               </button>
             </footer>
@@ -224,7 +258,13 @@ export function StudyRoomsContent() {
 }
 
 
-function StudyRoomDetail({ onLeave }: { onLeave: () => void }) {
+function StudyRoomDetail({
+  onLeave,
+  onStartVideo,
+}: {
+  onLeave: () => void;
+  onStartVideo: () => void;
+}) {
   const [muted, setMuted] = useState(false);
   const [chat, setChat] = useState([
     "Sarah: Welcome! We’re working through question 4.",
@@ -317,7 +357,7 @@ function StudyRoomDetail({ onLeave }: { onLeave: () => void }) {
         </div>
         <div className="room-controls">
           <CallControl active={muted} icon={muted ? <MicOff size={20} /> : <Mic size={20} />} label={muted ? "Unmute" : "Mute"} onClick={() => setMuted((value) => !value)} />
-          <CallControl icon={<Video size={20} />} label="Start video" />
+          <CallControl icon={<Video size={20} />} label="Start video" onClick={onStartVideo} />
           <CallControl icon={<MonitorUp size={20} />} label="Share screen" />
           <CallControl icon={<Users size={20} />} label="Raise hand" />
           <CallControl icon={<MessageCircle size={20} />} label="Chat" />
@@ -361,17 +401,190 @@ function CallControl({
   icon,
   label,
   active = false,
+  danger = false,
   onClick,
 }: {
   icon: ReactNode;
   label: string;
   active?: boolean;
+  danger?: boolean;
   onClick?: () => void;
 }) {
   return (
-    <button className={active ? "call-control active" : "call-control"} onClick={onClick}>
+    <button className={`call-control${active ? " active" : ""}${danger ? " danger" : ""}`} onClick={onClick}>
       <span>{icon}</span>
       <small>{label}</small>
     </button>
+  );
+}
+
+function IncomingCallPage({
+  onAccept,
+  onDecline,
+}: {
+  onAccept: (video: boolean) => void;
+  onDecline: () => void;
+}) {
+  const [video, setVideo] = useState(false);
+
+  return (
+    <main className="incoming-call-page">
+      <div className="call-backdrop"><span /><span /><span /></div>
+      <div className="incoming-call-card">
+        <div className="incoming-label">
+          <span className="live-dot" /> Incoming {video ? "video" : "audio"} call
+        </div>
+        <Avatar initials="PS" tone="violet" size="lg" />
+        <h1>Priya Sharma</h1>
+        <p>AI student · 5 shared groups</p>
+        <div className="incoming-context">
+          <MessageCircle size={17} />
+          <span>Calling from your conversation</span>
+        </div>
+        <div className="incoming-actions">
+          <CallControl icon={<Phone size={20} />} label="Decline" danger onClick={onDecline} />
+          <CallControl
+            icon={video ? <VideoOff size={20} /> : <Video size={20} />}
+            label={video ? "Video off" : "Video on"}
+            active={video}
+            onClick={() => setVideo((value) => !value)}
+          />
+          <CallControl icon={<Phone size={20} />} label="Accept" onClick={() => onAccept(video)} />
+        </div>
+        <button className="incoming-message" onClick={onDecline}>Reply with a message</button>
+      </div>
+    </main>
+  );
+}
+
+function AudioCallPage({
+  onEnd,
+  onVideo,
+}: {
+  onEnd: () => void;
+  onVideo: () => void;
+}) {
+  const [muted, setMuted] = useState(false);
+  const [speaker, setSpeaker] = useState(true);
+
+  return (
+    <main className="audio-call-page">
+      <div className="call-top">
+        <div className="mini-brand"><span>Y</span> yome call</div>
+        <button onClick={onEnd}>
+          <ChevronLeft size={16} />
+          Back to messages
+        </button>
+      </div>
+      <section className="audio-call-main">
+        <div className="audio-orbits"><i /><i /><i /></div>
+        <Avatar initials="PS" tone="violet" size="lg" />
+        <h1>Priya Sharma</h1>
+        <p>00:08:42</p>
+        <span className="call-quality"><i className="live-dot" /> Encrypted · Good connection</span>
+        <div className="audio-wave">
+          {Array.from({ length: 28 }).map((_, index) => (
+            <i key={index} style={{ height: `${8 + (index % 7) * 4}px` }} />
+          ))}
+        </div>
+      </section>
+      <footer className="call-dock">
+        <CallControl icon={muted ? <MicOff size={20} /> : <Mic size={20} />} label={muted ? "Unmute" : "Mute"} active={muted} onClick={() => setMuted((value) => !value)} />
+        <CallControl icon={<Headphones size={20} />} label={speaker ? "Speaker on" : "Speaker off"} active={!speaker} onClick={() => setSpeaker((value) => !value)} />
+        <CallControl icon={<Users size={20} />} label="Add person" />
+        <CallControl icon={<Video size={20} />} label="Switch to video" onClick={onVideo} />
+        <CallControl icon={<Phone size={20} />} label="End call" danger onClick={onEnd} />
+      </footer>
+    </main>
+  );
+}
+
+function VideoCallPage({ onEnd }: { onEnd: () => void }) {
+  const [muted, setMuted] = useState(false);
+  const [camera, setCamera] = useState(true);
+  const [hand, setHand] = useState(false);
+  const [view, setView] = useState<"Grid" | "Speaker">("Grid");
+
+  return (
+    <main className="video-call-page">
+      <header>
+        <div>
+          <span className="live-dot" />
+          <strong>Calculus Revision Room</strong>
+          <small>6 participants · 42:16</small>
+        </div>
+        <nav>
+          <button className={view === "Grid" ? "active" : ""} onClick={() => setView("Grid")}>Grid</button>
+          <button className={view === "Speaker" ? "active" : ""} onClick={() => setView("Speaker")}>Speaker</button>
+        </nav>
+        <button><MoreHorizontal size={18} /></button>
+      </header>
+      <section className={`video-grid ${view === "Speaker" ? "speaker-view" : ""}`}>
+        <VideoTile name="Sarah Chen" initials="SC" tone="teal" speaking />
+        <VideoTile name="Maya Patel (You)" initials="MP" tone="violet" camera={camera} muted={muted} />
+        <VideoTile name="James Liu" initials="JL" tone="blue" />
+        <VideoTile name="Alex Nguyen" initials="AN" tone="amber" muted />
+        <VideoTile name="Priya Sharma" initials="PS" tone="violet" />
+        <VideoTile name="Leo Martins" initials="LM" tone="teal" camera={false} />
+      </section>
+      <aside className="video-side-note">
+        <div className="section-title">
+          <h3>Session notes</h3>
+          <button>×</button>
+        </div>
+        <p><strong>Integration by parts</strong></p>
+        <ul>
+          <li>Start from the product rule</li>
+          <li>Choose u to simplify when differentiated</li>
+          <li>Check the result by differentiating</li>
+        </ul>
+        <button>Open collaborative notes</button>
+      </aside>
+      <footer className="video-call-dock">
+        <div>
+          <CallControl icon={muted ? <MicOff size={20} /> : <Mic size={20} />} label={muted ? "Unmute" : "Mute"} active={muted} onClick={() => setMuted((value) => !value)} />
+          <CallControl icon={camera ? <Video size={20} /> : <VideoOff size={20} />} label={camera ? "Stop video" : "Start video"} active={!camera} onClick={() => setCamera((value) => !value)} />
+          <CallControl icon={<MonitorUp size={20} />} label="Share screen" />
+          <CallControl icon={<Users size={20} />} label={hand ? "Hand raised" : "Raise hand"} active={hand} onClick={() => setHand((value) => !value)} />
+          <CallControl icon={<MessageCircle size={20} />} label="Chat" />
+          <CallControl icon={<Phone size={20} />} label="End" danger onClick={onEnd} />
+        </div>
+      </footer>
+    </main>
+  );
+}
+
+function VideoTile({
+  name,
+  initials,
+  tone,
+  speaking = false,
+  muted = false,
+  camera = true,
+}: {
+  name: string;
+  initials: string;
+  tone: YomeTone;
+  speaking?: boolean;
+  muted?: boolean;
+  camera?: boolean;
+}) {
+  return (
+    <article className={`video-tile ${speaking ? "speaking" : ""}`}>
+      <div className={`video-person video-${tone}`}>
+        {camera ? (
+          <>
+            <span className="video-avatar-face">{initials}</span>
+            <div className="video-abstract"><i /><i /><i /></div>
+          </>
+        ) : (
+          <Avatar initials={initials} tone={tone} size="lg" />
+        )}
+      </div>
+      <footer>
+        <span>{speaking ? <i className="live-dot" /> : null}<strong>{name}</strong></span>
+        {muted ? <MicOff size={14} /> : null}
+      </footer>
+    </article>
   );
 }

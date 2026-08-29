@@ -1,6 +1,6 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import "./yome.css";
+import "./app-theme.css";
 import "./chat.css";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { StateProvider } from "@/context/StateContext";
