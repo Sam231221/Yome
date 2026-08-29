@@ -1,4 +1,4 @@
-import { ProjectDetailContent } from "@/components/yome/YomeCollectionPages";
+import { ProjectDetailContent } from "@/features/learning";
 
 export default async function ProjectDetailPage({
   params,

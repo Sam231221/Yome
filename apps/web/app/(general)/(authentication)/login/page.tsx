@@ -84,8 +84,8 @@ export default function Login() {
         </div>
       </section>
 
-      <section className="auth-panel">
-        <Link className="auth-close" href="/" aria-label="Close authentication">
+      <section className="auth-panel flex min-w-0 items-center justify-center bg-yome-surface">
+        <Link className="auth-close inline-grid place-items-center rounded-full text-yome-muted" href="/" aria-label="Close authentication">
           <span>x</span>
         </Link>
         <div className="auth-form-wrap">
@@ -96,11 +96,11 @@ export default function Login() {
               ? "Join a community where curiosity connects us."
               : "Continue learning with your communities."}
           </p>
-          <div className="auth-tabs">
-            <button className={activeTab === "register" ? "active" : ""} onClick={() => setActiveTab("register")}>
+          <div className="auth-tabs grid grid-cols-2 rounded-yome bg-yome-surface-2">
+            <button className={activeTab === "register" ? "active rounded-yome font-bold" : "rounded-yome font-bold"} onClick={() => setActiveTab("register")}>
               Sign up
             </button>
-            <button className={activeTab === "login" ? "active" : ""} onClick={() => setActiveTab("login")}>
+            <button className={activeTab === "login" ? "active rounded-yome font-bold" : "rounded-yome font-bold"} onClick={() => setActiveTab("login")}>
               Sign in
             </button>
           </div>

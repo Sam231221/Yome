@@ -1,4 +1,4 @@
-import { StudyRoomsContent } from "@/components/yome/YomeCollectionPages";
+import { StudyRoomsContent } from "@/features/learning";
 
 export default function StudyRoomsPage() {
   return <StudyRoomsContent />;

@@ -7,18 +7,22 @@ const iconPaths = {
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   users:
     '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
-  help:
-    '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.7 2.7 0 1 1 4.3 2.2c-1 .7-1.8 1.2-1.8 2.8M12 18h.01"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.7 2.7 0 1 1 4.3 2.2c-1 .7-1.8 1.2-1.8 2.8M12 18h.01"/>',
   flask:
     '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/>',
   check: '<path d="m5 12 4 4L19 6"/>',
-  profile:
-    '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   message:
     '<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/>',
 } as const;
 
-function Icon({ name, size = 20 }: { name: keyof typeof iconPaths; size?: number }) {
+function Icon({
+  name,
+  size = 20,
+}: {
+  name: keyof typeof iconPaths;
+  size?: number;
+}) {
   return (
     <svg
       aria-hidden="true"
@@ -44,7 +48,9 @@ function Avatar({
   tone?: "blue" | "teal" | "amber" | "violet";
   size?: "xs" | "sm" | "md";
 }) {
-  return <span className={`avatar avatar-${tone} avatar-${size}`}>{initials}</span>;
+  return (
+    <span className={`avatar avatar-${tone} avatar-${size}`}>{initials}</span>
+  );
 }
 
 function Badge({
@@ -65,7 +71,7 @@ export default function Home() {
       <nav className="landing-nav">
         <Link className="auth-brand landing-brand" href="/">
           <span className="brand-mark">Y</span>
-          <span>yome</span>
+          <span>Yome</span>
         </Link>
         <div className={menuOpen ? "landing-links open" : "landing-links"}>
           <a href="#communities">Communities</a>
@@ -73,14 +79,14 @@ export default function Home() {
           <a href="#safety">Safety</a>
         </div>
         <div className="landing-actions">
-          <Link className="landing-login" href="/login">
+          <Link className="landing-login inline-flex items-center justify-center rounded-yome font-bold text-yome-navy" href="/login">
             Sign in
           </Link>
-          <Link className="primary-button" href="/login?tab=register">
+          <Link className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white" href="/login?tab=register">
             Join Yome
           </Link>
           <button
-            className="landing-menu"
+            className="landing-menu inline-grid place-items-center rounded-yome border border-yome-border bg-yome-surface text-yome-navy"
             onClick={() => setMenuOpen((value) => !value)}
             aria-label="Toggle menu"
           >
@@ -102,10 +108,13 @@ export default function Home() {
               building projects, and learning together.
             </p>
             <div className="hero-actions">
-              <Link className="primary-button hero-primary" href="/login?tab=register">
+              <Link
+                className="primary-button hero-primary inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white"
+                href="/login?tab=register"
+              >
                 Start learning together <Icon name="arrow" size={18} />
               </Link>
-              <Link className="hero-secondary" href="/dashboard">
+              <Link className="hero-secondary inline-flex items-center gap-2 rounded-yome font-bold text-yome-navy" href="/dashboard">
                 <span className="play-button">&#9654;</span> Explore the demo
               </Link>
             </div>
@@ -122,14 +131,19 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <div className="hero-product" aria-label="Preview of the Yome learning feed">
+          <div
+            className="hero-product"
+            aria-label="Preview of the Yome learning feed"
+          >
             <div className="hero-glow" />
             <div className="product-window">
               <header>
                 <div className="mini-brand">
                   <span>Y</span> yome
                 </div>
-                <div className="mini-search">⌕ Search people, groups, topics...</div>
+                <div className="mini-search">
+                  ⌕ Search people, groups, topics...
+                </div>
                 <Avatar initials="MP" tone="violet" size="xs" />
               </header>
               <div className="product-body">
@@ -158,10 +172,12 @@ export default function Home() {
                       </span>
                       <b>Question</b>
                     </div>
-                    <h3>Can someone explain integration by parts intuitively?</h3>
+                    <h3>
+                      Can someone explain integration by parts intuitively?
+                    </h3>
                     <p>
-                      I understand the formula, but I&apos;m struggling to see why it
-                      works geometrically.
+                      I understand the formula, but I&apos;m struggling to see
+                      why it works geometrically.
                     </p>
                     <div className="mini-answer">
                       <span>&#10003;</span>
@@ -206,7 +222,7 @@ export default function Home() {
                 <strong>Python Help Room</strong>
                 <small>14 studying now</small>
               </div>
-              <button>Join</button>
+              <button className="inline-flex items-center justify-center rounded-yome font-bold text-yome-blue">Join</button>
             </div>
             <div className="floating-card floating-answer">
               <span>&#10003;</span>
@@ -232,7 +248,9 @@ export default function Home() {
         <section className="landing-section" id="communities">
           <div className="landing-heading">
             <p className="eyebrow">Built around curiosity</p>
-            <h2>Everything you need to learn socially&#8212;without the noise.</h2>
+            <h2>
+              Everything you need to learn socially&#8212;without the noise.
+            </h2>
             <span>
               Yome turns questions, shared work, and focused communities into an
               educational network.
@@ -316,7 +334,10 @@ export default function Home() {
         <section className="learning-together" id="learn">
           <div className="learning-copy">
             <p className="eyebrow">Learning, redesigned</p>
-            <h2>From &#8220;I don&apos;t get it&#8221; to &#8220;we built it.&#8221;</h2>
+            <h2>
+              From &#8220;I don&apos;t get it&#8221; to &#8220;we built
+              it.&#8221;
+            </h2>
             <p>
               Yome connects every stage of learning: discover a topic, ask for
               help, study live, and turn knowledge into projects.
@@ -376,8 +397,8 @@ export default function Home() {
             <h2>A safer space to grow your academic network.</h2>
             <p>
               Thoughtful privacy controls, clear reporting, group moderation,
-              and learning-first recommendations are part of the foundation&#8212;not
-              an afterthought.
+              and learning-first recommendations are part of the
+              foundation&#8212;not an afterthought.
             </p>
           </div>
           <div className="safety-grid">
@@ -419,7 +440,7 @@ export default function Home() {
             Create your academic profile and find the people who make curiosity
             contagious.
           </p>
-          <Link className="primary-button" href="/login?tab=register">
+          <Link className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white" href="/login?tab=register">
             Join Yome for free <Icon name="arrow" size={17} />
           </Link>
         </section>

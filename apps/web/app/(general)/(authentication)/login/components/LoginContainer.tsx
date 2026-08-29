@@ -126,13 +126,13 @@ export default function LoginContainer({ activeTab }: LoginContainerProps) {
             </button>
           </div>
         </label>
-        <button className="forgot-link" type="button">
+        <button className="forgot-link font-bold text-yome-blue" type="button">
           Forgot password?
         </button>
         <button
           type="submit"
           disabled={!isFormFilled || isSubmitting}
-          className="primary-button auth-submit"
+          className="primary-button auth-submit inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white"
         >
           {isSubmitting ? "Signing in..." : "Sign in"}
         </button>

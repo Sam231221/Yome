@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { OnboardingReferencePage } from "@/components/yome/YomeCollectionPages";
+import { OnboardingReferencePage } from "@/features/learning";
 
 type OnboardingState = {
   username: string;

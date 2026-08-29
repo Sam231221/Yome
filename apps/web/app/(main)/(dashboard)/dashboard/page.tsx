@@ -4,8 +4,9 @@ import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { useStateProvider } from "@/context/StateContext";
 import { ensureUserInfo } from "@/lib/auth/userInfo";
-import { ComposerCard, FeedPostCard, RightRail, Badge } from "@/components/yome/YomeUI";
-import { feedPosts } from "@/lib/yome/data";
+import { Badge } from "@/components/ui";
+import { ComposerCard, FeedPostCard, RightRail } from "@/features/feed";
+import { feedPosts } from "@/features/learning/data";
 
 const Home = () => {
   const [{ userInfo }, dispatch] = useStateProvider();
@@ -60,7 +61,7 @@ const Home = () => {
               </button>
             ))}
             <span />
-            <button className="sort-button">Top posts⌄</button>
+            <button className="sort-button inline-flex items-center justify-center rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-muted">Top posts⌄</button>
           </div>
           {feedPosts.map((post) => <FeedPostCard key={post.id} post={post} />)}
           <div className="end-feed">

@@ -1,4 +1,4 @@
-import { SettingsContent } from "@/components/yome/YomeCollectionPages";
+import { SettingsContent } from "@/features/learning";
 
 export default function SettingsPage() {
   return <SettingsContent />;

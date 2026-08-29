@@ -1,4 +1,4 @@
-import { ConnectionsContent } from "@/components/yome/YomeCollectionPages";
+import { ConnectionsContent } from "@/features/learning";
 
 export default function ConnectionsPage() {
   return <ConnectionsContent />;

@@ -3,6 +3,7 @@ import type { Config } from "tailwindcss";
 const config: Config = {
   content: [
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./features/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
@@ -12,11 +13,27 @@ const config: Config = {
       },
       screens: {
         xs: "340px",
+        chatMobile: { max: "699px" },
+        chatCompact: { max: "1100px" },
       },
       backgroundImage: {
         "chat-background": "url('/bgChat.jpg')",
       },
       colors: {
+        yome: {
+          bg: "var(--yome-bg)",
+          surface: "var(--yome-surface)",
+          "surface-2": "var(--yome-surface-2)",
+          elevated: "var(--yome-elevated)",
+          text: "var(--yome-text)",
+          muted: "var(--yome-muted)",
+          border: "var(--yome-border)",
+          navy: "var(--yome-navy)",
+          blue: "var(--yome-blue)",
+          teal: "var(--yome-teal)",
+          amber: "var(--yome-amber)",
+          violet: "var(--yome-violet)",
+        },
         "teal-light": "#7ae3c3",
         "photopicker-overlay-background": "rgba(30,42,49,0.8)",
         "dropdown-background": "#233138",
@@ -77,9 +94,21 @@ const config: Config = {
         },
       },
       borderRadius: {
+        yome: "8px",
+        "yome-sm": "6px",
+        "yome-lg": "12px",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        yome: "var(--yome-shadow)",
+        "yome-panel": "0 14px 40px rgba(15, 23, 42, 0.08)",
+      },
+      spacing: {
+        "yome-sidebar": "248px",
+        "yome-topbar": "72px",
+        "yome-mobile-nav": "66px",
       },
       gridTemplateColumns: {
         main: "1fr 2.4fr",

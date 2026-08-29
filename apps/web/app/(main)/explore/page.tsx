@@ -1,4 +1,4 @@
-import { ExploreContent } from "@/components/yome/YomeCollectionPages";
+import { ExploreContent } from "@/features/learning";
 
 export default function ExplorePage() {
   return <ExploreContent />;

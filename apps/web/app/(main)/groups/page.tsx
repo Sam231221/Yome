@@ -1,4 +1,4 @@
-import { GroupsContent } from "@/components/yome/YomeCollectionPages";
+import { GroupsContent } from "@/features/learning";
 
 export default function GroupsPage() {
   return <GroupsContent />;

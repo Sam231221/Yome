@@ -4,10 +4,10 @@ import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import IncomingCall from "@/components/common/IncomingCall";
 import IncomingVideoCall from "@/components/common/IncomingVideoCall";
-import VideoCall from "./components/Call/VideoCall";
-import VoiceCall from "./components/Call/VoiceCall";
-import ChatLeftBar from "./components/ChatLeftBar";
-import ChatRightBar from "./components/ChatRightBar";
+import VideoCall from "@/features/chat/components/Call/VideoCall";
+import VoiceCall from "@/features/chat/components/Call/VoiceCall";
+import ChatLeftBar from "@/features/chat/components/ChatLeftBar";
+import ChatRightBar from "@/features/chat/components/ChatRightBar";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -18,7 +18,7 @@ import {
   getUserInfoErrorMessage,
   logUserInfoLoadError,
 } from "@/lib/auth/userInfo";
-import { YomeAppShell } from "@/components/yome/YomeUI";
+import { YomeAppShell } from "@/components/layout";
 import { getUserConversation, logChatConversationError } from "@/lib/chat/chatApi";
 import { resolveChatKind, type ActiveCall, type ChatKind, type UserId } from "@/types/chat";
 

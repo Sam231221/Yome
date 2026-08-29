@@ -1,4 +1,4 @@
-import { GroupDetailContent } from "@/components/yome/YomeCollectionPages";
+import { GroupDetailContent } from "@/features/learning";
 
 export default async function GroupDetailPage({
   params,

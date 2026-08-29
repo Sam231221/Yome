@@ -30,7 +30,7 @@ import {
   type ReactNode,
 } from "react";
 import toast from "react-hot-toast";
-import { Badge, Avatar } from "@/components/yome/YomeUI";
+import { Badge, Avatar } from "@/components/ui";
 import { reducerCases } from "@/context/constants";
 import { useStateProvider } from "@/context/StateContext";
 import {
@@ -276,12 +276,12 @@ function SettingsFooter({
 }) {
   return (
     <footer className="settings-footer">
-      <button type="button" className="secondary-button" onClick={onCancel}>
+      <button type="button" className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue" onClick={onCancel}>
         Cancel
       </button>
       <button
         type={onSave ? "button" : "submit"}
-        className="primary-button"
+        className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white"
         onClick={onSave}
         disabled={saveDisabled || saveBusy}
       >
@@ -631,7 +631,7 @@ export default function AccountPage() {
       </header>
 
       <div className="settings-layout">
-        <aside className="settings-nav yome-card">
+        <aside className="settings-nav yome-card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
           {SETTINGS_TABS.map((tab) => (
             <button
               key={tab.key}
@@ -1214,10 +1214,10 @@ export default function AccountPage() {
                 ))}
               </div>
               <div className="moderation-actions">
-                <button type="button" className="secondary-button">
+                <button type="button" className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue">
                   Export queue
                 </button>
-                <button type="button" className="primary-button">
+                <button type="button" className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white">
                   Open escalation guide
                 </button>
               </div>

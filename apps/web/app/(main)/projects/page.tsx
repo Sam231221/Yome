@@ -1,4 +1,4 @@
-import { ProjectsContent } from "@/components/yome/YomeCollectionPages";
+import { ProjectsContent } from "@/features/learning";
 
 export default function ProjectsPage() {
   return <ProjectsContent />;

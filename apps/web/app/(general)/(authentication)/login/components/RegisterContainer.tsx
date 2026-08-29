@@ -305,7 +305,7 @@ export default function RegisterContainer({
         <button
           type="submit"
           disabled={!isFormFilled || !isChecked || isSubmitting}
-          className="primary-button auth-submit"
+          className="primary-button auth-submit inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white"
         >
           {isSubmitting ? "Creating account..." : "Create account"}
         </button>

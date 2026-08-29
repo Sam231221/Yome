@@ -1,4 +1,4 @@
-import { ResourceDetailContent } from "@/components/yome/YomeCollectionPages";
+import { ResourceDetailContent } from "@/features/learning";
 
 export default async function ResourceDetailPage({
   params,
