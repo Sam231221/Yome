@@ -3,25 +3,74 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
-import {
-  Bell,
-  Bookmark,
-  Check,
-  ChevronDown,
-  HelpCircle,
-  MessageCircle,
-  Moon,
-  Plus,
-  Search,
-  Send,
-  Share2,
-  Sun,
-  MoreHorizontal,
-} from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Bookmark, Check, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useStateProvider } from "@/context/StateContext";
-import { groups, studyRooms, topics, yomeNavItems, type FeedPost, type YomeTone } from "@/lib/yome/data";
+import {
+  groups,
+  studyRooms,
+  topics,
+  yomeNavItems,
+  type FeedPost,
+  type YomeIconName,
+  type YomeTone,
+} from "@/lib/yome/data";
+
+const iconPaths: Record<string, string> = {
+  home: '<path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="m16 8-2.4 5.6L8 16l2.4-5.6L16 8Z"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  message: '<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/>',
+  headphones: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M18 19c0 1.1-.9 2-2 2h-1v-7h5v3a2 2 0 0 1-2 2ZM6 19a2 2 0 0 1-2-2v-3h5v7H8a2 2 0 0 1-2-2Z"/>',
+  library: '<path d="m4 19 5-1 6 2 5-1V5l-5 1-6-2-5 1Z"/><path d="M9 4v14M15 6v14"/>',
+  flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+  bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.7 2.7 0 1 1 4.3 2.2c-1 .7-1.8 1.2-1.8 2.8M12 18h.01"/>',
+  code: '<path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/>',
+  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
+  comment: '<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/>',
+  bookmark: '<path d="M6 3h12v18l-6-4-6 4Z"/>',
+  check: '<path d="m5 12 4 4L19 6"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/>',
+};
+
+function YomeIcon({
+  name,
+  size = 20,
+  filled = false,
+  className,
+}: {
+  name: YomeIconName | keyof typeof iconPaths;
+  size?: number;
+  filled?: boolean;
+  className?: string;
+}) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      dangerouslySetInnerHTML={{ __html: iconPaths[name] ?? iconPaths.home }}
+    />
+  );
+}
 
 export function Brand({ href = "/dashboard", light = false }: { href?: string; light?: boolean }) {
   return (
@@ -97,7 +146,7 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
   const name =
     userInfo?.firstname || userInfo?.lastname
       ? `${userInfo?.firstname ?? ""} ${userInfo?.lastname ?? ""}`.trim()
-      : userInfo?.name || session?.user?.name || "Yome learner";
+      : userInfo?.name || session?.user?.name || "Maya Patel";
   const initials = useMemo(
     () =>
       name
@@ -112,26 +161,25 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
     router.push("/account");
   };
 
-  const handleSignOut = async () => {
-    await signOut({ redirect: false });
-    router.push("/login");
-  };
-
   return (
-    <div className={dark ? "yome-app dark" : "yome-app"}>
+    <div
+      className={`${dark ? "yome-app dark" : "yome-app"}${
+        pathname.startsWith("/chat") ? " yome-chat-shell" : ""
+      }`}
+    >
       <header className="yome-topbar topbar">
         <Brand />
         <label className="yome-searchbox searchbox">
-          <Search size={19} />
+          <YomeIcon name="search" size={19} />
           <input placeholder="Search people, groups, topics..." />
           <kbd>⌘ K</kbd>
         </label>
         <div className="yome-top-actions top-actions">
           <button className="yome-icon-button icon-button" onClick={() => setDark((value) => !value)} aria-label="Toggle theme">
-            {dark ? <Sun size={20} /> : <Moon size={20} />}
+            {dark ? <YomeIcon name="sun" size={20} /> : <YomeIcon name="moon" size={20} />}
           </button>
           <Link className="yome-icon-button icon-button notification-button" href="/notifications" aria-label="Notifications">
-            <Bell size={20} />
+            <YomeIcon name="bell" size={20} />
             <span className="notification-dot">3</span>
           </Link>
           <Link className="yome-profile-button profile-button" href="/account">
@@ -140,7 +188,7 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
               <strong>{name}</strong>
               <small>{userInfo?.role === "TEACHER" ? "Educator" : "Student"}</small>
             </span>
-            <ChevronDown size={16} className="chevron" />
+            <span className="chevron">⌄</span>
           </Link>
         </div>
       </header>
@@ -148,11 +196,10 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
       <aside className="yome-sidebar sidebar">
         <nav aria-label="Primary navigation">
           {yomeNavItems.map((item) => {
-            const Icon = item.icon;
             const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
             return (
               <Link key={item.href} className={active ? "yome-nav-item nav-item active" : "yome-nav-item nav-item"} href={item.href}>
-                <Icon size={20} />
+                <YomeIcon name={item.icon} size={20} />
                 <span>{item.label}</span>
                 {item.badge && <em>{item.badge}</em>}
               </Link>
@@ -162,7 +209,7 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
         <div className="yome-sidebar-divider sidebar-divider" />
         <div className="yome-sidebar-heading sidebar-heading">
           <span>Your groups</span>
-          <Plus size={17} />
+          <YomeIcon name="plus" size={17} />
         </div>
         <div className="yome-list group-list">
           {groups.slice(0, 3).map((group) => (
@@ -173,19 +220,18 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
           ))}
         </div>
         <button className="view-all" onClick={() => router.push("/groups")}>
-          View all groups <Send size={16} />
+          View all groups <YomeIcon name="arrow" size={16} />
+        </button>
+        <button className="demo-flow" onClick={() => router.push("/onboarding")}>
+          Preview onboarding
         </button>
         <button className="user-card-mini" onClick={handleProfileClick}>
           <Avatar initials={initials} image={userInfo?.profilePicture || session?.user?.image || undefined} tone="violet" size="sm" />
           <div>
             <strong>{name}</strong>
-            <small>@{name.toLowerCase().split(" ").join("").slice(0, 14) || "yomelearner"}</small>
+            <small>@mayacodes</small>
           </div>
-          <MoreHorizontal size={18} />
-        </button>
-        <button className="yome-group-item group-item yome-signout-button" onClick={handleSignOut}>
-          <Send size={18} />
-          <span>Sign out</span>
+          <YomeIcon name="more" size={18} />
         </button>
       </aside>
 
@@ -195,16 +241,15 @@ export function YomeAppShell({ children }: { children: React.ReactNode }) {
         {[
           { href: "/dashboard", label: "Home", icon: yomeNavItems[0].icon },
           { href: "/explore", label: "Explore", icon: yomeNavItems[1].icon },
-          { href: "/dashboard", label: "Create", icon: Plus },
+          { href: "/dashboard", label: "Create", icon: "plus" as const },
           { href: "/chat", label: "Messages", icon: yomeNavItems[4].icon },
           { href: "/account", label: "Profile", icon: yomeNavItems[3].icon },
         ].map((item) => {
-          const Icon = item.icon;
           const active = pathname === item.href;
           const className = `${active ? "active " : ""}${item.label === "Create" ? "create-mobile" : ""}`.trim();
           return (
             <Link key={`${item.href}-${item.label}`} className={className} href={item.href}>
-              <Icon size={21} />
+              <YomeIcon name={item.icon} size={21} />
               <span>{item.label}</span>
             </Link>
           );
@@ -250,17 +295,17 @@ export function ComposerCard({ userName = "there" }: { userName?: string }) {
       />
       <div className="composer-actions">
         {[
-          ["Post", MessageCircle],
-          ["Question", HelpCircle],
-          ["Project", Check],
-          ["Resource", Bookmark],
+          ["Post", "message"],
+          ["Question", "help"],
+          ["Project", "code"],
+          ["Resource", "file"],
         ].map(([label, Icon]) => (
           <button
             key={String(label)}
             className={type === label ? "composer-type selected" : "composer-type"}
             onClick={() => setType(String(label))}
           >
-            <Icon size={17} />
+            <YomeIcon name={Icon as keyof typeof iconPaths} size={18} />
             <span>{String(label)}</span>
           </button>
         ))}
@@ -270,7 +315,7 @@ export function ComposerCard({ userName = "there" }: { userName?: string }) {
           </button>
         ) : null}
       </div>
-      {sent ? <div className="toast"><Check size={17} /> Your post was published</div> : null}
+      {sent ? <div className="toast"><YomeIcon name="check" size={18} /> Your post was published</div> : null}
     </section>
   );
 }
@@ -285,10 +330,14 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
         <div className="yome-author author">
           <div>
             <strong>{post.author}</strong>
+            {post.type === "Question" ? <span className="verified">✓</span> : null}
           </div>
           <small>{post.type === "Question" ? "Mathematics student" : "Engineering student"} · {post.time}</small>
         </div>
         <Badge tone={post.tone}>{post.type}</Badge>
+        <button className="more-button" aria-label="Post options">
+          <YomeIcon name="more" size={18} />
+        </button>
       </header>
       <div className="yome-post-content post-content">
         <div className="yome-tags topic-row">
@@ -299,6 +348,16 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
         <h2>{post.title}</h2>
         <p>{post.body}</p>
       </div>
+      {post.type === "Question" ? (
+        <div className="answer-preview">
+          <span className="answer-avatar"><YomeIcon name="check" size={14} /></span>
+          <div>
+            <strong>Top answer from Dr. James Liu</strong>
+            <p>Think of it as reversing the product rule: you&apos;re redistributing which function gets differentiated...</p>
+          </div>
+          <button>Read answer</button>
+        </div>
+      ) : null}
       {post.type === "Project" && (
         <div className="project-visual" role="img" aria-label="Stylized diagram of the smart greenhouse project">
           <div className="grid-lines" />
@@ -326,13 +385,13 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
       ) : null}
       <div className="yome-post-stats post-stats">
         <span><strong>{post.stat.split(" ")[0]}</strong> {post.stat.split(" ").slice(1).join(" ")}</span>
-        <span>{post.detail} · 3 shares</span>
+        <span>{post.detail} · {post.type === "Project" ? "6 shares" : "3 shares"}</span>
       </div>
       <footer className="yome-post-actions post-actions">
-        <button className="post-action"><HelpCircle size={17} /> <span>{post.type === "Project" ? "Inspiring" : "Helpful"}</span></button>
-        <button className="post-action"><MessageCircle size={17} /> <span>{post.type === "Project" ? "Comment" : "Answer"}</span></button>
-        <button className="post-action"><Share2 size={17} /> <span>Share</span></button>
-        <button className="post-action"><Bookmark size={17} /> <span>Save</span></button>
+        <button className="post-action"><YomeIcon name={post.type === "Project" ? "flask" : "help"} size={18} /> <span>{post.type === "Project" ? "Inspiring" : "Helpful"}</span></button>
+        <button className="post-action"><YomeIcon name="comment" size={18} /> <span>{post.type === "Project" ? "Comment" : "Answer"}</span></button>
+        <button className="post-action"><YomeIcon name="share" size={18} /> <span>Share</span></button>
+        <button className="post-action"><YomeIcon name="bookmark" size={18} /> <span>Save</span></button>
       </footer>
     </article>
   );
@@ -416,7 +475,7 @@ export function RightRail() {
                   )
                 }
               >
-                {isConnected ? <Check size={15} /> : <Plus size={15} />}
+                {isConnected ? <YomeIcon name="check" size={15} /> : <YomeIcon name="plus" size={15} />}
                 <span>{isConnected ? "Sent" : "Connect"}</span>
               </button>
             </article>

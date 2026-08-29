@@ -238,10 +238,18 @@ export default function Chatpage() {
         <YomeAppShell>
           <section className="messages-board">
             <div className="messages-page flex-1 min-h-0 min-w-0">
-              <div className={`${currentChatUser ? "hidden md:block" : "block"} h-full overflow-hidden`}>
+              <div
+                className={`chat-inbox-pane h-full overflow-hidden ${
+                  currentChatUser ? "has-active-chat" : ""
+                }`}
+              >
                 <ChatLeftBar isUserLoading={isUserLoading} />
               </div>
-              <div className={`${currentChatUser ? "block" : "hidden md:block"} h-full overflow-hidden`}>
+              <div
+                className={`chat-conversation-pane h-full overflow-hidden ${
+                  currentChatUser ? "has-active-chat" : ""
+                }`}
+              >
                 <ChatRightBar />
               </div>
             </div>

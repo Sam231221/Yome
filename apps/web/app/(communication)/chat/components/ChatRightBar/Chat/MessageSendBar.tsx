@@ -209,7 +209,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
               >
                 <ImAttachment />
               </button>
-              <span>Enter to send</span>
+              <span className="message-composer-hint">Enter to send</span>
             </div>
             </div>
             {message.length ? (

@@ -38,7 +38,7 @@ const Home = () => {
 
   const fullName = userInfo?.firstname
     ? `${userInfo.firstname} ${userInfo.lastname ?? ""}`.trim()
-    : userInfo?.name || session?.user?.name || "Friend";
+    : userInfo?.name || session?.user?.name || "Maya";
 
   return (
     <>
@@ -46,7 +46,7 @@ const Home = () => {
         <div className="feed-intro">
           <div>
             <p>{new Intl.DateTimeFormat("en", { weekday: "long" }).format(new Date())}</p>
-            <h1>Good afternoon, {fullName.split(" ")[0] || "Friend"}</h1>
+            <h1>Good afternoon, {fullName.split(" ")[0] || "Maya"}</h1>
             <span>What will you learn today?</span>
           </div>
           <Badge tone="blue">12 day learning streak</Badge>

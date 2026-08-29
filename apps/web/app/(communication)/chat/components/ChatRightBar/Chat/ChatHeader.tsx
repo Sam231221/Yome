@@ -155,7 +155,7 @@ export default function ChatHeader({
               dispatch({ type: reducerCases.SET_MESSAGES_SEARCH });
             }
           }}
-          className="chat-header-icon desktop-only"
+          className="chat-header-icon desktop-only chat-header-secondary-action"
           aria-label="Search messages"
           type="button"
         >
@@ -163,7 +163,7 @@ export default function ChatHeader({
         </button>
         <button
           onClick={onToggleDetails}
-          className={`chat-header-icon desktop-only ${detailsOpen ? "is-active" : ""}`}
+          className={`chat-header-icon desktop-only chat-header-secondary-action ${detailsOpen ? "is-active" : ""}`}
           aria-label={detailsOpen ? "Hide details panel" : "Show details panel"}
           type="button"
         >

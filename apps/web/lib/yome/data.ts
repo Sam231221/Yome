@@ -1,37 +1,34 @@
-import {
-  BookOpen,
-  CalendarDays,
-  Compass,
-  FlaskConical,
-  Headphones,
-  Home,
-  MessageCircle,
-  Settings,
-  UserRound,
-  UsersRound,
-  type LucideIcon,
-} from "lucide-react";
-
 export type YomeTone = "blue" | "teal" | "amber" | "violet" | "neutral";
+export type YomeIconName =
+  | "home"
+  | "compass"
+  | "users"
+  | "profile"
+  | "message"
+  | "headphones"
+  | "library"
+  | "flask"
+  | "calendar"
+  | "settings";
 
 export type YomeNavItem = {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: YomeIconName;
   badge?: string;
 };
 
 export const yomeNavItems: YomeNavItem[] = [
-  { label: "Home", href: "/dashboard", icon: Home },
-  { label: "Explore", href: "/explore", icon: Compass },
-  { label: "Groups", href: "/groups", icon: UsersRound },
-  { label: "Connections", href: "/connections", icon: UserRound },
-  { label: "Messages", href: "/chat", icon: MessageCircle, badge: "4" },
-  { label: "Study Rooms", href: "/study-rooms", icon: Headphones },
-  { label: "Resources", href: "/resources", icon: BookOpen },
-  { label: "Projects", href: "/projects", icon: FlaskConical },
-  { label: "Events", href: "/events", icon: CalendarDays },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Home", href: "/dashboard", icon: "home" },
+  { label: "Explore", href: "/explore", icon: "compass" },
+  { label: "Groups", href: "/groups", icon: "users" },
+  { label: "Connections", href: "/connections", icon: "profile" },
+  { label: "Messages", href: "/chat", icon: "message", badge: "4" },
+  { label: "Study Rooms", href: "/study-rooms", icon: "headphones" },
+  { label: "Resources", href: "/resources", icon: "library" },
+  { label: "Projects", href: "/projects", icon: "flask" },
+  { label: "Events", href: "/events", icon: "calendar" },
+  { label: "Settings", href: "/settings", icon: "settings" },
 ];
 
 export const groups = [
@@ -47,9 +44,9 @@ export const groups = [
   },
   {
     id: "physics-club",
-    name: "Physics Problem Solvers",
+    name: "Physics Club",
     about: "Work through mechanics, quantum ideas, and visual explanations together.",
-    symbol: "phi",
+    symbol: "φ",
     tone: "teal" as YomeTone,
     members: "9.2k",
     level: "Intermediate",
@@ -59,7 +56,7 @@ export const groups = [
     id: "robotics-team",
     name: "Robotics Team",
     about: "Arduino, sensors, CAD, and small team build logs.",
-    symbol: "ENG",
+    symbol: "⚙",
     tone: "amber" as YomeTone,
     members: "7.8k",
     level: "Project based",
@@ -105,8 +102,8 @@ export const feedPosts = [
     initials: "AN",
     tone: "amber" as YomeTone,
     time: "5h",
-    title: "We built an Arduino smart greenhouse",
-    body: "Our four-person team finished a prototype that monitors soil moisture, temperature, and light, then waters plants automatically.",
+    title: "We built an Arduino smart greenhouse 🌱",
+    body: "Our four-person team finished the first working prototype. It monitors soil moisture, temperature, and light, then waters plants automatically.",
     tags: ["Engineering", "Programming"],
     stat: "48 inspired",
     detail: "12 comments",
@@ -127,7 +124,7 @@ export const studyRooms = [
     id: "physics-problem-solving",
     title: "Physics Problem Solving",
     meta: "7 studying now",
-    symbol: "phi",
+    symbol: "φ",
     tone: "teal" as YomeTone,
   },
   {
