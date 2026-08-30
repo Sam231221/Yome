@@ -8,9 +8,19 @@ export const useGetCallById = (id: string | string[]) => {
   const client = useStreamVideoClient();
 
   useEffect(() => {
-    if (!client) return;
+    if (!client) {
+      setCall(undefined);
+      setIsCallLoading(false);
+      return;
+    }
+    if (!id || (Array.isArray(id) && id.length === 0)) {
+      setCall(undefined);
+      setIsCallLoading(false);
+      return;
+    }
 
     const loadCall = async () => {
+      setIsCallLoading(true);
       try {
         const nextCall = client.call("default", String(id));
         await nextCall.getOrCreate();

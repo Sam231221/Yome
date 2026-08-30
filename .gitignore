@@ -29,6 +29,9 @@ dist
 web-build
 .expo
 
+# Runtime uploads
+services/media/uploads/
+
 # Prisma generated client (regenerate with: prisma generate)
 **/src/generated/
 packages/**/generated/

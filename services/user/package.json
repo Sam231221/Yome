@@ -1,1 +1,31 @@
-{"name":"@services/user","private":true,"type":"module","scripts":{"build":"tsc","dev":"tsx watch src/index.ts","start":"node dist/index.js","lint":"echo \"No lint configured for @services/user\"","check-types":"tsc --noEmit","test":"echo \"No tests configured for @services/user\""},"dependencies":{"@repo/database":"workspace:*","@repo/shared":"workspace:*","cors":"^2.8.5","dotenv":"^17.2.3","express":"^5.1.0","multer":"^2.0.2","zod":"^4.1.5"},"devDependencies":{"@repo/typescript-config":"workspace:*","@types/cors":"^2.8.17","@types/express":"^5.0.0","@types/multer":"^1.4.12","@types/node":"^22.0.0","tsx":"^4.19.0","typescript":"^5.9.2"}}
+{
+  "name": "@services/user",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "echo \"No lint configured for @services/user\"",
+    "check-types": "tsc --noEmit",
+    "test": "echo \"No tests configured for @services/user\""
+  },
+  "dependencies": {
+    "@repo/database": "workspace:*",
+    "@repo/shared": "workspace:*",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.2"
+  }
+}

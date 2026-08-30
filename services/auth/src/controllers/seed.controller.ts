@@ -212,9 +212,10 @@ export async function deleteAllRecords(
   try {
     const prisma = getPrismaInstance();
     await prisma.messages.deleteMany();
-    await prisma.userProfile.deleteMany();
-    await prisma.user.deleteMany();
+    await prisma.conversation.deleteMany();
     await prisma.group.deleteMany();
+    await prisma.user.deleteMany();
+    await prisma.userProfile.deleteMany();
     res.status(200).json({ message: "All records deleted successfully" });
   } catch (error) {
     logger.error("Failed to delete seed records", error);

@@ -82,11 +82,15 @@ export function attachSocketHandlers(io: Server): void {
         const prisma = getPrismaInstance();
         const group = await prisma.group.findUnique({
           where: { id: String(data.to) },
-          include: { members: true },
+          include: { members: true, admins: true },
         });
         if (!group) return;
+        const recipients = new Map(
+          [...group.members, ...group.admins].map((user) => [user.id, user])
+        );
+        if (!recipients.has(data.from)) return;
 
-        for (const user of group.members) {
+        for (const user of recipients.values()) {
           if (user.id === data.from) continue;
           const memberSocketId = onlineUsers.get(String(user.id));
           if (memberSocketId) {

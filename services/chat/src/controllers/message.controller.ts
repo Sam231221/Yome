@@ -11,6 +11,8 @@ import {
   normalizeMessageType,
   type SupportedMessageType,
 } from "../lib/direct-messages.js";
+
+type PrismaClient = ReturnType<typeof getPrismaInstance>;
 type ChatRequestKind = "user" | "group";
 
 function getAuthenticatedUserId(req: Request): number | null {
@@ -23,6 +25,24 @@ function getAuthenticatedUserId(req: Request): number | null {
 function parseRequiredUserId(value: unknown): number | null {
   const id = Number.parseInt(String(value ?? ""), 10);
   return Number.isNaN(id) ? null : id;
+}
+
+async function isGroupParticipant(
+  prisma: PrismaClient,
+  groupId: string,
+  userId: number
+): Promise<boolean> {
+  const accessibleGroupCount = await prisma.group.count({
+    where: {
+      id: groupId,
+      OR: [
+        { members: { some: { id: userId } } },
+        { admins: { some: { id: userId } } },
+      ],
+    },
+  });
+
+  return accessibleGroupCount > 0;
 }
 
 async function createDirectMessage(params: {
@@ -187,6 +207,16 @@ export async function getMessages(
     }
 
     if (chatType === "group") {
+      const canAccessGroup = await isGroupParticipant(
+        prisma,
+        to,
+        authenticatedUserId
+      );
+      if (!canAccessGroup) {
+        res.status(403).json({ ok: false, error: "Forbidden" });
+        return;
+      }
+
       const messages = await prisma.messages.findMany({
         where: { groupId: to },
         include: { sender: true, group: true },
@@ -357,11 +387,22 @@ export async function addMessage(
     }
 
     if (message && to && chatType === "group") {
+      const groupId = String(to);
+      const canAccessGroup = await isGroupParticipant(
+        prisma,
+        groupId,
+        authenticatedUserId
+      );
+      if (!canAccessGroup) {
+        res.status(403).json({ ok: false, error: "Forbidden" });
+        return;
+      }
+
       const newMessage = await prisma.messages.create({
         data: {
           message,
           type: "text",
-          group: { connect: { id: String(to) } },
+          group: { connect: { id: groupId } },
           msgType: "group",
           sender: { connect: { id: fromId } },
           messageStatus: "sent",
@@ -442,12 +483,23 @@ export async function addMediaMessage(
     }
 
     if (chatType === "group") {
+      const groupId = String(to);
+      const canAccessGroup = await isGroupParticipant(
+        prisma,
+        groupId,
+        authenticatedUserId
+      );
+      if (!canAccessGroup) {
+        res.status(403).json({ ok: false, error: "Forbidden" });
+        return;
+      }
+
       const newMessage = await prisma.messages.create({
         data: {
           message: url,
           type: normalizeMessageType(type, "image"),
           msgType: "group",
-          group: { connect: { id: String(to) } },
+          group: { connect: { id: groupId } },
           sender: { connect: { id: fromId } },
           messageStatus: "sent",
         },

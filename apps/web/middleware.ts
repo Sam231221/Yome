@@ -39,6 +39,7 @@ export const config = {
     "/dashboard",
     "/account",
     "/chat",
+    "/chat/:path*",
     "/userfeeds",
     "/onboarding",
     "/explore",

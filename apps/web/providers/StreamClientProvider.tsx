@@ -7,32 +7,46 @@ import { StreamVideoClient, StreamVideo } from "@stream-io/video-react-sdk";
 import { tokenProvider } from "@/actions/stream.actions";
 import { useStateProvider } from "@/context/StateContext";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { ensureUserInfo } from "@/lib/auth/userInfo";
 
 const API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY as string;
 
 const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
   const [videoClient, setVideoClient] = useState<StreamVideoClient>();
-  const { data: session } = useSession();
+  const [isResolvingUser, setIsResolvingUser] = useState(false);
+  const [setupError, setSetupError] = useState<string>();
+  const { data: session, status } = useSession();
   const [{ userInfo }, dispatch] = useStateProvider();
+  const router = useRouter();
 
   useEffect(() => {
-    let cancelled = false;
     const load = async () => {
       try {
         if (!session?.user || userInfo) return;
-        await ensureUserInfo({
+        setIsResolvingUser(true);
+        const loadedUser = await ensureUserInfo({
           sessionUser: session.user,
           currentUserInfo: userInfo,
           dispatch,
         });
-      } catch {}
+        if (!loadedUser) {
+          setSetupError("Unable to load your account for this call.");
+        }
+      } catch {
+        setSetupError("Unable to load your account for this call.");
+      } finally {
+        setIsResolvingUser(false);
+      }
     };
     void load();
-    return () => {
-      cancelled = true;
-    };
   }, [session, userInfo, dispatch]);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [router, status]);
 
   useEffect(() => {
     if (!userInfo || !API_KEY) return;
@@ -58,7 +72,39 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [userInfo]);
 
-  if (!videoClient) return <>{children}</>;
+  if (status === "unauthenticated") {
+    return (
+      <main className="grid min-h-screen w-full place-items-center bg-[#080d1b] px-6 text-center text-white">
+        <p className="text-lg font-semibold">Redirecting to login...</p>
+      </main>
+    );
+  }
+
+  if (setupError || (status === "authenticated" && !API_KEY)) {
+    return (
+      <main className="grid min-h-screen w-full place-items-center bg-[#080d1b] px-6 text-center text-white">
+        <p className="text-lg font-semibold">
+          {setupError ?? "Call setup is unavailable right now."}
+        </p>
+      </main>
+    );
+  }
+
+  if (
+    status === "loading" ||
+    isResolvingUser ||
+    (status === "authenticated" && !videoClient)
+  ) {
+    return (
+      <main className="grid min-h-screen w-full place-items-center bg-[#080d1b] px-6 text-center text-white">
+        <p className="text-lg font-semibold">Preparing call...</p>
+      </main>
+    );
+  }
+
+  if (!videoClient) {
+    return null;
+  }
 
   return <StreamVideo client={videoClient}>{children}</StreamVideo>;
 };
