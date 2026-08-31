@@ -10,8 +10,6 @@ export type ChatTargetId = UserId | GroupId;
 export type ChatIdentityId = ChatTargetId;
 export type ChatKind = "user" | "group";
 export type MessageKind = "text" | "image" | "audio";
-export type CallDirection = "out-going" | "in-coming";
-export type CallMode = "audio" | "video";
 
 export type ChatSocketRef = MutableRefObject<Socket | null>;
 
@@ -79,15 +77,6 @@ export type ChatListItem = ChatIdentity & {
   online?: boolean;
 };
 
-export type ActiveCall = {
-  id: UserId;
-  name?: string;
-  profilePicture?: string;
-  type?: CallDirection;
-  callType?: CallMode;
-  roomId?: number;
-};
-
 export type OnlineUsersEvent = {
   onlineUsers: UserId[];
 };
@@ -105,12 +94,6 @@ export type GroupMessageEvent = {
 export type MarkReadEvent = {
   id: UserId;
   receiverId?: UserId;
-};
-
-export type IncomingCallEvent = {
-  from: ChatIdentity & { id: UserId; name?: string };
-  roomId: number;
-  callType: CallMode;
 };
 
 export type ChatStateUser = AppUserInfo;

@@ -1,6 +1,5 @@
 import { reducerCases } from "./constants";
 import type {
-  ActiveCall,
   ChatListItem,
   ChatKind,
   ChatMessage,
@@ -23,10 +22,6 @@ export interface State {
   groupMessages: ChatMessage[];
   userContacts: ChatListItem[];
   groupContacts: ChatListItem[];
-  videoCall: ActiveCall | undefined;
-  voiceCall: ActiveCall | undefined;
-  incomingVoiceCall: ActiveCall | undefined;
-  incomingVideoCall: ActiveCall | undefined;
   onlineUsers: UserId[];
   contactSearch: string;
   filteredContacts: ChatListItem[];
@@ -78,30 +73,6 @@ type SetOnlineUsersAction = {
   onlineUsers: UserId[];
 };
 
-type SetVideoCallAction = {
-  type: typeof reducerCases.SET_VIDEO_CALL;
-  videoCall: ActiveCall | undefined;
-};
-
-type SetVoiceCallAction = {
-  type: typeof reducerCases.SET_VOICE_CALL;
-  voiceCall: ActiveCall | undefined;
-};
-
-type EndCallAction = {
-  type: typeof reducerCases.END_CALL;
-};
-
-type SetIncomingVoiceCallAction = {
-  type: typeof reducerCases.SET_INCOMING_VOICE_CALL;
-  incomingVoiceCall: ActiveCall | undefined;
-};
-
-type SetIncomingVideoCallAction = {
-  type: typeof reducerCases.SET_INCOMING_VIDEO_CALL;
-  incomingVideoCall: ActiveCall | undefined;
-};
-
 type SetMessagesAction = {
   type: typeof reducerCases.SET_MESSAGES;
   messages: ChatMessage[];
@@ -149,11 +120,6 @@ export type Action =
   | SetUserContactsAction
   | SetGroupContactsAction
   | SetOnlineUsersAction
-  | SetVideoCallAction
-  | SetVoiceCallAction
-  | EndCallAction
-  | SetIncomingVoiceCallAction
-  | SetIncomingVideoCallAction
   | SetMessagesAction
   | AddUserMessageAction
   | AddGroupMessageAction
@@ -217,10 +183,6 @@ export const initialState: State = {
   groupMessages: [],
   userContacts: [],
   groupContacts: [],
-  videoCall: undefined,
-  voiceCall: undefined,
-  incomingVoiceCall: undefined,
-  incomingVideoCall: undefined,
   onlineUsers: [],
   contactSearch: "",
   filteredContacts: [],
@@ -518,34 +480,6 @@ const reducer = (state: State, action: Action): State => {
       return {
         ...state,
         groupContacts: action.groupContacts,
-      };
-    case reducerCases.SET_VIDEO_CALL:
-      return {
-        ...state,
-        videoCall: action.videoCall,
-      };
-    case reducerCases.SET_VOICE_CALL:
-      return {
-        ...state,
-        voiceCall: action.voiceCall,
-      };
-    case reducerCases.END_CALL:
-      return {
-        ...state,
-        videoCall: undefined,
-        voiceCall: undefined,
-        incomingVoiceCall: undefined,
-        incomingVideoCall: undefined,
-      };
-    case reducerCases.SET_INCOMING_VOICE_CALL:
-      return {
-        ...state,
-        incomingVoiceCall: action.incomingVoiceCall,
-      };
-    case reducerCases.SET_INCOMING_VIDEO_CALL:
-      return {
-        ...state,
-        incomingVideoCall: action.incomingVideoCall,
       };
     case reducerCases.SET_EXIT_CHAT:
       return {

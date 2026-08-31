@@ -2,10 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import IncomingCall from "@/components/common/IncomingCall";
-import IncomingVideoCall from "@/components/common/IncomingVideoCall";
-import VideoCall from "@/features/chat/components/Call/VideoCall";
-import VoiceCall from "@/features/chat/components/Call/VoiceCall";
 import ChatLeftBar from "@/features/chat/components/ChatLeftBar";
 import ChatRightBar from "@/features/chat/components/ChatRightBar";
 import { useSession } from "next-auth/react";
@@ -20,21 +16,17 @@ import {
 } from "@/lib/auth/userInfo";
 import { YomeAppShell } from "@/components/layout";
 import { getUserConversation, logChatConversationError } from "@/lib/chat/chatApi";
-import { resolveChatKind, type ActiveCall, type ChatKind, type UserId } from "@/types/chat";
+import { resolveChatKind, type ChatKind } from "@/types/chat";
+import StreamVideoProvider from "@/providers/StreamClientProvider";
+import { IncomingDirectCallOverlay } from "@/features/chat/direct-call/IncomingDirectCallOverlay";
+import { useStreamClientStatus } from "@/providers/stream-client-status";
 
-function createIncomingCall(
-  from: { id: UserId; name?: string; profilePicture?: string },
-  roomId: number,
-  callType: "audio" | "video"
-): ActiveCall {
-  return {
-    id: from.id,
-    name: from.name ?? "Unknown caller",
-    profilePicture: from.profilePicture,
-    roomId,
-    callType,
-    type: "in-coming",
-  };
+function StreamIncomingCallLayer() {
+  const { isReady } = useStreamClientStatus();
+
+  if (!isReady) return null;
+
+  return <IncomingDirectCallOverlay />;
 }
 
 export default function Chatpage() {
@@ -42,10 +34,6 @@ export default function Chatpage() {
     {
       userInfo,
       currentChatUser,
-      videoCall,
-      voiceCall,
-      incomingVoiceCall,
-      incomingVideoCall,
       userContacts,
       groupContacts,
     },
@@ -139,38 +127,6 @@ export default function Chatpage() {
         receiverId,
       });
     },
-    onIncomingVoiceCall: ({ from, roomId, callType }) => {
-      dispatch({
-        type: reducerCases.SET_INCOMING_VOICE_CALL,
-        incomingVoiceCall: createIncomingCall(from, roomId, callType),
-      });
-    },
-    onVoiceCallRejected: () => {
-      dispatch({
-        type: reducerCases.SET_INCOMING_VOICE_CALL,
-        incomingVoiceCall: undefined,
-      });
-      dispatch({
-        type: reducerCases.SET_VOICE_CALL,
-        voiceCall: undefined,
-      });
-    },
-    onIncomingVideoCall: ({ from, roomId, callType }) => {
-      dispatch({
-        type: reducerCases.SET_INCOMING_VIDEO_CALL,
-        incomingVideoCall: createIncomingCall(from, roomId, callType),
-      });
-    },
-    onVideoCallRejected: () => {
-      dispatch({
-        type: reducerCases.SET_INCOMING_VIDEO_CALL,
-        incomingVideoCall: undefined,
-      });
-      dispatch({
-        type: reducerCases.SET_VIDEO_CALL,
-        videoCall: undefined,
-      });
-    },
   });
 
   useEffect(() => {
@@ -217,45 +173,28 @@ export default function Chatpage() {
   }, [currentChatUser, userInfo, userContacts, groupContacts, dispatch]);
 
   return (
-    <>
-      {/* giving notification of call in chatpage */}
-      {incomingVoiceCall && <IncomingCall />}
-      {incomingVideoCall && <IncomingVideoCall />}
-
-      {/* if any user picks video/voice call container of full resolution will be shown */}
-      {videoCall && (
-        <div className="h-screen w-screen max-h-full max-w-full overflow-hidden">
-          <VideoCall />
+    <YomeAppShell>
+      <section className="messages-board">
+        <div className="messages-page flex-1 min-h-0 min-w-0">
+          <div
+            className={`chat-inbox-pane h-full overflow-hidden ${
+              currentChatUser ? "has-active-chat" : ""
+            }`}
+          >
+            <ChatLeftBar isUserLoading={isUserLoading} />
+          </div>
+          <div
+            className={`chat-conversation-pane h-full overflow-hidden ${
+              currentChatUser ? "has-active-chat" : ""
+            }`}
+          >
+            <StreamVideoProvider>
+              <StreamIncomingCallLayer />
+              <ChatRightBar />
+            </StreamVideoProvider>
+          </div>
         </div>
-      )}
-      {voiceCall && (
-        <div className="h-screen w-screen max-h-full max-w-full overflow-hidden">
-          <VoiceCall />
-        </div>
-      )}
-
-      {!videoCall && !voiceCall && (
-        <YomeAppShell>
-          <section className="messages-board">
-            <div className="messages-page flex-1 min-h-0 min-w-0">
-              <div
-                className={`chat-inbox-pane h-full overflow-hidden ${
-                  currentChatUser ? "has-active-chat" : ""
-                }`}
-              >
-                <ChatLeftBar isUserLoading={isUserLoading} />
-              </div>
-              <div
-                className={`chat-conversation-pane h-full overflow-hidden ${
-                  currentChatUser ? "has-active-chat" : ""
-                }`}
-              >
-                <ChatRightBar />
-              </div>
-            </div>
-          </section>
-        </YomeAppShell>
-      )}
-    </>
+      </section>
+    </YomeAppShell>
   );
 }

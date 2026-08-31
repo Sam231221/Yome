@@ -6,7 +6,6 @@ import { CHAT_SOCKET_URL } from "@/utils/ApiRoutes";
 import type {
   ChatSocketRef,
   GroupMessageEvent,
-  IncomingCallEvent,
   MarkReadEvent,
   OnlineUsersEvent,
   PrivateMessageEvent,
@@ -20,10 +19,6 @@ type UseChatSocketParams = {
   onGroupMessageReceived?: (payload: GroupMessageEvent) => void;
   onOnlineUsers?: (payload: OnlineUsersEvent) => void;
   onMarkReadReceived?: (payload: MarkReadEvent) => void;
-  onIncomingVoiceCall?: (payload: IncomingCallEvent) => void;
-  onVoiceCallRejected?: () => void;
-  onIncomingVideoCall?: (payload: IncomingCallEvent) => void;
-  onVideoCallRejected?: () => void;
 };
 
 const noop = () => {};
@@ -35,10 +30,6 @@ export const useChatSocket = ({
   onGroupMessageReceived,
   onOnlineUsers,
   onMarkReadReceived,
-  onIncomingVoiceCall,
-  onVoiceCallRejected,
-  onIncomingVideoCall,
-  onVideoCallRejected,
 }: UseChatSocketParams) => {
   const socketRef = useRef<Socket | null>(null);
   const [activeSocket, setActiveSocket] = useState<Socket | null>(null);
@@ -47,10 +38,6 @@ export const useChatSocket = ({
   const onGroupMessageReceivedRef = useRef(onGroupMessageReceived);
   const onOnlineUsersRef = useRef(onOnlineUsers);
   const onMarkReadReceivedRef = useRef(onMarkReadReceived);
-  const onIncomingVoiceCallRef = useRef(onIncomingVoiceCall);
-  const onVoiceCallRejectedRef = useRef(onVoiceCallRejected);
-  const onIncomingVideoCallRef = useRef(onIncomingVideoCall);
-  const onVideoCallRejectedRef = useRef(onVideoCallRejected);
 
   useEffect(() => {
     onSocketReadyRef.current = onSocketReady;
@@ -58,20 +45,12 @@ export const useChatSocket = ({
     onGroupMessageReceivedRef.current = onGroupMessageReceived;
     onOnlineUsersRef.current = onOnlineUsers;
     onMarkReadReceivedRef.current = onMarkReadReceived;
-    onIncomingVoiceCallRef.current = onIncomingVoiceCall;
-    onVoiceCallRejectedRef.current = onVoiceCallRejected;
-    onIncomingVideoCallRef.current = onIncomingVideoCall;
-    onVideoCallRejectedRef.current = onVideoCallRejected;
   }, [
     onSocketReady,
     onPrivateMessageReceived,
     onGroupMessageReceived,
     onOnlineUsers,
     onMarkReadReceived,
-    onIncomingVoiceCall,
-    onVoiceCallRejected,
-    onIncomingVideoCall,
-    onVideoCallRejected,
   ]);
 
   useEffect(() => {
@@ -111,42 +90,22 @@ export const useChatSocket = ({
       (onOnlineUsersRef.current || noop)(payload);
     const markReadHandler = (payload: MarkReadEvent) =>
       (onMarkReadReceivedRef.current || noop)(payload);
-    const incomingVoiceCallHandler = (payload: IncomingCallEvent) =>
-      (onIncomingVoiceCallRef.current || noop)(payload);
-    const voiceCallRejectedHandler = () =>
-      (onVoiceCallRejectedRef.current || noop)();
-    const incomingVideoCallHandler = (payload: IncomingCallEvent) =>
-      (onIncomingVideoCallRef.current || noop)(payload);
-    const videoCallRejectedHandler = () =>
-      (onVideoCallRejectedRef.current || noop)();
 
     socket.off("privateMessageReceived", privateMessageHandler);
     socket.off("msg-receive", groupMessageHandler);
     socket.off("online-users", onlineUsersHandler);
     socket.off("mark-read-receive", markReadHandler);
-    socket.off("incoming-voice-call", incomingVoiceCallHandler);
-    socket.off("voice-call-rejected", voiceCallRejectedHandler);
-    socket.off("incoming-video-call", incomingVideoCallHandler);
-    socket.off("video-call-rejected", videoCallRejectedHandler);
 
     socket.on("privateMessageReceived", privateMessageHandler);
     socket.on("msg-receive", groupMessageHandler);
     socket.on("online-users", onlineUsersHandler);
     socket.on("mark-read-receive", markReadHandler);
-    socket.on("incoming-voice-call", incomingVoiceCallHandler);
-    socket.on("voice-call-rejected", voiceCallRejectedHandler);
-    socket.on("incoming-video-call", incomingVideoCallHandler);
-    socket.on("video-call-rejected", videoCallRejectedHandler);
 
     return () => {
       socket.off("privateMessageReceived", privateMessageHandler);
       socket.off("msg-receive", groupMessageHandler);
       socket.off("online-users", onlineUsersHandler);
       socket.off("mark-read-receive", markReadHandler);
-      socket.off("incoming-voice-call", incomingVoiceCallHandler);
-      socket.off("voice-call-rejected", voiceCallRejectedHandler);
-      socket.off("incoming-video-call", incomingVideoCallHandler);
-      socket.off("video-call-rejected", videoCallRejectedHandler);
     };
   }, [activeSocket]);
 

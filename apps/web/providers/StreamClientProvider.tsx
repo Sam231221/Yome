@@ -1,7 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
-//used to interact with the Stream Video API.
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { StreamVideoClient, StreamVideo } from "@stream-io/video-react-sdk";
 
 import { tokenProvider } from "@/actions/stream.actions";
@@ -9,16 +8,31 @@ import { useStateProvider } from "@/context/StateContext";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { ensureUserInfo } from "@/lib/auth/userInfo";
+import {
+  StreamClientStatusContext,
+  type StreamClientStatus,
+} from "./stream-client-status";
 
 const API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY as string;
+const INVALID_STREAM_API_KEYS = new Set(["", "your_stream_api_key", "change-me"]);
 
-const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
+const hasValidStreamConfig = () =>
+  !INVALID_STREAM_API_KEYS.has(String(API_KEY ?? "").trim());
+
+const StreamVideoProvider = ({
+  children,
+  blocking = false,
+}: {
+  children: ReactNode;
+  blocking?: boolean;
+}) => {
   const [videoClient, setVideoClient] = useState<StreamVideoClient>();
   const [isResolvingUser, setIsResolvingUser] = useState(false);
   const [setupError, setSetupError] = useState<string>();
   const { data: session, status } = useSession();
   const [{ userInfo }, dispatch] = useStateProvider();
   const router = useRouter();
+  const isConfigured = hasValidStreamConfig();
 
   useEffect(() => {
     const load = async () => {
@@ -49,28 +63,50 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
   }, [router, status]);
 
   useEffect(() => {
-    if (!userInfo || !API_KEY) return;
-
-    // Initialize the Stream Video client
-    const client = new StreamVideoClient({
-      apiKey: API_KEY,
-      // Set the user details
-      user: {
-        //needs to be in string format complusory,
-        id: String(userInfo.id),
-        name: userInfo.username,
-        image: userInfo.profilePicture,
-      },
-      // function send to this that generates a token for authenticating with the Stream Video API.
-      tokenProvider,
-    });
-
-    setVideoClient(client);
-    return () => {
+    if (!isConfigured) {
       setVideoClient(undefined);
-      void client.disconnectUser();
-    };
-  }, [userInfo]);
+      setSetupError(
+        "Calls are unavailable until valid Stream credentials are added in .env."
+      );
+      return;
+    }
+
+    setSetupError(undefined);
+
+    if (!userInfo) {
+      setVideoClient(undefined);
+      return;
+    }
+
+    try {
+      const client = StreamVideoClient.getOrCreateInstance({
+        apiKey: API_KEY,
+        user: {
+          id: String(userInfo.id),
+          name: userInfo.username || userInfo.name || `User ${userInfo.id}`,
+          image: userInfo.profilePicture,
+        },
+        tokenProvider,
+      });
+
+      setVideoClient(client);
+      setSetupError(undefined);
+    } catch {
+      setVideoClient(undefined);
+      setSetupError("We couldn't prepare the Stream call client.");
+    }
+  }, [isConfigured, userInfo]);
+
+  const statusValue = useMemo<StreamClientStatus>(
+    () => ({
+      client: videoClient,
+      isReady: Boolean(videoClient),
+      isConfigured,
+      isLoading: status === "loading" || isResolvingUser,
+      setupError: isConfigured ? setupError : setupError,
+    }),
+    [videoClient, isConfigured, isResolvingUser, setupError, status]
+  );
 
   if (status === "unauthenticated") {
     return (
@@ -80,7 +116,10 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
     );
   }
 
-  if (setupError || (status === "authenticated" && !API_KEY)) {
+  if (
+    blocking &&
+    (setupError || (status === "authenticated" && !isConfigured))
+  ) {
     return (
       <main className="grid min-h-screen w-full place-items-center bg-[#080d1b] px-6 text-center text-white">
         <p className="text-lg font-semibold">
@@ -91,9 +130,10 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
   }
 
   if (
-    status === "loading" ||
-    isResolvingUser ||
-    (status === "authenticated" && !videoClient)
+    blocking &&
+    (status === "loading" ||
+      isResolvingUser ||
+      (status === "authenticated" && isConfigured && !videoClient))
   ) {
     return (
       <main className="grid min-h-screen w-full place-items-center bg-[#080d1b] px-6 text-center text-white">
@@ -103,11 +143,18 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
   }
 
   if (!videoClient) {
-    return null;
+    return (
+      <StreamClientStatusContext.Provider value={statusValue}>
+        <>{children}</>
+      </StreamClientStatusContext.Provider>
+    );
   }
 
-  return <StreamVideo client={videoClient}>{children}</StreamVideo>;
+  return (
+    <StreamClientStatusContext.Provider value={statusValue}>
+      <StreamVideo client={videoClient}>{children}</StreamVideo>
+    </StreamClientStatusContext.Provider>
+  );
 };
 
 export default StreamVideoProvider;
-//Once the videoClient is initialized, the component wraps its children with the StreamVideo provider, passing the videoClient as a prop. This makes the video client available to all child components.

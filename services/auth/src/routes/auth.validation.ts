@@ -1,6 +1,4 @@
 import { z } from "zod";
-
-const nonEmptyString = z.string().trim().min(1);
 const emailSchema = z.string().trim().toLowerCase().email();
 const nameSchema = z
   .string()
@@ -69,10 +67,4 @@ export const changePasswordSchema = {
       message: "Confirmation must match the new password exactly.",
       path: ["confirmPassword"],
     }),
-};
-
-export const generateTokenSchema = {
-  params: z.object({
-    userId: nonEmptyString.regex(/^\d+$/, "userId must be a positive integer"),
-  }),
 };

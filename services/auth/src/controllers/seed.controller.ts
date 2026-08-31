@@ -130,7 +130,7 @@ export async function createEducationGroups(
     if (allUsers.length === 0) {
       res.status(400).json({
         error:
-          "No users found. Please create users first using /api/db/create-multiple-users",
+          "No users found. Please create users first using /api/dev/db/seed-users",
       });
       return;
     }

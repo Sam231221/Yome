@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
+import { CallingState, useCalls } from "@stream-io/video-react-sdk";
 import Avatar from "@/components/common/Avatar";
 import AvatarWithStatus from "@/components/common/AvatarWithStatus";
 import { BsThreeDotsVertical } from "react-icons/bs";
@@ -9,7 +10,18 @@ import { FiUser } from "react-icons/fi";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import ContextMenu from "@/components/common/ContextMenu";
-import { resolveChatKind, type ActiveCall } from "@/types/chat";
+import { resolveChatKind } from "@/types/chat";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { createDirectCall } from "@/features/chat/direct-call/service";
+import {
+  getCallMemberIds,
+  parseDirectCallCustomData,
+} from "@/features/chat/direct-call/guards";
+import { markDirectCallAutoJoinIntent } from "@/features/chat/direct-call/storage";
+import { buildDirectCallRoute } from "@/features/chat/direct-call/routing";
+import type { DirectCallMode } from "@/features/chat/direct-call/types";
+import { useStreamClientStatus } from "@/providers/stream-client-status";
 
 interface ChatHeaderProps {
   chatType: string;
@@ -24,8 +36,12 @@ export default function ChatHeader({
   onToggleDetails,
   onOpenDetails,
 }: ChatHeaderProps) {
-  const [{ currentChatUser, onlineUsers, messageSearch }, dispatch] =
+  const [{ currentChatUser, onlineUsers, messageSearch, userInfo }, dispatch] =
     useStateProvider();
+  const router = useRouter();
+  const { client, isConfigured, isLoading, setupError } = useStreamClientStatus();
+  const calls = useCalls();
+  const [isPending, startTransition] = useTransition();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,
     y: 0,
@@ -48,35 +64,90 @@ export default function ChatHeader({
     },
   ];
 
-  const handleVideoCall = () => {
-    if (!currentChatUser?.id || typeof currentChatUser.id !== "number") return;
-    const videoCall: ActiveCall = {
-      id: currentChatUser.id,
-      name: currentChatUser.name,
-      profilePicture: currentChatUser.profilePicture,
-      type: "out-going",
-      callType: "video",
-      roomId: Date.now(),
-    };
-    dispatch({
-      type: reducerCases.SET_VIDEO_CALL,
-      videoCall,
-    });
-  };
+  const startDirectChatCall = (initialMode: DirectCallMode) => {
+    const shouldOpenInNewTab = initialMode === "audio";
+    const pendingTab = shouldOpenInNewTab ? window.open("", "_blank") : null;
 
-  const handleVoiceCall = () => {
-    if (!currentChatUser?.id || typeof currentChatUser.id !== "number") return;
-    const voiceCall: ActiveCall = {
-      id: currentChatUser.id,
-      name: currentChatUser.name,
-      profilePicture: currentChatUser.profilePicture,
-      type: "out-going",
-      callType: "audio",
-      roomId: Date.now(),
-    };
-    dispatch({
-      type: reducerCases.SET_VOICE_CALL,
-      voiceCall,
+    startTransition(() => {
+      void (async () => {
+        if (!client || !currentChatUser || typeof currentChatUser.id !== "number") {
+          pendingTab?.close();
+          toast.error(
+            setupError ??
+              (isConfigured
+                ? isLoading
+                  ? "Call setup is still loading. Please try again."
+                  : "Call setup is unavailable right now."
+                : "Add valid Stream credentials in .env to enable audio and video calls.")
+          );
+          return;
+        }
+        if (!userInfo) {
+          pendingTab?.close();
+          toast.error("We couldn't load your account for this call.");
+          return;
+        }
+
+        try {
+          const existingCall = calls.find((call) => {
+            const custom = parseDirectCallCustomData(call.state.custom);
+            if (!custom) return false;
+            if (call.state.endedAt) return false;
+            if (call.state.callingState === CallingState.LEFT) return false;
+
+            const memberIds = getCallMemberIds(call);
+            return (
+              memberIds.includes(String(userInfo.id)) &&
+              memberIds.includes(String(currentChatUser.id))
+            );
+          });
+
+          if (existingCall) {
+            const custom = parseDirectCallCustomData(existingCall.state.custom);
+            if (custom) {
+              markDirectCallAutoJoinIntent(existingCall.id);
+              const route = buildDirectCallRoute(
+                custom.conversationId,
+                existingCall.id
+              );
+
+              if (pendingTab) {
+                pendingTab.location.href = route;
+                pendingTab.focus();
+              } else {
+                router.push(route);
+              }
+              return;
+            }
+          }
+
+          const descriptor = await createDirectCall({
+            client,
+            caller: userInfo,
+            peer: currentChatUser,
+            initialMode,
+          });
+          markDirectCallAutoJoinIntent(descriptor.callId);
+          const route = buildDirectCallRoute(
+            descriptor.conversationId,
+            descriptor.callId
+          );
+
+          if (pendingTab) {
+            pendingTab.location.href = route;
+            pendingTab.focus();
+          } else {
+            router.push(route);
+          }
+        } catch (error) {
+          pendingTab?.close();
+          const message =
+            error instanceof Error
+              ? error.message
+              : "We couldn't start this call right now.";
+          toast.error(message);
+        }
+      })();
     });
   };
 
@@ -133,8 +204,10 @@ export default function ChatHeader({
       </div>
       <div className="chat-header-actions relative">
         <button
-          onClick={handleVoiceCall}
-          disabled={resolveChatKind(currentChatUser) !== "user"}
+          onClick={() => startDirectChatCall("audio")}
+          disabled={
+            resolveChatKind(currentChatUser) !== "user" || isPending
+          }
           className="chat-header-icon"
           aria-label="Voice call"
           type="button"
@@ -142,8 +215,10 @@ export default function ChatHeader({
           <MdCall />
         </button>
         <button
-          onClick={handleVideoCall}
-          disabled={resolveChatKind(currentChatUser) !== "user"}
+          onClick={() => startDirectChatCall("video")}
+          disabled={
+            resolveChatKind(currentChatUser) !== "user" || isPending
+          }
           className="chat-header-icon"
           aria-label="Video call"
           type="button"

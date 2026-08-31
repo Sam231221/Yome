@@ -12,7 +12,6 @@ export const GET_USER_ROUTE = `${AUTH_ROUTE}/get-user`;
 export const VERIFY_CREDENTIALS_ROUTE = `${AUTH_ROUTE}/verify-credentials`;
 export const UPSERT_OAUTH_USER_ROUTE = `${AUTH_ROUTE}/oauth-user`;
 export const CHANGE_PASSWORD_ROUTE = `${AUTH_ROUTE}/change-password`;
-export const GET_CALL_TOKEN = `${AUTH_ROUTE}/generate-token`;
 
 // User service (profiles, groups, follow)
 export const GET_USER_BY_ID_ROUTE = `${USER_ROUTE}/get-user-by-id`;

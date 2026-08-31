@@ -1,6 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
-import { generateToken04 } from "../lib/zego-token.js";
 import bcryptjs from "bcryptjs";
 import crypto from "node:crypto";
 
@@ -292,49 +291,5 @@ export async function changePassword(
     res.status(200).json({ ok: true, msg: "Password updated successfully" });
   } catch (error) {
     next(error);
-  }
-}
-
-export function generateToken(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
-  try {
-    const authenticatedUserId = getAuthenticatedUserId(req);
-    if (authenticatedUserId === null) {
-      res.status(401).json({ ok: false, error: "Unauthorized" });
-      return;
-    }
-
-    const appID = parseInt(process.env.ZEGO_APP_ID ?? "", 10);
-    const serverSecret = process.env.ZEGO_APP_SECRET;
-    const userId = String(req.params.userId ?? "");
-    const requestedUserId = parseInt(userId, 10);
-    if (Number.isNaN(requestedUserId)) {
-      res.status(400).json({ ok: false, error: "Invalid user id" });
-      return;
-    }
-    if (requestedUserId !== authenticatedUserId) {
-      res.status(403).json({ ok: false, error: "Forbidden" });
-      return;
-    }
-
-    const effectiveTimeInSeconds = 3600;
-    const payload = "";
-    if (appID && serverSecret && userId) {
-      const token = generateToken04(
-        appID,
-        userId,
-        serverSecret,
-        effectiveTimeInSeconds,
-        payload
-      );
-      res.status(200).json({ token });
-      return;
-    }
-    res.status(400).send("User id, app id and server secret is required");
-  } catch (err) {
-    next(err);
   }
 }

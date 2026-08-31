@@ -336,9 +336,10 @@ The project includes development seed endpoints, but they are intentionally guar
 
 ### Files involved
 
-- `apps/web/app/api/auth/create-multiple-users/route.ts`
-- `apps/web/app/api/auth/create-multiple-groups/route.ts`
-- `apps/web/app/api/auth/deleteAll/route.ts`
+- `apps/web/app/api/dev/db/seed-users/route.ts`
+- `apps/web/app/api/dev/db/seed-groups/route.ts`
+- `apps/web/app/api/dev/db/reset/route.ts`
+- `apps/web/app/api/dev/db/_lib/devDbProxy.ts`
 - `services/auth/src/routes/db.routes.ts`
 - `services/auth/src/controllers/seed.controller.ts`
 - `.env`
@@ -347,19 +348,22 @@ The project includes development seed endpoints, but they are intentionally guar
 ### Seeding in Terminal
 
 ```
-curl -X POST http://localhost:3000/api/auth/create-multiple-users
+curl -X POST http://localhost:3000/api/dev/db/seed-users
 
- curl -X POST http://localhost:3000/api/auth/create-multiple-groups
+curl -X POST http://localhost:3000/api/dev/db/seed-groups
 
+curl -X POST http://localhost:3000/api/dev/db/reset \
+  -H "x-dev-seed-token: $DEV_SEED_ROUTE_TOKEN"
 ```
 
 ### What happens
 
-1. Frontend dev-only routes forward seed requests to the gateway.
+1. Frontend dev-only database routes forward seed requests to the gateway.
 2. The gateway forwards them to auth service DB routes.
 3. The auth service performs bulk create or update operations.
 4. These routes are only intended for local development.
 5. They are controlled by `ENABLE_DEV_SEED_ROUTES` in `.env`.
+6. The destructive reset route also requires `DEV_SEED_ROUTE_TOKEN`.
 
 ### Practical meaning
 
