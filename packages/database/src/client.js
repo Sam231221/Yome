@@ -24,7 +24,7 @@ function getPrismaInstance() {
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
       throw new Error(
-        "DATABASE_URL is not set. Create a .env file in the monorepo root (see .env.example)."
+        "DATABASE_URL is not set. Create a .env file in the monorepo root."
       );
     }
     const pool = new pg.Pool({ connectionString });

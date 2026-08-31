@@ -303,7 +303,7 @@ The frontend uses:
 That setup is defined in:
 
 - `apps/web/utils/ApiRoutes.ts`
-- `.env.example`
+- the root `.env`
 
 So chat websocket traffic connects directly to the chat service.
 
@@ -341,7 +341,7 @@ sequenceDiagram
 
 ## 9. Service Ports Used In This Workflow
 
-These defaults come from `packages/shared/src/config/env.ts` and `.env.example`.
+These defaults come from `packages/shared/src/config/env.ts` and the root `.env`.
 
 - `3000`: Next.js frontend in `apps/web`
 - `4100`: gateway

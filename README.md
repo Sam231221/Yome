@@ -79,28 +79,65 @@ bun install
 
 ### Environment
 
-Copy the example env file and fill in values:
+Create a single `.env` file in the monorepo root and keep it out of git. All
+apps, services, and Prisma scripts load this root file for local development;
+service-level env files are not used for the normal local workflow.
 
-```bash
-cp .env.example .env
-```
+Gateway and auth:
 
-Important values include:
+- `GATEWAY_SHARED_TOKEN`
+- `GATEWAY_REQUIRE_AUTH`
+- `INTERNAL_TOKEN_GUARD_ENABLED`
+- `NEXTAUTH_SECRET`
+- `JWT_KEY`
+- `GATEWAY_RATE_WINDOW_MS`
+- `GATEWAY_RATE_MAX_REQUESTS`
+
+Service ports and URLs:
+
+- `GATEWAY_PORT`
+- `AUTH_SERVICE_PORT`
+- `USER_SERVICE_PORT`
+- `CHAT_SERVICE_PORT`
+- `MEDIA_SERVICE_PORT`
+- `NOTIFICATIONS_SERVICE_PORT`
+- `AUTH_SERVICE_URL`
+- `USER_SERVICE_URL`
+- `CHAT_SERVICE_URL`
+- `MEDIA_SERVICE_URL`
+- `NOTIFICATIONS_SERVICE_URL`
+
+Database:
 
 - `DATABASE_URL`
 - `DIRECT_URL`
-- `NEXTAUTH_SECRET`
-- `JWT_KEY`
+
+Frontend:
+
 - `NEXT_PUBLIC_BACKEND_API`
 - `NEXT_PUBLIC_CHAT_SOCKET_URL`
 - `FRONTEND_URL`
-- `GATEWAY_SHARED_TOKEN`
+- `FRONTEND_CLIENT_PORT` is a legacy alias; prefer `FRONTEND_URL`.
+
+Object storage:
+
+- `STORAGE_PROVIDER`
 - `AWS_REGION`
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_S3_BUCKET`
 - `AWS_S3_PUBLIC_BASE_URL` or `AWS_CLOUDFRONT_URL`
 - optional `AWS_S3_PREFIX`
+
+Stream chat/video:
+
+- `NEXT_PUBLIC_STREAM_API_KEY`
+- `STREAM_SECRET_KEY`
+
+Development-only seed/reset routes:
+
+- `ENABLE_DEV_SEED_ROUTES`
+- `DEV_SEED_ROUTE_TOKEN`
 
 ### Database
 

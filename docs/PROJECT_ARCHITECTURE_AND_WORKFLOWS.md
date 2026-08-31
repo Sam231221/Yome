@@ -343,7 +343,6 @@ The project includes development seed endpoints, but they are intentionally guar
 - `services/auth/src/routes/db.routes.ts`
 - `services/auth/src/controllers/seed.controller.ts`
 - `.env`
-- `.env.example`
 
 ### Seeding in Terminal
 
@@ -444,5 +443,5 @@ The app behaves like this:
 If you want, the next useful follow-up would be a second doc with:
 
 - a service-by-service API map
-- a port and environment variable matrix
+- a port and root `.env` variable matrix
 - a troubleshooting section for registration, session, and websocket failures
