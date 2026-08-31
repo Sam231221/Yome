@@ -1,6 +1,12 @@
 import type { Server, Socket } from "socket.io";
 import getPrismaInstance from "@repo/database";
-import { onlineUsers } from "../state/online-users.js";
+import {
+  addOnlineUserSocket,
+  getOnlineUserIds,
+  getOnlineUserSockets,
+  removeOnlineUserSocket,
+  removeSocketFromOnlineUsers,
+} from "../state/online-users.js";
 
 type SocketChatMessage = {
   id: number;
@@ -24,17 +30,8 @@ export function attachSocketHandlers(io: Server): void {
   io.on("connection", (socket: Socket) => {
     const emitOnlineUsers = () => {
       io.emit("online-users", {
-        onlineUsers: Array.from(onlineUsers.keys()).map((id) => Number(id)),
+        onlineUsers: getOnlineUserIds(),
       });
-    };
-
-    const removeUserBySocketId = (socketId: string) => {
-      for (const [userId, mappedSocketId] of onlineUsers.entries()) {
-        if (mappedSocketId === socketId) {
-          onlineUsers.delete(userId);
-          break;
-        }
-      }
     };
 
     socket.on("add-user", () => {
@@ -44,12 +41,29 @@ export function attachSocketHandlers(io: Server): void {
         return;
       }
       socket.join(userId);
-      onlineUsers.set(userId, socket.id);
+      addOnlineUserSocket(userId, socket.id);
       emitOnlineUsers();
     });
 
-    socket.on("join room", (room: string) => {
-      socket.join(room);
+    socket.on("join room", async (room: string) => {
+      const authedUserId = parseSocketUserId(socket.data.userId);
+      if (authedUserId === null) return;
+
+      const groupId = room.startsWith("room-") ? room.slice("room-".length) : room;
+      const prisma = getPrismaInstance();
+      const groupCount = await prisma.group.count({
+        where: {
+          id: groupId,
+          OR: [
+            { members: { some: { id: authedUserId } } },
+            { admins: { some: { id: authedUserId } } },
+          ],
+        },
+      });
+
+      if (groupCount > 0) {
+        socket.join(room);
+      }
     });
 
     socket.on(
@@ -66,37 +80,65 @@ export function attachSocketHandlers(io: Server): void {
         if (data.from !== authedUserId) {
           data.from = authedUserId;
         }
+        if (!data.message?.id) return;
+
+        const prisma = getPrismaInstance();
 
         if (data.chatType === "user") {
-          const sendUserSocket = onlineUsers.get(String(data.to));
-          if (sendUserSocket) {
+          const toUserId = parseSocketUserId(data.to);
+          if (toUserId === null) return;
+
+          const message = await prisma.messages.findFirst({
+            where: {
+              id: data.message.id,
+              msgType: "user",
+              senderId: authedUserId,
+              receiverId: toUserId,
+            },
+            include: { sender: true, receiver: true, conversation: true },
+          });
+          if (!message) return;
+
+          for (const sendUserSocket of getOnlineUserSockets(toUserId)) {
             socket.to(sendUserSocket).emit("privateMessageReceived", {
               from: data.from,
               msgType: "user",
-              message: data.message,
+              message,
             });
           }
           return;
         }
 
-        const prisma = getPrismaInstance();
         const group = await prisma.group.findUnique({
           where: { id: String(data.to) },
-          include: { members: true, admins: true },
+          include: {
+            members: true,
+            admins: true,
+            messages: {
+              where: {
+                id: data.message.id,
+                senderId: authedUserId,
+                msgType: "group",
+              },
+              include: { sender: true, group: true },
+              take: 1,
+            },
+          },
         });
         if (!group) return;
         const recipients = new Map(
           [...group.members, ...group.admins].map((user) => [user.id, user])
         );
         if (!recipients.has(data.from)) return;
+        const message = group.messages[0];
+        if (!message) return;
 
         for (const user of recipients.values()) {
           if (user.id === data.from) continue;
-          const memberSocketId = onlineUsers.get(String(user.id));
-          if (memberSocketId) {
+          for (const memberSocketId of getOnlineUserSockets(user.id)) {
             socket.to(memberSocketId).emit("msg-receive", {
               from: data.from,
-              message: data.message,
+              message,
               msgType: "group",
               room: data.room,
               groupId: String(data.to),
@@ -108,8 +150,11 @@ export function attachSocketHandlers(io: Server): void {
 
     socket.on("mark-read", (payload: { id: number; receiverId?: number }) => {
       const { id, receiverId } = payload;
-      const sendUserSocket = onlineUsers.get(String(id));
-      if (sendUserSocket) {
+      const authedUserId = parseSocketUserId(socket.data.userId);
+      if (authedUserId === null || receiverId !== authedUserId) return;
+      if (id === authedUserId) return;
+
+      for (const sendUserSocket of getOnlineUserSockets(id)) {
         const data = {
           id,
           receiverId,
@@ -121,13 +166,13 @@ export function attachSocketHandlers(io: Server): void {
     socket.on("signout", (id: string | number) => {
       const normalizedUserId = String(id ?? socket.data.userId ?? "");
       if (!normalizedUserId) return;
-      onlineUsers.delete(normalizedUserId);
+      removeOnlineUserSocket(normalizedUserId, socket.id);
       socket.leave(normalizedUserId);
       emitOnlineUsers();
     });
 
     socket.on("disconnect", () => {
-      removeUserBySocketId(socket.id);
+      removeSocketFromOnlineUsers(socket.id);
       emitOnlineUsers();
     });
   });

@@ -2,6 +2,7 @@
 
 import { getServerSession } from "next-auth/next";
 import { StreamClient } from "@stream-io/node-sdk";
+import getPrismaInstance from "@repo/database";
 import { options } from "@/app/api/auth/[...nextauth]/options";
 import axios from "axios";
 import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
@@ -20,6 +21,13 @@ type StreamSeedUser = {
   id: number | string;
   name?: string | null;
   image?: string | null;
+};
+
+type EnsureDirectCallUsersParams = {
+  callerId: number | string;
+  peerId: number | string;
+  conversationId: string;
+  users: StreamSeedUser[];
 };
 
 const getStreamServerClient = () => {
@@ -42,6 +50,22 @@ const resolveSessionUserId = async (user?: SessionUser) => {
     throw new Error("Failed to fetch user information");
   }
 };
+
+const parsePositiveUserId = (value: number | string) => {
+  const id = Number.parseInt(String(value), 10);
+  if (Number.isNaN(id) || id <= 0) {
+    throw new Error("Invalid direct call participant.");
+  }
+  return id;
+};
+
+const normalizeDirectConversationParticipants = (
+  leftUserId: number,
+  rightUserId: number
+) =>
+  leftUserId < rightUserId
+    ? { participantAId: leftUserId, participantBId: rightUserId }
+    : { participantAId: rightUserId, participantBId: leftUserId };
 
 export const tokenProvider = async () => {
   const session = await getServerSession(options);
@@ -67,13 +91,36 @@ export const tokenProvider = async () => {
   return token;
 };
 
-export const ensureDirectCallUsers = async (users: StreamSeedUser[]) => {
+export const ensureDirectCallUsers = async ({
+  callerId,
+  peerId,
+  conversationId,
+  users,
+}: EnsureDirectCallUsersParams) => {
   const session = await getServerSession(options);
   const sessionUser = session?.user as SessionUser | undefined;
   if (!sessionUser) throw new Error("User is not authenticated");
 
   const sessionUserId = await resolveSessionUserId(sessionUser);
   if (!sessionUserId) throw new Error("User ID is missing");
+  if (String(callerId) !== sessionUserId) {
+    throw new Error("Unauthorized direct call provisioning request.");
+  }
+
+  const callerUserId = parsePositiveUserId(callerId);
+  const peerUserId = parsePositiveUserId(peerId);
+  const pair = normalizeDirectConversationParticipants(callerUserId, peerUserId);
+  const prisma = getPrismaInstance();
+  const conversation = await prisma.conversation.findFirst({
+    where: {
+      id: conversationId,
+      participantAId: pair.participantAId,
+      participantBId: pair.participantBId,
+    },
+  });
+  if (!conversation) {
+    throw new Error("Direct call conversation is not available.");
+  }
 
   const uniqueUsers = Array.from(
     new Map(
@@ -83,11 +130,14 @@ export const ensureDirectCallUsers = async (users: StreamSeedUser[]) => {
     ).values()
   );
 
-  const sessionUserIncluded = uniqueUsers.some(
-    (user) => String(user.id) === sessionUserId
+  const expectedUserIds = new Set([String(callerUserId), String(peerUserId)]);
+  const includesOnlyCallMembers = uniqueUsers.every((user) =>
+    expectedUserIds.has(String(user.id))
   );
-
-  if (!sessionUserIncluded) {
+  const includesAllCallMembers = Array.from(expectedUserIds).every((userId) =>
+    uniqueUsers.some((user) => String(user.id) === userId)
+  );
+  if (!includesOnlyCallMembers || !includesAllCallMembers) {
     throw new Error("Unauthorized direct call provisioning request.");
   }
 

@@ -18,7 +18,6 @@ import {
   Loader2,
   Mic,
   MicOff,
-  MonitorUp,
   Phone,
   PhoneOff,
   RefreshCw,
@@ -186,7 +185,6 @@ function DirectCallRoom({
     useLocalParticipant,
     useCameraState,
     useMicrophoneState,
-    useScreenShareState,
   } = useCallStateHooks();
 
   const callingState = useCallCallingState();
@@ -195,7 +193,6 @@ function DirectCallRoom({
   const localParticipant = useLocalParticipant();
   const cameraState = useCameraState({ optimisticUpdates: true });
   const microphoneState = useMicrophoneState({ optimisticUpdates: true });
-  const screenShareState = useScreenShareState({ optimisticUpdates: true });
 
   const descriptor = useMemo(() => {
     if (!activeCall || !userInfo?.id) return null;
@@ -208,18 +205,7 @@ function DirectCallRoom({
   }, [descriptor, userContacts]);
 
   const remoteParticipant = remoteParticipants[0];
-  const remoteScreenShareParticipant = remoteParticipants.find(
-    (participant) => participant.screenShareStream
-  );
-  const localScreenShareParticipant = localParticipant?.screenShareStream
-    ? localParticipant
-    : undefined;
-  const primaryVideoParticipant =
-    remoteScreenShareParticipant ?? localScreenShareParticipant ?? remoteParticipant;
-  const primaryVideoTrackType =
-    remoteScreenShareParticipant || localScreenShareParticipant
-      ? "screenShareTrack"
-      : "videoTrack";
+  const primaryVideoParticipant = remoteParticipant;
   const hasRemoteParticipant = remoteParticipants.length > 0;
   const sharedMode =
     parseDirectCallCustomData(callCustomData)?.currentMode ?? initialMode;
@@ -401,22 +387,6 @@ function DirectCallRoom({
     }
   };
 
-  const handleUpgradeToVideo = async () => {
-    if (!activeCall || actionPending) return;
-    setActionPending(true);
-    try {
-      await syncDevicesForMode("video");
-      await activeCall.update({
-        custom: {
-          ...activeCall.state.custom,
-          currentMode: "video",
-        },
-      });
-    } finally {
-      setActionPending(false);
-    }
-  };
-
   const handleVideoToggle = async () => {
     if (!activeCall || actionPending) return;
     setActionPending(true);
@@ -465,19 +435,6 @@ function DirectCallRoom({
     }
   };
 
-  const handleScreenShare = async () => {
-    if (actionPending) return;
-    setActionPending(true);
-    try {
-      await screenShareState.screenShare.toggle();
-      setPermissionError(undefined);
-    } catch {
-      setPermissionError("Screen sharing permission was denied.");
-    } finally {
-      setActionPending(false);
-    }
-  };
-
   const renderTile = ({
     participant,
     compact = false,
@@ -487,7 +444,7 @@ function DirectCallRoom({
     participant?: StreamVideoParticipant;
     compact?: boolean;
     label?: string;
-    trackType?: "videoTrack" | "screenShareTrack";
+    trackType?: "videoTrack";
   }) => {
     const participantName =
       label ?? participant?.name ?? participant?.userId ?? peer?.name ?? "Participant";
@@ -681,9 +638,8 @@ function DirectCallRoom({
                 participant: primaryVideoParticipant,
                 label:
                   primaryVideoParticipant?.isLocalParticipant
-                    ? "You are sharing"
+                    ? "You"
                     : peer?.name ?? title,
-                trackType: primaryVideoTrackType,
               })}
 
               <div className="absolute bottom-4 left-4 z-10 w-[120px] max-w-[38vw] sm:bottom-6 sm:left-6 sm:w-[180px] lg:w-[220px]">
@@ -766,14 +722,6 @@ function DirectCallRoom({
             >
               <Volume2 className="h-6 w-6" />
               Speaker
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleScreenShare()}
-              className="flex min-h-[88px] min-w-0 flex-col items-center justify-center gap-2 rounded-[22px] border border-white/12 bg-white/5 px-3 py-3 text-[11px] text-[#c8d2ea] transition hover:bg-white/10 sm:min-w-[92px] sm:text-xs"
-            >
-              <MonitorUp className="h-6 w-6" />
-              {screenShareState.isMute ? "Share" : "Stop share"}
             </button>
             <button
               type="button"

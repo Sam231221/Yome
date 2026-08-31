@@ -40,18 +40,26 @@ export const createDirectCall = async ({
     throw new Error("Unable to prepare a direct conversation for this call.");
   }
 
-  await ensureDirectCallUsers([
-    {
-      id: caller.id,
-      name: caller.username || caller.name || `${caller.firstname ?? ""} ${caller.lastname ?? ""}`.trim(),
-      image: caller.profilePicture,
-    },
-    {
-      id: peer.id,
-      name: peer.name,
-      image: peer.profilePicture,
-    },
-  ]);
+  await ensureDirectCallUsers({
+    callerId: caller.id,
+    peerId: peer.id,
+    conversationId,
+    users: [
+      {
+        id: caller.id,
+        name:
+          caller.username ||
+          caller.name ||
+          `${caller.firstname ?? ""} ${caller.lastname ?? ""}`.trim(),
+        image: caller.profilePicture,
+      },
+      {
+        id: peer.id,
+        name: peer.name,
+        image: peer.profilePicture,
+      },
+    ],
+  });
 
   const callId = crypto.randomUUID();
   const call = client.call(DIRECT_CALL_TYPE, callId);

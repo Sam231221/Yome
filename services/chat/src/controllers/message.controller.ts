@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
-import { onlineUsers } from "../state/online-users.js";
+import { getOnlineUserIds, isUserOnline } from "../state/online-users.js";
 import {
   getDirectConversation,
   getOrCreateDirectConversation,
@@ -78,7 +78,7 @@ async function createDirectMessage(params: {
     resolvedConversation ??
     (await getOrCreateDirectConversation(prisma, fromId, toId));
 
-  const isRecipientOnline = onlineUsers.get(String(toId));
+  const isRecipientOnline = isUserOnline(toId);
 
   return prisma.messages.create({
     data: {
@@ -280,7 +280,7 @@ export async function getInitialUsersWithMessages(
 
     res.status(200).json({
       usersWithLatestPrivateMessages,
-      onlineUsers: Array.from(onlineUsers.keys()).map((id) => Number(id)),
+      onlineUsers: getOnlineUserIds(),
     });
   } catch (error) {
     next(error);

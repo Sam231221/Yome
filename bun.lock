@@ -20,6 +20,7 @@
         "@auth/prisma-adapter": "^2.11.1",
         "@headlessui/react": "^2.2.9",
         "@prisma/client": "^7.3.0",
+        "@repo/database": "workspace:*",
         "@stream-io/node-sdk": "^0.7.40",
         "@stream-io/video-react-sdk": "^1.31.8",
         "axios": "^1.13.4",
@@ -181,6 +182,7 @@
     "services/media": {
       "name": "@services/media",
       "dependencies": {
+        "@repo/database": "workspace:*",
         "@repo/shared": "workspace:*",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
