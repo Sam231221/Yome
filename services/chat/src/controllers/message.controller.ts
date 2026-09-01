@@ -45,6 +45,21 @@ async function isGroupParticipant(
   return accessibleGroupCount > 0;
 }
 
+async function isConnectedDirectPeer(
+  prisma: PrismaClient,
+  callerId: number,
+  peerId: number
+): Promise<boolean> {
+  const connectedPeerCount = await prisma.user.count({
+    where: {
+      id: callerId,
+      following: { some: { id: peerId } },
+    },
+  });
+
+  return connectedPeerCount > 0;
+}
+
 async function createDirectMessage(params: {
   authenticatedUserId: number;
   fromId: number;
@@ -125,6 +140,90 @@ export async function getOrCreateConversation(
     const prisma = getPrismaInstance();
     const conversation = await getOrCreateDirectConversation(prisma, fromId, toId);
 
+    res.status(200).json({ ok: true, conversation });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function validateDirectConversation(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+
+    const callerId = parseRequiredUserId(req.body?.callerId);
+    const peerId = parseRequiredUserId(req.body?.peerId);
+    const conversationId = String(req.body?.conversationId ?? "").trim();
+
+    if (callerId === null || peerId === null || !conversationId) {
+      res.status(400).json({ ok: false, error: "Invalid direct conversation" });
+      return;
+    }
+    if (callerId !== authenticatedUserId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
+
+    const prisma = getPrismaInstance();
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+    });
+
+    if (!conversation || !isMatchingDirectConversation(conversation, callerId, peerId)) {
+      res.status(404).json({ ok: false, error: "Direct conversation not found" });
+      return;
+    }
+
+    const isConnectedPeer = await isConnectedDirectPeer(prisma, callerId, peerId);
+    if (!isConnectedPeer) {
+      res.status(403).json({ ok: false, error: "Direct call peer is not connected" });
+      return;
+    }
+
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function prepareDirectCallConversation(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+
+    const callerId = parseRequiredUserId(req.body?.callerId);
+    const peerId = parseRequiredUserId(req.body?.peerId);
+    if (callerId === null || peerId === null) {
+      res.status(400).json({ ok: false, error: "Invalid direct call participants" });
+      return;
+    }
+    if (callerId !== authenticatedUserId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
+
+    const prisma = getPrismaInstance();
+    const isConnectedPeer = await isConnectedDirectPeer(prisma, callerId, peerId);
+    if (!isConnectedPeer) {
+      res.status(403).json({ ok: false, error: "Direct call peer is not connected" });
+      return;
+    }
+
+    const conversation = await getOrCreateDirectConversation(prisma, callerId, peerId);
     res.status(200).json({ ok: true, conversation });
   } catch (error) {
     next(error);

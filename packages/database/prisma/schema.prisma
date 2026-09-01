@@ -48,6 +48,9 @@ model User {
   posts                     Post[]
   comments                  Comment[]
   likes                     Like[]
+  authoredResources         Resource[]              @relation("ResourceAuthor")
+  savedResources            ResourceSave[]
+  helpfulResourceVotes      ResourceHelpfulVote[]
   followers                 User[]                  @relation("Followers")
   following                 User[]                  @relation("Followers")
   messagesSeen              Messages[]              @relation(name: "MessageSeenBy")
@@ -136,4 +139,58 @@ model Like {
   userId Int
   post   Post @relation(fields: [postId], references: [id])
   postId Int
+}
+
+model Resource {
+  id            String                 @id @default(uuid())
+  slug          String                 @unique
+  title         String
+  subject       String
+  topic         String
+  level         String
+  type          String
+  tone          String
+  description   String
+  author        User                   @relation("ResourceAuthor", fields: [authorId], references: [id])
+  authorId      Int
+  fileUrl       String?
+  externalUrl   String?
+  saveCount     Int                    @default(0)
+  helpfulCount  Int                    @default(0)
+  ratingAverage Float?
+  ratingCount   Int                    @default(0)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  saves         ResourceSave[]
+  helpfulVotes  ResourceHelpfulVote[]
+
+  @@index([subject])
+  @@index([topic])
+  @@index([level])
+  @@index([type])
+  @@index([authorId])
+}
+
+model ResourceSave {
+  id         String   @id @default(uuid())
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  resourceId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  createdAt  DateTime @default(now())
+
+  @@unique([resourceId, userId])
+  @@index([userId])
+}
+
+model ResourceHelpfulVote {
+  id         String   @id @default(uuid())
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  resourceId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  createdAt  DateTime @default(now())
+
+  @@unique([resourceId, userId])
+  @@index([userId])
 }

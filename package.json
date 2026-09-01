@@ -6,11 +6,11 @@
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=@apps/web",
     "dev:gateway": "turbo run dev --filter=@services/gateway",
-    "dev:services": "concurrently -n g,auth,user,chat,media,notif \"bun run --cwd services/gateway dev\" \"bun run --cwd services/auth dev\" \"bun run --cwd services/user dev\" \"bun run --cwd services/chat dev\" \"bun run --cwd services/media dev\" \"bun run --cwd services/notifications dev\"",
+    "dev:services": "concurrently -n g,auth,user,chat,media,notif,resources \"bun run --cwd services/gateway dev\" \"bun run --cwd services/auth dev\" \"bun run --cwd services/user dev\" \"bun run --cwd services/chat dev\" \"bun run --cwd services/media dev\" \"bun run --cwd services/notifications dev\" \"bun run --cwd services/resources dev\"",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "check-types:all": "bun run --cwd services/auth check-types && bun run --cwd services/user check-types && bun run --cwd services/chat check-types && bun run --cwd services/media check-types && bun run --cwd services/notifications check-types && bun run --cwd services/gateway check-types && bun run --cwd packages/shared check-types",
+    "check-types:all": "bun run --cwd services/auth check-types && bun run --cwd services/user check-types && bun run --cwd services/chat check-types && bun run --cwd services/media check-types && bun run --cwd services/notifications check-types && bun run --cwd services/resources check-types && bun run --cwd services/gateway check-types && bun run --cwd packages/shared check-types",
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
     "db:migrate": "turbo run db:migrate"

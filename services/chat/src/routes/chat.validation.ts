@@ -82,3 +82,18 @@ export const directConversationSchema = {
     to: z.coerce.number().int().positive(),
   }),
 };
+
+export const validateDirectConversationSchema = {
+  body: z.object({
+    callerId: z.coerce.number().int().positive(),
+    peerId: z.coerce.number().int().positive(),
+    conversationId: z.string().trim().min(1),
+  }),
+};
+
+export const prepareDirectCallConversationSchema = {
+  body: z.object({
+    callerId: z.coerce.number().int().positive(),
+    peerId: z.coerce.number().int().positive(),
+  }),
+};

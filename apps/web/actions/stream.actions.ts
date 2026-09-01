@@ -2,13 +2,15 @@
 
 import { getServerSession } from "next-auth/next";
 import { StreamClient } from "@stream-io/node-sdk";
-import getPrismaInstance from "@repo/database";
 import { options } from "@/app/api/auth/[...nextauth]/options";
 import axios from "axios";
 import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
+import type { ConversationId } from "@/types/chat";
 
 const STREAM_API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY;
 const STREAM_API_SECRET = process.env.STREAM_SECRET_KEY;
+const CHAT_SERVICE_URL = process.env.CHAT_SERVICE_URL || "http://127.0.0.1:4103";
+const GATEWAY_SHARED_TOKEN = process.env.GATEWAY_SHARED_TOKEN;
 
 type SessionUser = {
   id?: string;
@@ -28,6 +30,10 @@ type EnsureDirectCallUsersParams = {
   peerId: number | string;
   conversationId: string;
   users: StreamSeedUser[];
+};
+
+type DirectConversationRecord = {
+  id: ConversationId;
 };
 
 const getStreamServerClient = () => {
@@ -59,13 +65,100 @@ const parsePositiveUserId = (value: number | string) => {
   return id;
 };
 
-const normalizeDirectConversationParticipants = (
-  leftUserId: number,
-  rightUserId: number
-) =>
-  leftUserId < rightUserId
-    ? { participantAId: leftUserId, participantBId: rightUserId }
-    : { participantAId: rightUserId, participantBId: leftUserId };
+const getInternalChatHeaders = (userId: number | string) => {
+  if (!GATEWAY_SHARED_TOKEN) {
+    throw new Error("Gateway shared token is missing");
+  }
+
+  return {
+    "x-internal-token": GATEWAY_SHARED_TOKEN,
+    "x-user-id": String(userId),
+  };
+};
+
+const getDirectCallServiceError = (error: unknown) => {
+  if (!axios.isAxiosError(error)) return null;
+  if (error.response?.status === 403) {
+    return "Calls are only available for connected contacts.";
+  }
+  if (error.response?.status === 404) {
+    return "This direct conversation is no longer available.";
+  }
+  return "Unable to prepare a direct conversation for this call.";
+};
+
+const validateDirectCallConversation = async ({
+  callerId,
+  peerId,
+  conversationId,
+}: {
+  callerId: number;
+  peerId: number;
+  conversationId: string;
+}) => {
+  try {
+    await axios.post(
+      `${CHAT_SERVICE_URL}/api/chat/validate-direct-conversation`,
+      {
+        callerId,
+        peerId,
+        conversationId,
+      },
+      {
+        headers: getInternalChatHeaders(callerId),
+      }
+    );
+  } catch (error) {
+    throw new Error(
+      getDirectCallServiceError(error) ??
+        "Unable to validate this direct conversation for a call."
+    );
+  }
+};
+
+export const prepareDirectCallConversation = async ({
+  callerId,
+  peerId,
+}: {
+  callerId: number | string;
+  peerId: number | string;
+}): Promise<DirectConversationRecord> => {
+  const session = await getServerSession(options);
+  const sessionUser = session?.user as SessionUser | undefined;
+  if (!sessionUser) throw new Error("User is not authenticated");
+
+  const sessionUserId = await resolveSessionUserId(sessionUser);
+  if (!sessionUserId) throw new Error("User ID is missing");
+  if (String(callerId) !== sessionUserId) {
+    throw new Error("Unauthorized direct call preparation request.");
+  }
+
+  const callerUserId = parsePositiveUserId(callerId);
+  const peerUserId = parsePositiveUserId(peerId);
+  const { data } = await axios
+    .post(
+      `${CHAT_SERVICE_URL}/api/chat/prepare-direct-call-conversation`,
+      {
+        callerId: callerUserId,
+        peerId: peerUserId,
+      },
+      {
+        headers: getInternalChatHeaders(callerUserId),
+      }
+    )
+    .catch((error) => {
+      throw new Error(
+        getDirectCallServiceError(error) ??
+          "Unable to prepare a direct conversation for this call."
+      );
+    });
+
+  if (!data?.conversation?.id) {
+    throw new Error("Unable to prepare a direct conversation for this call.");
+  }
+
+  return data.conversation as DirectConversationRecord;
+};
 
 export const tokenProvider = async () => {
   const session = await getServerSession(options);
@@ -109,18 +202,11 @@ export const ensureDirectCallUsers = async ({
 
   const callerUserId = parsePositiveUserId(callerId);
   const peerUserId = parsePositiveUserId(peerId);
-  const pair = normalizeDirectConversationParticipants(callerUserId, peerUserId);
-  const prisma = getPrismaInstance();
-  const conversation = await prisma.conversation.findFirst({
-    where: {
-      id: conversationId,
-      participantAId: pair.participantAId,
-      participantBId: pair.participantBId,
-    },
+  await validateDirectCallConversation({
+    callerId: callerUserId,
+    peerId: peerUserId,
+    conversationId,
   });
-  if (!conversation) {
-    throw new Error("Direct call conversation is not available.");
-  }
 
   const uniqueUsers = Array.from(
     new Map(

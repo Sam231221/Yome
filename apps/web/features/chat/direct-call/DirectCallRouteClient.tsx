@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CallingState,
   ParticipantView,
@@ -21,7 +21,6 @@ import {
   Phone,
   PhoneOff,
   RefreshCw,
-  Users,
   Video,
   VideoOff,
   Volume2,
@@ -180,7 +179,6 @@ function DirectCallRoom({
 
   const {
     useCallCallingState,
-    useCallCustomData,
     useRemoteParticipants,
     useLocalParticipant,
     useCameraState,
@@ -188,7 +186,6 @@ function DirectCallRoom({
   } = useCallStateHooks();
 
   const callingState = useCallCallingState();
-  const callCustomData = useCallCustomData();
   const remoteParticipants = useRemoteParticipants();
   const localParticipant = useLocalParticipant();
   const cameraState = useCameraState({ optimisticUpdates: true });
@@ -207,12 +204,8 @@ function DirectCallRoom({
   const remoteParticipant = remoteParticipants[0];
   const primaryVideoParticipant = remoteParticipant;
   const hasRemoteParticipant = remoteParticipants.length > 0;
-  const sharedMode =
-    parseDirectCallCustomData(callCustomData)?.currentMode ?? initialMode;
-
-  useEffect(() => {
-    setMode(sharedMode);
-  }, [sharedMode]);
+  const hasRemoteVideo = Boolean(remoteParticipant?.videoStream);
+  const isVideoMode = mode === "video" || hasRemoteVideo;
 
   useEffect(() => {
     if (hasRemoteParticipant) {
@@ -222,7 +215,7 @@ function DirectCallRoom({
     }
   }, [hasRemoteParticipant]);
 
-  const syncDevicesForMode = async (nextMode: DirectCallMode) => {
+  const syncDevicesForMode = useCallback(async (nextMode: DirectCallMode) => {
     try {
       await microphoneState.microphone.enable();
       if (nextMode === "video") {
@@ -240,24 +233,46 @@ function DirectCallRoom({
       );
       throw new Error("permission-denied");
     }
-  };
+  }, [cameraState.camera, microphoneState.microphone]);
 
-  const joinCall = async (nextMode: DirectCallMode) => {
+  const joinCall = useCallback(async (nextMode: DirectCallMode) => {
     if (!activeCall || actionPending) return;
 
+    joinAttemptedRef.current = true;
     setActionPending(true);
     setJoinError(undefined);
 
     try {
       await syncDevicesForMode(nextMode);
       await activeCall.join();
-      joinAttemptedRef.current = true;
     } catch {
+      try {
+        await cameraState.camera.disable();
+        await microphoneState.microphone.disable();
+      } catch {
+        // Device cleanup is best-effort after a failed join attempt.
+      }
+      if (activeCall.state.callingState === CallingState.RINGING) {
+        try {
+          await activeCall.leave({
+            reject: true,
+            reason: activeCall.isCreatedByMe ? "cancel" : "decline",
+          });
+        } catch {
+          // If Stream already transitioned the call, keep the local failure visible.
+        }
+      }
       setJoinError("We couldn't join the call right now.");
     } finally {
       setActionPending(false);
     }
-  };
+  }, [
+    activeCall,
+    actionPending,
+    cameraState.camera,
+    microphoneState.microphone,
+    syncDevicesForMode,
+  ]);
 
   useEffect(() => {
     if (!activeCall || joinAttemptedRef.current) return;
@@ -271,7 +286,7 @@ function DirectCallRoom({
     if (shouldAutoJoin) {
       void joinCall(initialMode);
     }
-  }, [activeCall, callingState, initialMode]);
+  }, [activeCall, callingState, initialMode, joinCall]);
 
   useEffect(() => {
     if (!activeCall || !userInfo?.id) return;
@@ -392,25 +407,13 @@ function DirectCallRoom({
     setActionPending(true);
 
     try {
-      if (mode !== "video") {
+      if (cameraState.isMute) {
         await syncDevicesForMode("video");
-        await activeCall.update({
-          custom: {
-            ...activeCall.state.custom,
-            currentMode: "video",
-          },
-        });
         return;
       }
 
-      await cameraState.camera.toggle();
-      if (hasRemoteParticipant && !remoteParticipant?.videoStream) {
-        await activeCall.update({
-          custom: {
-            ...activeCall.state.custom,
-            currentMode: "audio",
-          },
-        });
+      await cameraState.camera.disable();
+      if (!hasRemoteVideo) {
         setMode("audio");
       }
     } catch {
@@ -549,7 +552,7 @@ function DirectCallRoom({
           </div>
           <button
             type="button"
-            onClick={() => router.replace(`/chat`)}
+            onClick={() => void handleLeave("decline")}
             className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-[#c7d2fe] transition hover:bg-white/5"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -621,7 +624,15 @@ function DirectCallRoom({
           ) : null}
           <button
             type="button"
-            onClick={() => router.replace("/chat")}
+            onClick={() =>
+              void handleLeave(
+                callingState === CallingState.RINGING
+                  ? activeCall.isCreatedByMe
+                    ? "cancel"
+                    : "decline"
+                  : "leave"
+              )
+            }
             className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-[#c7d2fe] transition hover:bg-white/5"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -632,7 +643,7 @@ function DirectCallRoom({
 
       <div className="flex flex-1 flex-col gap-4 px-3 py-4 sm:px-6 sm:py-6">
         <section className="relative flex-1 overflow-hidden rounded-[30px] border border-white/10 bg-[#0b1020]/70 p-3 shadow-[0_25px_80px_rgba(2,6,23,0.35)] sm:p-4">
-          {mode === "video" ? (
+          {isVideoMode ? (
             <div className="relative h-full min-h-[420px] rounded-[26px] bg-[#0a1020] sm:min-h-[520px]">
               {renderTile({
                 participant: primaryVideoParticipant,
@@ -704,12 +715,12 @@ function DirectCallRoom({
               onClick={() => void handleVideoToggle()}
               className="flex min-h-[88px] min-w-0 flex-col items-center justify-center gap-2 rounded-[22px] border border-white/12 bg-white/5 px-3 py-3 text-[11px] text-[#c8d2ea] transition hover:bg-white/10 sm:min-w-[92px] sm:text-xs"
             >
-              {mode === "video" && cameraState.isMute ? (
+              {isVideoMode && cameraState.isMute ? (
                 <VideoOff className="h-6 w-6" />
               ) : (
                 <Video className="h-6 w-6" />
               )}
-              {mode === "video"
+              {isVideoMode
                 ? cameraState.isMute
                   ? "Start video"
                   : "Stop video"
@@ -722,13 +733,6 @@ function DirectCallRoom({
             >
               <Volume2 className="h-6 w-6" />
               Speaker
-            </button>
-            <button
-              type="button"
-              className="flex min-h-[88px] min-w-0 flex-col items-center justify-center gap-2 rounded-[22px] border border-white/12 bg-white/5 px-3 py-3 text-[11px] text-[#c8d2ea] transition hover:bg-white/10 sm:min-w-[92px] sm:text-xs"
-            >
-              <Users className="h-6 w-6" />
-              1:1
             </button>
             <button
               type="button"

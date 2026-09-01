@@ -5,6 +5,8 @@ import {
   addMessageSchema,
   directConversationSchema,
   getMessagesSchema,
+  prepareDirectCallConversationSchema,
+  validateDirectConversationSchema,
 } from "./chat.validation.js";
 
 test("getMessagesSchema accepts numeric direct chat targets", () => {
@@ -74,6 +76,34 @@ test("directConversationSchema requires positive user ids", () => {
     directConversationSchema.body.parse({
       from: 0,
       to: 5,
+    })
+  );
+});
+
+test("direct call schemas validate participants and conversation ownership fields", () => {
+  const prepared = prepareDirectCallConversationSchema.body.parse({
+    callerId: "4",
+    peerId: "12",
+  });
+  const validated = validateDirectConversationSchema.body.parse({
+    callerId: "4",
+    peerId: "12",
+    conversationId: "conversation-123",
+  });
+
+  assert.deepEqual(prepared, {
+    callerId: 4,
+    peerId: 12,
+  });
+  assert.deepEqual(validated, {
+    callerId: 4,
+    peerId: 12,
+    conversationId: "conversation-123",
+  });
+  assert.throws(() =>
+    prepareDirectCallConversationSchema.body.parse({
+      callerId: "0",
+      peerId: "12",
     })
   );
 });

@@ -3,10 +3,12 @@
 import type { StreamVideoClient } from "@stream-io/video-react-sdk";
 import type { ChatListItem, ConversationId, UserId } from "@/types/chat";
 import type { AppUserInfo } from "@/lib/auth/userInfo";
-import { getOrCreateDirectConversation } from "@/lib/chat/chatApi";
 import { resolveChatKind } from "@/types/chat";
 import type { DirectCallDescriptor, DirectCallMode } from "./types";
-import { ensureDirectCallUsers } from "@/actions/stream.actions";
+import {
+  ensureDirectCallUsers,
+  prepareDirectCallConversation,
+} from "@/actions/stream.actions";
 
 const DIRECT_CALL_TYPE = "default";
 
@@ -16,7 +18,10 @@ const resolveConversationId = async (
 ): Promise<ConversationId | null> => {
   if (peer.conversationId) return peer.conversationId;
   if (typeof peer.id !== "number") return null;
-  const conversation = await getOrCreateDirectConversation(callerId, peer.id);
+  const conversation = await prepareDirectCallConversation({
+    callerId,
+    peerId: peer.id,
+  });
   return conversation?.id ?? null;
 };
 
@@ -85,7 +90,6 @@ export const createDirectCall = async ({
   return {
     conversationId,
     callId,
-    direction: "outgoing",
     initialMode,
     peerUserId: peer.id,
   };

@@ -7,6 +7,8 @@ import {
   addMessage,
   addMediaMessage,
   getOrCreateConversation,
+  prepareDirectCallConversation,
+  validateDirectConversation,
 } from "../controllers/message.controller.js";
 import {
   addMediaMessageSchema,
@@ -15,6 +17,8 @@ import {
   getMessagesSchema,
   initialGroupMessagesSchema,
   initialContactsSchema,
+  prepareDirectCallConversationSchema,
+  validateDirectConversationSchema,
 } from "./chat.validation.js";
 
 const router = Router();
@@ -24,6 +28,16 @@ router.post(
   "/get-or-create-direct-conversation",
   validateRequest(directConversationSchema),
   getOrCreateConversation
+);
+router.post(
+  "/validate-direct-conversation",
+  validateRequest(validateDirectConversationSchema),
+  validateDirectConversation
+);
+router.post(
+  "/prepare-direct-call-conversation",
+  validateRequest(prepareDirectCallConversationSchema),
+  prepareDirectCallConversation
 );
 router.post("/add-message", validateRequest(addMessageSchema), addMessage);
 router.post("/add-media-message", validateRequest(addMediaMessageSchema), addMediaMessage);

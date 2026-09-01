@@ -48,6 +48,7 @@ const services = {
   media: process.env.MEDIA_SERVICE_URL || "http://127.0.0.1:4104",
   notifications:
     process.env.NOTIFICATIONS_SERVICE_URL || "http://127.0.0.1:4105",
+  resources: process.env.RESOURCES_SERVICE_URL || "http://127.0.0.1:4106",
 };
 const logger = createLogger("gateway");
 
@@ -380,6 +381,9 @@ app.use("/api/media", (req, res) =>
 );
 app.use("/api/notifications", (req, res) =>
   proxyRequest(req as GatewayRequest, res, services.notifications)
+);
+app.use("/api/resources", (req, res) =>
+  proxyRequest(req as GatewayRequest, res, services.resources)
 );
 app.use("/api/chat", (req, res) =>
   proxyRequest(req as GatewayRequest, res, services.chat)

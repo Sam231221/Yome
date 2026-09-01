@@ -17,17 +17,6 @@ import {
 import { YomeAppShell } from "@/components/layout";
 import { getUserConversation, logChatConversationError } from "@/lib/chat/chatApi";
 import { resolveChatKind, type ChatKind } from "@/types/chat";
-import StreamVideoProvider from "@/providers/StreamClientProvider";
-import { IncomingDirectCallOverlay } from "@/features/chat/direct-call/IncomingDirectCallOverlay";
-import { useStreamClientStatus } from "@/providers/stream-client-status";
-
-function StreamIncomingCallLayer() {
-  const { isReady } = useStreamClientStatus();
-
-  if (!isReady) return null;
-
-  return <IncomingDirectCallOverlay />;
-}
 
 export default function Chatpage() {
   const [
@@ -188,10 +177,7 @@ export default function Chatpage() {
               currentChatUser ? "has-active-chat" : ""
             }`}
           >
-            <StreamVideoProvider>
-              <StreamIncomingCallLayer />
-              <ChatRightBar />
-            </StreamVideoProvider>
+            <ChatRightBar />
           </div>
         </div>
       </section>

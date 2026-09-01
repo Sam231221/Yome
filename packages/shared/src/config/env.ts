@@ -33,4 +33,7 @@ export const servicePorts = {
   get notifications() {
     return toPort(process.env.NOTIFICATIONS_SERVICE_PORT, 4105);
   },
+  get resources() {
+    return toPort(process.env.RESOURCES_SERVICE_PORT, 4106);
+  },
 } as const;

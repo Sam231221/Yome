@@ -120,7 +120,6 @@ export const buildDirectCallDescriptor = (
   return {
     conversationId: custom.conversationId,
     callId: call.id,
-    direction: call.isCreatedByMe ? "outgoing" : "incoming",
     initialMode: custom.initialMode,
     peerUserId: peer.userId,
     peerName: peer.name,

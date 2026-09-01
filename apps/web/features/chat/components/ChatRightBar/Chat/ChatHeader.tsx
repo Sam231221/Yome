@@ -23,6 +23,14 @@ import { buildDirectCallRoute } from "@/features/chat/direct-call/routing";
 import type { DirectCallMode } from "@/features/chat/direct-call/types";
 import { useStreamClientStatus } from "@/providers/stream-client-status";
 
+const REUSABLE_CALL_STATES = new Set<CallingState>([
+  CallingState.RINGING,
+  CallingState.JOINING,
+  CallingState.JOINED,
+  CallingState.RECONNECTING,
+  CallingState.MIGRATING,
+]);
+
 interface ChatHeaderProps {
   chatType: string;
   detailsOpen: boolean;
@@ -65,13 +73,9 @@ export default function ChatHeader({
   ];
 
   const startDirectChatCall = (initialMode: DirectCallMode) => {
-    const shouldOpenInNewTab = initialMode === "audio";
-    const pendingTab = shouldOpenInNewTab ? window.open("", "_blank") : null;
-
     startTransition(() => {
       void (async () => {
         if (!client || !currentChatUser || typeof currentChatUser.id !== "number") {
-          pendingTab?.close();
           toast.error(
             setupError ??
               (isConfigured
@@ -83,7 +87,6 @@ export default function ChatHeader({
           return;
         }
         if (!userInfo) {
-          pendingTab?.close();
           toast.error("We couldn't load your account for this call.");
           return;
         }
@@ -93,7 +96,11 @@ export default function ChatHeader({
             const custom = parseDirectCallCustomData(call.state.custom);
             if (!custom) return false;
             if (call.state.endedAt) return false;
-            if (call.state.callingState === CallingState.LEFT) return false;
+            if (!REUSABLE_CALL_STATES.has(call.state.callingState)) return false;
+            if (!currentChatUser.conversationId) return false;
+            if (custom.conversationId !== currentChatUser.conversationId) {
+              return false;
+            }
 
             const memberIds = getCallMemberIds(call);
             return (
@@ -110,13 +117,7 @@ export default function ChatHeader({
                 custom.conversationId,
                 existingCall.id
               );
-
-              if (pendingTab) {
-                pendingTab.location.href = route;
-                pendingTab.focus();
-              } else {
-                router.push(route);
-              }
+              router.push(route);
               return;
             }
           }
@@ -132,15 +133,8 @@ export default function ChatHeader({
             descriptor.conversationId,
             descriptor.callId
           );
-
-          if (pendingTab) {
-            pendingTab.location.href = route;
-            pendingTab.focus();
-          } else {
-            router.push(route);
-          }
+          router.push(route);
         } catch (error) {
-          pendingTab?.close();
           const message =
             error instanceof Error
               ? error.message
