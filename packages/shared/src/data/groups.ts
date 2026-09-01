@@ -42,7 +42,7 @@ export const groupData = [
     subject: "Science",
     category: "Physics",
     tone: "teal",
-    symbol: "PHI",
+    symbol: "φ",
     privacy: "Public group",
     location: "Global",
     featured: false,
@@ -67,7 +67,7 @@ export const groupData = [
       },
     ],
     adminUserIDs: [2, 3],
-    memberUserIDs: [2, 3, 4, 8],
+    memberUserIDs: [1, 2, 3, 4, 8],
   },
   {
     slug: "robotics-team",

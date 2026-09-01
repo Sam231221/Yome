@@ -85,7 +85,7 @@ export function GroupDetailContent({ id }: { id: string }) {
               <span className="verified">✓</span>
             </div>
             <p>{group.subject} · {group.category}</p>
-            <small>{group.members} · {group.activeThisWeek} active this week</small>
+            <small>{group.memberLabel} · {group.activeThisWeek} active this week</small>
           </div>
           <div className="group-detail-actions flex flex-wrap items-center gap-2">
             <button className={group.isJoined ? "secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue" : "primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white"} disabled={isJoining} onClick={handleJoin}>

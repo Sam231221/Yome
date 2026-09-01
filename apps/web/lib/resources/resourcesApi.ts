@@ -1,7 +1,6 @@
 import axios from "axios";
 import { RESOURCES_API_ROUTE } from "@/utils/ApiRoutes";
 import { getClientErrorMessage } from "@/lib/api/clientErrors";
-import { fallbackResources } from "@/lib/resources/fallbackResources";
 import type {
   LearningResource,
   ResourceAuthor,
@@ -23,6 +22,7 @@ const RESOURCE_TONES = new Set<ResourceTone>([
   "amber",
   "neutral",
 ]);
+const resourceRequestConfig = { withCredentials: true };
 
 export const getResourcesErrorMessage = (
   error: unknown,
@@ -91,96 +91,62 @@ export const getResourceHref = (resource: LearningResource) =>
 export const getResources = async (
   params: ResourceListParams = {}
 ): Promise<ResourceListResult> => {
-  try {
-    const { data } = await axios.get(RESOURCES_API_ROUTE, { params });
-    const resources = (data?.resources as ApiResource[] | undefined) ?? [];
+  const { data } = await axios.get(RESOURCES_API_ROUTE, {
+    ...resourceRequestConfig,
+    params,
+  });
+  const resources = (data?.resources as ApiResource[] | undefined) ?? [];
 
-    if (resources.length === 0) {
-      return {
-        resources: filterFallbackResources(params),
-        pageInfo: { nextCursor: null, hasMore: false },
-      };
-    }
-
-    return {
-      resources: resources.map(normalizeResource),
-      pageInfo: {
-        nextCursor:
-          typeof data?.pageInfo?.nextCursor === "string"
-            ? data.pageInfo.nextCursor
-            : null,
-        hasMore: Boolean(data?.pageInfo?.hasMore),
-      },
-    };
-  } catch {
-    return {
-      resources: filterFallbackResources(params),
-      pageInfo: { nextCursor: null, hasMore: false },
-    };
-  }
+  return {
+    resources: resources.map(normalizeResource),
+    pageInfo: {
+      nextCursor:
+        typeof data?.pageInfo?.nextCursor === "string"
+          ? data.pageInfo.nextCursor
+          : null,
+      hasMore: Boolean(data?.pageInfo?.hasMore),
+    },
+  };
 };
 
 export const getResource = async (
   id: string
 ): Promise<ResourceDetailResult> => {
-  try {
-    const { data } = await axios.get(`${RESOURCES_API_ROUTE}/${id}`);
-    const relatedResources =
-      (data?.relatedResources as ApiResource[] | undefined) ?? [];
+  const { data } = await axios.get(
+    `${RESOURCES_API_ROUTE}/${id}`,
+    resourceRequestConfig
+  );
+  const relatedResources =
+    (data?.relatedResources as ApiResource[] | undefined) ?? [];
 
-    return {
-      resource: normalizeResource(data?.resource ?? {}),
-      relatedResources: relatedResources.map(normalizeResource),
-    };
-  } catch {
-    const resource =
-      fallbackResources.find((item) => item.id === id || item.slug === id) ??
-      fallbackResources[0];
-    return {
-      resource,
-      relatedResources: fallbackResources
-        .filter(
-          (item) =>
-            item.id !== resource.id &&
-            (item.subject === resource.subject || item.topic === resource.topic)
-        )
-        .slice(0, 4),
-    };
-  }
+  return {
+    resource: normalizeResource(data?.resource ?? {}),
+    relatedResources: relatedResources.map(normalizeResource),
+  };
 };
 
 export const saveResource = async (id: string) => {
-  const { data } = await axios.post(`${RESOURCES_API_ROUTE}/${id}/save`);
+  const { data } = await axios.post(
+    `${RESOURCES_API_ROUTE}/${id}/save`,
+    undefined,
+    resourceRequestConfig
+  );
   return normalizeResource(data?.resource ?? {});
 };
 
 export const unsaveResource = async (id: string) => {
-  const { data } = await axios.delete(`${RESOURCES_API_ROUTE}/${id}/save`);
+  const { data } = await axios.delete(
+    `${RESOURCES_API_ROUTE}/${id}/save`,
+    resourceRequestConfig
+  );
   return normalizeResource(data?.resource ?? {});
 };
 
 export const markResourceHelpful = async (id: string) => {
-  const { data } = await axios.post(`${RESOURCES_API_ROUTE}/${id}/helpful`);
+  const { data } = await axios.post(
+    `${RESOURCES_API_ROUTE}/${id}/helpful`,
+    undefined,
+    resourceRequestConfig
+  );
   return normalizeResource(data?.resource ?? {});
 };
-
-function filterFallbackResources(params: ResourceListParams) {
-  const search = params.search?.trim().toLowerCase() ?? "";
-  const subject = params.subject && params.subject !== "All" ? params.subject : "";
-  const type = params.type && params.type !== "All" ? params.type : "";
-  const level = params.level && params.level !== "All levels" ? params.level : "";
-
-  return fallbackResources.filter((resource) => {
-    const matchesSearch =
-      !search ||
-      `${resource.title} ${resource.subject} ${resource.topic} ${resource.description} ${resource.author.name}`
-        .toLowerCase()
-        .includes(search);
-    return (
-      matchesSearch &&
-      (!subject || resource.subject === subject) &&
-      (!type || resource.type === type) &&
-      (!level || resource.level === level)
-    );
-  });
-}

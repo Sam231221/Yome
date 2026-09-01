@@ -72,15 +72,19 @@ export default function ContextMenu({
           const IconComponent = icon != null ? iconComponents[icon as keyof typeof iconComponents] : undefined;
 
           return (
-            <div className="flex px-2 hover:bg-background-default-hover items-center ">
-              {icon !== "" ? IconComponent : ""}
-              <li
-                className=" px-3 py-2 cursor-pointer"
+            <li
+              key={`${name}-${icon ?? "no-icon"}`}
+              className="flex px-2 hover:bg-background-default-hover items-center cursor-pointer"
+              onClick={(e) => handleClick(e, callBack)}
+            >
+              {icon ? IconComponent : ""}
+              <span
+                className="px-3 py-2 font-medium text-sm"
                 onClick={(e) => handleClick(e, callBack)}
               >
-                <span className="font-medium text-sm">{name}</span>
-              </li>
-            </div>
+                {name}
+              </span>
+            </li>
           );
         })}
       </ul>

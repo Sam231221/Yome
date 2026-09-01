@@ -34,6 +34,7 @@ export const JOIN_GROUP = `${USER_ROUTE}/groups`;
 export const GET_CONNECTION_SUMMARY = `${USER_ROUTE}/connections/summary`;
 export const GET_CONNECTION_SUGGESTIONS = `${USER_ROUTE}/connections/suggestions`;
 export const GET_FOLLOWING_CONNECTIONS = `${USER_ROUTE}/connections/following`;
+export const GET_DASHBOARD_HOME = `${USER_ROUTE}/dashboard`;
 
 //For user and groups
 export const GET_MESSAGES_ROUTE = `${MESSAGES_ROUTE}/get-messages`;

@@ -3,6 +3,12 @@ import getPrismaInstance from "@repo/database";
 import { createLogger, groupData } from "@repo/shared";
 import { usersData } from "../data/users.js";
 import { resourcesData } from "../data/resources.js";
+import {
+  dashboardPostsData,
+  dashboardSessionsData,
+  dashboardStudyRoomsData,
+  dashboardTopicsData,
+} from "../data/dashboard.js";
 import bcryptjs from "bcryptjs";
 
 const logger = createLogger("auth-seed");
@@ -388,6 +394,184 @@ export async function createLearningResources(
   }
 }
 
+export async function createDashboardDemoData(
+  _req: Request,
+  res: Response
+): Promise<void> {
+  if (rejectIfSeedDisabled(res)) return;
+  try {
+    const prisma = getPrismaInstance();
+    const allUsers = await prisma.user.findMany({
+      select: { id: true },
+      orderBy: { id: "asc" },
+    });
+
+    if (allUsers.length === 0) {
+      res.status(400).json({
+        error:
+          "No users found. Please create users first using /api/dev/db/seed-users",
+      });
+      return;
+    }
+
+    const getUserIdByUsername = async (username: string) => {
+      const user = await prisma.user.findUnique({
+        where: { username },
+        select: { id: true },
+      });
+      return user?.id ?? allUsers[0]?.id ?? null;
+    };
+    const getGroupId = async (slug: string) => {
+      const group = await prisma.group.findUnique({
+        where: { slug },
+        select: { id: true },
+      });
+      return group?.id ?? null;
+    };
+
+    const seededTopics = [];
+    for (const topic of dashboardTopicsData) {
+      seededTopics.push(
+        await prisma.topic.upsert({
+          where: { slug: topic.slug },
+          update: topic,
+          create: topic,
+        })
+      );
+    }
+
+    const seededPosts = [];
+    for (const post of dashboardPostsData) {
+      const authorId = await getUserIdByUsername(post.authorUsername);
+      if (!authorId) continue;
+      const groupId = await getGroupId(post.groupSlug);
+      const createdAt = new Date(Date.now() - post.hoursAgo * 60 * 60 * 1000);
+      seededPosts.push(
+        await prisma.post.upsert({
+          where: { slug: post.slug },
+          update: {
+            title: post.title,
+            description: post.description,
+            kind: post.kind,
+            tone: post.tone,
+            tags: [...post.tags],
+            helpfulCount: "helpfulCount" in post ? post.helpfulCount : 0,
+            answerCount: "answerCount" in post ? post.answerCount : 0,
+            commentCount: "commentCount" in post ? post.commentCount : 0,
+            shareCount: post.shareCount,
+            inspiredCount: "inspiredCount" in post ? post.inspiredCount : 0,
+            topAnswerAuthor: "topAnswerAuthor" in post ? post.topAnswerAuthor : null,
+            topAnswerBody: "topAnswerBody" in post ? post.topAnswerBody : null,
+            projectTeam: "projectTeam" in post ? post.projectTeam : null,
+            projectProgress: "projectProgress" in post ? post.projectProgress : null,
+            projectStack: "projectStack" in post ? post.projectStack : null,
+            createdAt,
+            author: { connect: { id: authorId } },
+            group: groupId ? { connect: { id: groupId } } : { disconnect: true },
+          },
+          create: {
+            slug: post.slug,
+            title: post.title,
+            description: post.description,
+            kind: post.kind,
+            tone: post.tone,
+            tags: [...post.tags],
+            helpfulCount: "helpfulCount" in post ? post.helpfulCount : 0,
+            answerCount: "answerCount" in post ? post.answerCount : 0,
+            commentCount: "commentCount" in post ? post.commentCount : 0,
+            shareCount: post.shareCount,
+            inspiredCount: "inspiredCount" in post ? post.inspiredCount : 0,
+            topAnswerAuthor: "topAnswerAuthor" in post ? post.topAnswerAuthor : null,
+            topAnswerBody: "topAnswerBody" in post ? post.topAnswerBody : null,
+            projectTeam: "projectTeam" in post ? post.projectTeam : null,
+            projectProgress: "projectProgress" in post ? post.projectProgress : null,
+            projectStack: "projectStack" in post ? post.projectStack : null,
+            createdAt,
+            author: { connect: { id: authorId } },
+            group: groupId ? { connect: { id: groupId } } : undefined,
+          },
+        })
+      );
+    }
+
+    const seededStudyRooms = [];
+    for (const room of dashboardStudyRoomsData) {
+      const groupId = await getGroupId(room.groupSlug);
+      const participantIds = (
+        await Promise.all(room.participantUsernames.map(getUserIdByUsername))
+      ).filter((id: number | null): id is number => typeof id === "number");
+      const studyRoom = await prisma.studyRoom.upsert({
+        where: { slug: room.slug },
+        update: {
+          title: room.title,
+          meta: room.meta,
+          tone: room.tone,
+          symbol: room.symbol,
+          activeParticipantCount: room.activeParticipantCount,
+          status: "live",
+          group: groupId ? { connect: { id: groupId } } : { disconnect: true },
+          participants: {
+            deleteMany: {},
+            create: participantIds.map((userId: number) => ({ userId })),
+          },
+        },
+        create: {
+          slug: room.slug,
+          title: room.title,
+          meta: room.meta,
+          tone: room.tone,
+          symbol: room.symbol,
+          activeParticipantCount: room.activeParticipantCount,
+          status: "live",
+          group: groupId ? { connect: { id: groupId } } : undefined,
+          participants: {
+            create: participantIds.map((userId: number) => ({ userId })),
+          },
+        },
+      });
+      seededStudyRooms.push(studyRoom);
+    }
+
+    const sessionTitles = dashboardSessionsData.map((session) => session.title);
+    await prisma.groupEvent.deleteMany({ where: { title: { in: sessionTitles } } });
+    const seededSessions = [];
+    for (const session of dashboardSessionsData) {
+      const groupId = await getGroupId(session.groupSlug);
+      if (!groupId) continue;
+      const startsAt = new Date();
+      startsAt.setDate(startsAt.getDate() + session.startsInDays);
+      startsAt.setHours(session.startsAtHour, session.startsAtMinute, 0, 0);
+      seededSessions.push(
+        await prisma.groupEvent.create({
+          data: {
+            groupId,
+            title: session.title,
+            type: session.type,
+            startsAt,
+            location: session.location,
+            tone: session.tone,
+          },
+        })
+      );
+    }
+
+    res.status(201).json({
+      ok: true,
+      seededTopics,
+      seededPosts,
+      seededStudyRooms,
+      seededSessions,
+      message: "Successfully seeded dashboard demo data",
+    });
+  } catch (error) {
+    logger.error("Failed to create dashboard demo data", error);
+    res.status(500).json({
+      error: "Unable to create dashboard demo data",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 export async function deleteAllRecords(
   _req: Request,
   res: Response
@@ -395,8 +579,14 @@ export async function deleteAllRecords(
   if (rejectIfSeedDisabled(res)) return;
   try {
     const prisma = getPrismaInstance();
+    await prisma.studyRoomParticipant.deleteMany();
+    await prisma.studyRoom.deleteMany();
+    await prisma.topic.deleteMany();
     await prisma.resourceHelpfulVote.deleteMany();
     await prisma.resourceSave.deleteMany();
+    await prisma.like.deleteMany();
+    await prisma.comment.deleteMany();
+    await prisma.post.deleteMany();
     await prisma.resource.deleteMany();
     await prisma.groupInvitation.deleteMany();
     await prisma.groupAnnouncement.deleteMany();

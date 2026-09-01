@@ -45,9 +45,12 @@ model User {
   directConversationsA      Conversation[]          @relation("ConversationParticipantA")
   directConversationsB      Conversation[]          @relation("ConversationParticipantB")
   role                      Role                    @default(USER)
+  learningStreakDays        Int                     @default(12)
+  notificationCount         Int                     @default(3)
   posts                     Post[]
   comments                  Comment[]
   likes                     Like[]
+  studyRoomParticipants     StudyRoomParticipant[]
   authoredResources         Resource[]              @relation("ResourceAuthor")
   savedResources            ResourceSave[]
   helpfulResourceVotes      ResourceHelpfulVote[]
@@ -114,6 +117,8 @@ model Group {
   announcements  GroupAnnouncement[]
   events         GroupEvent[]
   resources      Resource[]
+  posts          Post[]
+  studyRooms     StudyRoom[]
   created_at     DateTime            @default(now())
   updated_at     DateTime            @updatedAt
 
@@ -174,11 +179,13 @@ model GroupEvent {
   startsAt  DateTime
   location  String   @default("Group room")
   tone      String   @default("blue")
+  dashboardVisible Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([groupId])
   @@index([startsAt])
+  @@index([dashboardVisible])
 }
 
 model Conversation {
@@ -197,12 +204,39 @@ model Conversation {
 }
 
 model Post {
-  id          Int       @id @default(autoincrement())
-  description String
-  author      User      @relation(fields: [authorId], references: [id])
-  authorId    Int
-  comments    Comment[]
-  likes       Like[]
+  id             Int       @id @default(autoincrement())
+  slug           String?   @unique
+  title          String    @default("")
+  description    String
+  kind           String    @default("Post")
+  tone           String    @default("blue")
+  tags           String[]  @default([])
+  helpfulCount   Int       @default(0)
+  answerCount    Int       @default(0)
+  commentCount   Int       @default(0)
+  shareCount     Int       @default(0)
+  inspiredCount  Int       @default(0)
+  topAnswerAuthor String?
+  topAnswerBody  String?
+  projectTeam    String?
+  projectProgress String?
+  projectStack   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  author         User      @relation(fields: [authorId], references: [id])
+  authorId       Int
+  group          Group?    @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  groupId        String?
+  resource       Resource? @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  resourceId     String?
+  comments       Comment[]
+  likes          Like[]
+
+  @@index([authorId])
+  @@index([groupId])
+  @@index([resourceId])
+  @@index([kind])
+  @@index([createdAt])
 }
 
 model Comment {
@@ -246,6 +280,7 @@ model Resource {
   updatedAt     DateTime               @updatedAt
   saves         ResourceSave[]
   helpfulVotes  ResourceHelpfulVote[]
+  posts         Post[]
 
   @@index([subject])
   @@index([topic])
@@ -253,6 +288,52 @@ model Resource {
   @@index([type])
   @@index([authorId])
   @@index([groupId])
+}
+
+model StudyRoom {
+  id                     String                 @id @default(uuid())
+  slug                   String                 @unique
+  title                  String
+  meta                   String                 @default("")
+  tone                   String                 @default("blue")
+  symbol                 String                 @default("Y")
+  activeParticipantCount Int                    @default(0)
+  status                 String                 @default("live")
+  group                  Group?                 @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  groupId                String?
+  participants           StudyRoomParticipant[]
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+
+  @@index([status])
+  @@index([groupId])
+  @@index([activeParticipantCount])
+}
+
+model StudyRoomParticipant {
+  id          String    @id @default(uuid())
+  studyRoom   StudyRoom @relation(fields: [studyRoomId], references: [id], onDelete: Cascade)
+  studyRoomId String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  joinedAt    DateTime  @default(now())
+
+  @@unique([studyRoomId, userId])
+  @@index([userId])
+}
+
+model Topic {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+  title           String   @unique
+  tone            String   @default("blue")
+  postCount       Int      @default(0)
+  discussionLabel String   @default("posts")
+  trendScore      Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([trendScore])
 }
 
 model ResourceSave {

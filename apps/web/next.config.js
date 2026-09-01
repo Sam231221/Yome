@@ -54,6 +54,22 @@ const nextConfig = {
   images: {
     remotePatterns,
   },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        ...(config.watchOptions ?? {}),
+        ignored: [
+          "**/.next/**",
+          "**/.turbo/**",
+          "**/node_modules/**",
+          "**/dist/**",
+          "**/build/**",
+          "**/src/generated/**",
+        ],
+      };
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;

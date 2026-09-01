@@ -61,7 +61,8 @@ export type LearningResource = {
   saves: string;
 };
 
-export type LearningGroupDetail = LearningGroup & {
+export type LearningGroupDetail = Omit<LearningGroup, "members"> & {
+  memberLabel: string;
   privacy: string;
   location: string;
   createdAt: string;

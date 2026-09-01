@@ -27,7 +27,11 @@ export function validateRequest(schemas: RequestSchemas): RequestHandler {
         req.params = schemas.params.parse(req.params) as Request["params"];
       }
       if (schemas.query) {
-        req.query = schemas.query.parse(req.query) as Request["query"];
+        Object.defineProperty(req, "query", {
+          value: schemas.query.parse(req.query) as Request["query"],
+          enumerable: true,
+          configurable: true,
+        });
       }
       if (schemas.body) {
         req.body = schemas.body.parse(req.body ?? {}) as Request["body"];

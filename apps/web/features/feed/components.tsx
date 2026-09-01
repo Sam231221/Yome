@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Avatar, Badge, YomeIcon } from "@/components/ui";
-import { studyRooms, topics, type FeedPost, type YomeIconName, type YomeTone } from "@/features/learning/data";
+import type { YomeIconName, YomeTone } from "@/features/learning/data";
+import type {
+  DashboardFeedPost,
+  DashboardPerson,
+  DashboardSession,
+  DashboardStudyRoom,
+  DashboardTopic,
+} from "@/lib/dashboard/types";
 
 export function ComposerCard({ userName = "there" }: { userName?: string }) {
   const [type, setType] = useState("Post");
@@ -66,7 +73,7 @@ export function ComposerCard({ userName = "there" }: { userName?: string }) {
   );
 }
 
-export function FeedPostCard({ post }: { post: FeedPost }) {
+export function FeedPostCard({ post }: { post: DashboardFeedPost }) {
   const accent = post.tone === "amber" ? "var(--yome-amber)" : post.tone === "teal" ? "var(--yome-teal)" : post.tone === "violet" ? "var(--yome-violet)" : "var(--yome-blue)";
   return (
     <article className="yome-card yome-post post card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
@@ -98,8 +105,8 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
         <div className="answer-preview">
           <span className="answer-avatar"><YomeIcon name="check" size={14} /></span>
           <div>
-            <strong>Top answer from Dr. James Liu</strong>
-            <p>Think of it as reversing the product rule: you&apos;re redistributing which function gets differentiated...</p>
+            <strong>Top answer from {post.topAnswer?.author || "Yome mentor"}</strong>
+            <p>{post.topAnswer?.body || "A helpful answer is available for this question."}</p>
           </div>
           <button>Read answer</button>
         </div>
@@ -124,14 +131,14 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
       )}
       {post.type === "Project" ? (
         <div className="project-meta">
-          <div><span>Team</span><strong>4 students</strong></div>
-          <div><span>Progress</span><strong>Prototype complete</strong></div>
-          <div><span>Stack</span><strong>Arduino · C++</strong></div>
+          <div><span>Team</span><strong>{post.project?.team || "Team project"}</strong></div>
+          <div><span>Progress</span><strong>{post.project?.progress || "In progress"}</strong></div>
+          <div><span>Stack</span><strong>{post.project?.stack || "Learning stack"}</strong></div>
         </div>
       ) : null}
       <div className="yome-post-stats post-stats">
         <span><strong>{post.stat.split(" ")[0]}</strong> {post.stat.split(" ").slice(1).join(" ")}</span>
-        <span>{post.detail} · {post.type === "Project" ? "6 shares" : "3 shares"}</span>
+        <span>{post.detail} · {post.shareCount} shares</span>
       </div>
       <footer className="yome-post-actions post-actions flex items-center gap-2">
         <button className="post-action inline-flex items-center justify-center gap-2 rounded-yome font-bold text-yome-muted"><YomeIcon name={post.type === "Project" ? "flask" : "help"} size={18} /> <span>{post.type === "Project" ? "Inspiring" : "Helpful"}</span></button>
@@ -143,12 +150,18 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
   );
 }
 
-export function RightRail() {
+export function RightRail({
+  liveStudyRooms,
+  upcomingSessions,
+  suggestedPeople,
+  trendingTopics,
+}: {
+  liveStudyRooms: DashboardStudyRoom[];
+  upcomingSessions: DashboardSession[];
+  suggestedPeople: DashboardPerson[];
+  trendingTopics: DashboardTopic[];
+}) {
   const [connected, setConnected] = useState<string[]>([]);
-  const people = [
-    { name: "Priya Sharma", detail: "AI · Robotics", initials: "PS", tone: "violet" as YomeTone },
-    { name: "Leo Martins", detail: "Physics · Astronomy", initials: "LM", tone: "teal" as YomeTone },
-  ];
 
   return (
     <aside className="yome-right-rail right-rail">
@@ -158,17 +171,23 @@ export function RightRail() {
           <Link href="/study-rooms">View all</Link>
         </div>
         <div>
-          {studyRooms.slice(0, 2).map((room) => (
+          {liveStudyRooms.map((room) => (
             <article key={room.id} className="room-card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
               <div className={`room-icon ${room.tone}`}>{room.symbol}</div>
               <div className="room-copy">
                 <strong>{room.title}</strong>
                 <small>{room.meta}</small>
                 <div className="stacked-avatars flex items-center">
-                  <Avatar initials="AL" tone="blue" size="xs" />
-                  <Avatar initials="SC" tone="teal" size="xs" />
-                  <Avatar initials="MP" tone="violet" size="xs" />
-                  <span>+11</span>
+                  {room.participants.slice(0, 3).map((participant, index) => (
+                    <Avatar
+                      key={`${room.id}-${participant.initials}-${index}`}
+                      initials={participant.initials}
+                      image={participant.profilePicture || undefined}
+                      tone={(["blue", "teal", "violet"] as YomeTone[])[index] ?? "blue"}
+                      size="xs"
+                    />
+                  ))}
+                  <span>+{Math.max(0, room.activeParticipantCount - room.participants.length)}</span>
                 </div>
               </div>
               <Link className="join-button inline-flex items-center justify-center rounded-yome font-bold text-yome-blue" href="/study-rooms">Join</Link>
@@ -181,10 +200,7 @@ export function RightRail() {
           <div>Upcoming sessions</div>
           <Link href="/events">See calendar</Link>
         </div>
-        {[
-          { day: "28", month: "AUG", title: "Calculus Revision Session", meta: "Today · 4:00 PM", group: "Mathematics Study Group", tone: "violet" },
-          { day: "30", month: "AUG", title: "Intro to Machine Learning", meta: "Sat · 2:30 PM", group: "AI & ML Community", tone: "amber" },
-        ].map((event) => (
+        {upcomingSessions.map((event) => (
           <article key={event.title} className="event-card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
             <div className={event.tone === "amber" ? "date-tile amber" : "date-tile"}>
               <strong>{event.day}</strong>
@@ -203,15 +219,15 @@ export function RightRail() {
           <div>People to learn with</div>
           <Link href="/connections">View all</Link>
         </div>
-        {people.map((person) => {
+        {suggestedPeople.map((person) => {
           const isConnected = connected.includes(person.name);
           return (
             <article className="person-row" key={person.name}>
               <Avatar initials={person.initials} tone={person.tone} />
               <div>
                 <strong>{person.name}</strong>
-                <small>{person.detail}</small>
-                <p>3 mutual groups</p>
+                <small>{person.role}</small>
+                <p>{person.shared}</p>
               </div>
               <button
                 className={isConnected ? "connect-button connected inline-flex items-center justify-center gap-1 rounded-yome font-bold" : "connect-button inline-flex items-center justify-center gap-1 rounded-yome font-bold"}
@@ -234,7 +250,7 @@ export function RightRail() {
           <Link href="/explore">Explore</Link>
         </div>
         <div>
-          {topics.map((topic) => <Badge key={topic.title} tone={topic.tone}># {topic.title}</Badge>)}
+          {trendingTopics.map((topic) => <Badge key={topic.title} tone={topic.tone}># {topic.title}</Badge>)}
         </div>
       </section>
     </aside>

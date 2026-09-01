@@ -9,6 +9,7 @@ import {
 import {
   createGroup,
   discoverGroups,
+  getDashboardHome,
   getConnectionSummary,
   getConnectionSuggestions,
   getFollowingConnections,
@@ -29,6 +30,7 @@ import {
 } from "../controllers/user.controller.js";
 import {
   createGroupSchema,
+  dashboardParamsSchema,
   discoverGroupsSchema,
   followUnfollowedUserSchema,
   groupIdParamsSchema,
@@ -62,6 +64,11 @@ router.post(
   updateUser
 );
 router.get("/get-all-users", getAllUsers);
+router.get(
+  "/dashboard/:loggedInUserId",
+  validateRequest(dashboardParamsSchema),
+  getDashboardHome
+);
 
 router.get("/groups/discover", validateRequest(discoverGroupsSchema), discoverGroups);
 router.get(

@@ -5,8 +5,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useStateProvider } from "@/context/StateContext";
-import { groups, yomeNavItems } from "@/features/learning/data";
+import { yomeNavItems } from "@/features/learning/data";
 import { Avatar, Brand, ToneSymbol, YomeIcon } from "@/components/ui";
+import { getDashboardHome } from "@/lib/dashboard/dashboardApi";
+import type { DashboardHome } from "@/lib/dashboard/types";
 
 export function YomeAppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -14,15 +16,33 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
   const [{ userInfo }] = useStateProvider();
   const [dark, setDark] = useState(false);
+  const [dashboard, setDashboard] = useState<DashboardHome | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
   }, [dark]);
 
-  const name =
-    userInfo?.firstname || userInfo?.lastname
+  useEffect(() => {
+    let cancelled = false;
+    const loggedInUserId = userInfo?.id ?? Number((session?.user as { id?: unknown } | undefined)?.id);
+    if (!Number.isFinite(loggedInUserId)) return;
+
+    getDashboardHome(loggedInUserId)
+      .then((home) => {
+        if (!cancelled) setDashboard(home);
+      })
+      .catch(() => {
+        if (!cancelled) setDashboard(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session, userInfo?.id]);
+
+  const name = dashboard?.profile.name || (userInfo?.firstname || userInfo?.lastname
       ? `${userInfo?.firstname ?? ""} ${userInfo?.lastname ?? ""}`.trim()
-      : userInfo?.name || session?.user?.name || "Maya Patel";
+      : userInfo?.name || session?.user?.name || "Maya Patel");
   const initials = useMemo(
     () =>
       name
@@ -56,7 +76,9 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
           </button>
           <Link className="yome-icon-button icon-button notification-button inline-grid shrink-0 place-items-center rounded-yome border border-yome-border bg-yome-surface text-yome-muted" href="/notifications" aria-label="Notifications">
             <YomeIcon name="bell" size={20} />
-            <span className="notification-dot">3</span>
+              {dashboard?.profile.notificationCount ? (
+                <span className="notification-dot">{dashboard.profile.notificationCount}</span>
+              ) : null}
           </Link>
           <Link className="yome-profile-button profile-button" href="/account">
             <Avatar initials={initials} image={userInfo?.profilePicture || session?.user?.image || undefined} tone="violet" size="sm" />
@@ -88,8 +110,8 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
           <YomeIcon name="plus" size={17} />
         </div>
         <div className="yome-list group-list">
-          {groups.slice(0, 3).map((group) => (
-            <Link key={group.id} href={`/groups/${group.id}`} className="yome-group-item group-item">
+          {(dashboard?.sidebarGroups ?? []).slice(0, 3).map((group) => (
+            <Link key={group.id} href={`/groups/${group.slug || group.id}`} className="yome-group-item group-item">
               <ToneSymbol tone={group.tone}>{group.symbol}</ToneSymbol>
               <span>{group.name}</span>
             </Link>
@@ -105,7 +127,7 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
           <Avatar initials={initials} image={userInfo?.profilePicture || session?.user?.image || undefined} tone="violet" size="sm" />
           <div>
             <strong>{name}</strong>
-            <small>@mayacodes</small>
+            <small>@{dashboard?.profile.username || userInfo?.username || "yomeuser"}</small>
           </div>
           <YomeIcon name="more" size={18} />
         </button>

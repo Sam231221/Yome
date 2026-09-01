@@ -7,6 +7,7 @@ type DevDbAction =
   | "create-multiple-users"
   | "create-multiple-groups"
   | "create-multiple-resources"
+  | "create-dashboard-demo-data"
   | "deleteAll";
 
 function hostnameFromHeader(value: string): string | null {

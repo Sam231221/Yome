@@ -52,6 +52,8 @@ export const loggedInUserIdParamsSchema = {
   params: userIdParamsSchema,
 };
 
+export const dashboardParamsSchema = loggedInUserIdParamsSchema;
+
 export const followUnfollowedUserSchema = {
   body: z.object({
     loggedInUserId: positiveInt,

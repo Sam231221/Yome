@@ -222,6 +222,203 @@ type GroupDetailRecord = GroupCardRecord & {
   }>;
   resources: ResourceCardRecord[];
 };
+type DashboardPostRecord = {
+  id: number;
+  slug: string | null;
+  title: string;
+  description: string;
+  kind: string;
+  tone: string;
+  tags: string[];
+  helpfulCount: number;
+  answerCount: number;
+  commentCount: number;
+  shareCount: number;
+  inspiredCount: number;
+  topAnswerAuthor: string | null;
+  topAnswerBody: string | null;
+  projectTeam: string | null;
+  projectProgress: string | null;
+  projectStack: string | null;
+  createdAt: Date;
+  author: {
+    firstname?: string | null;
+    lastname?: string | null;
+    name?: string | null;
+    username?: string | null;
+    role?: string | null;
+    profilePicture?: string | null;
+  };
+};
+type DashboardStudyRoomRecord = {
+  id: string;
+  slug: string;
+  title: string;
+  meta: string;
+  tone: string;
+  symbol: string;
+  activeParticipantCount: number;
+  participants: Array<{
+    user: {
+      firstname?: string | null;
+      lastname?: string | null;
+      name?: string | null;
+      username?: string | null;
+      profilePicture?: string | null;
+    };
+  }>;
+};
+type DashboardTopicRecord = {
+  id: string;
+  slug: string;
+  title: string;
+  tone: string;
+  postCount: number;
+  discussionLabel: string;
+};
+type DashboardEventRecord = {
+  id: string;
+  title: string;
+  startsAt: Date;
+  location: string;
+  tone: string;
+  group: { name: string } | null;
+};
+
+const dashboardSidebarGroupSlugs = [
+  "python-learners",
+  "physics-club",
+  "robotics-team",
+];
+
+function getCompactCount(value: number): string {
+  if (value >= 1000) return `${Number((value / 1000).toFixed(value >= 10000 ? 0 : 1))}k`;
+  return String(value);
+}
+
+function getRelativeTimeLabel(date: Date): string {
+  const diffMs = Date.now() - date.getTime();
+  const minutes = Math.max(1, Math.round(diffMs / 60_000));
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  return `${Math.round(hours / 24)}d`;
+}
+
+function formatDashboardEventMeta(startsAt: Date): string {
+  const now = new Date();
+  const sameDay = startsAt.toDateString() === now.toDateString();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const label = sameDay
+    ? "Today"
+    : startsAt.toDateString() === tomorrow.toDateString()
+      ? "Tomorrow"
+      : new Intl.DateTimeFormat("en", { weekday: "short" }).format(startsAt);
+  const time = new Intl.DateTimeFormat("en", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(startsAt);
+  return `${label} · ${time}`;
+}
+
+function mapDashboardPost(post: DashboardPostRecord) {
+  const author = getUserName(post.author);
+  const kind = post.kind || "Post";
+  return {
+    id: post.slug || String(post.id),
+    type: kind,
+    author,
+    initials: getInitials(author),
+    tone: post.tone,
+    time: getRelativeTimeLabel(post.createdAt),
+    title: post.title || post.description,
+    body: post.description,
+    tags: post.tags,
+    stat:
+      kind === "Project"
+        ? `${post.inspiredCount} inspired`
+        : `${post.helpfulCount} helpful`,
+    detail:
+      kind === "Project"
+        ? `${post.commentCount} comments`
+        : `${post.answerCount} answers`,
+    topAnswer:
+      post.topAnswerAuthor || post.topAnswerBody
+        ? {
+            author: post.topAnswerAuthor || "Yome mentor",
+            body: post.topAnswerBody || "",
+          }
+        : null,
+    project:
+      post.projectTeam || post.projectProgress || post.projectStack
+        ? {
+            team: post.projectTeam || "",
+            progress: post.projectProgress || "",
+            stack: post.projectStack || "",
+          }
+        : null,
+    shareCount: post.shareCount,
+  };
+}
+
+function mapDashboardRoom(room: DashboardStudyRoomRecord) {
+  return {
+    id: room.slug || room.id,
+    title: room.title,
+    meta: room.meta || `${room.activeParticipantCount} studying now`,
+    symbol: room.symbol,
+    tone: room.tone,
+    activeParticipantCount: room.activeParticipantCount,
+    participants: room.participants.slice(0, 3).map((participant) => {
+      const name = getUserName(participant.user);
+      return {
+        name,
+        initials: getInitials(name),
+        profilePicture: participant.user.profilePicture || "",
+      };
+    }),
+  };
+}
+
+function mapDashboardTopic(topic: DashboardTopicRecord) {
+  return {
+    id: topic.slug || topic.id,
+    title: topic.title,
+    tone: topic.tone,
+    posts: `${getCompactCount(topic.postCount)} ${topic.discussionLabel}`,
+  };
+}
+
+function mapDashboardSidebarGroup(
+  group: GroupCardRecord,
+  viewerId: number,
+  joinedIds: Set<string>
+) {
+  const card = mapGroupCard(group, viewerId, joinedIds);
+  return group.slug === "physics-club" ? { ...card, symbol: "φ" } : card;
+}
+
+function mapDashboardSuggestedPerson(person: UserCardRecord) {
+  const card = mapUserCard(person);
+  if (person.username === "priyasharma") {
+    return {
+      ...card,
+      role: "AI · Robotics",
+      shared: "3 mutual groups",
+      tone: "violet",
+    };
+  }
+  if (person.username === "leomartins") {
+    return {
+      ...card,
+      role: "Physics · Astronomy",
+      shared: "3 mutual groups",
+      tone: "teal",
+    };
+  }
+  return card;
+}
 
 export async function getUserById(
   req: Request,
@@ -393,6 +590,178 @@ export async function getAllUsers(
       },
     });
     res.status(200).send({ users });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getDashboardHome(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    const loggedInUserId = parseInt(String(req.params.loggedInUserId ?? ""), 10);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+    if (Number.isNaN(loggedInUserId)) {
+      res.status(400).json({ ok: false, error: "Invalid user id" });
+      return;
+    }
+    if (authenticatedUserId !== loggedInUserId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
+
+    const prisma = getPrismaInstance();
+    const [
+      user,
+      feedPosts,
+      liveStudyRooms,
+      upcomingSessions,
+      suggestedPeople,
+      trendingTopics,
+      sidebarGroups,
+    ] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: loggedInUserId },
+        select: {
+          id: true,
+          firstname: true,
+          lastname: true,
+          name: true,
+          username: true,
+          role: true,
+          profilePicture: true,
+          learningStreakDays: true,
+          notificationCount: true,
+        },
+      }),
+      prisma.post.findMany({
+        orderBy: [{ createdAt: "desc" }],
+        take: 10,
+        include: {
+          author: {
+            select: {
+              firstname: true,
+              lastname: true,
+              name: true,
+              username: true,
+              role: true,
+              profilePicture: true,
+            },
+          },
+        },
+      }) as Promise<DashboardPostRecord[]>,
+      prisma.studyRoom.findMany({
+        where: { status: "live" },
+        orderBy: [{ activeParticipantCount: "desc" }, { title: "asc" }],
+        take: 2,
+        include: {
+          participants: {
+            take: 3,
+            orderBy: { joinedAt: "asc" },
+            include: {
+              user: {
+                select: {
+                  firstname: true,
+                  lastname: true,
+                  name: true,
+                  username: true,
+                  profilePicture: true,
+                },
+              },
+            },
+          },
+        },
+      }) as Promise<DashboardStudyRoomRecord[]>,
+      prisma.groupEvent.findMany({
+        where: {
+          title: { in: ["Calculus Revision Session", "Intro to Machine Learning"] },
+        },
+        orderBy: [{ startsAt: "asc" }],
+        take: 2,
+        include: { group: { select: { name: true } } },
+      }) as Promise<DashboardEventRecord[]>,
+      prisma.user.findMany({
+        where: {
+          username: { in: ["priyasharma", "leomartins"] },
+          id: { not: loggedInUserId },
+          NOT: { followers: { some: { id: loggedInUserId } } },
+        },
+        orderBy: { firstname: "desc" },
+        take: 2,
+        include: {
+          userProfile: { select: { bio: true, address: true } },
+          group: { select: { id: true, name: true, subject: true } },
+          groupAdmin: { select: { id: true, name: true, subject: true } },
+        },
+      }) as Promise<UserCardRecord[]>,
+      prisma.topic.findMany({
+        orderBy: [{ trendScore: "desc" }, { title: "asc" }],
+        take: 4,
+      }) as Promise<DashboardTopicRecord[]>,
+      prisma.group.findMany({
+        where: {
+          slug: { in: dashboardSidebarGroupSlugs },
+        },
+        take: 3,
+        include: {
+          tags: { orderBy: { label: "asc" } },
+          _count: { select: { members: true, admins: true, resources: true } },
+        },
+      }) as Promise<GroupCardRecord[]>,
+    ]);
+
+    if (!user) {
+      res.status(404).json({ ok: false, error: "User not found" });
+      return;
+    }
+
+    const userName = getUserName(user);
+    const sortedSidebarGroups = [...sidebarGroups].sort(
+      (a, b) =>
+        dashboardSidebarGroupSlugs.indexOf(a.slug) -
+        dashboardSidebarGroupSlugs.indexOf(b.slug)
+    );
+    const joinedIds = new Set<string>(sortedSidebarGroups.map((group: GroupCardRecord) => group.id));
+
+    res.status(200).json({
+      ok: true,
+      dashboard: {
+        profile: {
+          id: user.id,
+          name: userName,
+          firstName: user.firstname,
+          username: user.username,
+          role: user.role === "TEACHER" || user.role === "MENTOR" ? "Educator" : "Student",
+          initials: getInitials(userName),
+          profilePicture: user.profilePicture || "",
+          learningStreakDays: user.learningStreakDays,
+          notificationCount: user.notificationCount,
+        },
+        feedPosts: feedPosts.map(mapDashboardPost),
+        liveStudyRooms: liveStudyRooms.map(mapDashboardRoom),
+        upcomingSessions: upcomingSessions.map((session: DashboardEventRecord) => ({
+          id: session.id,
+          title: session.title,
+          day: new Intl.DateTimeFormat("en", { day: "2-digit" }).format(session.startsAt),
+          month: new Intl.DateTimeFormat("en", { month: "short" }).format(session.startsAt).toUpperCase(),
+          meta: formatDashboardEventMeta(session.startsAt),
+          group: session.location || session.group?.name || "Yome study group",
+          tone: session.tone,
+          startsAt: session.startsAt.toISOString(),
+        })),
+        suggestedPeople: suggestedPeople.map(mapDashboardSuggestedPerson),
+        trendingTopics: trendingTopics.map(mapDashboardTopic),
+        sidebarGroups: sortedSidebarGroups.map((group: GroupCardRecord) =>
+          mapDashboardSidebarGroup(group, loggedInUserId, joinedIds)
+        ),
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -844,6 +1213,7 @@ export async function getGroupDetail(
       ok: true,
       group: {
         ...summary,
+        memberLabel: summary.members,
         privacy: group.privacy,
         location: group.location,
         createdAt: group.created_at.toISOString(),

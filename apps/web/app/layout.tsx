@@ -1,4 +1,3 @@
-import { Inter } from "next/font/google";
 import "./globals.css";
 import "./app-theme.css";
 import "./chat.css";
@@ -7,7 +6,6 @@ import { StateProvider } from "@/context/StateContext";
 import { ReactNode } from "react";
 import AuthProvider from "@/context/AuthProvider";
 import ModalContextProvider from "@/context/ModalContextProvider";
-const inter = Inter({ subsets: ["latin"] });
 import { Toaster } from "react-hot-toast";
 
 export const metadata = {
@@ -37,7 +35,7 @@ export const viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning={true} className={inter.className}>
+      <body suppressHydrationWarning={true}>
         <AuthProvider>
           <ModalContextProvider>
             <StateProvider>
