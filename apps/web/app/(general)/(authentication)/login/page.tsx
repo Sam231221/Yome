@@ -6,26 +6,7 @@ import { useSession } from "next-auth/react";
 import LoginContainer from "./components/LoginContainer";
 import RegisterContainer from "./components/RegisterContainer";
 import Link from "next/link";
-
-function Avatar({
-  initials,
-  tone = "blue",
-}: {
-  initials: string;
-  tone?: "blue" | "teal" | "amber" | "violet";
-}) {
-  return <span className={`avatar avatar-${tone} avatar-md`}>{initials}</span>;
-}
-
-function Badge({
-  children,
-  tone = "blue",
-}: {
-  children: React.ReactNode;
-  tone?: "blue" | "teal" | "amber" | "violet" | "neutral";
-}) {
-  return <span className={`badge badge-${tone}`}>{children}</span>;
-}
+import { Avatar, Badge } from "@/components/ui";
 
 export default function Login() {
   const router = useRouter();

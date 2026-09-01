@@ -1,10 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { FaFacebook, FaGithub } from "react-icons/fa";
-import { FcGoogle } from "react-icons/fc";
 import { REGISTER_USER } from "@/utils/ApiRoutes";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import {
   CONFIRM_PASSWORD_ERROR_MESSAGE,
@@ -12,11 +10,11 @@ import {
   NAME_PATTERN,
   normalizeEmail,
   normalizeText,
-  PASSWORD_ERROR_MESSAGE,
   PASSWORD_PATTERN,
   passwordsMatch,
   USERNAME_PATTERN,
 } from "@/lib/auth/formValidation";
+import { AuthTerms, SocialAuthButtons } from "@/features/auth/socialAuth";
 
 interface RegisterContainerProps {
   activeTab: string;
@@ -41,22 +39,6 @@ const emptyValues: RegisterValues = {
   confirmPassword: "",
 };
 
-function SocialAuthButton({
-  provider,
-  children,
-  onClick,
-}: {
-  provider: string;
-  children: React.ReactNode;
-  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
-}) {
-  return (
-    <button type="button" data-provider={provider} onClick={onClick}>
-      {children}
-    </button>
-  );
-}
-
 export default function RegisterContainer({
   activeTab,
   setActiveTab,
@@ -67,9 +49,7 @@ export default function RegisterContainer({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const callbackUrl = searchParams.get("callbackUrl");
   const [values, setValues] = useState<RegisterValues>(emptyValues);
 
   const inputs = useMemo(
@@ -119,27 +99,6 @@ export default function RegisterContainer({
 
   const onChangeFormInputs = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [e.target.name]: e.target.value });
-  };
-
-  const loginWithNextAuthProvider = async (
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    const provider = e.currentTarget.getAttribute("data-provider");
-    if (!provider) return;
-
-    const callback = await signIn(provider, { redirect: false });
-    if (callback?.error) {
-      toast.error("Unable to sign in with that provider right now.");
-      return;
-    }
-    if (callback?.ok) {
-      toast.success("Signed in successfully.");
-      if (callbackUrl === null) {
-        router.push("/dashboard");
-      } else {
-        window.location.href = callbackUrl;
-      }
-    }
   };
 
   const handleRegisterFormSubmit = async (
@@ -310,23 +269,8 @@ export default function RegisterContainer({
           {isSubmitting ? "Creating account..." : "Create account"}
         </button>
       </form>
-      <div className="auth-divider">
-        <span>or continue with</span>
-      </div>
-      <div className="social-auth">
-        <SocialAuthButton provider="google" onClick={loginWithNextAuthProvider}>
-          <strong><FcGoogle size={15} /></strong> Google
-        </SocialAuthButton>
-        <SocialAuthButton provider="github" onClick={loginWithNextAuthProvider}>
-          <strong><FaGithub size={15} /></strong> Github
-        </SocialAuthButton>
-        <SocialAuthButton provider="facebook" onClick={loginWithNextAuthProvider}>
-          <strong><FaFacebook size={15} color="#1e5aff" /></strong> Facebook
-        </SocialAuthButton>
-      </div>
-      <p className="auth-terms">
-        By continuing, you agree to Yome&apos;s Terms and acknowledge the Privacy Policy.
-      </p>
+      <SocialAuthButtons />
+      <AuthTerms />
     </div>
   );
 }

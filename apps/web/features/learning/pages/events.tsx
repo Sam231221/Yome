@@ -2,41 +2,77 @@
 
 import Link from "next/link";
 import {
-  ArrowRight,
-  Bookmark,
   CalendarDays,
   Check,
-  FileText,
-  Headphones,
-  HelpCircle,
-  MessageCircle,
-  Mic,
-  MicOff,
-  MonitorUp,
-  MoreHorizontal,
-  Phone,
   Plus,
-  Search,
-  Settings,
-  Share2,
   Users,
-  UsersRound,
   Video,
 } from "lucide-react";
-import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Avatar, Badge } from "@/components/ui";
-import { groups, onboardingGoals, onboardingInterests, type YomeTone } from "@/features/learning/data";
-import { discoveryGroups, GroupCard, MembersGrid, QuestionCard } from "./shared";
+import {
+  getLearningContentErrorMessage,
+  getLearningEvents,
+  type LearningEvent,
+} from "@/lib/learning/learningContentApi";
+
+function EventState({
+  title,
+  body,
+  onRetry,
+}: {
+  title: string;
+  body?: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <div className="groups-tab-state card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
+      <div className="empty-icon"><CalendarDays size={30} /></div>
+      <h2>{title}</h2>
+      {body ? <p>{body}</p> : null}
+      {onRetry ? (
+        <button className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white" onClick={onRetry}>
+          Try again
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 export function EventsContent() {
   const [tab, setTab] = useState("Discover");
   const [joined, setJoined] = useState<string[]>([]);
-  const events = [
-    { title: "Calculus Revision Session", date: "28", month: "AUG", time: "Today · 4:00 PM", host: "Mathematics Study Group", attending: 24, tone: "violet" as YomeTone, type: "Study session" },
-    { title: "Intro to Machine Learning", date: "30", month: "AUG", time: "Saturday · 2:30 PM", host: "AI & ML Community", attending: 42, tone: "blue" as YomeTone, type: "Live lesson" },
-    { title: "Arduino Build Clinic", date: "02", month: "SEP", time: "Tuesday · 5:00 PM", host: "Robotics Club", attending: 28, tone: "amber" as YomeTone, type: "Workshop" },
-    { title: "Quantum Physics Q&A", date: "04", month: "SEP", time: "Thursday · 6:30 PM", host: "Physics Problem Solvers", attending: 67, tone: "teal" as YomeTone, type: "STEM talk" },
-  ];
+  const [events, setEvents] = useState<LearningEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadEvents = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      setEvents(await getLearningEvents());
+    } catch (loadError) {
+      setError(getLearningContentErrorMessage(loadError, "Unable to load events."));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadEvents();
+  }, []);
+
+  const featuredEvent = useMemo(() => events[0] ?? null, [events]);
+  const calendarDays = useMemo(() => {
+    if (events.length === 0) return [];
+    return events.slice(0, 7).map((event) => {
+      const date = new Date(event.startsAt);
+      const weekday = Number.isNaN(date.getTime())
+        ? "Day"
+        : new Intl.DateTimeFormat("en", { weekday: "short" }).format(date);
+      return { id: event.id, label: `${weekday} ${event.date}` };
+    });
+  }, [events]);
 
   return (
     <main className="events-page min-w-0 text-yome-text">
@@ -61,11 +97,11 @@ export function EventsContent() {
 
       <section className="events-calendar-strip card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
         <button>‹</button>
-        {["Thu 27", "Fri 28", "Sat 29", "Sun 30", "Mon 31", "Tue 01", "Wed 02"].map((day, index) => (
-          <button key={day} className={index === 1 ? "active" : ""}>
-            <span>{day.split(" ")[0]}</span>
-            <strong>{day.split(" ")[1]}</strong>
-            {[1, 3, 6].includes(index) ? <i /> : null}
+        {(calendarDays.length ? calendarDays : [{ id: "empty", label: "No events" }]).map((day, index) => (
+          <button key={day.id} className={index === 0 ? "active" : ""}>
+            <span>{day.label.split(" ")[0]}</span>
+            <strong>{day.label.split(" ")[1] ?? ""}</strong>
+            {events[index] ? <i /> : null}
           </button>
         ))}
         <button>›</button>
@@ -73,30 +109,38 @@ export function EventsContent() {
 
       {tab === "Discover" ? (
         <>
-          <section className="event-feature card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
-            <div>
-              <Badge tone="blue">Featured live lesson</Badge>
-              <h2>How machines learn: a visual introduction</h2>
-              <p>Build an intuitive understanding of datasets, models, loss, and training with no advanced mathematics required.</p>
-              <div className="event-host">
-                <Avatar initials="JL" tone="blue" />
-                <span>
-                  <strong>Dr. James Liu</strong>
-                  <small>Educator · AI & Machine Learning</small>
-                </span>
+          {isLoading ? (
+            <EventState title="Loading events..." />
+          ) : error ? (
+            <EventState title="Events could not load" body={error} onRetry={() => void loadEvents()} />
+          ) : !featuredEvent ? (
+            <EventState title="No upcoming events" body="Events from your learning communities will appear here." />
+          ) : (
+            <section className="event-feature card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
+              <div>
+                <Badge tone={featuredEvent.tone}>Featured {featuredEvent.type.toLowerCase()}</Badge>
+                <h2>{featuredEvent.title}</h2>
+                <p>Join learners from {featuredEvent.host} for a live session focused on {featuredEvent.subject.toLowerCase()}.</p>
+                <div className="event-host">
+                  <Avatar initials={featuredEvent.subject.slice(0, 2).toUpperCase()} tone={featuredEvent.tone} />
+                  <span>
+                    <strong>{featuredEvent.host}</strong>
+                    <small>{featuredEvent.subject} community</small>
+                  </span>
+                </div>
+                <div className="event-feature-meta flex flex-wrap items-center gap-2">
+                  <span><CalendarDays size={16} /><b>{featuredEvent.time}</b></span>
+                  <span><Video size={16} /><b>{featuredEvent.type}</b></span>
+                  <span><Users size={16} /><b>{featuredEvent.attending} attending</b></span>
+                </div>
+                <button className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white">Reserve a place</button>
               </div>
-              <div className="event-feature-meta flex flex-wrap items-center gap-2">
-                <span><CalendarDays size={16} /><b>Saturday, 2:30 PM</b></span>
-                <span><Video size={16} /><b>Live video session</b></span>
-                <span><Users size={16} /><b>42 attending</b></span>
+              <div className="event-lesson-art">
+                <div className="lesson-network"><span>{featuredEvent.subject}</span><i /><span>{featuredEvent.type}</span><i /><span>LIVE</span></div>
+                <small>{featuredEvent.month} {featuredEvent.date}</small>
               </div>
-              <button className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white">Reserve a place</button>
-            </div>
-            <div className="event-lesson-art">
-              <div className="lesson-network"><span>DATA</span><i /><span>MODEL</span><i /><span>IDEA</span></div>
-              <small>LIVE · 30 AUG · 14:30</small>
-            </div>
-          </section>
+            </section>
+          )}
 
           <div className="events-list-heading">
             <div>
@@ -113,9 +157,9 @@ export function EventsContent() {
 
           <div className="events-grid">
             {events.map((event) => {
-              const isJoined = joined.includes(event.title);
+              const isJoined = joined.includes(event.id);
               return (
-                <article className="event-card-full card rounded-yome border border-yome-border bg-yome-surface shadow-yome" key={event.title}>
+                <article className="event-card-full card rounded-yome border border-yome-border bg-yome-surface shadow-yome" key={event.id}>
                   <div className={`event-date-large ${event.tone}`}>
                     <strong>{event.date}</strong>
                     <span>{event.month}</span>
@@ -134,7 +178,7 @@ export function EventsContent() {
                       <span>{event.attending} attending</span>
                     </div>
                   </div>
-                  <button className={isJoined ? "secondary-button joined inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue" : "primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white"} onClick={() => setJoined((current) => isJoined ? current.filter((value) => value !== event.title) : [...current, event.title])}>
+                  <button className={isJoined ? "secondary-button joined inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue" : "primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white"} onClick={() => setJoined((current) => isJoined ? current.filter((value) => value !== event.id) : [...current, event.id])}>
                     {isJoined ? <><Check size={15} /> Joined</> : "Join event"}
                   </button>
                 </article>

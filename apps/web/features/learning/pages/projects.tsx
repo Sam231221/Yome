@@ -4,38 +4,77 @@ import Link from "next/link";
 import {
   ArrowRight,
   Bookmark,
-  CalendarDays,
   Check,
   FileText,
-  Headphones,
   HelpCircle,
   MessageCircle,
-  Mic,
-  MicOff,
-  MonitorUp,
-  MoreHorizontal,
-  Phone,
   Plus,
-  Search,
-  Settings,
   Share2,
   Users,
-  UsersRound,
-  Video,
 } from "lucide-react";
-import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Avatar, Badge } from "@/components/ui";
-import { groups, onboardingGoals, onboardingInterests, type YomeTone } from "@/features/learning/data";
-import { discoveryGroups, GroupCard, MembersGrid, QuestionCard } from "./shared";
+import {
+  getLearningContentErrorMessage,
+  getLearningProject,
+  getLearningProjects,
+  type LearningProject,
+} from "@/lib/learning/learningContentApi";
+
+function ProjectState({
+  title,
+  body,
+  onRetry,
+}: {
+  title: string;
+  body?: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <div className="groups-tab-state card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
+      <div className="empty-icon"><Users size={29} /></div>
+      <h2>{title}</h2>
+      {body ? <p>{body}</p> : null}
+      {onRetry ? (
+        <button className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white" onClick={onRetry}>
+          Try again
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 export function ProjectsContent() {
   const [filter, setFilter] = useState("Featured");
-  const projectsData = [
-    { id: "arduino-smart-greenhouse", title: "Arduino Smart Greenhouse", subject: "Engineering", tags: ["Arduino", "C++", "Electronics"], tone: "amber" as YomeTone, team: "4 students", progress: "Prototype complete", initials: "SG", description: "An automated greenhouse that monitors soil, light, and temperature." },
-    { id: "accessible-campus-navigator", title: "Accessible Campus Navigator", subject: "Technology", tags: ["Computer Vision", "Python", "Accessibility"], tone: "blue" as YomeTone, team: "3 students", progress: "Testing", initials: "CN", description: "Indoor navigation assistance for visually impaired students." },
-    { id: "open-source-air-quality-map", title: "Open-source Air Quality Map", subject: "Science", tags: ["Data Science", "Sensors", "Environment"], tone: "teal" as YomeTone, team: "6 contributors", progress: "Live beta", initials: "AQ", description: "Community sensors visualized as an open local air-quality map." },
-    { id: "visual-calculus-explorer", title: "Visual Calculus Explorer", subject: "Mathematics", tags: ["React", "Graphs", "Calculus"], tone: "violet" as YomeTone, team: "2 students", progress: "In progress", initials: "VC", description: "Interactive graphs that connect calculus notation to geometric intuition." },
-  ];
+  const [subject, setSubject] = useState("All subjects");
+  const [projects, setProjects] = useState<LearningProject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadProjects = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      setProjects(await getLearningProjects());
+    } catch (loadError) {
+      setError(getLearningContentErrorMessage(loadError, "Unable to load projects."));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadProjects();
+  }, []);
+
+  const visibleProjects = useMemo(
+    () =>
+      projects.filter((project) =>
+        subject === "All subjects" ? true : project.subject === subject
+      ),
+    [projects, subject]
+  );
+  const featuredProject = visibleProjects[0] ?? projects[0] ?? null;
 
   return (
     <main className="projects-page min-w-0 text-yome-text">
@@ -50,41 +89,49 @@ export function ProjectsContent() {
         </button>
       </header>
 
-      <section className="project-feature card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
-        <div>
-          <Badge tone="blue">Project of the week</Badge>
-          <h2>Accessible Campus Navigator</h2>
-          <p>A student team is combining computer vision, accessible design, and indoor mapping to help visually impaired learners navigate unfamiliar university buildings.</p>
-          <div className="project-feature-tags">
-            <Badge tone="blue">Computer Vision</Badge>
-            <Badge tone="violet">Accessibility</Badge>
-            <Badge tone="neutral">Python</Badge>
-          </div>
-          <div className="project-team-row">
-            <div className="proof-avatars flex items-center">
-              <Avatar initials="MP" tone="violet" />
-              <Avatar initials="AN" tone="amber" />
-              <Avatar initials="PS" tone="teal" />
+      {isLoading ? (
+        <ProjectState title="Loading projects..." />
+      ) : error ? (
+        <ProjectState title="Projects could not load" body={error} onRetry={() => void loadProjects()} />
+      ) : !featuredProject ? (
+        <ProjectState title="No projects yet" body="Project posts from your learning network will appear here." />
+      ) : (
+        <section className="project-feature card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
+          <div>
+            <Badge tone={featuredProject.tone}>Project of the week</Badge>
+            <h2>{featuredProject.title}</h2>
+            <p>{featuredProject.description}</p>
+            <div className="project-feature-tags">
+              {featuredProject.tags.slice(0, 3).map((tag, index) => (
+                <Badge key={tag} tone={index === 0 ? featuredProject.tone : "neutral"}>{tag}</Badge>
+              ))}
             </div>
-            <span>
-              <strong>3 collaborators</strong>
-              <small>University of Manchester</small>
-            </span>
+            <div className="project-team-row">
+              <div className="proof-avatars flex items-center">
+                <Avatar initials={featuredProject.initials} tone={featuredProject.tone} />
+                <Avatar initials="AN" tone="amber" />
+                <Avatar initials="PS" tone="teal" />
+              </div>
+              <span>
+                <strong>{featuredProject.team}</strong>
+                <small>{featuredProject.author}</small>
+              </span>
+            </div>
+            <Link className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white" href={`/projects/${featuredProject.id}`}>
+              View project <ArrowRight size={16} />
+            </Link>
           </div>
-          <Link className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white" href="/projects/accessible-campus-navigator">
-            View project <ArrowRight size={16} />
-          </Link>
-        </div>
-        <div className="campus-map-art">
-          <div className="map-grid" />
-          <span className="map-building b1">A</span>
-          <span className="map-building b2">B</span>
-          <span className="map-building b3">C</span>
-          <div className="map-route"><i /><i /><i /><i /></div>
-          <span className="map-you">YOU</span>
-          <small>ACCESSIBLE ROUTE · 4 MIN</small>
-        </div>
-      </section>
+          <div className="campus-map-art">
+            <div className="map-grid" />
+            <span className="map-building b1">A</span>
+            <span className="map-building b2">B</span>
+            <span className="map-building b3">C</span>
+            <div className="map-route"><i /><i /><i /><i /></div>
+            <span className="map-you">{featuredProject.initials}</span>
+            <small>{featuredProject.progress.toUpperCase()}</small>
+          </div>
+        </section>
+      )}
 
       <nav className="project-filters">
         {["Featured", "Recently updated", "Seeking collaborators", "Following"].map((item) => (
@@ -93,17 +140,15 @@ export function ProjectsContent() {
           </button>
         ))}
         <span />
-        <select>
-          <option>All subjects</option>
-          <option>Science</option>
-          <option>Technology</option>
-          <option>Engineering</option>
-          <option>Mathematics</option>
+        <select value={subject} onChange={(event) => setSubject(event.target.value)}>
+          {["All subjects", "Science", "Technology", "Engineering", "Mathematics"].map((item) => (
+            <option key={item}>{item}</option>
+          ))}
         </select>
       </nav>
 
       <div className="projects-grid">
-        {projectsData.map((project, index) => (
+        {visibleProjects.map((project, index) => (
           <article className="project-card-full card rounded-yome border border-yome-border bg-yome-surface shadow-yome" key={project.id}>
             <Link className={`project-card-art ${project.tone}`} href={`/projects/${project.id}`}>
               <span>{project.initials}</span>
@@ -121,7 +166,7 @@ export function ProjectsContent() {
               <div className="project-tags flex flex-wrap items-center gap-2">{project.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
               <footer>
                 <div>
-                  <Avatar initials={["AN", "MP", "AO", "SC"][index]} tone={project.tone} size="xs" />
+                  <Avatar initials={["AN", "MP", "AO", "SC"][index] ?? project.initials} tone={project.tone} size="xs" />
                   <span>{project.team}</span>
                 </div>
                 <Badge tone="neutral">{project.progress}</Badge>
@@ -137,13 +182,43 @@ export function ProjectsContent() {
 export function ProjectDetailContent({ id }: { id: string }) {
   const [follow, setFollow] = useState(false);
   const [tab, setTab] = useState("Overview");
-  const projectsData = [
-    { id: "arduino-smart-greenhouse", title: "Arduino Smart Greenhouse", subject: "Engineering", tags: ["Arduino", "C++", "Electronics"], tone: "amber" as YomeTone, team: "4 students", progress: "Prototype complete", initials: "SG", description: "An automated greenhouse that monitors soil, light, and temperature." },
-    { id: "accessible-campus-navigator", title: "Accessible Campus Navigator", subject: "Technology", tags: ["Computer Vision", "Python", "Accessibility"], tone: "blue" as YomeTone, team: "3 students", progress: "Testing", initials: "CN", description: "Indoor navigation assistance for visually impaired students." },
-    { id: "open-source-air-quality-map", title: "Open-source Air Quality Map", subject: "Science", tags: ["Data Science", "Sensors", "Environment"], tone: "teal" as YomeTone, team: "6 contributors", progress: "Live beta", initials: "AQ", description: "Community sensors visualized as an open local air-quality map." },
-    { id: "visual-calculus-explorer", title: "Visual Calculus Explorer", subject: "Mathematics", tags: ["React", "Graphs", "Calculus"], tone: "violet" as YomeTone, team: "2 students", progress: "In progress", initials: "VC", description: "Interactive graphs that connect calculus notation to geometric intuition." },
-  ];
-  const project = projectsData.find((item) => item.id === id) ?? projectsData[0];
+  const [project, setProject] = useState<LearningProject | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadProject = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      setProject(await getLearningProject(id));
+    } catch (loadError) {
+      setError(getLearningContentErrorMessage(loadError, "Unable to load this project."));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadProject();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <main className="project-detail-page min-w-0 text-yome-text">
+        <Link className="back-link inline-flex items-center gap-2 font-bold text-yome-blue" href="/projects">← All projects</Link>
+        <ProjectState title="Loading project..." />
+      </main>
+    );
+  }
+
+  if (error || !project) {
+    return (
+      <main className="project-detail-page min-w-0 text-yome-text">
+        <Link className="back-link inline-flex items-center gap-2 font-bold text-yome-blue" href="/projects">← All projects</Link>
+        <ProjectState title="Project could not load" body={error || "This project was not found."} onRetry={() => void loadProject()} />
+      </main>
+    );
+  }
 
   return (
     <main className="project-detail-page min-w-0 text-yome-text">
