@@ -27,7 +27,15 @@ const resourceRequestConfig = { withCredentials: true };
 export const getResourcesErrorMessage = (
   error: unknown,
   fallback = "Unable to load resources. Please try again."
-) => getClientErrorMessage(error, fallback);
+) => {
+  const message = getClientErrorMessage(error, fallback);
+  if (
+    /max clients|too many clients|connection pool|prisma\./i.test(message)
+  ) {
+    return "The resource database is temporarily busy. Please try again in a moment.";
+  }
+  return message;
+};
 
 const asNumber = (value: unknown, fallback = 0) => {
   const numberValue = Number(value);

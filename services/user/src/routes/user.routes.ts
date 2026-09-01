@@ -15,6 +15,9 @@ import {
   getFollowingConnections,
   getGroupDetail,
   getGroupInvitations,
+  getLearningEvents,
+  getLearningProjectById,
+  getLearningProjects,
   getUserById,
   updateUser,
   getAllUsers,
@@ -39,6 +42,7 @@ import {
   joinUnjoinedGroupsSchema,
   joinedGroupsParamsSchema,
   loggedInUserIdParamsSchema,
+  projectIdParamsSchema,
   updateUserSchema,
 } from "./user.validation.js";
 
@@ -64,6 +68,13 @@ router.post(
   updateUser
 );
 router.get("/get-all-users", getAllUsers);
+router.get("/events", getLearningEvents);
+router.get("/projects", getLearningProjects);
+router.get(
+  "/projects/:id",
+  validateRequest(projectIdParamsSchema),
+  getLearningProjectById
+);
 router.get(
   "/dashboard/:loggedInUserId",
   validateRequest(dashboardParamsSchema),

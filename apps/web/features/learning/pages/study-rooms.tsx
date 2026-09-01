@@ -3,13 +3,8 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Bookmark,
   ChevronLeft,
-  CalendarDays,
-  Check,
-  FileText,
   Headphones,
-  HelpCircle,
   MessageCircle,
   Mic,
   MicOff,
@@ -19,63 +14,104 @@ import {
   Plus,
   Search,
   Settings,
-  Share2,
   Users,
-  UsersRound,
   Video,
   VideoOff,
 } from "lucide-react";
-import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useSession } from "next-auth/react";
 import { Avatar, Badge } from "@/components/ui";
-import { groups, onboardingGoals, onboardingInterests, type YomeTone } from "@/features/learning/data";
-import { discoveryGroups, GroupCard, MembersGrid, QuestionCard } from "./shared";
+import type { YomeTone } from "@/features/learning/data";
+import { useStateProvider } from "@/context/StateContext";
+import { ensureUserInfo } from "@/lib/auth/userInfo";
+import { getDashboardErrorMessage, getDashboardHome } from "@/lib/dashboard/dashboardApi";
+import type { DashboardSession, DashboardStudyRoom } from "@/lib/dashboard/types";
+
+type StudyRoomView = DashboardStudyRoom;
+
+const ROOM_FILTERS = ["All rooms", "Science", "Technology", "Engineering", "Mathematics"];
+
+const fallbackParticipants = [
+  { name: "Sarah Chen", initials: "SC", tone: "teal" as YomeTone },
+  { name: "Alex Nguyen", initials: "AN", tone: "amber" as YomeTone },
+  { name: "Maya Patel", initials: "MP", tone: "violet" as YomeTone },
+];
+
+function roomDescription(room: StudyRoomView) {
+  if (room.groupName) return `Study with the ${room.groupName} community.`;
+  return "Focused study with audio, chat, and screen share.";
+}
+
+function sessionTimeLabel(session: DashboardSession) {
+  const startsAt = new Date(session.startsAt);
+  if (Number.isNaN(startsAt.getTime())) return session.meta;
+  return `${startsAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${session.group}`;
+}
 
 export function StudyRoomsContent() {
   const [filter, setFilter] = useState("All rooms");
+  const [query, setQuery] = useState("");
   const [screen, setScreen] = useState<"rooms" | "detail" | "incoming" | "audio" | "video">("rooms");
   const [callReturnTarget, setCallReturnTarget] = useState<"rooms" | "detail">("rooms");
-  const rooms = [
-    {
-      id: "calculus-revision-room",
-      title: "Calculus Revision Room",
-      topic: "Mathematics · Calculus",
-      description: "Integration techniques, exam practice, and a shared focus timer.",
-      symbol: "Σ",
-      tone: "violet" as YomeTone,
-      active: 8,
-    },
-    {
-      id: "python-help-room",
-      title: "Python Help Room",
-      topic: "Technology · Programming",
-      description: "Debug together, compare approaches, and unblock tricky exercises.",
-      symbol: "</>",
-      tone: "blue" as YomeTone,
-      active: 14,
-    },
-    {
-      id: "physics-problem-solving",
-      title: "Physics Problem Solving",
-      topic: "Science · Physics",
-      description: "Work first-principles questions with voice, chat, and screen share.",
-      symbol: "φ",
-      tone: "teal" as YomeTone,
-      active: 7,
-    },
-    {
-      id: "arduino-build-clinic",
-      title: "Arduino Build Clinic",
-      topic: "Engineering · Electronics",
-      description: "Bring wiring questions, sensor issues, and prototype feedback.",
-      symbol: "⚙",
-      tone: "amber" as YomeTone,
-      active: 11,
-    },
-  ];
-  const visibleRooms = rooms.filter((room) => filter === "All rooms" || room.topic.startsWith(filter));
+  const [rooms, setRooms] = useState<StudyRoomView[]>([]);
+  const [scheduledSessions, setScheduledSessions] = useState<DashboardSession[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<StudyRoomView | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const { data: session, status } = useSession();
+  const [{ userInfo }, dispatch] = useStateProvider();
+
+  const loadStudyRooms = useCallback(async () => {
+    if (status === "loading") return;
+    setIsLoading(true);
+    setError("");
+    try {
+      const loadedUserInfo = await ensureUserInfo({
+        sessionUser: session?.user,
+        currentUserInfo: userInfo,
+        dispatch,
+      });
+      const loggedInUserId = loadedUserInfo?.id ?? userInfo?.id;
+      if (!loggedInUserId) {
+        setError("Unable to identify the current user.");
+        return;
+      }
+      const dashboard = await getDashboardHome(loggedInUserId);
+      setRooms(dashboard.liveStudyRooms);
+      setScheduledSessions(dashboard.upcomingSessions);
+      setSelectedRoom((current) => {
+        if (!current) return dashboard.liveStudyRooms[0] ?? null;
+        return dashboard.liveStudyRooms.find((room) => room.id === current.id) ?? dashboard.liveStudyRooms[0] ?? null;
+      });
+    } catch (loadError) {
+      setError(getDashboardErrorMessage(loadError, "Unable to load study rooms."));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [dispatch, session?.user, status, userInfo]);
+
+  useEffect(() => {
+    void loadStudyRooms();
+  }, [loadStudyRooms]);
+
+  const visibleRooms = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return rooms.filter((room) => {
+      const matchesFilter = filter === "All rooms" || room.subject === filter;
+      const searchable = `${room.title} ${room.subject} ${room.topic} ${room.groupName}`.toLowerCase();
+      return matchesFilter && (!normalizedQuery || searchable.includes(normalizedQuery));
+    });
+  }, [filter, query, rooms]);
+
+  const featuredRoom = visibleRooms[0] ?? rooms[0] ?? null;
+
+  const openRoom = (room: StudyRoomView) => {
+    setSelectedRoom(room);
+    setScreen("detail");
+  };
 
   if (screen === "detail") {
-    return <StudyRoomDetail onLeave={() => setScreen("rooms")} onStartVideo={() => {
+    return <StudyRoomDetail room={selectedRoom} onLeave={() => setScreen("rooms")} onStartVideo={() => {
       setCallReturnTarget("detail");
       setScreen("video");
     }} />;
@@ -100,7 +136,7 @@ export function StudyRoomsContent() {
   }
 
   if (screen === "video") {
-    return <VideoCallPage onEnd={() => setScreen(callReturnTarget)} />;
+    return <VideoCallPage room={selectedRoom} onEnd={() => setScreen(callReturnTarget)} />;
   }
 
   return (
@@ -116,58 +152,81 @@ export function StudyRoomsContent() {
         </button>
       </header>
 
-      <section className="study-feature card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
-        <div className="study-feature-copy">
-          <div className="live-badge">
-            <span className="live-dot" /> Live now
-          </div>
-          <Badge tone="violet">Mathematics · Calculus</Badge>
-          <h2>Calculus Revision Room</h2>
-          <p>Integration techniques, exam practice, and a shared focus timer. Join with audio, video, or chat only.</p>
-          <div className="feature-participants">
-            <div className="proof-avatars flex items-center">
-              <Avatar initials="SC" tone="teal" />
-              <Avatar initials="MP" tone="violet" />
-              <Avatar initials="JL" tone="blue" />
-              <Avatar initials="AN" tone="amber" />
+      {isLoading ? (
+        <section className="study-feature card rounded-yome border border-yome-border bg-yome-surface p-8 text-yome-muted shadow-yome">
+          Loading study rooms...
+        </section>
+      ) : error ? (
+        <section className="study-feature card rounded-yome border border-yome-border bg-yome-surface p-8 shadow-yome">
+          <strong>Unable to load study rooms</strong>
+          <p className="mt-2 text-yome-muted">{error}</p>
+          <button className="secondary-button mt-4 inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue" onClick={() => void loadStudyRooms()}>
+            Try again
+          </button>
+        </section>
+      ) : featuredRoom ? (
+        <section className="study-feature card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
+          <div className="study-feature-copy">
+            <div className="live-badge">
+              <span className="live-dot" /> Live now
             </div>
-            <span>
-              <strong>8 studying now</strong>
-              <small>Hosted by Sarah Chen</small>
-            </span>
+            <Badge tone={featuredRoom.tone}>{featuredRoom.subject} · {featuredRoom.topic}</Badge>
+            <h2>{featuredRoom.title}</h2>
+            <p>{roomDescription(featuredRoom)} Join with audio, video, or chat only.</p>
+            <div className="feature-participants">
+              <div className="proof-avatars flex items-center">
+                {(featuredRoom.participants.length ? featuredRoom.participants : fallbackParticipants).slice(0, 4).map((participant, index) => (
+                  <Avatar
+                    key={`${participant.name}-${index}`}
+                    initials={participant.initials}
+                    tone={fallbackParticipants[index]?.tone ?? featuredRoom.tone}
+                    image={"profilePicture" in participant ? participant.profilePicture : undefined}
+                  />
+                ))}
+              </div>
+              <span>
+                <strong>{featuredRoom.activeParticipantCount} studying now</strong>
+                <small>Hosted by {featuredRoom.hostName}</small>
+              </span>
+            </div>
+            <div className="feature-room-actions flex flex-wrap items-center gap-2">
+              <button className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white" onClick={() => openRoom(featuredRoom)}>
+                <Headphones size={17} /> Join room
+              </button>
+              <button
+                className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue"
+                onClick={() => {
+                  setCallReturnTarget("rooms");
+                  setScreen("incoming");
+                }}
+              >
+                <Phone size={16} /> Preview incoming call
+              </button>
+            </div>
           </div>
-          <div className="feature-room-actions flex flex-wrap items-center gap-2">
-            <button className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white" onClick={() => setScreen("detail")}>
-              <Headphones size={17} /> Join room
-            </button>
-            <button
-              className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue"
-              onClick={() => {
-                setCallReturnTarget("rooms");
-                setScreen("incoming");
-              }}
-            >
-              <Phone size={16} /> Preview incoming call
-            </button>
+          <div className="focus-timer">
+            <div className="timer-ring">
+              <span>24:18</span>
+              <small>FOCUS</small>
+            </div>
+            <div className="timer-marks">
+              {Array.from({ length: 20 }).map((_, index) => (
+                <i key={index} style={{ transform: `rotate(${index * 18}deg)` }} />
+              ))}
+            </div>
+            <p>Shared Pomodoro timer</p>
           </div>
-        </div>
-        <div className="focus-timer">
-          <div className="timer-ring">
-            <span>24:18</span>
-            <small>FOCUS</small>
-          </div>
-          <div className="timer-marks">
-            {Array.from({ length: 20 }).map((_, index) => (
-              <i key={index} style={{ transform: `rotate(${index * 18}deg)` }} />
-            ))}
-          </div>
-          <p>Shared Pomodoro timer</p>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section className="study-feature card rounded-yome border border-yome-border bg-yome-surface p-8 shadow-yome">
+          <strong>No live study rooms</strong>
+          <p className="mt-2 text-yome-muted">Live rooms from your learning network will appear here.</p>
+        </section>
+      )}
 
       <div className="room-toolbar">
         <nav>
-          {["All rooms", "Science", "Technology", "Engineering", "Mathematics"].map((item) => (
+          {ROOM_FILTERS.map((item) => (
             <button key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>
               {item}
             </button>
@@ -175,11 +234,17 @@ export function StudyRoomsContent() {
         </nav>
         <label>
           <Search size={16} />
-          <input placeholder="Find a room..." />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find a room..." />
         </label>
       </div>
 
       <section className="rooms-grid">
+        {!isLoading && !error && visibleRooms.length === 0 ? (
+          <article className="study-room-card card rounded-yome border border-yome-border bg-yome-surface p-6 shadow-yome">
+            <h3>No rooms found</h3>
+            <p>Try a different subject filter or search term.</p>
+          </article>
+        ) : null}
         {visibleRooms.map((room) => (
           <article className="study-room-card card rounded-yome border border-yome-border bg-yome-surface shadow-yome" key={room.id}>
             <header>
@@ -191,9 +256,9 @@ export function StudyRoomsContent() {
                 <MoreHorizontal size={18} />
               </button>
             </header>
-            <Badge tone={room.tone}>{room.topic.split(" · ")[0]}</Badge>
+            <Badge tone={room.tone}>{room.subject}</Badge>
             <h3>{room.title}</h3>
-            <p>{room.description}</p>
+            <p>{roomDescription(room)}</p>
             <div className="room-features">
               <span><Mic size={13} /> Audio</span>
               <span><MessageCircle size={13} /> Chat</span>
@@ -202,13 +267,19 @@ export function StudyRoomsContent() {
             <footer>
               <div>
                 <div className="stacked-avatars flex items-center">
-                  <Avatar initials="SC" tone="teal" size="xs" />
-                  <Avatar initials="AN" tone="amber" size="xs" />
-                  <Avatar initials="MP" tone="violet" size="xs" />
+                  {(room.participants.length ? room.participants : fallbackParticipants).slice(0, 3).map((participant, index) => (
+                    <Avatar
+                      key={`${participant.name}-${index}`}
+                      initials={participant.initials}
+                      tone={fallbackParticipants[index]?.tone ?? room.tone}
+                      size="xs"
+                      image={"profilePicture" in participant ? participant.profilePicture : undefined}
+                    />
+                  ))}
                 </div>
-                <span>{room.active} studying</span>
+                <span>{room.activeParticipantCount} studying</span>
               </div>
-              <button onClick={() => setScreen("detail")}>
+              <button onClick={() => openRoom(room)}>
                 Join <ArrowRight size={14} />
               </button>
             </footer>
@@ -227,30 +298,29 @@ export function StudyRoomsContent() {
           </button>
         </div>
         <div>
-          <article className="card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
-            <div className="date-tile">
-              <strong>30</strong>
-              <span>AUG</span>
-            </div>
-            <div>
-              <Badge tone="blue">Technology</Badge>
-              <h3>Intro to machine learning</h3>
-              <p>2:30 PM · 42 interested</p>
-            </div>
-            <button className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue">Set reminder</button>
-          </article>
-          <article className="card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
-            <div className="date-tile amber">
-              <strong>02</strong>
-              <span>SEP</span>
-            </div>
-            <div>
-              <Badge tone="amber">Engineering</Badge>
-              <h3>Arduino build clinic</h3>
-              <p>5:00 PM · 28 interested</p>
-            </div>
-            <button className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue">Set reminder</button>
-          </article>
+          {scheduledSessions.length === 0 ? (
+            <article className="card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
+              <div>
+                <h3>No scheduled sessions</h3>
+                <p>Upcoming sessions from your groups will appear here.</p>
+              </div>
+            </article>
+          ) : (
+            scheduledSessions.map((session) => (
+              <article className="card rounded-yome border border-yome-border bg-yome-surface shadow-yome" key={session.id}>
+                <div className={`date-tile ${session.tone === "amber" ? "amber" : ""}`}>
+                  <strong>{session.day}</strong>
+                  <span>{session.month}</span>
+                </div>
+                <div>
+                  <Badge tone={session.tone}>{session.subject}</Badge>
+                  <h3>{session.title}</h3>
+                  <p>{sessionTimeLabel(session)}</p>
+                </div>
+                <button className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue">Set reminder</button>
+              </article>
+            ))
+          )}
         </div>
       </section>
     </main>
@@ -259,9 +329,11 @@ export function StudyRoomsContent() {
 
 
 function StudyRoomDetail({
+  room,
   onLeave,
   onStartVideo,
 }: {
+  room: StudyRoomView | null;
   onLeave: () => void;
   onStartVideo: () => void;
 }) {
@@ -278,34 +350,47 @@ function StudyRoomDetail({
     setDraft("");
   };
 
+  const title = room?.title ?? "Study Room";
+  const subject = room?.subject ?? "General";
+  const activeCount = room?.activeParticipantCount ?? 0;
+  const participants = room?.participants.length ? room.participants : fallbackParticipants;
+  const topic = room?.topic ?? title;
+  const tone = room?.tone ?? "blue";
+
   return (
     <main className="study-room-detail min-w-0 text-yome-text">
       <header>
         <button className="back-link inline-flex items-center gap-2 font-bold text-yome-blue" onClick={onLeave}>← Leave room</button>
         <div>
           <span className="live-dot" />
-          <strong>Calculus Revision Room</strong>
-          <small>Mathematics · 8 studying</small>
+          <strong>{title}</strong>
+          <small>{subject} · {activeCount} studying</small>
         </div>
         <button className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue"><Settings size={16} /> Room settings</button>
       </header>
       <div className="study-room-workspace">
         <section className="study-stage">
           <div className="study-stage-top">
-            <Badge tone="violet">Focus session 2 of 4</Badge>
+            <Badge tone={tone}>Focus session 2 of 4</Badge>
             <div className="stage-timer"><strong>24:18</strong><span>remaining</span></div>
             <button><MoreHorizontal size={18} /></button>
           </div>
           <div className="participant-grid">
-            <ParticipantTile name="Sarah Chen" initials="SC" tone="teal" speaking />
-            <ParticipantTile name="Maya Patel (You)" initials="MP" tone="violet" muted={muted} />
-            <ParticipantTile name="James Liu" initials="JL" tone="blue" />
-            <ParticipantTile name="Alex Nguyen" initials="AN" tone="amber" muted />
+            {participants.slice(0, 4).map((participant, index) => (
+              <ParticipantTile
+                key={`${participant.name}-${index}`}
+                name={index === 1 ? `${participant.name} (You)` : participant.name}
+                initials={participant.initials}
+                tone={fallbackParticipants[index]?.tone ?? tone}
+                speaking={index === 0}
+                muted={index === 1 ? muted : index === 3}
+              />
+            ))}
           </div>
           <div className="stage-note">
-            <span>Σ</span>
+            <span>{room?.symbol ?? "Y"}</span>
             <div>
-              <strong>Current focus: Integration by parts</strong>
+              <strong>Current focus: {topic}</strong>
               <p>Work independently until the timer ends, then compare approaches.</p>
             </div>
             <button>Open whiteboard</button>
@@ -314,7 +399,7 @@ function StudyRoomDetail({
         <aside className="room-collab">
           <nav>
             <button className="active">Chat</button>
-            <button>People 8</button>
+            <button>People {activeCount}</button>
             <button>Resources 3</button>
           </nav>
           <div className="room-chat">
@@ -499,19 +584,22 @@ function AudioCallPage({
   );
 }
 
-function VideoCallPage({ onEnd }: { onEnd: () => void }) {
+function VideoCallPage({ room, onEnd }: { room: StudyRoomView | null; onEnd: () => void }) {
   const [muted, setMuted] = useState(false);
   const [camera, setCamera] = useState(true);
   const [hand, setHand] = useState(false);
   const [view, setView] = useState<"Grid" | "Speaker">("Grid");
+  const title = room?.title ?? "Study Room";
+  const activeCount = room?.activeParticipantCount ?? 0;
+  const participants = room?.participants.length ? room.participants : fallbackParticipants;
 
   return (
     <main className="video-call-page">
       <header>
         <div>
           <span className="live-dot" />
-          <strong>Calculus Revision Room</strong>
-          <small>6 participants · 42:16</small>
+          <strong>{title}</strong>
+          <small>{activeCount} participants · 42:16</small>
         </div>
         <nav>
           <button className={view === "Grid" ? "active" : ""} onClick={() => setView("Grid")}>Grid</button>
@@ -520,12 +608,17 @@ function VideoCallPage({ onEnd }: { onEnd: () => void }) {
         <button><MoreHorizontal size={18} /></button>
       </header>
       <section className={`video-grid ${view === "Speaker" ? "speaker-view" : ""}`}>
-        <VideoTile name="Sarah Chen" initials="SC" tone="teal" speaking />
-        <VideoTile name="Maya Patel (You)" initials="MP" tone="violet" camera={camera} muted={muted} />
-        <VideoTile name="James Liu" initials="JL" tone="blue" />
-        <VideoTile name="Alex Nguyen" initials="AN" tone="amber" muted />
-        <VideoTile name="Priya Sharma" initials="PS" tone="violet" />
-        <VideoTile name="Leo Martins" initials="LM" tone="teal" camera={false} />
+        {participants.slice(0, 6).map((participant, index) => (
+          <VideoTile
+            key={`${participant.name}-${index}`}
+            name={index === 1 ? `${participant.name} (You)` : participant.name}
+            initials={participant.initials}
+            tone={fallbackParticipants[index % fallbackParticipants.length]?.tone ?? "blue"}
+            speaking={index === 0}
+            camera={index === 1 ? camera : index !== 5}
+            muted={index === 1 ? muted : index === 3}
+          />
+        ))}
       </section>
       <aside className="video-side-note">
         <div className="section-title">

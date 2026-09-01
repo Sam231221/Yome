@@ -267,6 +267,10 @@ type DashboardStudyRoomRecord = {
       profilePicture?: string | null;
     };
   }>;
+  group: {
+    name: string;
+    subject: string | null;
+  } | null;
 };
 type DashboardTopicRecord = {
   id: string;
@@ -279,10 +283,15 @@ type DashboardTopicRecord = {
 type DashboardEventRecord = {
   id: string;
   title: string;
+  type: string;
   startsAt: Date;
   location: string;
   tone: string;
-  group: { name: string } | null;
+  group: { name: string; subject: string | null } | null;
+};
+
+type ProjectPostRecord = DashboardPostRecord & {
+  group: { name: string; subject: string | null } | null;
 };
 
 const dashboardSidebarGroupSlugs = [
@@ -363,12 +372,20 @@ function mapDashboardPost(post: DashboardPostRecord) {
 }
 
 function mapDashboardRoom(room: DashboardStudyRoomRecord) {
+  const hostName = room.participants[0]
+    ? getUserName(room.participants[0].user)
+    : "Yome host";
+
   return {
     id: room.slug || room.id,
     title: room.title,
     meta: room.meta || `${room.activeParticipantCount} studying now`,
     symbol: room.symbol,
     tone: room.tone,
+    subject: room.group?.subject || "General",
+    topic: room.group?.name || room.title,
+    groupName: room.group?.name || "",
+    hostName,
     activeParticipantCount: room.activeParticipantCount,
     participants: room.participants.slice(0, 3).map((participant) => {
       const name = getUserName(participant.user);
@@ -418,6 +435,162 @@ function mapDashboardSuggestedPerson(person: UserCardRecord) {
     };
   }
   return card;
+}
+
+function mapLearningEvent(event: DashboardEventRecord) {
+  return {
+    id: event.id,
+    title: event.title,
+    type: event.type,
+    startsAt: event.startsAt.toISOString(),
+    date: new Intl.DateTimeFormat("en", { day: "2-digit" }).format(event.startsAt),
+    month: new Intl.DateTimeFormat("en", { month: "short" }).format(event.startsAt).toUpperCase(),
+    time: formatDashboardEventMeta(event.startsAt),
+    host: event.location || event.group?.name || "Yome study group",
+    subject: event.group?.subject || "General",
+    attending: 0,
+    tone: event.tone,
+  };
+}
+
+function mapLearningProject(post: ProjectPostRecord) {
+  const authorName = getUserName(post.author);
+  const title = post.title || post.description;
+  const slug = post.slug || String(post.id);
+  const tags = post.tags.length > 0 ? post.tags : [post.group?.subject || "Project"];
+
+  return {
+    id: slug,
+    title,
+    subject: post.group?.subject || tags[0] || "General",
+    tags,
+    tone: post.tone,
+    team: post.projectTeam || "Yome project team",
+    progress: post.projectProgress || "In progress",
+    stack: post.projectStack || "",
+    initials: getInitials(title),
+    description: post.description,
+    author: authorName,
+    updatedAt: post.createdAt.toISOString(),
+    helpfulCount: post.helpfulCount,
+    commentCount: post.commentCount,
+    shareCount: post.shareCount,
+  };
+}
+
+export async function getLearningEvents(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (getAuthenticatedUserId(req) === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+
+    const prisma = getPrismaInstance();
+    const events = (await prisma.groupEvent.findMany({
+      where: { startsAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+      orderBy: [{ startsAt: "asc" }],
+      take: 24,
+      include: { group: { select: { name: true, subject: true } } },
+    })) as DashboardEventRecord[];
+
+    res.status(200).json({
+      ok: true,
+      events: events.map(mapLearningEvent),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getLearningProjects(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (getAuthenticatedUserId(req) === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+
+    const prisma = getPrismaInstance();
+    const projects = (await prisma.post.findMany({
+      where: { kind: "Project" },
+      orderBy: [{ createdAt: "desc" }],
+      take: 24,
+      include: {
+        author: {
+          select: {
+            firstname: true,
+            lastname: true,
+            name: true,
+            username: true,
+            role: true,
+            profilePicture: true,
+          },
+        },
+        group: { select: { name: true, subject: true } },
+      },
+    })) as ProjectPostRecord[];
+
+    res.status(200).json({
+      ok: true,
+      projects: projects.map(mapLearningProject),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getLearningProjectById(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (getAuthenticatedUserId(req) === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+
+    const id = String(req.params.id ?? "");
+    const prisma = getPrismaInstance();
+    const project = (await prisma.post.findFirst({
+      where: {
+        kind: "Project",
+        OR: [{ slug: id }, /^\d+$/.test(id) ? { id: Number(id) } : { slug: id }],
+      },
+      include: {
+        author: {
+          select: {
+            firstname: true,
+            lastname: true,
+            name: true,
+            username: true,
+            role: true,
+            profilePicture: true,
+          },
+        },
+        group: { select: { name: true, subject: true } },
+      },
+    })) as ProjectPostRecord | null;
+
+    if (!project) {
+      res.status(404).json({ ok: false, error: "Project not found" });
+      return;
+    }
+
+    res.status(200).json({
+      ok: true,
+      project: mapLearningProject(project),
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 export async function getUserById(
@@ -661,6 +834,7 @@ export async function getDashboardHome(
         orderBy: [{ activeParticipantCount: "desc" }, { title: "asc" }],
         take: 2,
         include: {
+          group: { select: { name: true, subject: true } },
           participants: {
             take: 3,
             orderBy: { joinedAt: "asc" },
@@ -684,7 +858,7 @@ export async function getDashboardHome(
         },
         orderBy: [{ startsAt: "asc" }],
         take: 2,
-        include: { group: { select: { name: true } } },
+        include: { group: { select: { name: true, subject: true } } },
       }) as Promise<DashboardEventRecord[]>,
       prisma.user.findMany({
         where: {
@@ -752,6 +926,7 @@ export async function getDashboardHome(
           month: new Intl.DateTimeFormat("en", { month: "short" }).format(session.startsAt).toUpperCase(),
           meta: formatDashboardEventMeta(session.startsAt),
           group: session.location || session.group?.name || "Yome study group",
+          subject: session.group?.subject || "General",
           tone: session.tone,
           startsAt: session.startsAt.toISOString(),
         })),

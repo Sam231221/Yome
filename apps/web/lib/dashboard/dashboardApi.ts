@@ -120,6 +120,10 @@ export const normalizeDashboardHome = (input: Partial<DashboardHome> | undefined
       meta: asString(room.meta, "0 studying now"),
       symbol: asString(room.symbol, "Y"),
       tone: asTone(room.tone),
+      subject: asString(room.subject, "General"),
+      topic: asString(room.topic, asString(room.title, "Study room")),
+      groupName: asString(room.groupName),
+      hostName: asString(room.hostName, "Yome host"),
       activeParticipantCount: asNumber(room.activeParticipantCount),
       participants: (room.participants ?? []).map((participant) => ({
         name: asString(participant.name, "Yome user"),
@@ -134,6 +138,7 @@ export const normalizeDashboardHome = (input: Partial<DashboardHome> | undefined
       month: asString(session.month, "JAN"),
       meta: asString(session.meta),
       group: asString(session.group, "Yome study group"),
+      subject: asString(session.subject, "General"),
       tone: asTone(session.tone),
       startsAt: asString(session.startsAt),
     })),

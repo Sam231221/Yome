@@ -82,6 +82,8 @@ export const groupIdParamsSchema = {
   }),
 };
 
+export const projectIdParamsSchema = groupIdParamsSchema;
+
 export const joinedGroupsParamsSchema = loggedInUserIdParamsSchema;
 
 export const createGroupSchema = {

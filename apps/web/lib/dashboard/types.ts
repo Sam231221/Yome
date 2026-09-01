@@ -54,6 +54,10 @@ export type DashboardStudyRoom = {
   meta: string;
   symbol: string;
   tone: YomeTone;
+  subject: string;
+  topic: string;
+  groupName: string;
+  hostName: string;
   activeParticipantCount: number;
   participants: Array<{
     name: string;
@@ -69,6 +73,7 @@ export type DashboardSession = {
   month: string;
   meta: string;
   group: string;
+  subject: string;
   tone: YomeTone;
   startsAt: string;
 };

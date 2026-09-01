@@ -15,6 +15,11 @@ dotenv.config({ path: join(monorepoRoot, ".env") });
 
 let prisma = null;
 
+function getPoolMax() {
+  const value = Number.parseInt(process.env.DATABASE_POOL_MAX ?? "2", 10);
+  return Number.isFinite(value) && value > 0 ? value : 2;
+}
+
 /**
  * Returns a singleton Prisma client instance (pg driver adapter).
  * DATABASE_URL must be set (e.g. in monorepo root .env).
@@ -27,7 +32,7 @@ function getPrismaInstance() {
         "DATABASE_URL is not set. Create a .env file in the monorepo root."
       );
     }
-    const pool = new pg.Pool({ connectionString });
+    const pool = new pg.Pool({ connectionString, max: getPoolMax() });
     const adapter = new PrismaPg(pool);
     prisma = new PrismaClient({ adapter });
   }
