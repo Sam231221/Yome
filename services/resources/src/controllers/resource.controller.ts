@@ -2,6 +2,12 @@ import type { NextFunction, Request, Response } from "express";
 import crypto from "node:crypto";
 import getPrismaInstance from "@repo/database";
 
+type PrismaClient = ReturnType<typeof getPrismaInstance>;
+type TransactionClient = Pick<
+  PrismaClient,
+  "resource" | "resourceSave" | "resourceHelpfulVote"
+>;
+
 type ResourceQuery = {
   search?: string;
   subject?: string;
@@ -231,7 +237,7 @@ export async function getResourceById(
 ): Promise<void> {
   try {
     const viewerId = getAuthenticatedUserId(req);
-    const resource = await findResourceByIdOrSlug(req.params.id, viewerId);
+    const resource = await findResourceByIdOrSlug(String(req.params.id ?? ""), viewerId);
 
     if (!resource) {
       res.status(404).json({ ok: false, error: "Resource not found" });
@@ -347,13 +353,13 @@ export async function saveResource(
     }
 
     const prisma = getPrismaInstance();
-    const resource = await findResourceByIdOrSlug(req.params.id, userId);
+    const resource = await findResourceByIdOrSlug(String(req.params.id ?? ""), userId);
     if (!resource) {
       res.status(404).json({ ok: false, error: "Resource not found" });
       return;
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: TransactionClient) => {
       const existing = await tx.resourceSave.findUnique({
         where: { resourceId_userId: { resourceId: resource.id, userId } },
       });
@@ -389,13 +395,13 @@ export async function deleteResourceSave(
     }
 
     const prisma = getPrismaInstance();
-    const resource = await findResourceByIdOrSlug(req.params.id, userId);
+    const resource = await findResourceByIdOrSlug(String(req.params.id ?? ""), userId);
     if (!resource) {
       res.status(404).json({ ok: false, error: "Resource not found" });
       return;
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: TransactionClient) => {
       const existing = await tx.resourceSave.findUnique({
         where: { resourceId_userId: { resourceId: resource.id, userId } },
       });
@@ -431,13 +437,13 @@ export async function markResourceHelpful(
     }
 
     const prisma = getPrismaInstance();
-    const resource = await findResourceByIdOrSlug(req.params.id, userId);
+    const resource = await findResourceByIdOrSlug(String(req.params.id ?? ""), userId);
     if (!resource) {
       res.status(404).json({ ok: false, error: "Resource not found" });
       return;
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: TransactionClient) => {
       const existing = await tx.resourceHelpfulVote.findUnique({
         where: { resourceId_userId: { resourceId: resource.id, userId } },
       });

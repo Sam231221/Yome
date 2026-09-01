@@ -1,50 +1,138 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ArrowRight,
-  Bookmark,
-  CalendarDays,
-  Check,
-  FileText,
-  Headphones,
-  HelpCircle,
-  MessageCircle,
-  Mic,
-  MicOff,
-  MonitorUp,
-  MoreHorizontal,
-  Phone,
-  Plus,
-  Search,
-  Settings,
-  Share2,
-  Users,
-  UsersRound,
-  Video,
-} from "lucide-react";
-import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { Bookmark, FileText, HelpCircle, Plus, Search, Share2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Avatar, Badge } from "@/components/ui";
-import { groups, onboardingGoals, onboardingInterests, type YomeTone } from "@/features/learning/data";
-import { discoveryGroups, GroupCard, MembersGrid, QuestionCard } from "./shared";
+import type { YomeTone } from "@/features/learning/data";
+import {
+  formatResourceCount,
+  getResource,
+  getResourceHref,
+  getResources,
+  getResourcesErrorMessage,
+  markResourceHelpful,
+  saveResource,
+  unsaveResource,
+} from "@/lib/resources/resourcesApi";
+import type { LearningResource } from "@/lib/resources/types";
+
+const SUBJECTS = ["All", "Science", "Technology", "Engineering", "Mathematics"];
+const RESOURCE_TYPES = [
+  { label: "All types", value: "All" },
+  { label: "PDF & documents", value: "PDF" },
+  { label: "Videos", value: "VIDEO" },
+  { label: "Code repositories", value: "CODE" },
+  { label: "Study notes", value: "NOTES" },
+  { label: "Guides", value: "GUIDE" },
+];
+const LEVELS = ["All levels", "Beginner", "GCSE", "A Level", "Intermediate", "Undergraduate", "Postgraduate"];
+const SORT_OPTIONS = [
+  { label: "Most helpful", value: "helpful" },
+  { label: "Most recent", value: "recent" },
+  { label: "Most saved", value: "saved" },
+] as const;
+
+const initialsFor = (name: string) =>
+  name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+const daysAgo = (value: string) => {
+  const createdAt = new Date(value).getTime();
+  if (!Number.isFinite(createdAt)) return "recently";
+  const days = Math.max(0, Math.floor((Date.now() - createdAt) / 86_400_000));
+  if (days === 0) return "today";
+  if (days === 1) return "1d ago";
+  return `${days}d ago`;
+};
+
+const resourceIdentity = (resource: LearningResource) => resource.slug || resource.id;
+
+const ratingLabel = (resource: LearningResource) =>
+  resource.ratingAverage === null ? "New" : resource.ratingAverage.toFixed(1);
+
+function StateCard({
+  title,
+  body,
+  action,
+}: {
+  title: string;
+  body: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="card rounded-yome border border-yome-border bg-yome-surface p-6 text-yome-text shadow-yome">
+      <h3 className="text-sm font-bold text-yome-navy">{title}</h3>
+      <p className="mt-2 text-xs text-yome-muted">{body}</p>
+      {action ? <div className="mt-4">{action}</div> : null}
+    </div>
+  );
+}
 
 export function ResourcesContent() {
   const [subject, setSubject] = useState("All");
+  const [type, setType] = useState("All");
+  const [level, setLevel] = useState("All levels");
+  const [sort, setSort] = useState<(typeof SORT_OPTIONS)[number]["value"]>("helpful");
   const [query, setQuery] = useState("");
-  const [saved, setSaved] = useState<string[]>([]);
-  const resourcesData = [
-    { id: "visual-guide-to-integration-techniques", title: "A visual guide to integration techniques", subject: "Mathematics", topic: "Calculus", level: "Undergraduate", type: "PDF", tone: "violet" as YomeTone, author: "Sarah Chen", saves: "2.4k", rating: "4.9", description: "Clear diagrams and worked examples for substitution, parts, and partial fractions." },
-    { id: "python-data-structures-reference", title: "Python data structures reference", subject: "Technology", topic: "Programming", level: "Beginner", type: "GUIDE", tone: "blue" as YomeTone, author: "Maya Patel", saves: "1.8k", rating: "4.8", description: "A compact reference for lists, dictionaries, sets, tuples, and common patterns." },
-    { id: "mechanics-problem-solving-workbook", title: "Mechanics problem-solving workbook", subject: "Science", topic: "Physics", level: "A Level", type: "PDF", tone: "teal" as YomeTone, author: "Leo Martins", saves: "980", rating: "4.7", description: "Practice questions with structured hints for forces, momentum, and energy." },
-    { id: "arduino-sensor-examples", title: "Arduino sensor examples", subject: "Engineering", topic: "Electronics", level: "Beginner", type: "CODE", tone: "amber" as YomeTone, author: "Robotics Club", saves: "1.5k", rating: "4.9", description: "Reusable wiring diagrams and code examples for common environmental sensors." },
-    { id: "neural-networks-from-first-principles", title: "Neural networks from first principles", subject: "Technology", topic: "AI", level: "Intermediate", type: "VIDEO", tone: "blue" as YomeTone, author: "Dr. James Liu", saves: "3.1k", rating: "4.9", description: "A concept-first lesson on layers, activations, gradients, and training." },
-    { id: "biology-revision-maps", title: "Biology revision maps", subject: "Science", topic: "Biology", level: "GCSE", type: "NOTES", tone: "teal" as YomeTone, author: "Sofia Rossi", saves: "760", rating: "4.6", description: "Linked concept maps for cells, genetics, ecology, and human systems." },
-  ];
-  const visible = resourcesData.filter(
-    (item) =>
-      (subject === "All" || item.subject === subject) &&
-      `${item.title} ${item.topic} ${item.author}`.toLowerCase().includes(query.toLowerCase())
-  );
+  const [resources, setResources] = useState<LearningResource[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const loadResources = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await getResources({
+        search: query || undefined,
+        subject: subject === "All" ? undefined : subject,
+        type: type === "All" ? undefined : type,
+        level: level === "All levels" ? undefined : level,
+        sort,
+        limit: 50,
+      });
+      setResources(result.resources);
+    } catch (loadError) {
+      setError(getResourcesErrorMessage(loadError));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [level, query, sort, subject, type]);
+
+  useEffect(() => {
+    void loadResources();
+  }, [loadResources]);
+
+  const subjectCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of resources) {
+      counts.set(item.subject, (counts.get(item.subject) ?? 0) + 1);
+    }
+    return counts;
+  }, [resources]);
+
+  const updateResource = (updated: LearningResource) => {
+    setResources((current) =>
+      current.map((item) => (item.id === updated.id ? updated : item))
+    );
+  };
+
+  const toggleSave = async (resource: LearningResource) => {
+    setActionError(null);
+    try {
+      const updated = resource.isSaved
+        ? await unsaveResource(resourceIdentity(resource))
+        : await saveResource(resourceIdentity(resource));
+      updateResource(updated);
+    } catch (saveError) {
+      setActionError(getResourcesErrorMessage(saveError, "Unable to update saved resources."));
+    }
+  };
 
   return (
     <main className="resource-library-page min-w-0 text-yome-text">
@@ -62,8 +150,12 @@ export function ResourcesContent() {
       <section className="resource-search-hero">
         <div>
           <Search size={21} />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search guides, notes, subjects, or topics..." />
-          <button>Search</button>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search guides, notes, subjects, or topics..."
+          />
+          <button onClick={() => void loadResources()}>Search</button>
         </div>
         <p>
           Popular:
@@ -78,29 +170,44 @@ export function ResourcesContent() {
         <aside className="library-filters card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
           <div className="section-title flex items-center justify-between gap-4">
             <h3>Filters</h3>
-            <button onClick={() => { setSubject("All"); setQuery(""); }}>Clear</button>
+            <button
+              onClick={() => {
+                setSubject("All");
+                setType("All");
+                setLevel("All levels");
+                setQuery("");
+              }}
+            >
+              Clear
+            </button>
           </div>
           <label>Subject</label>
-          {["All", "Science", "Technology", "Engineering", "Mathematics"].map((item) => (
-            <button key={item} className={subject === item ? "active" : ""} onClick={() => setSubject(item)}>
+          {SUBJECTS.map((item) => (
+            <button
+              key={item}
+              className={subject === item ? "active" : ""}
+              onClick={() => setSubject(item)}
+            >
               <span className={`filter-dot ${item.toLowerCase()}`} />
               {item}
-              <i>{item === "All" ? resourcesData.length : resourcesData.filter((resource) => resource.subject === item).length}</i>
+              <i>{item === "All" ? resources.length : subjectCounts.get(item) ?? 0}</i>
             </button>
           ))}
           <label>Resource type</label>
-          {["PDF & documents", "Videos", "Code repositories", "Study notes"].map((item) => (
-            <button key={item}>
-              <span /> {item}
+          {RESOURCE_TYPES.map((item) => (
+            <button
+              key={item.value}
+              className={type === item.value ? "active" : ""}
+              onClick={() => setType(item.value)}
+            >
+              <span /> {item.label}
             </button>
           ))}
           <label>Level</label>
-          <select>
-            <option>All levels</option>
-            <option>GCSE</option>
-            <option>A Level</option>
-            <option>Undergraduate</option>
-            <option>Postgraduate</option>
+          <select value={level} onChange={(event) => setLevel(event.target.value)}>
+            {LEVELS.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
           </select>
         </aside>
 
@@ -108,52 +215,94 @@ export function ResourcesContent() {
           <div className="results-heading">
             <div>
               <h2>{subject === "All" ? "Recommended resources" : subject}</h2>
-              <p>{visible.length} useful resources</p>
+              <p>{resources.length} useful resources</p>
             </div>
-            <select>
-              <option>Most helpful</option>
-              <option>Most recent</option>
-              <option>Most saved</option>
+            <select
+              value={sort}
+              onChange={(event) =>
+                setSort(event.target.value as (typeof SORT_OPTIONS)[number]["value"])
+              }
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div className="resource-library-grid">
-            {visible.map((item, index) => {
-              const isSaved = saved.includes(item.id);
-              return (
-                <article className="library-resource-card card rounded-yome border border-yome-border bg-yome-surface shadow-yome" key={item.id}>
-                  <Link className={`resource-preview ${item.tone}`} href={`/resources/${item.id}`}>
+          {actionError ? (
+            <p className="mb-3 text-xs font-bold text-red-600">{actionError}</p>
+          ) : null}
+
+          {isLoading ? (
+            <StateCard title="Loading resources" body="Fetching the latest shared learning resources." />
+          ) : error ? (
+            <StateCard
+              title="Resources could not load"
+              body={error}
+              action={
+                <button
+                  className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue"
+                  onClick={() => void loadResources()}
+                >
+                  Try again
+                </button>
+              }
+            />
+          ) : resources.length === 0 ? (
+            <StateCard
+              title="No resources found"
+              body="Try a different search term, subject, resource type, or level."
+            />
+          ) : (
+            <div className="resource-library-grid">
+              {resources.map((item) => (
+                <article
+                  className="library-resource-card card rounded-yome border border-yome-border bg-yome-surface shadow-yome"
+                  key={item.id}
+                >
+                  <Link className={`resource-preview ${item.tone}`} href={`/resources/${resourceIdentity(item)}`}>
                     <span className="resource-preview-type">{item.type}</span>
                     <div className="resource-preview-lines"><i /><i /><i /><i /></div>
                     <strong>{item.topic}</strong>
                   </Link>
                   <div className="library-resource-body">
                     <div className="resource-labels">
-                      <Badge tone={item.tone}>{item.subject}</Badge>
+                      <Badge tone={item.tone as YomeTone}>{item.subject}</Badge>
                       <Badge tone="neutral">{item.level}</Badge>
                     </div>
-                    <Link className="resource-title-link" href={`/resources/${item.id}`}>
+                    <Link className="resource-title-link" href={`/resources/${resourceIdentity(item)}`}>
                       {item.title}
                     </Link>
                     <p>{item.description}</p>
                     <div className="resource-author">
-                      <Avatar initials={item.author.split(" ").map((name) => name[0]).join("").slice(0, 2)} tone={item.tone} size="xs" />
+                      <Avatar
+                        initials={initialsFor(item.author.name)}
+                        tone={item.tone as YomeTone}
+                        size="xs"
+                        image={item.author.profilePicture}
+                      />
                       <span>
-                        <strong>{item.author}</strong>
-                        <small>Uploaded {index + 1}d ago</small>
+                        <strong>{item.author.name}</strong>
+                        <small>Uploaded {daysAgo(item.createdAt)}</small>
                       </span>
                     </div>
                     <footer>
-                      <span>★ {item.rating} · {item.saves} saves</span>
-                      <button className={isSaved ? "saved" : ""} onClick={() => setSaved((current) => isSaved ? current.filter((value) => value !== item.id) : [...current, item.id])}>
-                        <Bookmark size={16} fill={isSaved ? "currentColor" : "none"} />
+                      <span>★ {ratingLabel(item)} · {formatResourceCount(item.saveCount)} saves</span>
+                      <button
+                        className={item.isSaved ? "saved" : ""}
+                        onClick={() => void toggleSave(item)}
+                        aria-label={item.isSaved ? "Unsave resource" : "Save resource"}
+                      >
+                        <Bookmark size={16} fill={item.isSaved ? "currentColor" : "none"} />
                       </button>
                     </footer>
                   </div>
                 </article>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </main>
@@ -161,27 +310,102 @@ export function ResourcesContent() {
 }
 
 export function ResourceDetailContent({ id }: { id: string }) {
-  const [saved, setSaved] = useState(false);
-  const [helpful, setHelpful] = useState(false);
-  const resourcesData = [
-    { id: "visual-guide-to-integration-techniques", title: "A visual guide to integration techniques", subject: "Mathematics", topic: "Calculus", level: "Undergraduate", type: "PDF", tone: "violet" as YomeTone, author: "Sarah Chen", saves: "2.4k", rating: "4.9", description: "Clear diagrams and worked examples for substitution, parts, and partial fractions." },
-    { id: "python-data-structures-reference", title: "Python data structures reference", subject: "Technology", topic: "Programming", level: "Beginner", type: "GUIDE", tone: "blue" as YomeTone, author: "Maya Patel", saves: "1.8k", rating: "4.8", description: "A compact reference for lists, dictionaries, sets, tuples, and common patterns." },
-    { id: "mechanics-problem-solving-workbook", title: "Mechanics problem-solving workbook", subject: "Science", topic: "Physics", level: "A Level", type: "PDF", tone: "teal" as YomeTone, author: "Leo Martins", saves: "980", rating: "4.7", description: "Practice questions with structured hints for forces, momentum, and energy." },
-    { id: "arduino-sensor-examples", title: "Arduino sensor examples", subject: "Engineering", topic: "Electronics", level: "Beginner", type: "CODE", tone: "amber" as YomeTone, author: "Robotics Club", saves: "1.5k", rating: "4.9", description: "Reusable wiring diagrams and code examples for common environmental sensors." },
-    { id: "neural-networks-from-first-principles", title: "Neural networks from first principles", subject: "Technology", topic: "AI", level: "Intermediate", type: "VIDEO", tone: "blue" as YomeTone, author: "Dr. James Liu", saves: "3.1k", rating: "4.9", description: "A concept-first lesson on layers, activations, gradients, and training." },
-    { id: "biology-revision-maps", title: "Biology revision maps", subject: "Science", topic: "Biology", level: "GCSE", type: "NOTES", tone: "teal" as YomeTone, author: "Sofia Rossi", saves: "760", rating: "4.6", description: "Linked concept maps for cells, genetics, ecology, and human systems." },
-  ];
-  const resource = resourcesData.find((item) => item.id === id) ?? resourcesData[0];
+  const [resource, setResource] = useState<LearningResource | null>(null);
+  const [relatedResources, setRelatedResources] = useState<LearningResource[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const loadResource = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await getResource(id);
+      setResource(result.resource);
+      setRelatedResources(result.relatedResources);
+    } catch (loadError) {
+      setError(getResourcesErrorMessage(loadError, "Unable to load this resource."));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    void loadResource();
+  }, [loadResource]);
+
+  const updateResource = (updated: LearningResource) => {
+    setResource(updated);
+    setRelatedResources((current) =>
+      current.map((item) => (item.id === updated.id ? updated : item))
+    );
+  };
+
+  const toggleSave = async () => {
+    if (!resource) return;
+    setActionError(null);
+    try {
+      const updated = resource.isSaved
+        ? await unsaveResource(resourceIdentity(resource))
+        : await saveResource(resourceIdentity(resource));
+      updateResource(updated);
+    } catch (saveError) {
+      setActionError(getResourcesErrorMessage(saveError, "Unable to update saved resources."));
+    }
+  };
+
+  const markHelpful = async () => {
+    if (!resource || resource.isHelpful) return;
+    setActionError(null);
+    try {
+      const updated = await markResourceHelpful(resourceIdentity(resource));
+      updateResource(updated);
+    } catch (helpfulError) {
+      setActionError(getResourcesErrorMessage(helpfulError, "Unable to mark this resource helpful."));
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <main className="resource-detail-page min-w-0 text-yome-text">
+        <Link className="back-link inline-flex items-center gap-2 font-bold text-yome-blue" href="/resources">← Resource Library</Link>
+        <StateCard title="Loading resource" body="Opening the latest version of this shared resource." />
+      </main>
+    );
+  }
+
+  if (error || !resource) {
+    return (
+      <main className="resource-detail-page min-w-0 text-yome-text">
+        <Link className="back-link inline-flex items-center gap-2 font-bold text-yome-blue" href="/resources">← Resource Library</Link>
+        <StateCard
+          title="Resource could not load"
+          body={error ?? "This resource was not found."}
+          action={
+            <button
+              className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue"
+              onClick={() => void loadResource()}
+            >
+              Try again
+            </button>
+          }
+        />
+      </main>
+    );
+  }
+
+  const href = getResourceHref(resource);
 
   return (
     <main className="resource-detail-page min-w-0 text-yome-text">
       <Link className="back-link inline-flex items-center gap-2 font-bold text-yome-blue" href="/resources">← Resource Library</Link>
+      {actionError ? <p className="mb-3 text-xs font-bold text-red-600">{actionError}</p> : null}
       <div className="resource-detail-layout">
         <section>
           <article className="resource-document card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
             <header>
               <div>
-                <Badge tone={resource.tone}>{resource.subject}</Badge>
+                <Badge tone={resource.tone as YomeTone}>{resource.subject}</Badge>
                 <Badge tone="neutral">{resource.level}</Badge>
               </div>
               <span>{resource.type}</span>
@@ -206,10 +430,15 @@ export function ResourceDetailContent({ id }: { id: string }) {
               </ul>
             </div>
             <footer>
-              <span>Preview page 1 of 18</span>
-              <button className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white">
+              <span>Preview resource summary</span>
+              <a
+                className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white"
+                href={href}
+                target={href.startsWith("http") ? "_blank" : undefined}
+                rel={href.startsWith("http") ? "noreferrer" : undefined}
+              >
                 <FileText size={15} /> Open resource
-              </button>
+              </a>
             </footer>
           </article>
 
@@ -217,13 +446,13 @@ export function ResourceDetailContent({ id }: { id: string }) {
             <h2>About this resource</h2>
             <p>{resource.description} This resource was reviewed by the community and tagged for clear explanations and practical examples.</p>
             <div className="resource-topics flex flex-wrap items-center gap-2">
-              <Badge tone={resource.tone}>{resource.topic}</Badge>
+              <Badge tone={resource.tone as YomeTone}>{resource.topic}</Badge>
               <Badge tone="neutral">Visual learning</Badge>
               <Badge tone="neutral">Practice included</Badge>
             </div>
             <footer>
-              <button className={helpful ? "active" : ""} onClick={() => setHelpful((value) => !value)}>
-                <HelpCircle size={16} /> {helpful ? "Marked helpful" : "Was this helpful?"}
+              <button className={resource.isHelpful ? "active" : ""} onClick={() => void markHelpful()}>
+                <HelpCircle size={16} /> {resource.isHelpful ? "Marked helpful" : "Was this helpful?"}
               </button>
               <button><Share2 size={16} /> Share</button>
               <button>Report</button>
@@ -234,9 +463,14 @@ export function ResourceDetailContent({ id }: { id: string }) {
         <aside>
           <section className="card resource-side rounded-yome border border-yome-border bg-yome-surface shadow-yome">
             <div className="resource-side-author">
-              <Avatar initials={resource.author.split(" ").map((name) => name[0]).join("").slice(0, 2)} tone={resource.tone} size="lg" />
+              <Avatar
+                initials={initialsFor(resource.author.name)}
+                tone={resource.tone as YomeTone}
+                size="lg"
+                image={resource.author.profilePicture}
+              />
               <div>
-                <strong>{resource.author}</strong>
+                <strong>{resource.author.name}</strong>
                 <p>Helpful contributor</p>
               </div>
             </div>
@@ -246,25 +480,33 @@ export function ResourceDetailContent({ id }: { id: string }) {
           <section className="card resource-side rounded-yome border border-yome-border bg-yome-surface shadow-yome">
             <h3>Resource details</h3>
             <div><span>Format</span><strong>{resource.type}</strong></div>
-            <div><span>Pages</span><strong>18</strong></div>
-            <div><span>Uploaded</span><strong>3 days ago</strong></div>
-            <div><span>Rating</span><strong>★ {resource.rating}</strong></div>
-            <div><span>Saves</span><strong>{resource.saves}</strong></div>
-            <button className={saved ? "secondary-button saved inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue" : "primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white"} onClick={() => setSaved((value) => !value)}>
-              <Bookmark size={16} fill={saved ? "currentColor" : "none"} /> {saved ? "Saved" : "Save resource"}
+            <div><span>Topic</span><strong>{resource.topic}</strong></div>
+            <div><span>Uploaded</span><strong>{daysAgo(resource.createdAt)}</strong></div>
+            <div><span>Rating</span><strong>★ {ratingLabel(resource)}</strong></div>
+            <div><span>Saves</span><strong>{formatResourceCount(resource.saveCount)}</strong></div>
+            <button
+              className={resource.isSaved ? "secondary-button saved inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue" : "primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white"}
+              onClick={() => void toggleSave()}
+            >
+              <Bookmark size={16} fill={resource.isSaved ? "currentColor" : "none"} /> {resource.isSaved ? "Saved" : "Save resource"}
             </button>
           </section>
 
           <section className="card resource-side rounded-yome border border-yome-border bg-yome-surface shadow-yome">
             <h3>Related resources</h3>
-            <button className="related-resource">
-              <span>PDF</span>
-              <div><strong>Calculus formula reference</strong><small>1.1k saves</small></div>
-            </button>
-            <button className="related-resource">
-              <span>VID</span>
-              <div><strong>Integration walkthrough</strong><small>840 saves</small></div>
-            </button>
+            {relatedResources.length === 0 ? (
+              <p className="text-xs text-yome-muted">No related resources yet.</p>
+            ) : (
+              relatedResources.map((item) => (
+                <Link className="related-resource" href={`/resources/${resourceIdentity(item)}`} key={item.id}>
+                  <span>{item.type.slice(0, 3)}</span>
+                  <div>
+                    <strong>{item.title}</strong>
+                    <small>{formatResourceCount(item.saveCount)} saves</small>
+                  </div>
+                </Link>
+              ))
+            )}
           </section>
         </aside>
       </div>

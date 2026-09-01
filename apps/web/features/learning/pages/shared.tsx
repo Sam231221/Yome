@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Bookmark, Check, MessageCircle, MoreHorizontal, Share2 } from "lucide-react";
 import { useState } from "react";
 import { Avatar, Badge } from "@/components/ui";
-import type { YomeTone } from "@/features/learning/data";
+import { groups, type YomeTone } from "@/features/learning/data";
+import type { LearningGroup, LearningUser } from "@/lib/learning/learningApi";
 
 export type DiscoveryGroup = {
   id: string;
@@ -16,51 +17,56 @@ export type DiscoveryGroup = {
   tags: string[];
 };
 
-export const discoveryGroups: DiscoveryGroup[] = [
-  {
-    id: "python-learners",
-    title: "AI & Machine Learning",
-    members: "18.4k members",
-    detail: "Build intuition, discuss papers, and learn by making.",
-    symbol: "AI",
-    tone: "blue",
-    tags: ["Python", "Data Science"],
-  },
-  {
-    id: "physics-club",
-    title: "Physics Problem Solvers",
-    members: "9.2k members",
-    detail: "Work through physics problems from first principles.",
-    symbol: "phi",
-    tone: "teal",
-    tags: ["Mechanics", "Quantum"],
-  },
-  {
-    id: "robotics-team",
-    title: "Robotics Club",
-    members: "7.8k members",
-    detail: "Electronics, mechanics, code, and collaborative builds.",
-    symbol: "ENG",
-    tone: "amber",
-    tags: ["Arduino", "Engineering"],
-  },
-  {
-    id: "calculus-circle",
-    title: "Calculus Study Lab",
-    members: "6.1k members",
-    detail: "Friendly problem-solving sessions and shared revision notes.",
-    symbol: "SIG",
-    tone: "violet",
-    tags: ["Mathematics", "Study rooms"],
-  },
-];
+export const discoveryGroups: LearningGroup[] = groups.map((group) => ({
+  id: group.id,
+  slug: group.id,
+  title: group.name,
+  name: group.name,
+  members: group.members,
+  memberCount: 0,
+  detail: group.about,
+  about: group.about,
+  subject: group.level,
+  category: "Community",
+  symbol: group.symbol,
+  tone: group.tone,
+  thumbnail: "",
+  tags: [{ label: group.level, tone: group.tone }],
+  featured: false,
+  activeThisWeek: 0,
+  projectCount: 0,
+  mentorCount: 0,
+  resourceCount: 0,
+  isJoined: group.joined,
+}));
 
-export function GroupCard({ group }: { group: DiscoveryGroup }) {
-  const [joined, setJoined] = useState(group.id === "robotics-team");
+export function GroupCard({
+  group,
+  onJoin,
+}: {
+  group: LearningGroup;
+  onJoin?: (group: LearningGroup) => Promise<void> | void;
+}) {
+  const [joined, setJoined] = useState(group.isJoined);
+  const [isJoining, setIsJoining] = useState(false);
+  const tags = group.tags.length
+    ? group.tags
+    : [{ label: group.subject, tone: group.tone }];
+
+  const handleJoin = async () => {
+    if (joined || isJoining) return;
+    setIsJoining(true);
+    try {
+      await onJoin?.(group);
+      setJoined(true);
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   return (
     <article className="discovery-group card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
-      <Link className={`group-cover ${group.tone}`} href={`/groups/${group.id}`}>
+      <Link className={`group-cover ${group.tone}`} href={`/groups/${group.slug || group.id}`}>
         <span>{group.symbol}</span>
         <i />
         <i />
@@ -69,23 +75,24 @@ export function GroupCard({ group }: { group: DiscoveryGroup }) {
       <div className="discovery-group-body">
         <div className="group-title-row flex items-start justify-between gap-4">
           <div>
-            <Link className="group-title-link" href={`/groups/${group.id}`}>
+            <Link className="group-title-link" href={`/groups/${group.slug || group.id}`}>
               {group.title}
             </Link>
-            <small>{group.members} · Active today</small>
+            <small>{group.members} · {group.activeThisWeek} active this week</small>
           </div>
           <button
             className={joined ? "secondary-button joined inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue" : "primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white"}
-            onClick={() => setJoined((value) => !value)}
+            disabled={isJoining}
+            onClick={handleJoin}
           >
-            {joined ? "Joined" : "Join group"}
+            {joined ? "Joined" : isJoining ? "Joining..." : "Join group"}
           </button>
         </div>
         <p>{group.detail}</p>
         <div>
-          {group.tags.map((tag, index) => (
-            <Badge key={tag} tone={index ? "neutral" : group.tone}>
-              {tag}
+          {tags.map((tag, index) => (
+            <Badge key={tag.label} tone={index ? "neutral" : tag.tone}>
+              {tag.label}
             </Badge>
           ))}
         </div>
@@ -95,7 +102,7 @@ export function GroupCard({ group }: { group: DiscoveryGroup }) {
             <Avatar initials="AN" tone="amber" size="xs" />
             <Avatar initials="MP" tone="violet" size="xs" />
           </div>
-          <span>12 people you may know</span>
+          <span>{group.mentorCount} mentors · {group.projectCount} projects</span>
         </footer>
       </div>
     </article>
@@ -173,24 +180,15 @@ export function QuestionCard() {
   );
 }
 
-export function MembersGrid() {
-  const members = [
-    { name: "Dr. Elena Rivera", role: "Educator · Robotics", initials: "DR", tone: "blue" as YomeTone },
-    { name: "Alex Nguyen", role: "Engineering student", initials: "AN", tone: "amber" as YomeTone },
-    { name: "Priya Sharma", role: "AI · Robotics", initials: "PS", tone: "violet" as YomeTone },
-    { name: "Leo Martins", role: "Physics · Electronics", initials: "LM", tone: "teal" as YomeTone },
-    { name: "Sarah Chen", role: "Mathematics student", initials: "SC", tone: "teal" as YomeTone },
-    { name: "Maya Patel", role: "Computer Science", initials: "MP", tone: "violet" as YomeTone },
-  ];
-
+export function MembersGrid({ members }: { members: LearningUser[] }) {
   return (
     <div className="members-grid">
       {members.map((person) => (
-        <article className="member-card card rounded-yome border border-yome-border bg-yome-surface shadow-yome" key={person.name}>
+        <article className="member-card card rounded-yome border border-yome-border bg-yome-surface shadow-yome" key={person.id}>
           <Avatar initials={person.initials} tone={person.tone} size="lg" />
           <h3>{person.name}</h3>
           <p>{person.role}</p>
-          <span>3 shared groups</span>
+          <span>{person.shared}</span>
           <button className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue">View profile</button>
         </article>
       ))}

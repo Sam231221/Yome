@@ -3,7 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 const backendBase = process.env.NEXT_PUBLIC_BACKEND_API || "http://localhost:4100";
 const localhostNames = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
-type DevDbAction = "create-multiple-users" | "create-multiple-groups" | "deleteAll";
+type DevDbAction =
+  | "create-multiple-users"
+  | "create-multiple-groups"
+  | "create-multiple-resources"
+  | "deleteAll";
 
 function hostnameFromHeader(value: string): string | null {
   try {

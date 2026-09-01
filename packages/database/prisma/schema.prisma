@@ -51,6 +51,8 @@ model User {
   authoredResources         Resource[]              @relation("ResourceAuthor")
   savedResources            ResourceSave[]
   helpfulResourceVotes      ResourceHelpfulVote[]
+  groupInvitations          GroupInvitation[]
+  groupAnnouncements        GroupAnnouncement[]
   followers                 User[]                  @relation("Followers")
   following                 User[]                  @relation("Followers")
   messagesSeen              Messages[]              @relation(name: "MessageSeenBy")
@@ -88,16 +90,95 @@ model Messages {
 }
 
 model Group {
-  id         String     @id @default(uuid())
-  name       String     @unique
-  about      String     @default("")
-  identifier String     @default("group")
-  admins     User[]     @relation("AdminOfGroup")
-  members    User[]     @relation("MembersOfGroup")
-  messages   Messages[]
-  thumbnail  String     @default("")
-  created_at DateTime   @default(now())
-  updated_at DateTime   @updatedAt
+  id             String              @id @default(uuid())
+  slug           String              @unique
+  name           String              @unique
+  about          String              @default("")
+  identifier     String              @default("group")
+  subject        String              @default("General")
+  category       String              @default("Community")
+  tone           String              @default("blue")
+  symbol         String              @default("Y")
+  privacy        String              @default("Public group")
+  location       String              @default("Global")
+  featured       Boolean             @default(false)
+  activeThisWeek Int                 @default(0)
+  projectCount   Int                 @default(0)
+  mentorCount    Int                 @default(0)
+  admins         User[]              @relation("AdminOfGroup")
+  members        User[]              @relation("MembersOfGroup")
+  messages       Messages[]
+  thumbnail      String              @default("")
+  tags           GroupTag[]
+  invitations    GroupInvitation[]
+  announcements  GroupAnnouncement[]
+  events         GroupEvent[]
+  resources      Resource[]
+  created_at     DateTime            @default(now())
+  updated_at     DateTime            @updatedAt
+
+  @@index([subject])
+  @@index([featured])
+}
+
+model GroupTag {
+  id      String @id @default(uuid())
+  label   String
+  tone    String @default("neutral")
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId String
+
+  @@unique([groupId, label])
+  @@index([groupId])
+}
+
+model GroupInvitation {
+  id        String   @id @default(uuid())
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@index([status])
+}
+
+model GroupAnnouncement {
+  id        String   @id @default(uuid())
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+  title     String
+  body      String
+  ctaLabel  String?
+  ctaHref   String?
+  pinned    Boolean  @default(false)
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId  Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([groupId])
+  @@index([pinned])
+}
+
+model GroupEvent {
+  id        String   @id @default(uuid())
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+  title     String
+  type      String
+  startsAt  DateTime
+  location  String   @default("Group room")
+  tone      String   @default("blue")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([groupId])
+  @@index([startsAt])
 }
 
 model Conversation {
@@ -153,6 +234,8 @@ model Resource {
   description   String
   author        User                   @relation("ResourceAuthor", fields: [authorId], references: [id])
   authorId      Int
+  group         Group?                 @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  groupId       String?
   fileUrl       String?
   externalUrl   String?
   saveCount     Int                    @default(0)
@@ -169,6 +252,7 @@ model Resource {
   @@index([level])
   @@index([type])
   @@index([authorId])
+  @@index([groupId])
 }
 
 model ResourceSave {

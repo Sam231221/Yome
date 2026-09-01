@@ -7,21 +7,35 @@ import {
   validateRequest,
 } from "@repo/shared";
 import {
+  createGroup,
+  discoverGroups,
+  getConnectionSummary,
+  getConnectionSuggestions,
+  getFollowingConnections,
+  getGroupDetail,
+  getGroupInvitations,
   getUserById,
   updateUser,
   getAllUsers,
   getAllGroups,
+  getJoinedGroups,
   getFollowedUsersByUser,
   getUnfollowedMentors,
   getUnassociatedGroupsForUser,
   getAllGroupsForUser,
   followUnfollowedUser,
+  joinGroupById,
   joinUnjoinedGroups,
 } from "../controllers/user.controller.js";
 import {
+  createGroupSchema,
+  discoverGroupsSchema,
   followUnfollowedUserSchema,
+  groupIdParamsSchema,
   getUserByIdSchema,
+  joinGroupByIdSchema,
   joinUnjoinedGroupsSchema,
+  joinedGroupsParamsSchema,
   loggedInUserIdParamsSchema,
   updateUserSchema,
 } from "./user.validation.js";
@@ -48,6 +62,37 @@ router.post(
   updateUser
 );
 router.get("/get-all-users", getAllUsers);
+
+router.get("/groups/discover", validateRequest(discoverGroupsSchema), discoverGroups);
+router.get(
+  "/groups/joined/:loggedInUserId",
+  validateRequest(joinedGroupsParamsSchema),
+  getJoinedGroups
+);
+router.get(
+  "/groups/invitations/:loggedInUserId",
+  validateRequest(joinedGroupsParamsSchema),
+  getGroupInvitations
+);
+router.get("/groups/:id", validateRequest(groupIdParamsSchema), getGroupDetail);
+router.post("/groups", validateRequest(createGroupSchema), createGroup);
+router.post("/groups/:id/join", validateRequest(joinGroupByIdSchema), joinGroupById);
+
+router.get(
+  "/connections/summary/:loggedInUserId",
+  validateRequest(loggedInUserIdParamsSchema),
+  getConnectionSummary
+);
+router.get(
+  "/connections/suggestions/:loggedInUserId",
+  validateRequest(loggedInUserIdParamsSchema),
+  getConnectionSuggestions
+);
+router.get(
+  "/connections/following/:loggedInUserId",
+  validateRequest(loggedInUserIdParamsSchema),
+  getFollowingConnections
+);
 
 router.get("/get-all-groups", getAllGroups);
 router.post(

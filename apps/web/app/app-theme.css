@@ -2821,6 +2821,7 @@
 }
 
 .resource-preview.violet { color: #ede9fe; background: linear-gradient(145deg, #3b176f, #7c3aed); }
+.resource-preview.blue { color: #dbeafe; background: linear-gradient(145deg, #172554, #2563eb); }
 .resource-preview.teal { color: #ccfbf1; background: linear-gradient(145deg, #134e4a, #0d9488); }
 .resource-preview.amber { color: #fef3c7; background: linear-gradient(145deg, #78350f, #d97706); }
 
@@ -7366,7 +7367,8 @@
   background: var(--yome-surface);
 }
 
-.groups-filter > button {
+.groups-filter > button,
+.groups-filter > select {
   padding: 0 12px;
   border: 1px solid var(--yome-border);
   border-radius: 9px;
