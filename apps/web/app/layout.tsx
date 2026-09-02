@@ -4,7 +4,7 @@ import "@/features/chat/styles/chat.css";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { StateProvider } from "@/context/StateContext";
 import { ReactNode } from "react";
-import AuthProvider from "@/context/AuthProvider";
+import AuthProvider from "@/features/auth/providers/AuthProvider";
 import ModalContextProvider from "@/context/ModalContextProvider";
 import { Toaster } from "react-hot-toast";
 

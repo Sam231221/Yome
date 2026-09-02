@@ -2,7 +2,7 @@
 
 import { getServerSession } from "next-auth/next";
 import { StreamClient } from "@stream-io/node-sdk";
-import { options } from "@/app/api/auth/[...nextauth]/options";
+import { options } from "@/features/auth/lib/nextauth-options";
 import axios from "axios";
 import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
 import type { ConversationId } from "@/types/chat-contracts";

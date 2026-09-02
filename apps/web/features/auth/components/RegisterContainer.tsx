@@ -14,7 +14,7 @@ import {
   passwordsMatch,
   USERNAME_PATTERN,
 } from "@/lib/auth/formValidation";
-import { AuthTerms, SocialAuthButtons } from "@/features/auth/socialAuth";
+import { AuthTerms, SocialAuthButtons } from "@/features/auth/components/social-auth";
 
 interface RegisterContainerProps {
   activeTab: string;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { OnboardingReferencePage } from "@/features/learning";
+import { OnboardingReferencePage } from "@/features/onboarding/components/OnboardingReferencePage";
 
 type OnboardingState = {
   username: string;

@@ -17,7 +17,7 @@ import {
   changeAccountPassword,
   getAccountErrorMessage,
   updateAccountDetails,
-} from "@/lib/account/accountApi";
+} from "@/features/account-profile/api/accountApi";
 import {
   ensureUserInfo,
   logUserInfoLoadError,
@@ -38,7 +38,7 @@ import {
   type AccountPrefs,
   type AccountSettingsValues,
   type SettingsTab,
-} from "./accountSettings";
+} from "@/features/account-profile/lib/account-settings";
 
 export function useAccountSettingsController() {
   const [{ userInfo }, dispatch] = useStateProvider();

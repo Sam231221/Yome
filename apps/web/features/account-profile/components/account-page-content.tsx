@@ -13,7 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { Badge, Avatar } from "@/components/ui";
-import { SETTINGS_TABS } from "./accountSettings";
+import { SETTINGS_TABS } from "@/features/account-profile/lib/account-settings";
 import {
   noop,
   SettingRow,
@@ -22,8 +22,8 @@ import {
   SettingsGroup,
   SettingsSection,
   Toggle,
-} from "./settingsPrimitives";
-import { useAccountSettingsController } from "./useAccountSettingsController";
+} from "@/features/account-profile/components/settings-primitives";
+import { useAccountSettingsController } from "@/features/account-profile/hooks/useAccountSettingsController";
 
 export default function AccountPageContent() {
   const {

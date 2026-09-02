@@ -6,7 +6,7 @@ import {
   AuthTerms,
   SocialAuthButtons,
   useAuthRedirect,
-} from "@/features/auth/socialAuth";
+} from "@/features/auth/components/social-auth";
 
 interface LoginContainerProps {
   activeTab: string;

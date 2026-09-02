@@ -1,32 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight, Plus, UsersRound } from "lucide-react";
+import type { Dispatch, SetStateAction } from "react";
+import { Avatar } from "@/components/ui";
 import {
-  ArrowRight,
-  Bookmark,
-  CalendarDays,
-  Check,
-  FileText,
-  Headphones,
-  HelpCircle,
-  MessageCircle,
-  Mic,
-  MicOff,
-  MonitorUp,
-  MoreHorizontal,
-  Phone,
-  Plus,
-  Search,
-  Settings,
-  Share2,
-  Users,
-  UsersRound,
-  Video,
-} from "lucide-react";
-import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
-import { Avatar, Badge } from "@/components/ui";
-import { groups, onboardingGoals, onboardingInterests, type YomeTone } from "@/features/learning/data";
-import { discoveryGroups, GroupCard, MembersGrid, QuestionCard } from "./shared";
+  onboardingGoals,
+  onboardingInterests,
+} from "@/features/onboarding/data/onboarding-options";
 
 export function OnboardingReferencePage({
   values,
