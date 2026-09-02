@@ -14,12 +14,12 @@ import {
   type ChatKind,
   type ChatMessage,
   type ChatTargetId,
-} from "@/types/chat";
+} from "@/features/chat/types";
 import {
   getChatErrorMessage,
   sendImageMessage,
   sendTextMessage as postTextMessage,
-} from "@/lib/chat/chatApi";
+} from "@/features/chat/api/chatApi";
 
 const CaptureAudio = dynamic(
   () => import("@/features/chat/components/message-composer/CaptureAudio"),

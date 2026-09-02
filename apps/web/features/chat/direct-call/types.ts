@@ -1,4 +1,4 @@
-import type { ConversationId, UserId } from "@/types/chat";
+import type { ConversationId, UserId } from "@/features/chat/types";
 
 export type DirectCallMode = "audio" | "video";
 

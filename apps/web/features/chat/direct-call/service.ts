@@ -1,9 +1,9 @@
 "use client";
 
 import type { StreamVideoClient } from "@stream-io/video-react-sdk";
-import type { ChatListItem, ConversationId, UserId } from "@/types/chat";
+import type { ChatListItem, ConversationId, UserId } from "@/features/chat/types";
 import type { AppUserInfo } from "@/lib/auth/userInfo";
-import { resolveChatKind } from "@/types/chat";
+import { resolveChatKind } from "@/features/chat/types";
 import type { DirectCallDescriptor, DirectCallMode } from "./types";
 import {
   ensureDirectCallUsers,

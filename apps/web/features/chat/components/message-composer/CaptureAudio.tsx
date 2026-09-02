@@ -16,8 +16,8 @@ import {
   isGroupId,
   type ChatKind,
   type ChatMessage,
-} from "@/types/chat";
-import { getChatErrorMessage, sendAudioMessage } from "@/lib/chat/chatApi";
+} from "@/features/chat/types";
+import { getChatErrorMessage, sendAudioMessage } from "@/features/chat/api/chatApi";
 
 const AUDIO_RECORDING_MIME_CANDIDATES = [
   "audio/mp4;codecs=mp4a.40.2",

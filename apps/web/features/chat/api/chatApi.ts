@@ -20,7 +20,7 @@ import type {
   MessageId,
   MessageKind,
   UserId,
-} from "@/types/chat";
+} from "@/features/chat/types";
 import { getClientErrorMessage } from "@/lib/api/clientErrors";
 import { logBrowserWarning } from "@/lib/debug/browserLogger";
 

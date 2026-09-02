@@ -1,9 +1,9 @@
 import { useStateProvider } from "@/context/StateContext";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaPlay, FaStop } from "react-icons/fa";
-import { calculateTime } from "@/utils/CalculateTime";
+import { calculateTime } from "@/features/chat/lib/calculateTime";
 import MessageStatus from "@/features/chat/components/message-status";
-import type { ChatMessage } from "@/types/chat";
+import type { ChatMessage } from "@/features/chat/types";
 
 interface VoiceMessageProps {
   message: ChatMessage;

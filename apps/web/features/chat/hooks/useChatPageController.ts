@@ -6,15 +6,15 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { reducerCases } from "@/context/constants";
 import { useStateProvider } from "@/context/StateContext";
-import { useChatSocket } from "@/hooks/useChatSocket";
+import { useChatSocket } from "@/features/chat/hooks/useChatSocket";
 import {
   ensureUserInfo,
   getUserInfoErrorMessage,
   logUserInfoLoadError,
 } from "@/lib/auth/userInfo";
-import { getUserConversation, logChatConversationError } from "@/lib/chat/chatApi";
-import { playNotificationSound } from "@/lib/chat/notificationSound";
-import { resolveChatKind, type ChatKind } from "@/types/chat";
+import { getUserConversation, logChatConversationError } from "@/features/chat/api/chatApi";
+import { playNotificationSound } from "@/features/chat/lib/notificationSound";
+import { resolveChatKind, type ChatKind } from "@/features/chat/types";
 
 export function useChatPageController() {
   const [

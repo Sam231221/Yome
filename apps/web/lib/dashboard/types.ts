@@ -1,4 +1,4 @@
-import type { UserId } from "@/types/chat";
+import type { UserId } from "@/types/chat-contracts";
 import type { YomeTone } from "@/features/learning/data";
 
 export type DashboardUserRecord = {

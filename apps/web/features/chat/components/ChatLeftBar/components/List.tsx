@@ -7,12 +7,12 @@ import { reducerCases } from "@/context/constants";
 import {
   resolveChatKind,
   type ChatListItem as ChatListItemData,
-} from "@/types/chat";
+} from "@/features/chat/types";
 import {
   getInitialGroupMeta,
   getInitialUserMeta,
   logChatBootstrapError,
-} from "@/lib/chat/chatApi";
+} from "@/features/chat/api/chatApi";
 
 export default function List({
   onBootstrapStateChange,

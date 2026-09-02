@@ -5,7 +5,7 @@ import { StreamClient } from "@stream-io/node-sdk";
 import { options } from "@/app/api/auth/[...nextauth]/options";
 import axios from "axios";
 import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
-import type { ConversationId } from "@/types/chat";
+import type { ConversationId } from "@/types/chat-contracts";
 
 const STREAM_API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY;
 const STREAM_API_SECRET = process.env.STREAM_SECRET_KEY;

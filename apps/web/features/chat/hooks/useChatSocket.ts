@@ -10,7 +10,7 @@ import type {
   OnlineUsersEvent,
   PrivateMessageEvent,
   UserId,
-} from "@/types/chat";
+} from "@/features/chat/types";
 
 type UseChatSocketParams = {
   userId?: UserId;

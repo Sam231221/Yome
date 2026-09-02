@@ -4,7 +4,7 @@ import Empty from "@/features/chat/components/empty-chat-state";
 import { useStateProvider } from "@/context/StateContext";
 import Chat from "./Chat";
 import SearchMessagesRightMostChatContainer from "./SearchMessagesRightMostChatContainer";
-import { resolveChatKind } from "@/types/chat";
+import { resolveChatKind } from "@/features/chat/types";
 export default function ChatRightBar() {
   const [
     {

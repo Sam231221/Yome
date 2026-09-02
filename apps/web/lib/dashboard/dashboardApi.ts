@@ -14,7 +14,7 @@ import type {
   DashboardGroupRecord,
   DashboardUserRecord,
 } from "@/lib/dashboard/types";
-import type { UserId } from "@/types/chat";
+import type { UserId } from "@/types/chat-contracts";
 import type { YomeTone } from "@/features/learning/data";
 
 type ConnectResponse = {

@@ -1,10 +1,10 @@
-import type { ChatKind, ChatListItem as ChatContact } from "@/types/chat";
+import type { ChatKind, ChatListItem as ChatContact } from "@/features/chat/types";
 import toast from "react-hot-toast";
 import React, { useEffect, useState } from "react";
 import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import { getAllChatContacts, getChatErrorMessage } from "@/lib/chat/chatApi";
+import { getAllChatContacts, getChatErrorMessage } from "@/features/chat/api/chatApi";
 
 import ChatListItem from "./ChatListItem";
 

@@ -6,8 +6,8 @@ import type {
   ChatSocketRef,
   GroupId,
   UserId,
-} from "@/types/chat";
-import { resolveChatKind } from "@/types/chat";
+} from "@/types/chat-contracts";
+import { resolveChatKind } from "@/types/chat-contracts";
 import type { AppUserInfo } from "@/lib/auth/userInfo";
 
 export interface State {

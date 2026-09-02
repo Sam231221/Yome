@@ -5,13 +5,13 @@ import AvatarWithStatus from "@/features/chat/components/avatar-with-status";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 
-import { calculateTime } from "@/utils/CalculateTime";
+import { calculateTime } from "@/features/chat/lib/calculateTime";
 import MessageStatus from "@/features/chat/components/message-status";
 import {
   resolveChatKind,
   type ChatKind,
   type ChatListItem as ChatContact,
-} from "@/types/chat";
+} from "@/features/chat/types";
 
 interface ChatListItemProps {
   id: string;

@@ -4,8 +4,8 @@ import { IoClose } from "react-icons/io5";
 import { BiFilter, BiSearchAlt2, BiArrowBack } from "react-icons/bi";
 import { FiBellOff, FiSearch, FiUser } from "react-icons/fi";
 import { reducerCases } from "@/context/constants";
-import { calculateTime } from "@/utils/CalculateTime";
-import type { ChatMessage } from "@/types/chat";
+import { calculateTime } from "@/features/chat/lib/calculateTime";
+import type { ChatMessage } from "@/features/chat/types";
 
 function SearchMessagesRightMostChatContainer({
   onClose,
