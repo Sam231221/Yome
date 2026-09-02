@@ -8,7 +8,7 @@ import type {
   ResourceListParams,
   ResourceListResult,
   ResourceTone,
-} from "@/lib/resources/types";
+} from "@/features/learning/types/resources";
 
 type ApiResource = Omit<Partial<LearningResource>, "author"> & {
   author?: Partial<ResourceAuthor> | null;

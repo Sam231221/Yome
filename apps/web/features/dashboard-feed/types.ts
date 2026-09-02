@@ -1,5 +1,5 @@
 import type { UserId } from "@/types/chat-contracts";
-import type { YomeTone } from "@/features/learning/data";
+import type { YomeTone } from "@/types/yome-ui";
 
 export type DashboardUserRecord = {
   id: UserId;

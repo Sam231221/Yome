@@ -12,7 +12,7 @@ import {
   JOIN_GROUP,
 } from "@/utils/ApiRoutes";
 import { getClientErrorMessage } from "@/lib/api/clientErrors";
-import type { YomeTone } from "@/features/learning/data";
+import type { YomeTone } from "@/types/yome-ui";
 
 export type LearningUser = {
   id: number;

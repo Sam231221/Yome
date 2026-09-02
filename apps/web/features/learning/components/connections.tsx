@@ -13,7 +13,7 @@ import {
   getLearningErrorMessage,
   type ConnectionSummary,
   type LearningUser,
-} from "@/lib/learning/learningApi";
+} from "@/features/learning/api/learningApi";
 
 export function ConnectionsContent() {
   const [tab, setTab] = useState("Suggestions");

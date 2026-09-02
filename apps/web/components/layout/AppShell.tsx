@@ -7,8 +7,8 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useStateProvider } from "@/context/StateContext";
 import { yomeNavItems } from "@/features/learning/data";
 import { Avatar, Brand, ToneSymbol, YomeIcon } from "@/components/ui";
-import { getDashboardHome } from "@/lib/dashboard/dashboardApi";
-import type { DashboardHome } from "@/lib/dashboard/types";
+import { getDashboardHome } from "@/features/dashboard-feed/api/dashboardApi";
+import type { DashboardHome } from "@/features/dashboard-feed/types";
 
 export function YomeAppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();

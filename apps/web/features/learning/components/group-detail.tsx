@@ -10,7 +10,7 @@ import {
   getLearningErrorMessage,
   joinLearningGroup,
   type LearningGroupDetail,
-} from "@/lib/learning/learningApi";
+} from "@/features/learning/api/learningApi";
 import { MembersGrid, QuestionCard } from "./shared";
 
 export function GroupDetailContent({ id }: { id: string }) {

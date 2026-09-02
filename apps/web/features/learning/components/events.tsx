@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   CalendarDays,
   Check,
@@ -14,7 +13,7 @@ import {
   getLearningContentErrorMessage,
   getLearningEvents,
   type LearningEvent,
-} from "@/lib/learning/learningContentApi";
+} from "@/features/learning/api/learningContentApi";
 
 function EventState({
   title,

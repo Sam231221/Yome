@@ -1,32 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ArrowRight,
-  Bookmark,
-  CalendarDays,
-  Check,
-  FileText,
-  Headphones,
-  HelpCircle,
-  MessageCircle,
-  Mic,
-  MicOff,
-  MonitorUp,
-  MoreHorizontal,
-  Phone,
-  Plus,
-  Search,
-  Settings,
-  Share2,
-  Users,
-  UsersRound,
-  Video,
-} from "lucide-react";
-import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
-import { Avatar, Badge } from "@/components/ui";
-import { groups, onboardingGoals, onboardingInterests, type YomeTone } from "@/features/learning/data";
-import { discoveryGroups, GroupCard, MembersGrid, QuestionCard } from "./shared";
+import { ArrowRight, Search } from "lucide-react";
+import { useState } from "react";
+import { Badge } from "@/components/ui";
+import type { YomeTone } from "@/types/yome-ui";
+import { discoveryGroups, GroupCard } from "./shared";
 
 export function ExploreContent() {
   const [query, setQuery] = useState("");

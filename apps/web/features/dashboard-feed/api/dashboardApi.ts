@@ -13,9 +13,9 @@ import type {
   DashboardHome,
   DashboardGroupRecord,
   DashboardUserRecord,
-} from "@/lib/dashboard/types";
+} from "@/features/dashboard-feed/types";
 import type { UserId } from "@/types/chat-contracts";
-import type { YomeTone } from "@/features/learning/data";
+import type { YomeTone } from "@/types/yome-ui";
 
 type ConnectResponse = {
   status?: number;

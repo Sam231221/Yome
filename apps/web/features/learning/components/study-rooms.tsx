@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   ArrowRight,
   ChevronLeft,
@@ -21,13 +20,17 @@ import {
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSession } from "next-auth/react";
 import { Avatar, Badge } from "@/components/ui";
-import type { YomeTone } from "@/features/learning/data";
+import type { YomeTone } from "@/types/yome-ui";
 import { useStateProvider } from "@/context/StateContext";
 import { ensureUserInfo } from "@/lib/auth/userInfo";
-import { getDashboardErrorMessage, getDashboardHome } from "@/lib/dashboard/dashboardApi";
-import type { DashboardSession, DashboardStudyRoom } from "@/lib/dashboard/types";
+import {
+  getLearningContentErrorMessage,
+  getLearningStudyRooms,
+  type LearningScheduledSession,
+  type LearningStudyRoom,
+} from "@/features/learning/api/learningContentApi";
 
-type StudyRoomView = DashboardStudyRoom;
+type StudyRoomView = LearningStudyRoom;
 
 const ROOM_FILTERS = ["All rooms", "Science", "Technology", "Engineering", "Mathematics"];
 
@@ -42,7 +45,7 @@ function roomDescription(room: StudyRoomView) {
   return "Focused study with audio, chat, and screen share.";
 }
 
-function sessionTimeLabel(session: DashboardSession) {
+function sessionTimeLabel(session: LearningScheduledSession) {
   const startsAt = new Date(session.startsAt);
   if (Number.isNaN(startsAt.getTime())) return session.meta;
   return `${startsAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${session.group}`;
@@ -54,7 +57,7 @@ export function StudyRoomsContent() {
   const [screen, setScreen] = useState<"rooms" | "detail" | "incoming" | "audio" | "video">("rooms");
   const [callReturnTarget, setCallReturnTarget] = useState<"rooms" | "detail">("rooms");
   const [rooms, setRooms] = useState<StudyRoomView[]>([]);
-  const [scheduledSessions, setScheduledSessions] = useState<DashboardSession[]>([]);
+  const [scheduledSessions, setScheduledSessions] = useState<LearningScheduledSession[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<StudyRoomView | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -76,15 +79,15 @@ export function StudyRoomsContent() {
         setError("Unable to identify the current user.");
         return;
       }
-      const dashboard = await getDashboardHome(loggedInUserId);
-      setRooms(dashboard.liveStudyRooms);
-      setScheduledSessions(dashboard.upcomingSessions);
+      const learningRooms = await getLearningStudyRooms(loggedInUserId);
+      setRooms(learningRooms.liveStudyRooms);
+      setScheduledSessions(learningRooms.upcomingSessions);
       setSelectedRoom((current) => {
-        if (!current) return dashboard.liveStudyRooms[0] ?? null;
-        return dashboard.liveStudyRooms.find((room) => room.id === current.id) ?? dashboard.liveStudyRooms[0] ?? null;
+        if (!current) return learningRooms.liveStudyRooms[0] ?? null;
+        return learningRooms.liveStudyRooms.find((room) => room.id === current.id) ?? learningRooms.liveStudyRooms[0] ?? null;
       });
     } catch (loadError) {
-      setError(getDashboardErrorMessage(loadError, "Unable to load study rooms."));
+      setError(getLearningContentErrorMessage(loadError, "Unable to load study rooms."));
     } finally {
       setIsLoading(false);
     }
@@ -381,7 +384,6 @@ function StudyRoomDetail({
                 key={`${participant.name}-${index}`}
                 name={index === 1 ? `${participant.name} (You)` : participant.name}
                 initials={participant.initials}
-                tone={fallbackParticipants[index]?.tone ?? tone}
                 speaking={index === 0}
                 muted={index === 1 ? muted : index === 3}
               />
@@ -456,13 +458,11 @@ function StudyRoomDetail({
 function ParticipantTile({
   name,
   initials,
-  tone,
   speaking = false,
   muted = false,
 }: {
   name: string;
   initials: string;
-  tone: YomeTone;
   speaking?: boolean;
   muted?: boolean;
 }) {

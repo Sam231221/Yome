@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Bookmark, FileText, HelpCircle, Plus, Search, Share2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Avatar, Badge } from "@/components/ui";
-import type { YomeTone } from "@/features/learning/data";
+import type { YomeTone } from "@/types/yome-ui";
 import {
   formatResourceCount,
   getResource,
@@ -14,8 +14,8 @@ import {
   markResourceHelpful,
   saveResource,
   unsaveResource,
-} from "@/lib/resources/resourcesApi";
-import type { LearningResource } from "@/lib/resources/types";
+} from "@/features/learning/api/resourcesApi";
+import type { LearningResource } from "@/features/learning/types/resources";
 
 const SUBJECTS = ["All", "Science", "Technology", "Engineering", "Mathematics"];
 const RESOURCE_TYPES = [

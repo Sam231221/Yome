@@ -5,7 +5,7 @@ import { Bookmark, Check, MessageCircle, MoreHorizontal, Share2 } from "lucide-r
 import { useState } from "react";
 import { Avatar, Badge } from "@/components/ui";
 import { groups, type YomeTone } from "@/features/learning/data";
-import type { LearningGroup, LearningUser } from "@/lib/learning/learningApi";
+import type { LearningGroup, LearningUser } from "@/features/learning/api/learningApi";
 
 export type DiscoveryGroup = {
   id: string;

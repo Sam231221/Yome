@@ -6,9 +6,12 @@ import toast from "react-hot-toast";
 import { useStateProvider } from "@/context/StateContext";
 import { ensureUserInfo } from "@/lib/auth/userInfo";
 import { Badge } from "@/components/ui";
-import { ComposerCard, FeedPostCard, RightRail } from "@/features/feed";
-import { getDashboardHome, getDashboardErrorMessage } from "@/lib/dashboard/dashboardApi";
-import type { DashboardHome } from "@/lib/dashboard/types";
+import { ComposerCard, FeedPostCard, RightRail } from "@/features/dashboard-feed";
+import {
+  getDashboardErrorMessage,
+  getDashboardHome,
+} from "@/features/dashboard-feed/api/dashboardApi";
+import type { DashboardHome } from "@/features/dashboard-feed/types";
 
 export function DashboardScreen() {
   const [{ userInfo }, dispatch] = useStateProvider();

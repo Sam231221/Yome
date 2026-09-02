@@ -1,10 +1,11 @@
 import axios from "axios";
 import {
+  GET_DASHBOARD_HOME,
   LEARNING_EVENTS_ROUTE,
   LEARNING_PROJECTS_ROUTE,
 } from "@/utils/ApiRoutes";
 import { getClientErrorMessage } from "@/lib/api/clientErrors";
-import type { YomeTone } from "@/features/learning/data";
+import type { YomeTone } from "@/types/yome-ui";
 
 const learningRequestConfig = { withCredentials: true };
 const TONES = new Set<YomeTone>(["blue", "teal", "amber", "violet", "neutral"]);
@@ -41,8 +42,40 @@ export type LearningProject = {
   shareCount: number;
 };
 
+export type LearningStudyRoom = {
+  id: string;
+  title: string;
+  meta: string;
+  symbol: string;
+  tone: YomeTone;
+  subject: string;
+  topic: string;
+  groupName: string;
+  hostName: string;
+  activeParticipantCount: number;
+  participants: Array<{
+    name: string;
+    initials: string;
+    profilePicture: string;
+  }>;
+};
+
+export type LearningScheduledSession = {
+  id: string;
+  title: string;
+  day: string;
+  month: string;
+  meta: string;
+  group: string;
+  subject: string;
+  tone: YomeTone;
+  startsAt: string;
+};
+
 type ApiEvent = Partial<LearningEvent>;
 type ApiProject = Partial<LearningProject>;
+type ApiStudyRoom = Partial<LearningStudyRoom>;
+type ApiScheduledSession = Partial<LearningScheduledSession>;
 
 const asString = (value: unknown, fallback = "") =>
   typeof value === "string" ? value : fallback;
@@ -122,6 +155,42 @@ export function normalizeLearningProject(project: ApiProject): LearningProject {
   };
 }
 
+export function normalizeLearningStudyRoom(room: ApiStudyRoom): LearningStudyRoom {
+  return {
+    id: asString(room.id),
+    title: asString(room.title, "Study room"),
+    meta: asString(room.meta, "0 studying now"),
+    symbol: asString(room.symbol, "Y"),
+    tone: asTone(room.tone),
+    subject: asString(room.subject, "General"),
+    topic: asString(room.topic, asString(room.title, "Study room")),
+    groupName: asString(room.groupName),
+    hostName: asString(room.hostName, "Yome host"),
+    activeParticipantCount: asNumber(room.activeParticipantCount),
+    participants: (room.participants ?? []).map((participant) => ({
+      name: asString(participant.name, "Yome user"),
+      initials: asString(participant.initials, "Y"),
+      profilePicture: asString(participant.profilePicture),
+    })),
+  };
+}
+
+export function normalizeLearningScheduledSession(
+  session: ApiScheduledSession
+): LearningScheduledSession {
+  return {
+    id: asString(session.id),
+    title: asString(session.title, "Study session"),
+    day: asString(session.day, "01"),
+    month: asString(session.month, "JAN"),
+    meta: asString(session.meta),
+    group: asString(session.group, "Yome study group"),
+    subject: asString(session.subject, "General"),
+    tone: asTone(session.tone),
+    startsAt: asString(session.startsAt),
+  };
+}
+
 export async function getLearningEvents() {
   const { data } = await axios.get(LEARNING_EVENTS_ROUTE, learningRequestConfig);
   return ((data?.events as ApiEvent[] | undefined) ?? []).map(normalizeLearningEvent);
@@ -138,4 +207,21 @@ export async function getLearningProject(id: string) {
     learningRequestConfig
   );
   return normalizeLearningProject(data?.project ?? {});
+}
+
+export async function getLearningStudyRooms(loggedInUserId: number) {
+  const { data } = await axios.get(
+    `${GET_DASHBOARD_HOME}/${loggedInUserId}`,
+    learningRequestConfig
+  );
+  const dashboard = data?.dashboard ?? {};
+
+  return {
+    liveStudyRooms: ((dashboard.liveStudyRooms as ApiStudyRoom[] | undefined) ?? []).map(
+      normalizeLearningStudyRoom
+    ),
+    upcomingSessions: (
+      (dashboard.upcomingSessions as ApiScheduledSession[] | undefined) ?? []
+    ).map(normalizeLearningScheduledSession),
+  };
 }

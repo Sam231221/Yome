@@ -19,7 +19,7 @@ import {
   getLearningProject,
   getLearningProjects,
   type LearningProject,
-} from "@/lib/learning/learningContentApi";
+} from "@/features/learning/api/learningContentApi";
 
 function ProjectState({
   title,

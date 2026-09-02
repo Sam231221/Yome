@@ -13,7 +13,7 @@ import {
   joinLearningGroup,
   type GroupInvitation,
   type LearningGroup,
-} from "@/lib/learning/learningApi";
+} from "@/features/learning/api/learningApi";
 import { GroupCard } from "./shared";
 
 export function GroupsContent() {

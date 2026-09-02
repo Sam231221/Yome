@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Avatar, Badge, YomeIcon } from "@/components/ui";
-import type { YomeIconName, YomeTone } from "@/features/learning/data";
+import type { YomeIconName, YomeTone } from "@/types/yome-ui";
 import type {
   DashboardFeedPost,
   DashboardPerson,
   DashboardSession,
   DashboardStudyRoom,
   DashboardTopic,
-} from "@/lib/dashboard/types";
+} from "@/features/dashboard-feed/types";
 
 export function ComposerCard({ userName = "there" }: { userName?: string }) {
   const [type, setType] = useState("Post");
