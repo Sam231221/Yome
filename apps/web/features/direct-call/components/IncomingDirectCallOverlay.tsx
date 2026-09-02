@@ -8,9 +8,9 @@ import { useStateProvider } from "@/context/StateContext";
 import {
   buildDirectCallDescriptor,
   isRelevantDirectCall,
-} from "./guards";
-import { buildDirectCallRoute } from "./routing";
-import { markDirectCallAutoJoinIntent } from "./storage";
+} from "@/features/direct-call/lib/guards";
+import { buildDirectCallRoute } from "@/features/direct-call/lib/routing";
+import { markDirectCallAutoJoinIntent } from "@/features/direct-call/lib/storage";
 
 export function IncomingDirectCallOverlay() {
   const [{ userContacts, userInfo }] = useStateProvider();

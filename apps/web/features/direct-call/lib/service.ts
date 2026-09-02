@@ -1,14 +1,14 @@
 "use client";
 
 import type { StreamVideoClient } from "@stream-io/video-react-sdk";
-import type { ChatListItem, ConversationId, UserId } from "@/features/chat/types";
+import type { ChatListItem, ConversationId, UserId } from "@/types/chat-contracts";
 import type { AppUserInfo } from "@/lib/auth/userInfo";
-import { resolveChatKind } from "@/features/chat/types";
-import type { DirectCallDescriptor, DirectCallMode } from "./types";
+import { resolveChatKind } from "@/types/chat-contracts";
+import type { DirectCallDescriptor, DirectCallMode } from "../types";
 import {
   ensureDirectCallUsers,
   prepareDirectCallConversation,
-} from "@/actions/stream.actions";
+} from "@/features/direct-call/actions/stream.actions";
 
 const DIRECT_CALL_TYPE = "default";
 

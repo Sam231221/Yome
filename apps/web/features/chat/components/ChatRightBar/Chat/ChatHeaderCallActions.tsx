@@ -5,16 +5,16 @@ import { IoVideocam } from "react-icons/io5";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useStateProvider } from "@/context/StateContext";
-import { createDirectCall } from "@/features/chat/direct-call/service";
+import { createDirectCall } from "@/features/direct-call/lib/service";
 import {
   getCallMemberIds,
   parseDirectCallCustomData,
-} from "@/features/chat/direct-call/guards";
-import { buildDirectCallRoute } from "@/features/chat/direct-call/routing";
-import { markDirectCallAutoJoinIntent } from "@/features/chat/direct-call/storage";
-import type { DirectCallMode } from "@/features/chat/direct-call/types";
+} from "@/features/direct-call/lib/guards";
+import { buildDirectCallRoute } from "@/features/direct-call/lib/routing";
+import { markDirectCallAutoJoinIntent } from "@/features/direct-call/lib/storage";
+import type { DirectCallMode } from "@/features/direct-call/types";
 import { resolveChatKind } from "@/features/chat/types";
-import { useStreamClientStatus } from "@/providers/stream-client-status";
+import { useStreamClientStatus } from "@/features/direct-call/providers/stream-client-status";
 
 const REUSABLE_CALL_STATES = new Set<CallingState>([
   CallingState.RINGING,

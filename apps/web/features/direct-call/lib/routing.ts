@@ -1,4 +1,4 @@
-import type { ConversationId } from "@/features/chat/types";
+import type { ConversationId } from "@/types/chat-contracts";
 
 export const buildDirectCallRoute = (
   conversationId: ConversationId,

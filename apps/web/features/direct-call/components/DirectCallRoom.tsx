@@ -5,17 +5,12 @@ import {
   CallingState,
   ParticipantView,
   ParticipantsAudio,
-  StreamCall,
-  StreamTheme,
   useCall,
   useCallStateHooks,
-  useStreamVideoClient,
-  type Call,
   type StreamVideoParticipant,
 } from "@stream-io/video-react-sdk";
 import {
   ArrowLeft,
-  Loader2,
   Mic,
   MicOff,
   Phone,
@@ -27,23 +22,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStateProvider } from "@/context/StateContext";
-import {
-  buildDirectCallDescriptor,
-  getCallMemberIds,
-  parseDirectCallCustomData,
-} from "./guards";
-import { consumeDirectCallAutoJoinIntent } from "./storage";
-import type { DirectCallMode } from "./types";
-
-type DirectCallRouteClientProps = {
-  conversationId: string;
-  callId: string;
-};
-
-type LoadState =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; call: Call; initialMode: DirectCallMode };
+import { buildDirectCallDescriptor } from "@/features/direct-call/lib/guards";
+import { consumeDirectCallAutoJoinIntent } from "@/features/direct-call/lib/storage";
+import type { DirectCallMode } from "@/features/direct-call/types";
+import { DirectCallErrorState, DirectCallLoadingState } from "./DirectCallStates";
 
 const OUTGOING_RING_TIMEOUT_MS = 60_000;
 
@@ -62,102 +44,7 @@ const getTerminalCallMessage = (reason?: string) => {
   }
 };
 
-function useDirectCallLoadState({
-  conversationId,
-  callId,
-}: DirectCallRouteClientProps): LoadState {
-  const [{ userInfo }] = useStateProvider();
-  const client = useStreamVideoClient();
-  const [state, setState] = useState<LoadState>({ status: "loading" });
-
-  useEffect(() => {
-    if (!client || !userInfo?.id) {
-      setState({ status: "loading" });
-      return;
-    }
-
-    let mounted = true;
-    const call = client.call("default", callId);
-
-    const load = async () => {
-      try {
-        await call.get();
-        if (!mounted) return;
-
-        const custom = parseDirectCallCustomData(call.state.custom);
-        if (!custom || custom.conversationId !== conversationId) {
-          setState({
-            status: "error",
-            message: "This call link does not belong to the selected conversation.",
-          });
-          return;
-        }
-
-        const memberIds = getCallMemberIds(call);
-        if (!memberIds.includes(String(userInfo.id))) {
-          setState({
-            status: "error",
-            message: "You are not a member of this direct call.",
-          });
-          return;
-        }
-
-        setState({
-          status: "ready",
-          call,
-          initialMode: custom.initialMode,
-        });
-      } catch {
-        if (!mounted) return;
-        setState({
-          status: "error",
-          message: "We couldn't load this call. It may have ended or the link is invalid.",
-        });
-      }
-    };
-
-    void load();
-    return () => {
-      mounted = false;
-    };
-  }, [callId, client, conversationId, userInfo?.id]);
-
-  return state;
-}
-
-function DirectCallLoadingState({ label }: { label: string }) {
-  return (
-    <main className="grid min-h-screen w-full place-items-center bg-[#080d1b] px-6 text-center text-white">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="text-lg font-semibold">{label}</p>
-      </div>
-    </main>
-  );
-}
-
-function DirectCallErrorState({ message }: { message: string }) {
-  const router = useRouter();
-
-  return (
-    <main className="grid min-h-screen w-full place-items-center bg-[#080d1b] px-6 text-center text-white">
-      <div className="max-w-md rounded-[28px] border border-white/10 bg-white/5 p-8 shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
-        <p className="text-2xl font-semibold">Call unavailable</p>
-        <p className="mt-3 text-sm leading-6 text-[#aab4d1]">{message}</p>
-        <button
-          type="button"
-          onClick={() => router.replace("/chat")}
-          className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#2d6bff] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f5cf2]"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to messages
-        </button>
-      </div>
-    </main>
-  );
-}
-
-function DirectCallRoom({
+export function DirectCallRoom({
   initialMode,
   conversationId,
 }: {
@@ -457,7 +344,7 @@ function DirectCallRoom({
         <div className="flex h-full min-h-[220px] items-center justify-center rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.14),_transparent_40%),linear-gradient(180deg,#11182f_0%,#0a1020_100%)] p-6 text-center text-white/70">
           <div>
             <p className="text-xl font-semibold text-white">{participantName}</p>
-            <p className="mt-2 text-sm text-[#96a2c1]">Waiting for video…</p>
+            <p className="mt-2 text-sm text-[#96a2c1]">Waiting for video...</p>
           </div>
         </div>
       );
@@ -507,7 +394,7 @@ function DirectCallRoom({
   const subtitle =
     callingState === CallingState.RINGING && !activeCall.isCreatedByMe
       ? `Incoming ${mode} call`
-    : callingState === CallingState.RINGING
+      : callingState === CallingState.RINGING
         ? `${mode === "video" ? "Video" : "Audio"} call ringing`
         : callingState === CallingState.JOINED && !hasRemoteParticipant
           ? activeCall.isCreatedByMe
@@ -747,31 +634,6 @@ function DirectCallRoom({
           </div>
         </section>
       </div>
-    </main>
-  );
-}
-
-export function DirectCallRouteClient(props: DirectCallRouteClientProps) {
-  const state = useDirectCallLoadState(props);
-
-  if (state.status === "loading") {
-    return <DirectCallLoadingState label="Loading call..." />;
-  }
-
-  if (state.status === "error") {
-    return <DirectCallErrorState message={state.message} />;
-  }
-
-  return (
-    <main className="min-h-screen bg-[#080d1b]">
-      <StreamCall call={state.call}>
-        <StreamTheme>
-          <DirectCallRoom
-            conversationId={props.conversationId}
-            initialMode={state.initialMode}
-          />
-        </StreamTheme>
-      </StreamCall>
     </main>
   );
 }

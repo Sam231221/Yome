@@ -2,9 +2,9 @@
 
 import { ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import StreamVideoProvider from "@/providers/StreamClientProvider";
-import { useStreamClientStatus } from "@/providers/stream-client-status";
-import { IncomingDirectCallOverlay } from "./IncomingDirectCallOverlay";
+import StreamVideoProvider from "@/features/direct-call/providers/StreamClientProvider";
+import { useStreamClientStatus } from "@/features/direct-call/providers/stream-client-status";
+import { IncomingDirectCallOverlay } from "@/features/direct-call/components/IncomingDirectCallOverlay";
 
 function IncomingCallLayer({ enabled }: { enabled: boolean }) {
   const { isReady } = useStreamClientStatus();

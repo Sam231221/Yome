@@ -3,7 +3,7 @@ import type {
   DirectCallCustomData,
   DirectCallDescriptor,
   DirectCallMode,
-} from "./types";
+} from "@/features/direct-call/types";
 
 const isDirectCallMode = (value: unknown): value is DirectCallMode =>
   value === "audio" || value === "video";
