@@ -1,33 +1,5 @@
-"use client";
-import React from "react";
-import ChatLeftBar from "@/features/chat/components/ChatLeftBar";
-import ChatRightBar from "@/features/chat/components/ChatRightBar";
-import { YomeAppShell } from "@/components/layout";
-import { useChatPageController } from "@/features/chat/hooks/useChatPageController";
+import { ChatScreen } from "@/features/chat/components/chat-screen";
 
 export default function Chatpage() {
-  const { currentChatUser, isUserLoading } = useChatPageController();
-
-  return (
-    <YomeAppShell>
-      <section className="messages-board">
-        <div className="messages-page flex-1 min-h-0 min-w-0">
-          <div
-            className={`chat-inbox-pane h-full overflow-hidden ${
-              currentChatUser ? "has-active-chat" : ""
-            }`}
-          >
-            <ChatLeftBar isUserLoading={isUserLoading} />
-          </div>
-          <div
-            className={`chat-conversation-pane h-full overflow-hidden ${
-              currentChatUser ? "has-active-chat" : ""
-            }`}
-          >
-            <ChatRightBar />
-          </div>
-        </div>
-      </section>
-    </YomeAppShell>
-  );
+  return <ChatScreen />;
 }
