@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 
 import { FaCamera } from "react-icons/fa";
-import ContextMenu from "./ContextMenu";
-import PhotoPicker from "./PhotoPicker";
-import PhotoLibrary from "./PhotoLibrary";
-import CapturePhoto from "./CapturePhoto";
+import ContextMenu from "@/components/shared/ContextMenu";
+import PhotoPicker from "@/components/shared/media/PhotoPicker";
+import PhotoLibrary from "./profile-media/PhotoLibrary";
+import CapturePhoto from "./profile-media/CapturePhoto";
 import Image from "next/image";
 
 interface AvatarProps {
@@ -121,30 +121,6 @@ export default function Avatar({
   return (
     <>
       <div className="flex items-center justify-center">
-        {size === "sm" && (
-          <div className="relative h-11 w-11 rounded-full bg-white overflow-hidden">
-            <Image
-              fill
-              src={image}
-              loading="lazy"
-              alt="avatar"
-              sizes="44px"
-              className="object-cover rounded-full"
-            />
-          </div>
-        )}
-        {size === "lg" && (
-          <div className="relative h-14 w-14 rounded-full bg-white overflow-hidden">
-            <Image
-              fill
-              src={image}
-              loading="lazy"
-              alt="avatar"
-              sizes="56px"
-              className="object-cover rounded-full"
-            />
-          </div>
-        )}
         {size === "xl" && (
           // avatar with text on hover
           <div

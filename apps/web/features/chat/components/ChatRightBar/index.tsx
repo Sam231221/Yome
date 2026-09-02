@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import Empty from "@/components/Empty";
+import Empty from "@/features/chat/components/empty-chat-state";
 import { useStateProvider } from "@/context/StateContext";
 import Chat from "./Chat";
 import SearchMessagesRightMostChatContainer from "./SearchMessagesRightMostChatContainer";

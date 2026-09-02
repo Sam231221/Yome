@@ -2,8 +2,8 @@ import React, { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useStateProvider } from "@/context/StateContext";
 import { calculateTime } from "@/utils/CalculateTime";
-import MessageStatus from "@/components/common/MessageStatus";
-import Avatar from "@/components/common/Avatar";
+import MessageStatus from "@/features/chat/components/message-status";
+import Avatar from "@/components/shared/media/Avatar";
 import ImageMessage from "./ImageMessage";
 import type { ChatMessage } from "@/types/chat";
 

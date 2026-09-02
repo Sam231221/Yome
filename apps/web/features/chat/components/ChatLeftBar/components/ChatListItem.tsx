@@ -1,12 +1,12 @@
 import React from "react";
 import { FaCamera, FaMicrophone } from "react-icons/fa";
-import Avatar from "@/components/common/Avatar";
-import AvatarWithStatus from "@/components/common/AvatarWithStatus";
+import Avatar from "@/components/shared/media/Avatar";
+import AvatarWithStatus from "@/features/chat/components/avatar-with-status";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 
 import { calculateTime } from "@/utils/CalculateTime";
-import MessageStatus from "@/components/common/MessageStatus";
+import MessageStatus from "@/features/chat/components/message-status";
 import {
   resolveChatKind,
   type ChatKind,

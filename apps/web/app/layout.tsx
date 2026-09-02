@@ -1,6 +1,6 @@
 import "./globals.css";
 import "./app-theme.css";
-import "./chat.css";
+import "@/features/chat/styles/chat.css";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { StateProvider } from "@/context/StateContext";
 import { ReactNode } from "react";

@@ -1,9 +1,9 @@
-import Slider from "@/components/common/Slider/Slider";
+import Slider from "./Slider";
 import toast from "react-hot-toast";
 import React, { useState } from "react";
 import Cropper from "react-easy-crop";
 
-import getCroppedImg from "./cropImage";
+import getCroppedImg from "../../lib/cropImage";
 const zoomPercent = (value) => {
   return `${Math.round(value * 100)}%`;
 };

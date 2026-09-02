@@ -1,7 +1,7 @@
 import React, { useState, useTransition } from "react";
 import { CallingState, useCalls } from "@stream-io/video-react-sdk";
-import Avatar from "@/components/common/Avatar";
-import AvatarWithStatus from "@/components/common/AvatarWithStatus";
+import Avatar from "@/components/shared/media/Avatar";
+import AvatarWithStatus from "@/features/chat/components/avatar-with-status";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { BiSearchAlt2 } from "react-icons/bi";
 import { MdCall, MdArrowBack } from "react-icons/md";
@@ -9,7 +9,7 @@ import { IoVideocam } from "react-icons/io5";
 import { FiUser } from "react-icons/fi";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import ContextMenu from "@/components/common/ContextMenu";
+import ContextMenu from "@/components/shared/ContextMenu";
 import { resolveChatKind } from "@/types/chat";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";

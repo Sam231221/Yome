@@ -8,7 +8,7 @@ import { FaMicrophone } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import PhotoPicker from "@/components/common/PhotoPicker";
+import PhotoPicker from "@/components/shared/media/PhotoPicker";
 import {
   isGroupId,
   type ChatKind,
@@ -21,9 +21,12 @@ import {
   sendTextMessage as postTextMessage,
 } from "@/lib/chat/chatApi";
 
-const CaptureAudio = dynamic(() => import("@/components/common/CaptureAudio"), {
-  ssr: false,
-});
+const CaptureAudio = dynamic(
+  () => import("@/features/chat/components/message-composer/CaptureAudio"),
+  {
+    ssr: false,
+  }
+);
 
 interface MessageSendBarProps {
   id: string;

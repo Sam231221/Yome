@@ -4,8 +4,8 @@ import { signOut } from "next-auth/react";
 import { BsFillChatLeftTextFill, BsThreeDotsVertical } from "react-icons/bs";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
-import ContextMenu from "@/components/common/ContextMenu";
-import ProfileSkeleton from "@/components/Loading/Skeletons";
+import ContextMenu from "@/components/shared/ContextMenu";
+import ProfileSkeleton from "@/features/chat/components/loading/ProfileSkeleton";
 export default function ChatListHeader({
   isUserLoading,
 }: {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "./style.css";
+import "./slider.css";
 
 const Slider = ({ min, max, step, value, onChange }) => {
   const handleSliderChange = (e) => {

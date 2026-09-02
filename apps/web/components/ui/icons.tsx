@@ -1,4 +1,4 @@
-import type { YomeIconName } from "@/features/learning/data";
+import type { YomeIconName } from "@/types/yome-ui";
 
 const iconPaths: Record<string, string> = {
   home: '<path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>',

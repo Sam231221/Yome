@@ -2,7 +2,7 @@ import { useStateProvider } from "@/context/StateContext";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaPlay, FaStop } from "react-icons/fa";
 import { calculateTime } from "@/utils/CalculateTime";
-import MessageStatus from "@/components/common/MessageStatus";
+import MessageStatus from "@/features/chat/components/message-status";
 import type { ChatMessage } from "@/types/chat";
 
 interface VoiceMessageProps {

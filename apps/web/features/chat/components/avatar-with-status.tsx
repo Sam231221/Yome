@@ -1,5 +1,6 @@
-import { cn } from "@/lib/utils";
 import React from "react";
+
+const cn = (...inputs: Array<string | undefined>) => inputs.filter(Boolean).join(" ");
 
 interface AvatarWithStatusProps {
   type?: string;

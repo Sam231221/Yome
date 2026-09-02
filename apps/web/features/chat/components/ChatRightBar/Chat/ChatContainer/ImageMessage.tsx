@@ -2,7 +2,7 @@ import { useStateProvider } from "@/context/StateContext";
 import { calculateTime } from "@/utils/CalculateTime";
 import Image from "next/image";
 import React from "react";
-import MessageStatus from "@/components/common/MessageStatus";
+import MessageStatus from "@/features/chat/components/message-status";
 import type { ChatMessage } from "@/types/chat";
 
 interface ImageMessageProps {

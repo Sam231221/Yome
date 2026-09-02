@@ -1,15 +1,6 @@
-export type YomeTone = "blue" | "teal" | "amber" | "violet" | "neutral";
-export type YomeIconName =
-  | "home"
-  | "compass"
-  | "users"
-  | "profile"
-  | "message"
-  | "headphones"
-  | "library"
-  | "flask"
-  | "calendar"
-  | "settings";
+import type { YomeIconName, YomeTone } from "@/types/yome-ui";
+
+export type { YomeIconName, YomeTone } from "@/types/yome-ui";
 
 export type YomeNavItem = {
   label: string;
