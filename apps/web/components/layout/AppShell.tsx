@@ -2,47 +2,36 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useStateProvider } from "@/context/StateContext";
-import { yomeNavItems } from "@/features/learning/data";
 import { Avatar, Brand, ToneSymbol, YomeIcon } from "@/components/ui";
-import { getDashboardHome } from "@/features/dashboard-feed/api/dashboardApi";
-import type { DashboardHome } from "@/features/dashboard-feed/types";
+import type { YomeNavItem } from "@/lib/app-shell/navigation";
+import type { AppUserInfo } from "@/lib/auth/userInfo";
+import type { DashboardHome } from "@/lib/app-shell/data-types";
 
-export function YomeAppShell({ children }: { children: ReactNode }) {
+interface YomeAppShellProps {
+  user: AppUserInfo | undefined;
+  dashboard: DashboardHome | null;
+  navItems: YomeNavItem[];
+  children: ReactNode;
+}
+
+export function YomeAppShell({
+  user,
+  dashboard,
+  navItems,
+  children,
+}: YomeAppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session } = useSession();
-  const [{ userInfo }] = useStateProvider();
   const [dark, setDark] = useState(false);
-  const [dashboard, setDashboard] = useState<DashboardHome | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
   }, [dark]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const loggedInUserId = userInfo?.id ?? Number((session?.user as { id?: unknown } | undefined)?.id);
-    if (!Number.isFinite(loggedInUserId)) return;
-
-    getDashboardHome(loggedInUserId)
-      .then((home) => {
-        if (!cancelled) setDashboard(home);
-      })
-      .catch(() => {
-        if (!cancelled) setDashboard(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [session, userInfo?.id]);
-
-  const name = dashboard?.profile.name || (userInfo?.firstname || userInfo?.lastname
-      ? `${userInfo?.firstname ?? ""} ${userInfo?.lastname ?? ""}`.trim()
-      : userInfo?.name || session?.user?.name || "Maya Patel");
+  const name = dashboard?.profile.name || (user?.firstname || user?.lastname
+      ? `${user?.firstname ?? ""} ${user?.lastname ?? ""}`.trim()
+      : user?.name || "Maya Patel");
   const initials = useMemo(
     () =>
       name
@@ -81,10 +70,10 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
               ) : null}
           </Link>
           <Link className="yome-profile-button profile-button" href="/account">
-            <Avatar initials={initials} image={userInfo?.profilePicture || session?.user?.image || undefined} tone="violet" size="sm" />
+            <Avatar initials={initials} image={user?.profilePicture || undefined} tone="violet" size="sm" />
             <span>
               <strong>{name}</strong>
-              <small>{userInfo?.role === "TEACHER" ? "Educator" : "Student"}</small>
+              <small>{user?.role === "TEACHER" ? "Educator" : "Student"}</small>
             </span>
             <span className="chevron">⌄</span>
           </Link>
@@ -93,7 +82,7 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
 
       <aside className="yome-sidebar sidebar">
         <nav aria-label="Primary navigation">
-          {yomeNavItems.map((item) => {
+          {navItems.map((item) => {
             const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
             return (
               <Link key={item.href} className={active ? "yome-nav-item nav-item active" : "yome-nav-item nav-item"} href={item.href}>
@@ -124,10 +113,10 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
           Preview onboarding
         </button>
         <button className="user-card-mini rounded-yome border border-yome-border bg-yome-surface shadow-yome" onClick={handleProfileClick}>
-          <Avatar initials={initials} image={userInfo?.profilePicture || session?.user?.image || undefined} tone="violet" size="sm" />
+          <Avatar initials={initials} image={user?.profilePicture || undefined} tone="violet" size="sm" />
           <div>
             <strong>{name}</strong>
-            <small>@{dashboard?.profile.username || userInfo?.username || "yomeuser"}</small>
+            <small>@{dashboard?.profile.username || user?.username || "yomeuser"}</small>
           </div>
           <YomeIcon name="more" size={18} />
         </button>
@@ -137,11 +126,11 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
 
       <nav className="yome-mobile-nav" aria-label="Mobile navigation">
         {[
-          { href: "/dashboard", label: "Home", icon: yomeNavItems[0].icon },
-          { href: "/explore", label: "Explore", icon: yomeNavItems[1].icon },
+          { href: "/dashboard", label: "Home", icon: navItems[0].icon },
+          { href: "/explore", label: "Explore", icon: navItems[1].icon },
           { href: "/dashboard", label: "Create", icon: "plus" as const },
-          { href: "/chat", label: "Messages", icon: yomeNavItems[4].icon },
-          { href: "/account", label: "Profile", icon: yomeNavItems[3].icon },
+          { href: "/chat", label: "Messages", icon: navItems[4].icon },
+          { href: "/account", label: "Profile", icon: navItems[3].icon },
         ].map((item) => {
           const active = pathname === item.href;
           const className = `${active ? "active " : ""}${item.label === "Create" ? "create-mobile" : ""}`.trim();

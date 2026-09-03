@@ -2,14 +2,14 @@
 
 import ChatLeftBar from "@/features/chat/components/ChatLeftBar";
 import ChatRightBar from "@/features/chat/components/ChatRightBar";
-import { YomeAppShell } from "@/components/layout";
+import { YomeAppShellContainer } from "@/components/layout";
 import { useChatPageController } from "@/features/chat/hooks/useChatPageController";
 
 export function ChatScreen() {
   const { currentChatUser, isUserLoading } = useChatPageController();
 
   return (
-    <YomeAppShell>
+    <YomeAppShellContainer>
       <section className="messages-board">
         <div className="messages-page flex-1 min-h-0 min-w-0">
           <div
@@ -28,6 +28,6 @@ export function ChatScreen() {
           </div>
         </div>
       </section>
-    </YomeAppShell>
+    </YomeAppShellContainer>
   );
 }

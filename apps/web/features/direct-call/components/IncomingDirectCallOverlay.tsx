@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { CallingState, useCalls } from "@stream-io/video-react-sdk";
 import { Phone, PhoneOff, Video } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
 import {
   buildDirectCallDescriptor,
   isRelevantDirectCall,
@@ -13,7 +13,7 @@ import { buildDirectCallRoute } from "@/features/direct-call/lib/routing";
 import { markDirectCallAutoJoinIntent } from "@/features/direct-call/lib/storage";
 
 export function IncomingDirectCallOverlay() {
-  const [{ userContacts, userInfo }] = useStateProvider();
+  const [{ userInfo }] = useAuthState();
   const router = useRouter();
   const calls = useCalls();
   const [busyCallId, setBusyCallId] = useState<string>();
@@ -47,16 +47,9 @@ export function IncomingDirectCallOverlay() {
     return buildDirectCallDescriptor(activeIncomingCall, userInfo.id);
   }, [activeIncomingCall, userInfo?.id]);
 
-  const caller = useMemo(() => {
-    if (!descriptor) return null;
-    return (
-      userContacts.find((contact) => contact.id === descriptor.peerUserId) ?? null
-    );
-  }, [descriptor, userContacts]);
-
   if (!activeIncomingCall || !descriptor) return null;
 
-  const callerName = caller?.name ?? descriptor.peerName ?? "Incoming call";
+  const callerName = descriptor.peerName ?? "Incoming call";
   const modeLabel = descriptor.initialMode === "video" ? "Video call" : "Audio call";
   const isBusy = busyCallId === activeIncomingCall.id;
 

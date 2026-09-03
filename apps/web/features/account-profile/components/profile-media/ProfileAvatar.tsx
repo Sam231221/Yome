@@ -2,7 +2,7 @@ import { IoMdCrop } from "react-icons/io";
 import CropEasy from "./CropEasy";
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import Image from "next/image";
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
 
 type ProfileAvatarProps = {
   pic: string;
@@ -10,7 +10,7 @@ type ProfileAvatarProps = {
 };
 
 const ProfileAvatar = ({ pic, setPic }: ProfileAvatarProps) => {
-  const [{ userInfo }] = useStateProvider();
+  const [{ userInfo }] = useAuthState();
   const [photo, setPhoto] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [openCrop, setOpenCrop] = useState(false);

@@ -1,17 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Empty from "@/features/chat/components/empty-chat-state";
-import { useStateProvider } from "@/context/StateContext";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
 import Chat from "./Chat";
 import SearchMessagesRightMostChatContainer from "./SearchMessagesRightMostChatContainer";
 import { resolveChatKind } from "@/features/chat/types";
 export default function ChatRightBar() {
-  const [
-    {
-      currentChatUser,
-      messageSearch,
-    },
-  ] = useStateProvider();
+  const [{ currentChatUser, messageSearch }] = useChatState();
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {

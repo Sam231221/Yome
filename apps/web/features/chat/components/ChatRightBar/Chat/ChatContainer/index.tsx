@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
 import { calculateTime } from "@/features/chat/lib/calculateTime";
 import MessageStatus from "@/features/chat/components/message-status";
 import Avatar from "@/components/shared/media/Avatar";
@@ -12,7 +13,8 @@ const VoiceMessage = dynamic(() => import("./VoiceMessage"), {
 });
 
 export default function ChatContainer({ chatType }: { chatType: string }) {
-  const [{ messages, currentChatUser, userInfo }] = useStateProvider();
+  const [{ userInfo }] = useAuthState();
+  const [{ messages, currentChatUser }] = useChatState();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

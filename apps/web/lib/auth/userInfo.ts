@@ -1,5 +1,4 @@
 import axios from "axios";
-import { reducerCases } from "@/context/constants";
 import { GET_USER_ROUTE } from "@/utils/ApiRoutes";
 import { getClientErrorMessage } from "@/lib/api/clientErrors";
 import { logBrowserWarning } from "@/lib/debug/browserLogger";
@@ -43,10 +42,8 @@ export type AppUserInfo = {
   address?: string;
 };
 
-type DispatchFn = (action: {
-  type: typeof reducerCases.SET_USER_INFO;
-  userInfo: AppUserInfo;
-}) => void;
+/** Callback invoked by ensureUserInfo once the user record is resolved. */
+export type SetUserInfoFn = (user: AppUserInfo) => void;
 
 const DEFAULT_USER_INFO_ERROR = "Failed to load user information.";
 
@@ -82,9 +79,9 @@ export function mapApiUserToAppUser(user: ApiUser): AppUserInfo {
 export async function ensureUserInfo(params: {
   sessionUser?: SessionUser | null;
   currentUserInfo?: AppUserInfo;
-  dispatch: DispatchFn;
+  setUserInfo: SetUserInfoFn;
 }): Promise<AppUserInfo | null> {
-  const { sessionUser, currentUserInfo, dispatch } = params;
+  const { sessionUser, currentUserInfo, setUserInfo } = params;
   if (currentUserInfo) return currentUserInfo;
   if (!sessionUser?.email) return null;
 
@@ -107,10 +104,7 @@ export async function ensureUserInfo(params: {
       const syncedUser = syncResponse.data?.user as ApiUser | undefined;
       if (syncResponse.data?.ok && syncedUser) {
         const mapped = mapApiUserToAppUser(syncedUser);
-        dispatch({
-          type: reducerCases.SET_USER_INFO,
-          userInfo: mapped,
-        });
+        setUserInfo(mapped);
         return mapped;
       }
     }
@@ -121,9 +115,6 @@ export async function ensureUserInfo(params: {
   }
 
   const mapped = mapApiUserToAppUser(response.data.user as ApiUser);
-  dispatch({
-    type: reducerCases.SET_USER_INFO,
-    userInfo: mapped,
-  });
+  setUserInfo(mapped);
   return mapped;
 }

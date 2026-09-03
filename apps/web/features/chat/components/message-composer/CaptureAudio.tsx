@@ -1,5 +1,6 @@
-import { useStateProvider } from "@/context/StateContext";
-import { reducerCases } from "@/context/constants";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
+import { chatReducerCases } from "@/features/chat/state/chat-reducer";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
 import toast from "react-hot-toast";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -48,7 +49,8 @@ type AudioRecorderProps = {
 };
 
 const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
-  const [{ userInfo, currentChatUser, socket }, dispatch] = useStateProvider();
+  const [{ userInfo }] = useAuthState();
+  const [{ currentChatUser, socket }, chatDispatch] = useChatState();
   const resolvedChatType = (chatType === "group" ? "group" : "user") as ChatKind;
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -284,16 +286,17 @@ const AudioRecorder = ({ hide, chatType }: AudioRecorderProps) => {
     if (!currentChatUser?.id) return;
 
     if (resolvedChatType === "user") {
-      dispatch({
-        type: reducerCases.ADD_USER_MESSAGE,
+      chatDispatch({
+        type: chatReducerCases.ADD_USER_MESSAGE,
         newMessage: messagePayload,
         fromSelf: true,
+        currentUserId: userInfo?.id,
       });
       return;
     }
 
-    dispatch({
-      type: reducerCases.ADD_GROUP_MESSAGE,
+    chatDispatch({
+      type: chatReducerCases.ADD_GROUP_MESSAGE,
       newMessage: messagePayload,
       groupId: isGroupId(currentChatUser.id) ? currentChatUser.id : undefined,
       fromSelf: true,

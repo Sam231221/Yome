@@ -6,8 +6,9 @@ import { BsEmojiSmile, BsPlusLg } from "react-icons/bs";
 import { ImAttachment } from "react-icons/im";
 import { FaMicrophone } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
-import { useStateProvider } from "@/context/StateContext";
-import { reducerCases } from "@/context/constants";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
+import { chatReducerCases } from "@/features/chat/state/chat-reducer";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
 import PhotoPicker from "@/components/shared/media/PhotoPicker";
 import {
   isGroupId,
@@ -38,7 +39,8 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
   const [grabImage, setGrabImage] = useState(false);
-  const [{ socket, currentChatUser, userInfo }, dispatch] = useStateProvider();
+  const [{ userInfo }] = useAuthState();
+  const [{ socket, currentChatUser }, chatDispatch] = useChatState();
   const resolvedChatType = (chatType === "group" ? "group" : "user") as ChatKind;
 
   const emitMessage = (targetId: ChatTargetId, messagePayload: ChatMessage) => {
@@ -55,16 +57,17 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
     if (!currentChatUser?.id) return;
 
     if (resolvedChatType === "user") {
-      dispatch({
-        type: reducerCases.ADD_USER_MESSAGE,
+      chatDispatch({
+        type: chatReducerCases.ADD_USER_MESSAGE,
         newMessage: messagePayload,
         fromSelf: true,
+        currentUserId: userInfo?.id,
       });
       return;
     }
 
-    dispatch({
-      type: reducerCases.ADD_GROUP_MESSAGE,
+    chatDispatch({
+      type: chatReducerCases.ADD_GROUP_MESSAGE,
       newMessage: messagePayload,
       groupId: isGroupId(currentChatUser.id) ? currentChatUser.id : undefined,
       fromSelf: true,

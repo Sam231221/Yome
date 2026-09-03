@@ -21,7 +21,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
 import { buildDirectCallDescriptor } from "@/features/direct-call/lib/guards";
 import { consumeDirectCallAutoJoinIntent } from "@/features/direct-call/lib/storage";
 import type { DirectCallMode } from "@/features/direct-call/types";
@@ -52,7 +52,7 @@ export function DirectCallRoom({
   conversationId: string;
 }) {
   const router = useRouter();
-  const [{ userContacts, userInfo }] = useStateProvider();
+  const [{ userInfo }] = useAuthState();
   const call = useCall();
   const activeCall = call ?? undefined;
   const joinAttemptedRef = useRef(false);
@@ -83,10 +83,7 @@ export function DirectCallRoom({
     return buildDirectCallDescriptor(activeCall, userInfo.id);
   }, [activeCall, userInfo?.id]);
 
-  const peer = useMemo(() => {
-    if (!descriptor) return null;
-    return userContacts.find((contact) => contact.id === descriptor.peerUserId) ?? null;
-  }, [descriptor, userContacts]);
+  const peerDisplayName = descriptor?.peerName;
 
   const remoteParticipant = remoteParticipants[0];
   const primaryVideoParticipant = remoteParticipant;
@@ -337,7 +334,7 @@ export function DirectCallRoom({
     trackType?: "videoTrack";
   }) => {
     const participantName =
-      label ?? participant?.name ?? participant?.userId ?? peer?.name ?? "Participant";
+      label ?? participant?.name ?? participant?.userId ?? peerDisplayName ?? "Participant";
 
     if (!participant) {
       return (
@@ -387,8 +384,7 @@ export function DirectCallRoom({
   }
 
   const title =
-    peer?.name ??
-    descriptor?.peerName ??
+    peerDisplayName ??
     activeCall.state.createdBy?.name ??
     "Direct call";
   const subtitle =
@@ -537,7 +533,7 @@ export function DirectCallRoom({
                 label:
                   primaryVideoParticipant?.isLocalParticipant
                     ? "You"
-                    : peer?.name ?? title,
+                    : peerDisplayName ?? title,
               })}
 
               <div className="absolute bottom-4 left-4 z-10 w-[120px] max-w-[38vw] sm:bottom-6 sm:left-6 sm:w-[180px] lg:w-[220px]">

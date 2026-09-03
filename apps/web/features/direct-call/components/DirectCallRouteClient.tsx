@@ -7,7 +7,7 @@ import {
   useStreamVideoClient,
   type Call,
 } from "@stream-io/video-react-sdk";
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
 import {
   getCallMemberIds,
   parseDirectCallCustomData,
@@ -33,7 +33,7 @@ function useDirectCallLoadState({
   conversationId,
   callId,
 }: DirectCallRouteClientProps): LoadState {
-  const [{ userInfo }] = useStateProvider();
+  const [{ userInfo }] = useAuthState();
   const client = useStreamVideoClient();
   const [state, setState] = useState<LoadState>({ status: "loading" });
 

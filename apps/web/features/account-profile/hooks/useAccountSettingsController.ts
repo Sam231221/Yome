@@ -11,8 +11,7 @@ import {
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { reducerCases } from "@/context/constants";
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
 import {
   changeAccountPassword,
   getAccountErrorMessage,
@@ -41,7 +40,7 @@ import {
 } from "@/features/account-profile/lib/account-settings";
 
 export function useAccountSettingsController() {
-  const [{ userInfo }, dispatch] = useStateProvider();
+  const [{ userInfo }, { setUserInfo }] = useAuthState();
   const { data: session } = useSession();
   const router = useRouter();
   const securitySectionRef = useRef<HTMLElement | null>(null);
@@ -102,7 +101,7 @@ export function useAccountSettingsController() {
         await ensureUserInfo({
           sessionUser: session.user,
           currentUserInfo: userInfo,
-          dispatch,
+          setUserInfo,
         });
       } catch (error) {
         if (!cancelled) {
@@ -116,7 +115,7 @@ export function useAccountSettingsController() {
     return () => {
       cancelled = true;
     };
-  }, [dispatch, session?.user, userInfo]);
+  }, [session?.user, setUserInfo, userInfo]);
 
   useEffect(() => {
     setValues((current) => ({
@@ -299,10 +298,7 @@ export function useAccountSettingsController() {
         address: values.address.trim(),
       });
 
-      dispatch({
-        type: reducerCases.SET_USER_INFO,
-        userInfo: user,
-      });
+      setUserInfo(user);
       toast.success(message);
       setUpdatedDetails(false);
       setPic(null);

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
 import { ensureUserInfo } from "@/lib/auth/userInfo";
 import { Badge } from "@/components/ui";
 import { ComposerCard, FeedPostCard, RightRail } from "@/features/dashboard-feed";
@@ -14,7 +14,7 @@ import {
 import type { DashboardHome } from "@/features/dashboard-feed/types";
 
 export function DashboardScreen() {
-  const [{ userInfo }, dispatch] = useStateProvider();
+  const [{ userInfo }, { setUserInfo }] = useAuthState();
   const { data: session, status } = useSession();
   const [dashboard, setDashboard] = useState<DashboardHome | null>(null);
   const [isDashboardLoading, setIsDashboardLoading] = useState(true);
@@ -30,7 +30,7 @@ export function DashboardScreen() {
         const loadedUserInfo = await ensureUserInfo({
           sessionUser: session?.user,
           currentUserInfo: userInfo,
-          dispatch,
+          setUserInfo,
         });
         const loggedInUserId = loadedUserInfo?.id ?? userInfo?.id;
         if (!loggedInUserId) {
@@ -55,7 +55,7 @@ export function DashboardScreen() {
     return () => {
       cancelled = true;
     };
-  }, [session, status, userInfo, dispatch]);
+  }, [session, status, userInfo, setUserInfo]);
 
   const fullName = dashboard?.profile.name || (userInfo?.firstname
     ? `${userInfo.firstname} ${userInfo.lastname ?? ""}`.trim()

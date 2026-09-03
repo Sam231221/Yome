@@ -1,4 +1,5 @@
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaPlay, FaStop } from "react-icons/fa";
 import { calculateTime } from "@/features/chat/lib/calculateTime";
@@ -25,7 +26,8 @@ const formatTime = (time: number) => {
 const WAVEFORM_BARS = [10, 18, 14, 24, 12, 20, 28, 16, 22, 12, 26, 18, 14, 24];
 
 function VoiceMessage({ message }: VoiceMessageProps) {
-  const [{ currentChatUser, userInfo }] = useStateProvider();
+  const [{ userInfo }] = useAuthState();
+  const [{ currentChatUser }] = useChatState();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPlaybackTime, setCurrentPlaybackTime] = useState(0);

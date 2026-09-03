@@ -4,7 +4,8 @@ import { MdCall } from "react-icons/md";
 import { IoVideocam } from "react-icons/io5";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
 import { createDirectCall } from "@/features/direct-call/lib/service";
 import {
   getCallMemberIds,
@@ -25,7 +26,8 @@ const REUSABLE_CALL_STATES = new Set<CallingState>([
 ]);
 
 export default function ChatHeaderCallActions() {
-  const [{ currentChatUser, userInfo }] = useStateProvider();
+  const [{ userInfo }] = useAuthState();
+  const [{ currentChatUser }] = useChatState();
   const router = useRouter();
   const { client, isConfigured, isLoading, setupError } = useStreamClientStatus();
   const calls = useCalls();

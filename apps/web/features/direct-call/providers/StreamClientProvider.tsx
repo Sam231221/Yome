@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useMemo, useState } from "react";
 import { StreamVideoClient, StreamVideo } from "@stream-io/video-react-sdk";
 
 import { tokenProvider } from "@/features/direct-call/actions/stream.actions";
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { ensureUserInfo } from "@/lib/auth/userInfo";
@@ -30,7 +30,7 @@ const StreamVideoProvider = ({
   const [isResolvingUser, setIsResolvingUser] = useState(false);
   const [setupError, setSetupError] = useState<string>();
   const { data: session, status } = useSession();
-  const [{ userInfo }, dispatch] = useStateProvider();
+  const [{ userInfo }, { setUserInfo }] = useAuthState();
   const router = useRouter();
   const isConfigured = hasValidStreamConfig();
 
@@ -42,7 +42,7 @@ const StreamVideoProvider = ({
         const loadedUser = await ensureUserInfo({
           sessionUser: session.user,
           currentUserInfo: userInfo,
-          dispatch,
+          setUserInfo,
         });
         if (!loadedUser) {
           setSetupError("Unable to load your account for this call.");
@@ -54,7 +54,7 @@ const StreamVideoProvider = ({
       }
     };
     void load();
-  }, [session, userInfo, dispatch]);
+  }, [session, setUserInfo, userInfo]);
 
   useEffect(() => {
     if (status === "unauthenticated") {

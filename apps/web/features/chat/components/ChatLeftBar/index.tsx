@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
 import ChatListHeader from "./components/ChatListHeader";
 import List from "./components/List";
 import SearchBar from "./components/SearchBar";
@@ -13,8 +14,8 @@ export default function ChatLeftBar({
   const [pageType, setPageType] = useState("default");
   const [isBootstrapLoading, setIsBootstrapLoading] = useState(true);
   const [showHistoryRecovery, setShowHistoryRecovery] = useState(true);
-  const [{ contactsPage, userContacts, groupContacts, userInfo }] =
-    useStateProvider();
+  const [{ userInfo }] = useAuthState();
+  const [{ contactsPage, userContacts, groupContacts }] = useChatState();
 
   const hasContacts = userContacts.length + groupContacts.length > 0;
 

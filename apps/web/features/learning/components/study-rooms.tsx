@@ -21,7 +21,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { useSession } from "next-auth/react";
 import { Avatar, Badge } from "@/components/ui";
 import type { YomeTone } from "@/types/yome-ui";
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
 import { ensureUserInfo } from "@/lib/auth/userInfo";
 import {
   getLearningContentErrorMessage,
@@ -62,7 +62,7 @@ export function StudyRoomsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const { data: session, status } = useSession();
-  const [{ userInfo }, dispatch] = useStateProvider();
+  const [{ userInfo }, { setUserInfo }] = useAuthState();
 
   const loadStudyRooms = useCallback(async () => {
     if (status === "loading") return;
@@ -72,7 +72,7 @@ export function StudyRoomsContent() {
       const loadedUserInfo = await ensureUserInfo({
         sessionUser: session?.user,
         currentUserInfo: userInfo,
-        dispatch,
+        setUserInfo,
       });
       const loggedInUserId = loadedUserInfo?.id ?? userInfo?.id;
       if (!loggedInUserId) {
@@ -91,7 +91,7 @@ export function StudyRoomsContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [dispatch, session?.user, status, userInfo]);
+  }, [session?.user, setUserInfo, status, userInfo]);
 
   useEffect(() => {
     void loadStudyRooms();

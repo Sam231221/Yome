@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { reducerCases } from "@/context/constants";
-import { useStateProvider } from "@/context/StateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
+import { chatReducerCases } from "@/features/chat/state/chat-reducer";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
 import { useChatSocket } from "@/features/chat/hooks/useChatSocket";
 import {
   ensureUserInfo,
@@ -17,10 +18,9 @@ import { playNotificationSound } from "@/features/chat/lib/notificationSound";
 import { resolveChatKind, type ChatKind } from "@/features/chat/types";
 
 export function useChatPageController() {
-  const [
-    { userInfo, currentChatUser, userContacts, groupContacts },
-    dispatch,
-  ] = useStateProvider();
+  const [chatState, chatDispatch] = useChatState();
+  const [{ userInfo }, { setUserInfo }] = useAuthState();
+  const { currentChatUser, userContacts, groupContacts } = chatState;
   const [isUserLoading, setIsUserLoading] = useState(true);
   const { data: session } = useSession();
   const router = useRouter();
@@ -35,7 +35,7 @@ export function useChatPageController() {
         const loaded = await ensureUserInfo({
           sessionUser: session.user,
           currentUserInfo: userInfo,
-          dispatch,
+          setUserInfo,
         });
 
         if (!loaded && !cancelled) {
@@ -63,7 +63,7 @@ export function useChatPageController() {
     return () => {
       cancelled = true;
     };
-  }, [dispatch, router, session?.user, userInfo]);
+  }, [router, session?.user, setUserInfo, userInfo]);
 
   useEffect(() => {
     if (userInfo?.id) {
@@ -74,7 +74,7 @@ export function useChatPageController() {
   const socket = useChatSocket({
     userId: userInfo?.id,
     onSocketReady: (socketRef) => {
-      dispatch({ type: reducerCases.SET_SOCKET, socket: socketRef });
+      chatDispatch({ type: chatReducerCases.SET_SOCKET, socket: socketRef });
       setIsUserLoading(false);
     },
     onPrivateMessageReceived: (data) => {
@@ -82,16 +82,17 @@ export function useChatPageController() {
       if (!currentChatUser || Number(currentChatUser.id) !== senderId) {
         playNotificationSound();
       }
-      dispatch({
-        type: reducerCases.ADD_USER_MESSAGE,
+      chatDispatch({
+        type: chatReducerCases.ADD_USER_MESSAGE,
         newMessage: {
           ...data.message,
         },
+        currentUserId: userInfo?.id,
       });
     },
     onGroupMessageReceived: (data) => {
-      dispatch({
-        type: reducerCases.ADD_GROUP_MESSAGE,
+      chatDispatch({
+        type: chatReducerCases.ADD_GROUP_MESSAGE,
         newMessage: {
           ...data.message,
           groupId:
@@ -100,15 +101,15 @@ export function useChatPageController() {
       });
     },
     onOnlineUsers: ({ onlineUsers }) => {
-      dispatch({
-        type: reducerCases.SET_ONLINE_USERS,
+      chatDispatch({
+        type: chatReducerCases.SET_ONLINE_USERS,
         onlineUsers,
       });
     },
     onMarkReadReceived: ({ id, receiverId }) => {
       if (typeof receiverId === "undefined") return;
-      dispatch({
-        type: reducerCases.SET_MESSAGES_READ,
+      chatDispatch({
+        type: chatReducerCases.SET_MESSAGES_READ,
         id,
         receiverId,
       });
@@ -123,12 +124,12 @@ export function useChatPageController() {
 
   useEffect(() => {
     if (socket.current) {
-      dispatch({
-        type: reducerCases.SET_SOCKET,
+      chatDispatch({
+        type: chatReducerCases.SET_SOCKET,
         socket,
       });
     }
-  }, [dispatch, socket]);
+  }, [chatDispatch, socket]);
 
   useEffect(() => {
     const getMessages = async () => {
@@ -140,7 +141,7 @@ export function useChatPageController() {
           toUserId: currentChatUser.id,
           chatType: resolveChatKind(currentChatUser) as ChatKind,
         });
-        dispatch({ type: reducerCases.SET_MESSAGES, messages });
+        chatDispatch({ type: chatReducerCases.SET_MESSAGES, messages });
       } catch (error) {
         logChatConversationError("load active conversation", error);
       }
@@ -156,7 +157,7 @@ export function useChatPageController() {
     if (activeContactExists) {
       void getMessages();
     }
-  }, [currentChatUser, dispatch, groupContacts, userContacts, userInfo]);
+  }, [chatDispatch, currentChatUser, groupContacts, userContacts, userInfo]);
 
   return {
     currentChatUser,

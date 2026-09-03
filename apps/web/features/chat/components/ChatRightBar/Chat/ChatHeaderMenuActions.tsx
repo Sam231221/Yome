@@ -4,8 +4,8 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { BiSearchAlt2 } from "react-icons/bi";
 import { FiUser } from "react-icons/fi";
 import ContextMenu from "@/components/shared/ContextMenu";
-import { reducerCases } from "@/context/constants";
-import { useStateProvider } from "@/context/StateContext";
+import { chatReducerCases } from "@/features/chat/state/chat-reducer";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
 
 interface ChatHeaderMenuActionsProps {
   detailsOpen: boolean;
@@ -18,7 +18,7 @@ export default function ChatHeaderMenuActions({
   onToggleDetails,
   onOpenDetails,
 }: ChatHeaderMenuActionsProps) {
-  const [{ messageSearch }, dispatch] = useStateProvider();
+  const [{ messageSearch }, chatDispatch] = useChatState();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,
     y: 0,
@@ -36,7 +36,7 @@ export default function ChatHeaderMenuActions({
       name: "Exit",
       callBack: async () => {
         setIsContextMenuVisible(false);
-        dispatch({ type: reducerCases.SET_EXIT_CHAT });
+        chatDispatch({ type: chatReducerCases.SET_EXIT_CHAT });
       },
     },
   ];
@@ -47,7 +47,7 @@ export default function ChatHeaderMenuActions({
         onClick={() => {
           onOpenDetails();
           if (!messageSearch) {
-            dispatch({ type: reducerCases.SET_MESSAGES_SEARCH });
+            chatDispatch({ type: chatReducerCases.SET_MESSAGES_SEARCH });
           }
         }}
         className="chat-header-icon desktop-only chat-header-secondary-action"

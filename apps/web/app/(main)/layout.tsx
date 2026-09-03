@@ -1,6 +1,6 @@
 import React from "react";
-import { YomeAppShell } from "@/components/layout";
+import { YomeAppShellContainer } from "@/components/layout";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <YomeAppShell>{children}</YomeAppShell>;
+  return <YomeAppShellContainer>{children}</YomeAppShellContainer>;
 }

@@ -2,8 +2,9 @@ import React from "react";
 import { FaCamera, FaMicrophone } from "react-icons/fa";
 import Avatar from "@/components/shared/media/Avatar";
 import AvatarWithStatus from "@/features/chat/components/avatar-with-status";
-import { useStateProvider } from "@/context/StateContext";
-import { reducerCases } from "@/context/constants";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
+import { chatReducerCases } from "@/features/chat/state/chat-reducer";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
 
 import { calculateTime } from "@/features/chat/lib/calculateTime";
 import MessageStatus from "@/features/chat/components/message-status";
@@ -62,8 +63,8 @@ export default function ChatListItem({
   type,
   isContactPage = false,
 }: ChatListItemProps) {
-  const [{ userInfo, socket, onlineUsers, currentChatUser }, dispatch] =
-    useStateProvider();
+  const [{ userInfo }] = useAuthState();
+  const [{ socket, onlineUsers, currentChatUser }, chatDispatch] = useChatState();
 
   const handleContactClick = () => {
     const selectedChat = buildSelectedChat({ data, type, isContactPage });
@@ -75,7 +76,7 @@ export default function ChatListItem({
 
     if (isSameConversation) {
       if (isContactPage) {
-        dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
+        chatDispatch({ type: chatReducerCases.SET_ALL_CONTACTS_PAGE });
       }
       return;
     }
@@ -84,13 +85,14 @@ export default function ChatListItem({
       socket?.current?.emit("join room", `room-${selectedChat.id}`, userInfo?.id);
     }
 
-    dispatch({
-      type: reducerCases.CHANGE_CURRENT_CHAT_USER,
+    chatDispatch({
+      type: chatReducerCases.CHANGE_CURRENT_CHAT_USER,
       user: selectedChat,
+      currentUserId: userInfo?.id,
     });
 
     if (isContactPage) {
-      dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
+      chatDispatch({ type: chatReducerCases.SET_ALL_CONTACTS_PAGE });
     }
   };
 

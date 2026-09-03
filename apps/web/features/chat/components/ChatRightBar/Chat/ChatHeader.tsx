@@ -1,8 +1,8 @@
 import Avatar from "@/components/shared/media/Avatar";
 import AvatarWithStatus from "@/features/chat/components/avatar-with-status";
 import { MdArrowBack } from "react-icons/md";
-import { useStateProvider } from "@/context/StateContext";
-import { reducerCases } from "@/context/constants";
+import { chatReducerCases } from "@/features/chat/state/chat-reducer";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
 import ChatHeaderCallActions from "./ChatHeaderCallActions";
 import ChatHeaderMenuActions from "./ChatHeaderMenuActions";
 
@@ -19,10 +19,10 @@ export default function ChatHeader({
   onToggleDetails,
   onOpenDetails,
 }: ChatHeaderProps) {
-  const [{ currentChatUser, onlineUsers }, dispatch] = useStateProvider();
+  const [{ currentChatUser, onlineUsers }, chatDispatch] = useChatState();
 
   const handleBackToList = () => {
-    dispatch({ type: reducerCases.SET_EXIT_CHAT });
+    chatDispatch({ type: chatReducerCases.SET_EXIT_CHAT });
   };
 
   return (
