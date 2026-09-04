@@ -92,12 +92,17 @@ Yome/
     ├── database/
     │   ├── prisma/schema.prisma
     │   └── src/generated/client/
-    └── shared/src/
-        ├── config/env.ts
-        ├── middleware/internalTokenGuard.ts
-        ├── middleware/validateRequest.ts
-        └── storage/s3.ts
+    ├── service-kit/src/
+    │   ├── config/env.ts
+    │   ├── middleware/internalTokenGuard.ts
+    │   └── middleware/validateRequest.ts
+    ├── storage/src/s3.ts
+    └── shared/src/index.ts   # re-export shim over contracts/service-kit/storage
 ```
+
+> `packages/shared` was split in the [services/packages refactor](services_packages_refactoring/)
+> (B03) into `@repo/contracts`, `@repo/service-kit`, and `@repo/storage`; `@repo/shared`
+> remains a compatibility shim until that refactor's B10.
 
 ## 3. Flow A: User Opens `http://localhost:3000`
 
@@ -239,7 +244,7 @@ Inside `services/gateway/src/index.ts`, the gateway:
 
 ### Why this matters
 
-Downstream services are protected by `packages/shared/src/middleware/internalTokenGuard.ts`, which means they expect the gateway to be the trusted entry point.
+Downstream services are protected by `packages/service-kit/src/middleware/internalTokenGuard.ts` (re-exported through `@repo/shared`), which means they expect the gateway to be the trusted entry point.
 
 ## 7. Flow E: Chat Page Workflow
 
@@ -336,12 +341,12 @@ sequenceDiagram
 - `apps/web/lib/chat/chatApi.ts`
 - `services/media/src/routes/media.routes.ts`
 - `services/media/src/controllers/media.controller.ts`
-- `packages/shared/src/storage/s3.ts`
+- `packages/storage/src/s3.ts`
 - `services/chat/src/controllers/message.controller.ts`
 
 ## 9. Service Ports Used In This Workflow
 
-These defaults come from `packages/shared/src/config/env.ts` and the root `.env`.
+These defaults come from `packages/service-kit/src/config/env.ts` and the root `.env`.
 
 - `3000`: Next.js frontend in `apps/web`
 - `4100`: gateway

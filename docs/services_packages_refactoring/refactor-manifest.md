@@ -11,11 +11,33 @@ IDs when they are created (see "Files this migration will create" at the end).
 
 B03 completed (2026-09-04): `packages/shared` split into `@repo/contracts`, `@repo/service-kit`,
 and `@repo/storage`; `@repo/shared` kept as a re-export shim (`SP-011`–`SP-024`, excluding
-`SP-013` which stays with `packages/shared` until B04). The four duplicated helpers
-(`getAuthenticatedUserId`, `slugify`, `uuidPattern`/`isUuid`, `formatCount`/`compactNumber`)
-now live in `@repo/contracts` and are imported by `auth`, `user`, `chat`, and `resources`
-(`SP-030`, `SP-041`, `SP-067`, `SP-074` gain a note; their MOVE to the target service is
-still a later batch). New files created: see "Files this migration will create".
+`SP-013` which stays with `packages/shared` until B04). Current-source-count is now **90**:
+all 78 original rows still track a live file (no row was deleted — the closest is `SP-014`
+and `SP-022`, whose *old paths* were superseded when their content was merged/split into 2 new
+paths, but both rows were updated in place rather than retired), plus 12 genuinely new
+B03-created files (`SP-079`–`SP-090`: the three new package manifests, tsconfigs, entry
+points, and the consolidated-helpers module + its zod-primitives module + its test). The four
+duplicated helpers (`getAuthenticatedUserId`, `slugify`, `uuidPattern`/`isUuid`,
+`formatCount`/`compactNumber`) now live in `@repo/contracts` and are imported by `auth`,
+`user`, `chat`, and `resources` (`SP-030`, `SP-041`, `SP-067`, `SP-074` gain a note; their
+MOVE to the target service is still a later batch).
+
+B03 completeness audit (2026-09-04, same day): re-scanning after the batch found three gaps,
+all fixed in place rather than left for a later batch. (1) The 12 new files existed with no
+manifest row, violating this document's own rule that every eligible file gets one; assigned
+`SP-079`–`SP-090`. (2) Nine `DONE` rows (`SP-012`, `SP-014`, `SP-016`–`SP-021`, `SP-023`)
+still listed the pre-move path (e.g. `packages/shared/src/logger.ts`) in "Current File" after
+the file had already moved to `packages/service-kit` / `packages/storage` / `packages/contracts`
+— the column had drifted from what it is supposed to track. Corrected to the actual current
+path with the origin recorded in the notes column instead. (3) The first attempt at fixing (1)
+assigned fresh IDs to `packages/contracts/src/errors.ts` and `packages/contracts/src/service.ts`
+— but those are the very files `SP-014`/`SP-022` already point to after fix (2), so those two
+IDs would have duplicated a file already tracked. Caught before commit and removed; the
+correct new-file count is 12, not 14. `SP-022` also had a same-day correction: its destination
+said `ErrorEnvelope` moved with `ServiceName` into
+`service.ts`, but the actual code puts `ErrorEnvelope` in `errors.ts` (SP-014) alongside
+`createHttpError` — the manifest's stated destination didn't match the shipped code; the row
+now reflects reality. No source code changed during this audit, only manifest accuracy.
 
 **This manifest tracks Phase 1 (B01–B10) — the existing files and where they go.** Phase 2+
 work (Redis, event backbone, read models, database extraction) creates new files rather than
@@ -50,6 +72,8 @@ tracked in `migration-log.md` under "Trigger Measurements".
 - `EXTRACT` — pulled into a new package.
 - `REFACTOR` — reworked in place.
 - `DELETE` — removed after its content is proven relocated or dead.
+- `CREATE` — a brand-new file with no prior-batch predecessor (new package manifests,
+  tsconfigs, entry points, and net-new modules like consolidated helpers).
 
 ## Manifest
 
@@ -65,20 +89,20 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-008 | `packages/eslint-config/next.js` | tooling | LINT_CONFIG | KEEP | Same | — | eslint-config | Low | KEEP |
 | SP-009 | `packages/eslint-config/package.json` | tooling | PKG_MANIFEST | REFACTOR | Add a `./service` export for service linting | B10 | eslint-config | Low | PENDING |
 | SP-010 | `packages/eslint-config/react-internal.js` | tooling | LINT_CONFIG | KEEP | Same | — | eslint-config | Low | KEEP |
-| SP-011 | `packages/shared/package.json` | shared | PKG_MANIFEST | SPLIT | `@repo/shared` now depends on `@repo/contracts`, `@repo/service-kit`, `@repo/storage` only; kept as shim, deleted B10 | B03 / B10 | service-kit | Medium | DONE (B03; shim removal B10) |
-| SP-012 | `packages/shared/src/config/env.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/config/env.ts`; `servicePorts` gained a `core` getter (value wired B06) | B03 | service-kit | Medium | DONE |
+| SP-011 | `packages/shared/package.json` | shared | PKG_MANIFEST | SPLIT | Unchanged path (still the shim's manifest); now depends on `@repo/contracts`, `@repo/service-kit`, `@repo/storage` only, dropped `zod`/`@aws-sdk/client-s3`/`express` peer | B03 / B10 | service-kit | Medium | DONE (B03; shim removal B10) |
+| SP-012 | `packages/service-kit/src/config/env.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/config/env.ts`; `servicePorts` gained a `core` getter (value wired B06) | B03 | service-kit | Medium | DONE |
 | SP-013 | `packages/shared/src/data/groups.ts` | seed | SEED_DATA | MOVE | `packages/seed/src/fixtures/groups.ts`; runtime consumers in `services/user` removed (B04) | B04 | seed | Medium | PENDING |
-| SP-014 | `packages/shared/src/errors.ts` | shared | PKG_MODULE | MOVE + REFACTOR | Content moved to `packages/contracts/src/errors.ts` (kept with `ErrorEnvelope`, not service-kit — pure, no Express dep) | B03 | contracts | Low | DONE |
-| SP-015 | `packages/shared/src/index.ts` | shared | PKG_ENTRY | SPLIT | Re-export shim (`@repo/contracts` + `@repo/service-kit` + `@repo/storage` + local `groupData`); deleted in B10 | B03 / B10 | service-kit | Medium | DONE (B03; shim removal B10) |
-| SP-016 | `packages/shared/src/logger.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/logger.ts` | B03 | service-kit | Low | DONE |
-| SP-017 | `packages/shared/src/middleware/errorHandler.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/middleware/errorHandler.ts`; `ErrorEnvelope` import repointed to `@repo/contracts` | B03 | service-kit | Low | DONE |
-| SP-018 | `packages/shared/src/middleware/internalTokenGuard.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/middleware/internalTokenGuard.ts` | B03 | service-kit | Low | DONE |
-| SP-019 | `packages/shared/src/middleware/validateRequest.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/middleware/validateRequest.ts` | B03 | service-kit | Low | DONE |
-| SP-020 | `packages/shared/src/storage/s3.test.ts` | shared | TEST | MOVE | `packages/storage/src/s3.test.ts`; test script fixed to `bun test ./src` (glob bug found in B03) | B03 | storage | Low | DONE |
-| SP-021 | `packages/shared/src/storage/s3.ts` | shared | PKG_MODULE | MOVE | `packages/storage/src/s3.ts`; `createHttpError` import repointed to `@repo/contracts` | B03 | storage | Medium | DONE |
-| SP-022 | `packages/shared/src/types/contracts.ts` | shared | PKG_MODULE | MOVE + REFACTOR | `packages/contracts/src/service.ts`; `ServiceName` now includes `resources`, `identity`, `core`, `messaging` | B03 | contracts | Medium | DONE |
-| SP-023 | `packages/shared/src/utils/url.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/utils/url.ts` | B03 | service-kit | Low | DONE |
-| SP-024 | `packages/shared/tsconfig.json` | shared | TS_CONFIG | SPLIT | One tsconfig per new package (`contracts`, `service-kit`, `storage`); `packages/shared/tsconfig.json` kept for the shim build | B03 | service-kit | Low | DONE |
+| SP-014 | `packages/contracts/src/errors.ts` | shared | PKG_MODULE | MOVE + REFACTOR | Moved from `packages/shared/src/errors.ts` (`createHttpError`); also absorbed `ErrorEnvelope` from the old `types/contracts.ts` (see SP-022) — both are pure, no Express dep | B03 | contracts | Low | DONE |
+| SP-015 | `packages/shared/src/index.ts` | shared | PKG_ENTRY | SPLIT | Unchanged path; content replaced with a re-export shim (`@repo/contracts` + `@repo/service-kit` + `@repo/storage` + local `groupData`); deleted in B10 | B03 / B10 | service-kit | Medium | DONE (B03; shim removal B10) |
+| SP-016 | `packages/service-kit/src/logger.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/logger.ts`, unchanged | B03 | service-kit | Low | DONE |
+| SP-017 | `packages/service-kit/src/middleware/errorHandler.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/middleware/errorHandler.ts`; `ErrorEnvelope` import repointed to `@repo/contracts` | B03 | service-kit | Low | DONE |
+| SP-018 | `packages/service-kit/src/middleware/internalTokenGuard.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/middleware/internalTokenGuard.ts`, unchanged | B03 | service-kit | Low | DONE |
+| SP-019 | `packages/service-kit/src/middleware/validateRequest.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/middleware/validateRequest.ts`, unchanged | B03 | service-kit | Low | DONE |
+| SP-020 | `packages/storage/src/s3.test.ts` | shared | TEST | MOVE | Moved from `packages/shared/src/storage/s3.test.ts`; test script fixed to `bun test ./src` (glob bug found in B03 — see issue #40-adjacent note in migration-log) | B03 | storage | Low | DONE |
+| SP-021 | `packages/storage/src/s3.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/storage/s3.ts`; `createHttpError` import repointed to `@repo/contracts` | B03 | storage | Medium | DONE |
+| SP-022 | `packages/contracts/src/service.ts` | shared | PKG_MODULE | MOVE + REFACTOR + SPLIT | Moved from `packages/shared/src/types/contracts.ts`; `ServiceName`/`HealthResponse` stayed here, `ErrorEnvelope` moved into SP-014 instead (`errors.ts`) — the one place this manifest's own MOVE destinations disagreed with the actual split, corrected in the B03 completeness audit | B03 | contracts | Medium | DONE |
+| SP-023 | `packages/service-kit/src/utils/url.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/utils/url.ts`, unchanged | B03 | service-kit | Low | DONE |
+| SP-024 | `packages/shared/tsconfig.json` | shared | TS_CONFIG | KEEP | Unchanged path; still builds the shim. New packages get their own tsconfigs — see SP-086, SP-089, SP-092 | B03 | shared | Low | DONE |
 | SP-025 | `packages/typescript-config/base.json` | tooling | TS_CONFIG | KEEP | Same | — | typescript-config | Low | KEEP |
 | SP-026 | `packages/typescript-config/nextjs.json` | tooling | TS_CONFIG | KEEP | Same | — | typescript-config | Low | KEEP |
 | SP-027 | `packages/typescript-config/package.json` | tooling | PKG_MANIFEST | KEEP | Same | — | typescript-config | Low | KEEP |
@@ -133,6 +157,23 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-076 | `services/user/src/routes/user.routes.ts` | multi | ROUTE | SPLIT | Same fan-out as the controller; every external path preserved through the gateway route manifest | B05–B08 | identity + core | High | PENDING |
 | SP-077 | `services/user/src/routes/user.validation.ts` | multi | VALIDATION | SPLIT | Profile schemas → `identity`; group/connection schemas → `core`; primitives → `@repo/contracts` | B05–B08 | identity + core | Medium | PENDING |
 | SP-078 | `services/user/tsconfig.json` | multi | TS_CONFIG | DELETE | Replaced by `services/core/tsconfig.json` | B06 | core | Low | PENDING |
+| SP-079 | `packages/contracts/package.json` | shared | PKG_MANIFEST | CREATE | New in B03 | B03 | contracts | Low | DONE |
+| SP-080 | `packages/contracts/src/helpers.test.ts` | shared | TEST | CREATE | New in B03 — coverage `@repo/shared` never had, proving the 4 consolidated helpers match every implementation they replaced | B03 | contracts | Low | DONE |
+| SP-081 | `packages/contracts/src/helpers.ts` | shared | PKG_MODULE | CREATE | New in B03: `getAuthenticatedUserId`, `slugify`, `UUID_PATTERN`/`isUuid`, `compactNumber`/`formatCount` — consolidated from 4 duplicate per-service definitions (issue #11) | B03 | contracts | Low | DONE |
+| SP-082 | `packages/contracts/src/index.ts` | shared | PKG_ENTRY | CREATE | New in B03 | B03 | contracts | Low | DONE |
+| SP-083 | `packages/contracts/src/schemas.ts` | shared | PKG_MODULE | CREATE | New in B03: `positiveInt`, `positiveIntString`, `slugOrUuidSchema`, `toneSchema` zod primitives, available for B05+ adoption (not force-adopted in B03) | B03 | contracts | Low | DONE |
+| SP-084 | `packages/contracts/tsconfig.json` | shared | TS_CONFIG | CREATE | New in B03 | B03 | contracts | Low | DONE |
+| SP-085 | `packages/service-kit/package.json` | shared | PKG_MANIFEST | CREATE | New in B03 | B03 | service-kit | Low | DONE |
+| SP-086 | `packages/service-kit/src/index.ts` | shared | PKG_ENTRY | CREATE | New in B03 | B03 | service-kit | Low | DONE |
+| SP-087 | `packages/service-kit/tsconfig.json` | shared | TS_CONFIG | CREATE | New in B03 | B03 | service-kit | Low | DONE |
+| SP-088 | `packages/storage/package.json` | shared | PKG_MANIFEST | CREATE | New in B03 | B03 | storage | Low | DONE |
+| SP-089 | `packages/storage/src/index.ts` | shared | PKG_ENTRY | CREATE | New in B03 | B03 | storage | Low | DONE |
+| SP-090 | `packages/storage/tsconfig.json` | shared | TS_CONFIG | CREATE | New in B03 | B03 | storage | Low | DONE |
+
+Note: `packages/contracts/src/errors.ts` and `packages/contracts/src/service.ts` are **not**
+`CREATE` rows — they are the MOVE destinations already tracked by `SP-014` and `SP-022`
+respectively (see the B03 completeness-audit note above). Assigning them fresh IDs here would
+have been a duplicate-file-entry bug; caught and corrected before commit.
 
 ## Rows by batch
 
@@ -141,7 +182,8 @@ tracked in `migration-log.md` under "Trigger Measurements".
   `.github/workflows/deploy-services.yml`, new `Dockerfile.service`,
   `tests/contracts.smoke.mjs`, root `package.json`. No `SP-*` source rows.
 - **B03** (shared split): SP-011, SP-012, SP-014, SP-015, SP-016, SP-017, SP-018, SP-019,
-  SP-020, SP-021, SP-022, SP-023, SP-024 (+ import updates across every service entry/route).
+  SP-020, SP-021, SP-022, SP-023, SP-024, SP-079–SP-090 (+ import updates in SP-030, SP-041,
+  SP-067, SP-074).
 - **B04** (seed extraction): SP-013, SP-031, SP-032, SP-033, SP-034, SP-038 (+ SP-074/SP-076
   runtime-fallback removal).
 - **B05** (identity): SP-029, SP-030, SP-035, SP-036, SP-037, SP-039 (+ profile portions of
@@ -159,23 +201,31 @@ tracked in `migration-log.md` under "Trigger Measurements".
 
 ## Status accounting
 
-- Rows: 78. Duplicate IDs: 0. Duplicate files: 0.
+Counts below are machine-verified (extracted from the actual table, not hand-tallied) as
+part of the B03 completeness audit.
+
+- Rows: 90 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`). Duplicate IDs: 0.
+  Duplicate current-file entries: 0 (checked during this audit — see the header note above
+  for the one duplicate that was caught and removed before commit).
 - `KEEP` (no change intended): SP-002, SP-004, SP-005, SP-007, SP-008, SP-010, SP-025,
-  SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065 — 14 rows.
-- `DONE`: SP-011, SP-012, SP-014–SP-024 (13 rows) — the B03 `packages/shared` split.
-- `PENDING` (actionable, batch assigned): 51 rows — includes `SP-030`, `SP-041`, `SP-067`,
-  `SP-074`, which carry a B03 adoption note but are not `DONE` because their MOVE to the
-  target service is a separate, later batch.
+  SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065 — **14 rows**.
+- `DONE`: SP-011, SP-012, SP-014–SP-024 (13 rows — every `packages/shared` file touched by
+  B03 except `SP-013`, which is deliberately still `PENDING` for B04) + SP-079–SP-090
+  (12 rows, its newly created files) — **25 rows**.
+- `PENDING` (actionable, batch assigned): **51 rows** — includes `SP-013` (deferred to B04)
+  and `SP-030`, `SP-041`, `SP-067`, `SP-074`, which carry a B03 adoption note but are not
+  `DONE` because their MOVE to the target service is a separate, later batch.
 - `BLOCKED`: 0 in the manifest. One infra blocker was tracked in
   `service-decomposition-plan.md` (the missing `Dockerfile.service`) and was resolved in B02.
+- Row-count check (machine-counted, not hand-tallied): 14 KEEP + 25 DONE + 51 PENDING = 90. ✓
 
 ## Files this migration will create (IDs assigned on creation)
 
 **Phase 1 (B01–B10):**
 
 - ✅ `packages/service-kit/**`, `packages/storage/**`, `packages/contracts/**` — **created in
-  B03** (also: `packages/contracts/src/helpers.test.ts`, new coverage). `packages/seed/**` is
-  still B04.
+  B03**, tracked as `SP-079`–`SP-090` (also: `packages/contracts/src/helpers.test.ts`, new
+  coverage). `packages/seed/**` is still B04.
 - `services/identity/**` (rename target of `services/auth`; new `modules/profile/**`) (B05)
 - `services/core/**` with `src/modules/{community,learning,feed,dashboard}/**` (B06–B08)
 - `services/messaging/**` (rename target of `services/chat`; new `modules/calls/**`) (B09)
@@ -186,7 +236,7 @@ tracked in `migration-log.md` under "Trigger Measurements".
 **Phase 2+ (B11–B18+), planned in the companion documents:**
 
 - `packages/cache/**` — shared Redis client, presence, rate limiting, cache helpers (B11)
-- `docker-compose.yml` — local Postgres + Redis (B11)
+- ✅ `docker-compose.yml` — **created in B02** (Postgres + Redis; Redis unused until B11)
 - `packages/events/**` — event envelope, outbox publisher, consumer runtime, DLQ,
   idempotency helper (B13)
 - `OutboxEvent` model + migration in `packages/database` (B13)

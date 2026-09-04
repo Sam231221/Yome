@@ -245,9 +245,9 @@ Migrations live in `packages/database/prisma/migrations` and are applied with
 - Scope: `packages/shared/**` split, three new packages created, import-site cleanup in four
   services. **No `services/*` runtime behaviour changed** — every consolidated helper is
   byte-identical to the code it replaced (verified by the new `@repo/contracts` test suite).
-- Manifest IDs: `SP-011`–`SP-024` (all `DONE` except `SP-013`, deliberately deferred to B04);
-  `SP-030`, `SP-041`, `SP-067`, `SP-074` gain an adoption note (destination MOVE still
-  pending their own batch).
+- Manifest IDs: `SP-011`–`SP-024` (all `DONE` except `SP-013`, deliberately deferred to B04)
+  plus 12 newly created files assigned `SP-079`–`SP-090`; `SP-030`, `SP-041`, `SP-067`,
+  `SP-074` gain an adoption note (destination MOVE still pending their own batch).
 
 New packages:
 
@@ -318,6 +318,74 @@ test/build/check-types` reformatted five controller files far beyond the intende
 run through `bunx prettier --write` (the repo's controllers are not prettier-clean today).
 Reverted and reapplied the same semantic edits by hand so the B03 diff stays scoped to the
 helper consolidation — same lesson as the doc-formatting issue caught during B02.
+
+## B03 Completeness Audit
+
+Requested explicitly, run the same day against the already-committed B03 (`2715430`). Method:
+re-derive every Definition-of-Done claim from the live tree rather than trusting the batch's
+own summary — full clean rebuild (`rm -rf packages/*/dist packages/*/.turbo` then `build` →
+`check-types` → `lint` → `test`), grep-based checks for each Definition-of-Done clause, a
+repo-wide search for stale references to moved file paths, and a re-derivation of the
+manifest's own row/status counts by machine rather than by hand. No source code changed by
+this audit — only manifest/doc corrections and, separately, the stale-reference fixes below.
+
+**Verified clean (no action needed):**
+
+- No service imports `@repo/service-kit`, `@repo/storage`, or `@repo/contracts` directly —
+  every consumer still goes through the `@repo/shared` shim, per the plan's Definition of
+  Done.
+- `@repo/contracts` has zero framework imports and zero workspace dependencies (`zod` only).
+- No circular dependency: `service-kit` and `storage` each depend only on `contracts`;
+  neither imports the other.
+- No remaining local `getAuthenticatedUserId` / `slugify` / `uuidPattern` / `formatCount` /
+  `getCompactCount` definitions anywhere in `services/**` — the consolidation in the B03
+  Execution section above is complete, not partial.
+- A fully clean rebuild (`build` → `check-types` → `lint` → `test`, `dist`/`.turbo` wiped
+  first) reproduces the same green result as the batch's own validation: 12/12, 11/11, 166
+  warnings, 12/12 with 0 failures across every suite. B03 is not an artefact of a warm cache.
+- No `packages/*/dist` or `packages/*/.turbo` output is git-tracked.
+
+**Gaps found and fixed:**
+
+1. **Two doc-only bugs in `architecture-plan.md` and `refactor-manifest.md` that predate B03**
+   (introduced during B01 planning, not by B03 itself): the B03 scope line said
+   `SP-011`–`SP-023` when the actual row range is `SP-011`–`SP-024` (the `tsconfig.json` row
+   was undercounted by one); `refactor-manifest.md`'s "Files this migration will create"
+   section still listed `docker-compose.yml` as a B11 future file when it was already created
+   in B02. Both corrected.
+2. **12 B03-created files had no manifest row** (`SP-079`–`SP-090`) — a direct violation of
+   the manifest's own stated rule that every eligible file gets one. Assigned during this
+   audit. A first attempt also assigned IDs to `packages/contracts/src/errors.ts` and
+   `packages/contracts/src/service.ts`, which turned out to duplicate files already tracked
+   by `SP-014`/`SP-022` — caught by the same audit before commit and removed; final new-file
+   count is 12, not 14.
+3. **Nine `DONE` rows still showed the pre-move path** in "Current File"
+   (`SP-012`, `SP-014`, `SP-016`–`SP-021`, `SP-023`) — e.g. `SP-016` said
+   `packages/shared/src/logger.ts`, which no longer exists; the file is at
+   `packages/service-kit/src/logger.ts`. The column had drifted from what it is supposed to
+   track (the *current* location, not the origin). Corrected all nine; the origin is now
+   recorded in the row's notes instead.
+4. **`SP-022`'s recorded destination didn't match the shipped code.** It said `ServiceName`
+   and `ErrorEnvelope` moved together into `service.ts`; the actual split put `ErrorEnvelope`
+   in `errors.ts` (with `createHttpError`, tracked by `SP-014`) and only `ServiceName` /
+   `HealthResponse` in `service.ts`. Corrected to match the code, not the other way around.
+5. **Manifest status-accounting totals were hand-tallied and wrong twice in a row** while
+   fixing (2)-(4) above (off-by-one in opposite directions each time). Replaced with a
+   `grep`-derived count (`KEEP` 14, `DONE` 25, `PENDING` 51, sum 90) and a row-count check
+   line, so the numbers are reproducible rather than asserted.
+6. **Four stale references to pre-B03 file paths in docs outside this refactor's own folder**
+   — `README.md` (the media-storage section, the shared-packages list, and the validation
+   command list all still said `packages/shared/src/storage/s3.ts` /
+   `bun run --cwd packages/shared test`), `docs/LOCALHOST_3000_REQUEST_WORKFLOW.md` (a
+   directory-tree diagram and three inline path references). All fixed to point at
+   `packages/{contracts,service-kit,storage}` as appropriate, with a pointer back to this
+   refactor's docs for context. `docs/PROJECT_ARCHITECTURE_AND_WORKFLOWS.md` updated
+   similarly (its `packages/shared` bullet was still accurate on its own but incomplete).
+
+None of the six items involved incorrect *code* — every gap was in planning-document
+accuracy (manifest bookkeeping, stale cross-references in adjacent docs). B03's actual
+implementation (the package split, the shim, the helper consolidation) was correct as
+committed; this audit closes the documentation gap around it.
 
 ## B02 Execution
 

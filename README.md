@@ -32,7 +32,10 @@ Yome includes:
 ### Shared packages
 
 - `packages/database`: Prisma schema, client, and migrations
-- `packages/shared`: shared middleware, utilities, and S3 storage helpers
+- `packages/contracts`: service names, error envelope, and small cross-service helpers (zero framework dependencies)
+- `packages/service-kit`: Express middleware, logger, and service ports/env config
+- `packages/storage`: S3 upload helpers
+- `packages/shared`: compatibility re-export shim over the three packages above — being retired, see [docs/services_packages_refactoring](docs/services_packages_refactoring/)
 - `packages/typescript-config`: shared TS configuration
 - `packages/eslint-config`: shared lint configuration
 
@@ -50,7 +53,7 @@ This cleanup replaced the older loose pair-based direct-message inference in the
 
 ## Media Storage
 
-New runtime uploads use AWS S3-compatible public URLs through the shared storage helper in [packages/shared/src/storage/s3.ts](/Users/admin/Documents/Developer/FullStackDev/Yome/packages/shared/src/storage/s3.ts:1).
+New runtime uploads use AWS S3-compatible public URLs through the shared storage helper in [packages/storage/src/s3.ts](/Users/admin/Documents/Developer/FullStackDev/Yome/packages/storage/src/s3.ts:1).
 
 Current key layout:
 
@@ -170,7 +173,8 @@ Useful verification commands:
 bun run check-types:all
 bunx tsc -p apps/web/tsconfig.json --noEmit
 bun run --cwd services/chat test
-bun run --cwd packages/shared test
+bun run --cwd packages/storage test
+bun run --cwd packages/contracts test
 ```
 
 ## Current Status

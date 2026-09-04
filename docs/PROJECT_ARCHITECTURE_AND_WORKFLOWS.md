@@ -33,8 +33,11 @@ Yome is a Bun + Turbo monorepo with a Next.js frontend and several backend micro
   - notification APIs
 - `packages/database`
   - Prisma schema and shared DB client
+- `packages/contracts`, `packages/service-kit`, `packages/storage`
+  - shared contracts/helpers, middleware/logger/env, and S3 storage — split out of
+    `packages/shared` in the [services/packages refactor](services_packages_refactoring/)
 - `packages/shared`
-  - shared data, constants, and utility modules
+  - compatibility re-export shim over the three packages above, being retired
 
 ## 2. High-Level Architecture
 

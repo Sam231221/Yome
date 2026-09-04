@@ -377,7 +377,7 @@ parallel with B05–B08 since it touches only `messaging` and `gateway`; B13 req
 
 - Purpose: turn `packages/shared` into single-purpose packages.
 - Scope: `packages/shared/**`, and the import sites in every service.
-- Manifest IDs: `SP-011`–`SP-023` (`packages/shared` files), plus import updates across
+- Manifest IDs: `SP-011`–`SP-024` (`packages/shared` files), plus import updates across
   `services/*` `SERVICE_ENTRY` / `CONTROLLER` / `ROUTE` rows.
 - Dependencies: B01. (Can run before or after B02.)
 - Expected moves: create `packages/service-kit`, `packages/storage`, `packages/contracts`;
