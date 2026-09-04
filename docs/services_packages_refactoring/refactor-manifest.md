@@ -6,9 +6,15 @@ and `packages/**` is listed below (excluding `node_modules`, `dist`, `.turbo`, a
 
 B01 verification (2026-09-04): eligible source count is **78** and matches the 78 manifest
 rows. No `services/*` or `packages/*` source was changed. No implementation rows are assigned
-to B01; `SP-001`–`SP-078` are inventory inputs only. Files that a batch *creates*
-(`services/core/**`, `services/identity/**`, `packages/{service-kit,storage,contracts,seed}/**`)
-get fresh IDs when they are created.
+to B01; `SP-001`–`SP-078` are inventory inputs only. Files that a batch *creates* get fresh
+IDs when they are created (see "Files this migration will create" at the end).
+
+**This manifest tracks Phase 1 (B01–B10) — the existing files and where they go.** Phase 2+
+work (Redis, event backbone, read models, database extraction) creates new files rather than
+relocating existing ones, so it appears here only in the creation list. Those batches are
+planned in [`data-architecture-plan.md`](./data-architecture-plan.md) and
+[`event-architecture-plan.md`](./event-architecture-plan.md); their gating triggers are
+tracked in `migration-log.md` under "Trigger Measurements".
 
 ## Classification legend
 
@@ -155,6 +161,8 @@ get fresh IDs when they are created.
 
 ## Files this migration will create (IDs assigned on creation)
 
+**Phase 1 (B01–B10):**
+
 - `packages/service-kit/**`, `packages/storage/**`, `packages/contracts/**`,
   `packages/seed/**` (B03, B04)
 - `services/identity/**` (rename target of `services/auth`; new `modules/profile/**`) (B05)
@@ -163,3 +171,18 @@ get fresh IDs when they are created.
 - `services/gateway/src/routes/route-manifest.ts`, `services/gateway/src/middleware/**` (B10)
 - `Dockerfile.service` (B02)
 - `packages/eslint-config/service.js` (B10)
+
+**Phase 2+ (B11–B18+), planned in the companion documents:**
+
+- `packages/cache/**` — shared Redis client, presence, rate limiting, cache helpers (B11)
+- `docker-compose.yml` — local Postgres + Redis (B11)
+- `packages/events/**` — event envelope, outbox publisher, consumer runtime, DLQ,
+  idempotency helper (B13)
+- `OutboxEvent` model + migration in `packages/database` (B13)
+- Event zod schemas in `packages/contracts/src/events/**` (B13)
+- `services/notifications/src/modules/**` — consumer group, notification store, delivery
+  adapters (B14)
+- `services/core/src/modules/dashboard/read-model/**` (B15)
+- `services/core/src/modules/{learning,community}/search/**` (B16)
+- `services/messaging/src/projections/**` — follow-edge and user-profile projections
+  (B18+, only if a database is extracted)

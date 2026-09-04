@@ -11,10 +11,33 @@
 
 ## Scope
 
-This migration covers `services/**` and `packages/**` only. It is a sibling of the completed
+This migration covers `services/**` and `packages/**`. It is a sibling of the completed
 `docs/app_web_refactoring/` effort (which covered `apps/web`). It does **not** touch
-`apps/web` except for import paths that follow package renames, and it does **not** split the
-database — one PostgreSQL instance and one `packages/database` Prisma schema are retained.
+`apps/web` except for import paths that follow package renames, and for the new
+`/notifications` data source added in B14.
+
+The work is **phased**, and only Phase 1 is currently planned in detail:
+
+| Phase | Theme | Batches | Planned in |
+| --- | --- | --- | --- |
+| **P1** | Code + process boundaries, one PostgreSQL database | B01–B10 | `architecture-plan.md`, `service-decomposition-plan.md` |
+| **P2** | Shared runtime state (Redis): presence, socket fan-out, rate limiting, cache | B11–B12 | `data-architecture-plan.md` |
+| **P3** | Event backbone (transactional outbox → Redis Streams), still one DB | B13–B14 | `event-architecture-plan.md` |
+| **P4** | Read models + search index | B15–B16 | `data-architecture-plan.md` |
+| **P5/P6** | Database extraction / polyglot persistence | B17+, B18+ | `data-architecture-plan.md`, `event-architecture-plan.md` |
+
+**P1 retains one PostgreSQL instance and one `packages/database` Prisma schema.** That is a
+phase property, not a permanent constraint: establishing one writer per table is the
+precondition for any later extraction. P5 and P6 are **gated on measured triggers** (T-01
+through T-07 in `data-architecture-plan.md`) and are deliberately **not scheduled**.
+
+Two of those triggers — T-01 (Redis for presence and socket fan-out) and T-02 (Redis for
+gateway rate limiting) — have **already fired**: both are process-local `Map`s today, so
+neither `messaging` nor `gateway` can run more than one replica correctly. P2 is therefore a
+correctness fix, not an optimisation.
+
+The synchronous API surface, service-to-service call rules, resilience requirements, and
+end-to-end data flows are catalogued in `api-and-dataflow-plan.md`.
 
 ## Detected Validation Commands
 
@@ -95,6 +118,15 @@ These exist before any change in this migration and must not be counted as regre
 | 13 | Only `chat`, `resources`, `shared` have tests | every other `services/*` / `packages/*` | ongoing; enforced from B05 |
 | 14 | Gateway route/upstream map hardcoded with special-cased rewrites | `services/gateway/src/index.ts` | B10 |
 | 15 | `tests/contracts.smoke.mjs` health list omits `resources` | `tests/contracts.smoke.mjs` | B02 / B10 |
+| 16 | Presence is a process-local `Map`; `messaging` cannot run >1 replica without silent delivery bugs | `services/chat/src/state/online-users.ts:2`, `services/chat/src/socket/handlers.ts` | B11 |
+| 17 | Rate-limit buckets are a process-local `Map`; N `gateway` replicas grant N× the configured limit | `services/gateway/src/index.ts:79` | B11 |
+| 18 | No caching layer anywhere; every read hits Postgres, incl. the 7-query dashboard fan-out | `services/user/src/controllers/user.controller.ts` (`getDashboardHome`) | B12, B15 |
+| 19 | Search uses Prisma `contains` + `mode: "insensitive"` → unindexed `ILIKE '%term%'` sequential scans | `discoverGroups`, `getResources` | B16 |
+| 20 | No event/outbox/pub-sub primitives exist; all cross-domain communication is a synchronous join or HTTP call | repo-wide | B13 |
+| 21 | Gateway proxies with no timeout, retry, or circuit breaker; an unresponsive upstream hangs the request | `services/gateway/src/index.ts` | B10 |
+| 22 | `GET /api/messages/get-messages/...` mutates `messageStatus` — a GET with side effects | `services/chat/src/controllers/message.controller.ts` | B09 |
+| 23 | `apps/web` `/notifications` route has no backing API; `User.notificationCount` is a hardcoded schema default (`3`) | `services/notifications`, `schema.prisma` | B14 |
+| 24 | Response envelopes are inconsistent — some `{ ok, ... }`, some bare (`{ users }`, `{ groups }`, `{ messages }`) | all services | B03 |
 
 ## Batch Execution History
 
@@ -110,6 +142,34 @@ These exist before any change in this migration and must not be counted as regre
 | B08 — core/feed + core/dashboard Modules | PENDING | | | | |
 | B09 — messaging + media Boundary Cleanup | PENDING | | | | |
 | B10 — Gateway Modularization + Final Reconciliation | PENDING | | | | |
+| B11 — Redis Foundation (P2) | PENDING | | | | Trigger T-01/T-02 already fired. May run in parallel with B05–B08. |
+| B12 — Cache-Aside Read Paths (P2) | PENDING | | | | Requires B11. |
+| B13 — Event Backbone (P3) | PENDING | | | | Requires B10 + B11. Outbox on the shared DB. |
+| B14 — Notifications as First Consumer (P3) | PENDING | | | | Requires B13. Makes the 202 stub real. |
+| B15 — Dashboard Read Model (P4) | PENDING | | | | Gated on trigger T-03. |
+| B16 — Search Index (P4) | PENDING | | | | Gated on trigger T-04. Postgres FTS before OpenSearch. |
+| B17+ — Database Extraction (P5) | NOT SCHEDULED | | | | Gated on trigger T-05/T-06 being measured and recorded below. |
+| B18+ — Post-Split Projections (P5) | NOT SCHEDULED | | | | Opened alongside the matching B17+ extraction. |
+
+## Trigger Measurements
+
+Phase 5 and Phase 6 batches may only be opened after the relevant trigger from
+`data-architecture-plan.md` is measured and recorded here. "Fired" is a recorded measurement,
+not an opinion.
+
+| Trigger | Threshold | Measured value | Date | Status |
+| --- | --- | --- | --- | --- |
+| T-01 Redis presence / socket fan-out | ≥ 2 `messaging` replicas | n/a — in-process `Map` makes ≥2 replicas incorrect at any count | 2026-09-04 | **FIRED** (correctness defect) |
+| T-02 Redis rate limiting | ≥ 2 `gateway` replicas | n/a — same defect class | 2026-09-04 | **FIRED** (correctness defect) |
+| T-03 Dashboard read model | p95 > 300 ms, or > 50 req/s | _not measured_ | | not fired |
+| T-04 Search index | > 50k `Resource` rows, or search p95 > 200 ms | _not measured_ | | not fired |
+| T-05 Messaging own database | > 50M `Messages` rows, or > 500 writes/s | _not measured_ | | not fired |
+| T-06 Messaging document/wide-column store | > 5k writes/s, or > 1 TB retention | _not measured_ | | not fired |
+| T-07 Notifications store | notifications become a real feature | _not applicable yet_ | | not fired |
+
+Measurement commands to run before opening any P4/P5 batch are listed under each trigger in
+`data-architecture-plan.md`. T-05 additionally requires that `Messages` partitioning has
+already been applied and its ceiling measured.
 
 ## B01 Execution
 
@@ -130,6 +190,36 @@ These exist before any change in this migration and must not be counted as regre
 - Decisions locked with the requester: resources folds into `core/modules/learning`;
   events is a `core/modules/community` sub-module, not a service; `auth` → `identity` is a
   rename + profile absorption, not a new process; this pass is docs + branch only.
+
+### B01 addendum — system design (same day)
+
+The initial B01 pass scoped out persistence, caching, and eventing entirely, asserting "no
+data-model split". That was too narrow: it answered *where code lives* but not *where data
+lives* or *how domains share it*. Three documents were added and the original two were
+reframed from a flat B01–B10 plan into the P1–P6 phase model.
+
+- Added `data-architecture-plan.md` — target store per model, seven trigger definitions
+  (T-01…T-07) with thresholds and measurement methods, the Redis introduction with key
+  patterns, database-split mechanics, and the seven cross-domain reads that break under a
+  split.
+- Added `event-architecture-plan.md` — transactional outbox + Redis Streams, `OutboxEvent`
+  model, event envelope, stream topology, a 25-event catalogue across six domains, consumer
+  map, delivery/idempotency/ordering rules, and schema evolution policy.
+- Added `api-and-dataflow-plan.md` — the complete synchronous API surface (every endpoint →
+  owner → models → kind), the gateway route manifest with the `/api/user` sub-path split,
+  sync-vs-async decision rules, service-to-service call rules, read-model strategy,
+  resilience requirements, four end-to-end flow diagrams, and ten catalogued API defects.
+- Reframed `architecture-plan.md` (Database Strategy is now Phase 1 scoped, with the target
+  store table and links to the companion docs) and `service-decomposition-plan.md` (process
+  boundaries and data boundaries stated as separate decisions; DU-06 and DU-08 rationale
+  updated).
+- Recorded 9 additional pre-existing issues (#16–#24) found during the system-design audit.
+
+Decisions locked with the requester for this addendum: polyglot persistence is documented as
+**trigger-gated with thresholds**, not a committed roadmap; the event backbone is **Redis
+Streams** (Redis is already required by T-01/T-02, so it adds no new infrastructure); all
+three documents were written plus the reframe. Still docs only — no `services/*` or
+`packages/*` source changed.
 
 ## Notes for Implementers
 

@@ -51,9 +51,33 @@ Concrete problems found in the current tree:
 - **Gateway routing is a hardcoded list** with special-cased path rewrites (`/api/messages` →
   chat `/api/chat`, `/api/db` → auth). There is no declarative route/upstream manifest.
 
-This refactor keeps one shared database (no data-model split is required or planned), keeps
-public API paths and behaviour stable, and re-cuts the process and package boundaries so that
-each domain has exactly one owner and each separate process has a real reason to exist.
+This document (**Phase 1**) keeps one shared database, keeps public API paths and behaviour
+stable, and re-cuts the process and package boundaries so that each domain has exactly one
+owner and each separate process has a real reason to exist.
+
+Phase 1 is a **prerequisite, not the end state**. Polyglot persistence (Redis, and later a
+dedicated or non-relational store for messaging), the event-driven backbone, and the read-model
+strategy are planned in three companion documents:
+
+- [`data-architecture-plan.md`](./data-architecture-plan.md) — where each model lives, and the
+  measurable trigger that justifies moving it. Includes the Redis introduction (whose trigger
+  has **already fired** — presence and rate limiting are process-local today and block
+  horizontal scaling).
+- [`event-architecture-plan.md`](./event-architecture-plan.md) — the transactional outbox +
+  Redis Streams backbone, event catalogue, and consumer contracts. Deliberately built **while
+  still on one database**, so contracts are proven before any split.
+- [`api-and-dataflow-plan.md`](./api-and-dataflow-plan.md) — the full synchronous API surface,
+  service-to-service call rules, resilience requirements, and end-to-end data flows.
+
+The phase model is summarised in `data-architecture-plan.md`: **P1** boundaries (this
+document, B01–B10) → **P2** Redis (B11–B12) → **P3** event backbone on one DB (B13–B14) →
+**P4** read models and search (B15–B16) → **P5/P6** database extraction, gated on measured
+triggers and explicitly **not scheduled**.
+
+You cannot split a database along boundaries that do not exist yet. That is why P1 comes
+first: today `services/user` is one ~1000-line controller spanning four domains, and `Group`
+has two writers. Splitting data before fixing that would freeze the current confusion into
+network boundaries.
 
 ## Identified Domains and Owners
 
@@ -228,16 +252,39 @@ nothing until the old services are deleted.
 `@repo/shared` stays as a re-export shim for one migration window and is deleted in B10 after
 all imports move.
 
-## Database Strategy
+## Database Strategy (Phase 1)
 
-**No data-model split.** One PostgreSQL database, one `packages/database` Prisma schema, one
-generated client. The refactor changes *who writes each table*, not *where the tables live*.
+**Phase 1 performs no data-model split.** One PostgreSQL database, one `packages/database`
+Prisma schema, one generated client. P1 changes *who writes each table*, not *where the tables
+live*.
 
 - `SCHEMA_OWNERSHIP.md` is rewritten as a model → owning-module table, kept in sync with code.
 - Each model in `schema.prisma` gets a `/// owner: <module>` doc comment.
 - Optional: a lightweight check (script or ESLint rule) that flags a `prisma.<model>.{create,
   update,delete,upsert}` call outside the owning module.
 - `services/media` stops importing `@repo/database` entirely.
+
+Establishing one writer per table is precisely what makes a later split possible — it is the
+unit of extraction. **What happens after P1 is defined in
+[`data-architecture-plan.md`](./data-architecture-plan.md)**, which specifies the target store
+for every model and the measurable trigger that must fire before it moves. Summary of that
+target:
+
+| Models | Target store | Moves when |
+| --- | --- | --- |
+| `User`, `UserProfile` | Postgres — permanently | never |
+| `Group` + children, follow edges | Postgres — permanently | never |
+| `Resource*`, `StudyRoom*`, `Topic` | Postgres (write) + search index (read) | T-04: >50k resources, or search p95 >200 ms, or relevance/faceting required |
+| `Post`, `Comment`, `Like` | Postgres (write) + cached read model | T-03: dashboard p95 >300 ms or >50 req/s |
+| `Messages`, `Conversation` | Postgres → partitioned → dedicated Postgres → (only then) document/wide-column | T-05: >50M rows or >500 writes/s; T-06: >5k writes/s or >1TB retention |
+| Presence, rate-limit buckets, socket fan-out | **Redis** | T-01/T-02: **already fired** — these are process-local `Map`s today |
+| Notification records | Postgres `jsonb` or MongoDB | T-07: notifications become a real feature |
+
+Two consequences for P1 work: `services/media` losing `@repo/database` (B09) is also the first
+step toward a clean media boundary under any future split; and the cross-domain reads
+catalogued in `data-architecture-plan.md` ("Cross-Domain Reads That Break Under a Split") are
+cheap in-process module calls in P1 precisely *because* community, learning, and feed share the
+`core` process — which is the direct justification for the module-over-service decision.
 
 ## CI/CD and Deployment Strategy
 
@@ -255,6 +302,13 @@ generated client. The refactor changes *who writes each table*, not *where the t
 Batches are ordered so that each one leaves the repo type-checking, linting, testing, and
 building. No batch changes a public API path or a user-visible behaviour without explicit
 validation. Only B01 is complete on creation of this document; every other batch is `PENDING`.
+
+**B01–B10 below are Phase 1 (boundaries, one database).** Later batches are defined in the
+companion documents and are not repeated here: **B11–B12** (Redis) and **B15–B17+** (read
+models, search, database extraction) in [`data-architecture-plan.md`](./data-architecture-plan.md);
+**B13–B14** (event backbone, notifications as first consumer) and **B18+** (post-split
+projections) in [`event-architecture-plan.md`](./event-architecture-plan.md). B11 may run in
+parallel with B05–B08 since it touches only `messaging` and `gateway`; B13 requires B10.
 
 ### B01 — Documentation Foundation
 
@@ -471,6 +525,10 @@ validation. Only B01 is complete on creation of this document; every other batch
   file is `DONE`/`KEEP`/`BLOCKED`; no `PENDING` or `IN_PROGRESS` rows remain.
 
 ## Global Definition of Done
+
+This section defines done for **Phase 1 (B01–B10)** only. Phases 2–6 carry their own
+definitions of done in the companion documents, and each is gated on a trigger recorded in
+`migration-log.md` rather than on Phase 1 completing.
 
 - Every eligible file under `services/**` and `packages/**` has a manifest row with a stable
   ID, domain, classification, action, batch (if actionable), risk, and status.

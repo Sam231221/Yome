@@ -20,6 +20,13 @@ database and one Prisma client, so "it's a different domain" is not by itself a 
 a different process — the current tree already proves that (two of seven services are not even
 deployed).
 
+**Process boundaries and data boundaries are separate decisions.** This document decides only
+the former. Where each model's data should live, and what measurable trigger justifies moving
+it, is [`data-architecture-plan.md`](./data-architecture-plan.md). A domain can be its own
+process while sharing a database (that is the Phase 1 target for every unit below), and a
+`core` module can later be promoted to a process without its data moving at all. Conflating
+the two is how systems acquire distributed-transaction problems they did not need.
+
 B01 verification (2026-09-04): the eight domains below were each evaluated against the four
 drivers. No service code was moved during B01.
 
@@ -32,9 +39,9 @@ drivers. No service code was moved during B01.
 | DU-03 | community | `services/user` | **MODULE** `core/modules/community` | None. Shared DB; every read joins `User` (identity) and is joined by learning + feed + dashboard. Low traffic. No independent scaling story. | B06 |
 | DU-04 | learning | `services/resources` (+ reads in `services/user`, seed in `services/auth`) | **MODULE** `core/modules/learning`; delete `services/resources` | None. ~6 endpoints. `Resource` relates to `Post` (feed) and `Group` (community); the "projects" view *is* a `Post` query. Splitting it out forces cross-process joins for every list. | B07 |
 | DU-05 | feed | unowned (`Post`/`Comment`/`Like` only seeded + read via dashboard/projects) | **MODULE** `core/modules/feed` + `core/modules/dashboard` | None. Not yet a real feature. Dashboard aggregation is a read that composes community + learning + feed — cheapest as an in-process BFF call. Promote to its own process only when a feed feature with its own scaling profile ships. | B08 |
-| DU-06 | messaging | `services/chat` | **OWN PROCESS** (rename `chat` → `messaging`) | Statefulness + protocol: Socket.IO, in-memory `online-users` presence map, read-receipt fan-out. Genuinely scales on connection count, not request rate. | B09 |
+| DU-06 | messaging | `services/chat` | **OWN PROCESS** (rename `chat` → `messaging`) | Statefulness + protocol: Socket.IO, presence, read-receipt fan-out. Genuinely scales on connection count, not request rate. **Caveat: the driver is currently unrealizable** — presence is an in-process `Map` (`services/chat/src/state/online-users.ts:2`) and fan-out targets local socket ids, so a second replica silently breaks delivery. B11 (Redis + `@socket.io/redis-adapter`) is what actually makes this process independently scalable. | B09, then B11 |
 | DU-07 | media | `services/media` | **OWN PROCESS** | Scaling: upload workload (large multipart bodies, buffer handling, S3 latency) is a different profile from JSON APIs. Must hold **no** DB access. | B09 (DB removal) |
-| DU-08 | notifications | `services/notifications` | **OWN PROCESS (kept), stub** | Weak driver today (it is a 202 stub). Kept separate because it is the designated home for the future async/worker/queue model and the cost of an idle Express stub is trivial. Revisit at B10: collapse into `core/modules/notifications` if no async work is scheduled. | — (unchanged) |
+| DU-08 | notifications | `services/notifications` | **OWN PROCESS (kept)** | Weak driver *today* (a 202 stub), but it is the designated first event consumer in [`event-architecture-plan.md`](./event-architecture-plan.md) B14 — a long-running consumer group with its own retry, DLQ, and delivery adapters is a genuine async/worker driver, not a hypothetical one. Cost of an idle Express stub until then is trivial. The B10 "collapse into `core`" review is superseded if B13/B14 are scheduled. | — (P1), B14 |
 
 **Net: 7 processes → 6** (`gateway`, `identity`, `core`, `messaging`, `media`,
 `notifications`), with `notifications` on probation. `services/user` and `services/resources`
@@ -112,7 +119,7 @@ Rules:
 
 | Item | Decision | Reason | Batch |
 | --- | --- | --- | --- |
-| `packages/database` — single schema, single client | **KEEP** | "No data modellings" split requested. One DB, ownership enforced by code + `SCHEMA_OWNERSHIP.md`. | B10 (doc only) |
+| `packages/database` — single schema, single client | **KEEP through Phase 1** | One DB, ownership enforced by code + `SCHEMA_OWNERSHIP.md`. Establishing one writer per table *is* the unit of a future extraction. Per-domain schemas and per-domain databases are Phase 5, gated on the triggers in [`data-architecture-plan.md`](./data-architecture-plan.md), and are explicitly not scheduled. | B10 (doc only) |
 | `packages/typescript-config` | **KEEP** | Already single-purpose and correct. | — |
 | `packages/eslint-config` | **KEEP + extend** | Add a `service.js` profile; services currently have no lint. | B10 |
 | `services/notifications` as a process | **KEEP (probation)** | Trivial cost; designated async-future home. Collapse into `core` at B10 only if no async work is committed. | B10 review |
