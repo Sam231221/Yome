@@ -402,8 +402,8 @@ parallel with B05–B08 since it touches only `messaging` and `gateway`; B13 req
   `services/auth/src/data/{users,resources,dashboard}.ts`,
   `services/auth/src/routes/db.routes.ts`, `packages/shared/src/data/groups.ts`, and the
   `groupData` import in `services/user/src/controllers/user.controller.ts`.
-- Manifest IDs: `SP-004` (`auth/seed.controller.ts`), `SP-005`–`SP-007` (`auth/src/data/*`),
-  `SP-009` (`auth/db.routes.ts`), `SP-013` (`shared/src/data/groups.ts`), and the
+- Manifest IDs: `SP-031` (`auth/seed.controller.ts`), `SP-032`–`SP-034` (`auth/src/data/*`),
+  `SP-038` (`auth/db.routes.ts`), `SP-013` (`shared/src/data/groups.ts`), and the
   `user.controller.ts` fallback-group path (`SP-076`, partial).
 - Dependencies: B03.
 - Expected moves: create `packages/seed`; move `seed.controller.ts` logic and all four

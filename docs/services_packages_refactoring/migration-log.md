@@ -108,7 +108,7 @@ These exist before any change in this migration and must not be counted as regre
 | 4 | `services/media` imports `@repo/database` (violates `SCHEMA_OWNERSHIP.md`) | `services/media/src/controllers/media.controller.ts`, `package.json` | B09 |
 | 5 | `Group` writes split across `auth` (seed + `createEducationGroups`) and `user` (runtime) | `services/auth`, `services/user` | B04, B06 |
 | 6 | `Resource` writes split across `auth` (seed) and `resources` (runtime) | `services/auth`, `services/resources` | B04, B07 |
-| 7 | ~600-line seed subsystem + fixtures ship in the `auth` production image | `services/auth/src/{seed.controller.ts,data/*}` | B04 |
+| 7 | ✅ ~600-line seed subsystem + fixtures ship in the `auth` production image | now `packages/seed/src/{runners.ts,fixtures/*}` | **B04 — done.** `services/auth` (soon `identity`) has no `src/data/*` and no seed business logic; `packages/seed` owns it |
 | 8 | `services/user` is a single ~1000-line controller spanning 4 domains | `services/user/src/controllers/user.controller.ts` | B05–B08 |
 | 9 | `groupData` (523-line seed fixture) lives in `packages/shared` and is imported by `user` runtime code | `packages/shared/src/data/groups.ts` | B03/B04 — **deliberately left in place for B03**; extraction + runtime-fallback removal is B04 |
 | 10 | ✅ `ServiceName` union in `packages/shared` omits `resources` (and has no DTOs) | now `packages/contracts/src/service.ts` | **B03 — done.** Added `resources`, `identity`, `core`, `messaging` |
@@ -155,7 +155,7 @@ These exist before any change in this migration and must not be counted as regre
 | B01 — Documentation Foundation | COMPLETE | 2026-09-04 | 2026-09-04 | Manifest row count == eligible file count (78); every actionable row has a batch | Docs only. No `services/*` / `packages/*` source changed. |
 | B02 — Foundation: CI/CD, Build Integrity, Security Baseline | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 0; `build` 0; service tests 16/5/4 pass; `lint` 0 with 166 warnings (↓ from 174 baseline); `docker build -f Dockerfile.service --build-arg SERVICE_DIR=services/gateway .` exit 0, image runs to env-check | Infra + config only. No `services/*` / `packages/*` source moved. `apps/web` touched for the `sync-user` auth fix and a `middleware.ts` doc comment. |
 | B03 — Shared Package Split | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 0 (11/11); `build` 0 (12/12); `test` 0 (12/12, incl. new `@repo/contracts` suite); `lint` 0 (166 warnings, unchanged); `docker build --build-arg SERVICE_DIR=services/user` exit 0 | No `services/**` runtime behaviour changed. `@repo/shared` is now a shim; 4 duplicated helpers consolidated into `@repo/contracts` and adopted by `auth`, `user`, `chat`, `resources`. |
-| B04 — Seed Extraction | PENDING | | | | |
+| B04 — Seed Extraction | IN PROGRESS | 2026-09-04 | | `check-types` 12/12; `build` 13/13; `lint` 166 (unchanged); `test` 13/13; live guard verification against an unreachable DB (no data touched) | Seed controller + 3 fixtures + `db.routes.ts` extraction done and committed. `groupData` (`SP-013`) and the `services/user` runtime fallback are paused pending an explicit product decision — see "B04 Execution" below. |
 | B05 — identity Service | PENDING | | | | |
 | B06 — core Scaffold + community Module | PENDING | | | | |
 | B07 — core/learning Module (fold in resources) | PENDING | | | | |
@@ -238,6 +238,64 @@ Migrations live in `packages/database/prisma/migrations` and are applied with
   a column.
 - **Local:** `bun run infra:up` starts Postgres + Redis; point `DATABASE_URL` / `DIRECT_URL`
   at the local instance, then `bun run --cwd packages/database db:migrate`.
+
+## B04 Execution (in progress — one product decision pending)
+
+- Rollback target: parent commit `ebf93d4`.
+- Scope so far: `services/auth/src/controllers/seed.controller.ts`,
+  `services/auth/src/data/{users,resources,dashboard}.ts`, and
+  `services/auth/src/routes/db.routes.ts`. **Not yet touched:** `packages/shared/src/data/
+  groups.ts` (`SP-013`) and the `groupData` runtime fallback in
+  `services/user/src/controllers/user.controller.ts` — see below.
+- Manifest IDs done: `SP-031`–`SP-034`, `SP-038`, `SP-091`–`SP-094`. `SP-013` and the
+  fallback portion of `SP-074`/`SP-076` remain `PENDING`.
+
+Changes made:
+
+| Area | Change |
+| --- | --- |
+| New package | `packages/seed` — `src/guard.ts` (`canRunSeedMutations`, `devSeedGuard`), `src/runners.ts` (the 5 seed handlers, moved verbatim from `seed.controller.ts` minus their repeated per-handler guard call), `src/fixtures/{users,resources,dashboard}.ts` (moved verbatim), `src/index.ts`. Depends on `@repo/database`, `@repo/shared`, `bcryptjs` — same as `services/auth` did. |
+| Guard consolidation | The old code checked `rejectIfSeedDisabled(res)` inside all 5 handlers independently. Replaced with one `router.use(devSeedGuard)` in `db.routes.ts`. Same two conditions (`ENABLE_DEV_SEED_ROUTES === "true"` and `NODE_ENV !== "production"`), same 404 body, checked once instead of five times. |
+| `services/auth/src/routes/db.routes.ts` | Rewritten as a thin route: mounts the guard, then the 5 `POST` handlers imported from `@repo/seed`. **External paths unchanged**: `/api/db/create-multiple-users`, `/create-multiple-groups`, `/create-multiple-resources`, `/create-dashboard-demo-data`, `/deleteAll`. |
+| `services/auth` | `src/data/` directory deleted (now empty). `src/controllers/seed.controller.ts` deleted. Added `@repo/seed` to `package.json` dependencies. |
+
+Validation:
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `bun install` | 0 | Links `@repo/seed`; `bun.lock` updated. |
+| `bun run build` | 0 | 13/13 tasks (was 12; +1 for `@repo/seed`). |
+| `bun run check-types` | 0 | 12/12 tasks (was 11; +1). |
+| `bun run lint` | 0 | 166 warnings — unchanged. |
+| `bun run test` | 0 | 13/13 tasks, 0 failures. |
+| `bunx tsc --noEmit` (`apps/web`) | 0 | Unaffected. |
+| **Live guard verification** | — | Started `services/auth` standalone twice, once with `ENABLE_DEV_SEED_ROUTES=false` and once `=true` with a deliberately unreachable `DATABASE_URL` (`postgresql://noop:noop@127.0.0.1:1/noop`) so no real database could be touched either way. **Disabled:** all `/api/db/*` calls returned `404 {"ok":false,"error":"Not found","details":"Seed endpoints are disabled"}` — byte-identical to the pre-B04 response. **Enabled:** all 5 endpoints passed the guard and reached the moved code — confirmed by the error stack trace naming `packages/seed/dist/runners.js` — then failed cleanly on `ECONNREFUSED`, proving the wiring is correct with zero risk to any real data. |
+
+Risk called out in the plan and how it was handled: "the runtime `groupData` fallback in
+`services/user` is load-bearing for first-run UX; removing it needs a product check." Rather
+than deciding this unilaterally, the fallback (and the `SP-013` fixture move it's coupled to)
+is paused here for an explicit decision. What changes for a first-run user, either way:
+
+**If the fallback is kept** (`packages/shared/src/data/groups.ts` stays where it is, not
+moved into `@repo/seed`; `services/user/src/controllers/user.controller.ts` keeps importing
+`groupData`): a freshly migrated, completely empty database still shows ~15 synthetic
+"discoverable" groups (Python Learners, Physics Club, Nepali Sports Fanatics, ...) the moment
+any user calls `GET /api/user/get-unassociated-groups/:id`, with **no seed step required**.
+These are virtual cards (id `groupData-N`), not real rows, until a user actually joins one —
+at which point `joinUnjoinedGroups` materialises that one specific group into the real
+database on demand. This is undocumented behaviour (not mentioned in `README.md` or
+`AGENTS.md`) that currently only fires when `prisma.group.count()` is exactly zero.
+
+**If the fallback is removed** (matches B04's original plan: `groupData` moves fully into
+`@repo/seed`, `services/user` drops the import): the same freshly migrated database shows
+**zero** discoverable groups until an operator explicitly runs
+`POST /api/db/create-multiple-groups` (now served by `@repo/seed`) or a real user creates one
+via `POST /api/user/groups`. `groupData-N` ids sent to `joinUnjoinedGroups` would 400 as an
+unrecognised group rather than silently materialising one. This is more architecturally
+correct (no phantom data appears without someone deciding to seed) but changes what a fresh
+deploy or fresh local checkout looks like out of the box.
+
+**Decision: pending.** Asked the user directly (see chat) rather than choosing internally.
 
 ## B03 Execution
 

@@ -39,6 +39,19 @@ said `ErrorEnvelope` moved with `ServiceName` into
 `createHttpError` — the manifest's stated destination didn't match the shipped code; the row
 now reflects reality. No source code changed during this audit, only manifest accuracy.
 
+B04 in progress (2026-09-04): `packages/seed` created; `SP-031`–`SP-034` and `SP-038` are
+`DONE` (seed controller + 3 fixture files extracted verbatim; `db.routes.ts` rewritten as a
+thin route mounting one `devSeedGuard` middleware instead of 5 repeated per-handler checks).
+4 new files assigned `SP-091`–`SP-094`. Verified locally end-to-end without touching a real
+database: with `ENABLE_DEV_SEED_ROUTES=false` all 5 `/api/db/*` paths still 404 exactly as
+before; with it `=true` and a deliberately unreachable `DATABASE_URL`, all 5 pass the guard,
+reach the moved `packages/seed/dist/runners.js` code (confirmed in the error stack trace), and
+fail on `ECONNREFUSED` — proving the guard and route wiring are correct with zero write risk.
+**`SP-013` (`packages/shared/src/data/groups.ts`) and the `groupData` runtime fallback in
+`services/user/src/controllers/user.controller.ts` (`SP-076` partial) are intentionally not
+yet touched** — the batch's own spec requires presenting the first-run behaviour change and
+waiting for explicit confirmation before removing that fallback (see `migration-log.md`).
+
 **This manifest tracks Phase 1 (B01–B10) — the existing files and where they go.** Phase 2+
 work (Redis, event backbone, read models, database extraction) creates new files rather than
 relocating existing ones, so it appears here only in the creation list. Those batches are
@@ -109,14 +122,14 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-028 | `packages/typescript-config/react-library.json` | tooling | TS_CONFIG | KEEP | Same | — | typescript-config | Low | KEEP |
 | SP-029 | `services/auth/package.json` | identity | PKG_MANIFEST | RENAME | `@services/identity`; drop seed-only deps; add `@repo/storage` for avatar upload | B05 | identity | Medium | PENDING |
 | SP-030 | `services/auth/src/controllers/auth.controller.ts` | identity | CONTROLLER | MOVE | `services/identity/src/modules/credentials/`; **B03: now imports `getAuthenticatedUserId` from `@repo/shared`, local copy deleted.** Destination MOVE still pending | B05 | identity | Medium | PENDING |
-| SP-031 | `services/auth/src/controllers/seed.controller.ts` | seed | SEED_CONTROLLER | EXTRACT | `packages/seed/src/runners/*`; invoked only by the dev seed route. **B03: now imports `slugify` from `@repo/shared`, local copy deleted.** Extraction still pending | B04 | seed | High | PENDING |
-| SP-032 | `services/auth/src/data/dashboard.ts` | seed | SEED_DATA | MOVE | `packages/seed/src/fixtures/dashboard.ts` | B04 | seed | Low | PENDING |
-| SP-033 | `services/auth/src/data/resources.ts` | seed | SEED_DATA | MOVE | `packages/seed/src/fixtures/resources.ts` | B04 | seed | Low | PENDING |
-| SP-034 | `services/auth/src/data/users.ts` | seed | SEED_DATA | MOVE | `packages/seed/src/fixtures/users.ts` | B04 | seed | Low | PENDING |
+| SP-031 | `packages/seed/src/runners.ts` | seed | SEED_CONTROLLER | EXTRACT | Moved from `services/auth/src/controllers/seed.controller.ts`; per-handler `rejectIfSeedDisabled` calls removed (5x), guard now applied once at the route layer — see `SP-091` | B04 | seed | High | DONE |
+| SP-032 | `packages/seed/src/fixtures/dashboard.ts` | seed | SEED_DATA | MOVE | Moved from `services/auth/src/data/dashboard.ts`, unchanged | B04 | seed | Low | DONE |
+| SP-033 | `packages/seed/src/fixtures/resources.ts` | seed | SEED_DATA | MOVE | Moved from `services/auth/src/data/resources.ts`, unchanged | B04 | seed | Low | DONE |
+| SP-034 | `packages/seed/src/fixtures/users.ts` | seed | SEED_DATA | MOVE | Moved from `services/auth/src/data/users.ts`, unchanged | B04 | seed | Low | DONE |
 | SP-035 | `services/auth/src/index.ts` | identity | SERVICE_ENTRY | REFACTOR | `services/identity/src/index.ts`; mount `credentials` + `profile` modules; dev seed route only when `ENABLE_DEV_SEED_ROUTES` | B05 | identity | Medium | PENDING |
 | SP-036 | `services/auth/src/routes/auth.routes.ts` | identity | ROUTE | MOVE | `services/identity/src/modules/credentials/credentials.routes.ts` | B05 | identity | Low | PENDING |
 | SP-037 | `services/auth/src/routes/auth.validation.ts` | identity | VALIDATION | MOVE | Credentials module; reusable primitives lifted to `@repo/contracts` | B05 | identity | Low | PENDING |
-| SP-038 | `services/auth/src/routes/db.routes.ts` | seed | ROUTE | REFACTOR | `services/identity/src/dev/seed-route.ts`; imports `@repo/seed`; dev-guarded; external `/api/db` path preserved | B04 | identity (dev) | Medium | PENDING |
+| SP-038 | `services/auth/src/routes/db.routes.ts` | seed | ROUTE | REFACTOR | Thin route: mounts `devSeedGuard` from `@repo/seed` once, then the 5 seed handlers; external `/api/db` path preserved. Path itself unchanged in B04 — the further rename to `services/identity/src/dev/seed-route.ts` is B05's job | B04 | identity (dev) | Medium | DONE |
 | SP-039 | `services/auth/tsconfig.json` | identity | TS_CONFIG | MOVE | `services/identity/tsconfig.json` | B05 | identity | Low | PENDING |
 | SP-040 | `services/chat/package.json` | messaging | PKG_MANIFEST | RENAME | `@services/messaging` | B09 | messaging | Medium | PENDING |
 | SP-041 | `services/chat/src/controllers/message.controller.ts` | messaging | CONTROLLER | SPLIT | `messaging/src/modules/messages/*`; call-prep handlers → `modules/calls/*`. **B03: now imports `getAuthenticatedUserId` from `@repo/shared`, local copy deleted.** Split still pending | B09 | messaging | Medium | PENDING |
@@ -169,6 +182,10 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-088 | `packages/storage/package.json` | shared | PKG_MANIFEST | CREATE | New in B03 | B03 | storage | Low | DONE |
 | SP-089 | `packages/storage/src/index.ts` | shared | PKG_ENTRY | CREATE | New in B03 | B03 | storage | Low | DONE |
 | SP-090 | `packages/storage/tsconfig.json` | shared | TS_CONFIG | CREATE | New in B03 | B03 | storage | Low | DONE |
+| SP-091 | `packages/seed/src/guard.ts` | seed | PKG_MODULE | CREATE | New in B04: `canRunSeedMutations`, `devSeedGuard` — extracted from the 5 repeated per-handler checks in the old `seed.controller.ts` into one route-level middleware | B04 | seed | Low | DONE |
+| SP-092 | `packages/seed/src/index.ts` | seed | PKG_ENTRY | CREATE | New in B04 | B04 | seed | Low | DONE |
+| SP-093 | `packages/seed/package.json` | seed | PKG_MANIFEST | CREATE | New in B04; depends on `@repo/database`, `@repo/shared`, `bcryptjs` | B04 | seed | Low | DONE |
+| SP-094 | `packages/seed/tsconfig.json` | seed | TS_CONFIG | CREATE | New in B04 | B04 | seed | Low | DONE |
 
 Note: `packages/contracts/src/errors.ts` and `packages/contracts/src/service.ts` are **not**
 `CREATE` rows — they are the MOVE destinations already tracked by `SP-014` and `SP-022`
@@ -184,8 +201,9 @@ have been a duplicate-file-entry bug; caught and corrected before commit.
 - **B03** (shared split): SP-011, SP-012, SP-014, SP-015, SP-016, SP-017, SP-018, SP-019,
   SP-020, SP-021, SP-022, SP-023, SP-024, SP-079–SP-090 (+ import updates in SP-030, SP-041,
   SP-067, SP-074).
-- **B04** (seed extraction): SP-013, SP-031, SP-032, SP-033, SP-034, SP-038 (+ SP-074/SP-076
-  runtime-fallback removal).
+- **B04** (seed extraction): SP-031, SP-032, SP-033, SP-034, SP-038, SP-091–SP-094 **done**;
+  SP-013 and the SP-074/SP-076 runtime-fallback removal **pending a product decision** (see
+  migration-log.md).
 - **B05** (identity): SP-029, SP-030, SP-035, SP-036, SP-037, SP-039 (+ profile portions of
   SP-074, SP-076, SP-077).
 - **B06** (core scaffold + community): SP-073, SP-075, SP-078 (+ community portions of
@@ -201,23 +219,24 @@ have been a duplicate-file-entry bug; caught and corrected before commit.
 
 ## Status accounting
 
-Counts below are machine-verified (extracted from the actual table, not hand-tallied) as
-part of the B03 completeness audit.
+Counts below are machine-verified (`grep`-extracted from the actual table, not hand-tallied
+— a hand-tally error during the B03 completeness audit is exactly why this rule exists now).
 
-- Rows: 90 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`). Duplicate IDs: 0.
-  Duplicate current-file entries: 0 (checked during this audit — see the header note above
-  for the one duplicate that was caught and removed before commit).
+- Rows: 94 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`, plus 4 B04-created
+  rows `SP-091`–`SP-094`). Duplicate IDs: 0. Duplicate current-file entries: 0.
 - `KEEP` (no change intended): SP-002, SP-004, SP-005, SP-007, SP-008, SP-010, SP-025,
   SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065 — **14 rows**.
-- `DONE`: SP-011, SP-012, SP-014–SP-024 (13 rows — every `packages/shared` file touched by
-  B03 except `SP-013`, which is deliberately still `PENDING` for B04) + SP-079–SP-090
-  (12 rows, its newly created files) — **25 rows**.
-- `PENDING` (actionable, batch assigned): **51 rows** — includes `SP-013` (deferred to B04)
-  and `SP-030`, `SP-041`, `SP-067`, `SP-074`, which carry a B03 adoption note but are not
-  `DONE` because their MOVE to the target service is a separate, later batch.
+- `DONE`: SP-011, SP-012, SP-014–SP-024 (13 rows, B03's `packages/shared` split) +
+  SP-031–SP-034, SP-038 (5 rows, B04's seed extraction) + SP-079–SP-090 (12 rows, B03-created
+  files) + SP-091–SP-094 (4 rows, B04-created files) — **34 rows**.
+- `PENDING` (actionable, batch assigned): **46 rows** — includes `SP-013` (the `groupData`
+  fixture, deliberately not yet moved — see the B04-in-progress note above) and `SP-030`,
+  `SP-041`, `SP-067`, `SP-074`, `SP-076`, which carry an adoption note but are not `DONE`
+  because their full MOVE/domain-split is a separate, later batch or (for `SP-074`/`SP-076`)
+  gated on the same product decision as `SP-013`.
 - `BLOCKED`: 0 in the manifest. One infra blocker was tracked in
   `service-decomposition-plan.md` (the missing `Dockerfile.service`) and was resolved in B02.
-- Row-count check (machine-counted, not hand-tallied): 14 KEEP + 25 DONE + 51 PENDING = 90. ✓
+- Row-count check: 14 KEEP + 34 DONE + 46 PENDING = 94. ✓
 
 ## Files this migration will create (IDs assigned on creation)
 
@@ -225,7 +244,10 @@ part of the B03 completeness audit.
 
 - ✅ `packages/service-kit/**`, `packages/storage/**`, `packages/contracts/**` — **created in
   B03**, tracked as `SP-079`–`SP-090` (also: `packages/contracts/src/helpers.test.ts`, new
-  coverage). `packages/seed/**` is still B04.
+  coverage).
+- ✅ `packages/seed/**` — **created in B04**, tracked as `SP-091`–`SP-094` (the fixtures and
+  runners are moves, tracked by `SP-031`–`SP-034`). `SP-013` (`groupData`) has not moved
+  into it yet — pending the product decision on the runtime fallback.
 - `services/identity/**` (rename target of `services/auth`; new `modules/profile/**`) (B05)
 - `services/core/**` with `src/modules/{community,learning,feed,dashboard}/**` (B06–B08)
 - `services/messaging/**` (rename target of `services/chat`; new `modules/calls/**`) (B09)

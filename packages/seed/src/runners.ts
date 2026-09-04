@@ -1,42 +1,25 @@
 import type { Request, Response } from "express";
 import getPrismaInstance from "@repo/database";
 import { createLogger, groupData, slugify } from "@repo/shared";
-import { usersData } from "../data/users.js";
-import { resourcesData } from "../data/resources.js";
+import { usersData } from "./fixtures/users.js";
+import { resourcesData } from "./fixtures/resources.js";
 import {
   dashboardPostsData,
   dashboardSessionsData,
   dashboardStudyRoomsData,
   dashboardTopicsData,
-} from "../data/dashboard.js";
+} from "./fixtures/dashboard.js";
 import bcryptjs from "bcryptjs";
 
 const logger = createLogger("auth-seed");
 
-function canRunSeedMutations(): boolean {
-  return (
-    process.env.ENABLE_DEV_SEED_ROUTES === "true" &&
-    process.env.NODE_ENV !== "production"
-  );
-}
-
-function rejectIfSeedDisabled(res: Response): boolean {
-  if (canRunSeedMutations()) {
-    return false;
-  }
-  res.status(404).json({
-    ok: false,
-    error: "Not found",
-    details: "Seed endpoints are disabled",
-  });
-  return true;
-}
+// Availability is enforced once, at the route layer, by `devSeedGuard` (see guard.ts).
+// These runners assume they are only ever reached when seeding is enabled.
 
 export async function createMultipleUsersWithProfiles(
   _req: Request,
   res: Response
 ): Promise<void> {
-  if (rejectIfSeedDisabled(res)) return;
   try {
     const prisma = getPrismaInstance();
     const usersWithHashedPasswords = await Promise.all(
@@ -126,7 +109,6 @@ export async function createEducationGroups(
   _req: Request,
   res: Response
 ): Promise<void> {
-  if (rejectIfSeedDisabled(res)) return;
   try {
     const prisma = getPrismaInstance();
     const allUsers = await prisma.user.findMany({
@@ -305,7 +287,6 @@ export async function createLearningResources(
   _req: Request,
   res: Response
 ): Promise<void> {
-  if (rejectIfSeedDisabled(res)) return;
   try {
     const prisma = getPrismaInstance();
     const allUsers = await prisma.user.findMany({
@@ -389,7 +370,6 @@ export async function createDashboardDemoData(
   _req: Request,
   res: Response
 ): Promise<void> {
-  if (rejectIfSeedDisabled(res)) return;
   try {
     const prisma = getPrismaInstance();
     const allUsers = await prisma.user.findMany({
@@ -567,7 +547,6 @@ export async function deleteAllRecords(
   _req: Request,
   res: Response
 ): Promise<void> {
-  if (rejectIfSeedDisabled(res)) return;
   try {
     const prisma = getPrismaInstance();
     await prisma.studyRoomParticipant.deleteMany();
