@@ -4,7 +4,9 @@ You have eight planning documents. **You only need this one to begin.** The othe
 reference material you open when a batch tells you to.
 
 - **Branch:** `refactor/services-packages-architecture`
-- **Status:** planning complete (B01). No `services/*` or `packages/*` code has changed.
+- **Status:** B01 (planning) and **B02 (foundation) complete**. No `services/*` or
+  `packages/*` source has moved yet — B02 was infra + config only, plus two `apps/web` auth
+  fixes. **B03 is next.**
 - **How work happens:** you paste one command per batch into Claude Code. Claude does the
   batch, updates `migration-log.md`, and commits. You verify, then move to the next.
 
@@ -368,8 +370,8 @@ Or just say: `Roll back batch B0X and tell me what went wrong.`
 
 Tick these off as you go.
 
-- [ ] **B01** Documentation — *complete 2026-09-04*
-- [ ] **B02** CI, Docker, turbo env, security baseline
+- [x] **B01** Documentation — *complete 2026-09-04*
+- [x] **B02** CI, Docker, turbo env, security baseline — *complete 2026-09-04 (issues #1–3, #15, #28–35, #37 resolved)*
 - [ ] **B03** Split `packages/shared`
 - [ ] **B04** Seed extraction to `packages/seed`
 - [ ] **B05** `identity` service (rename + profile absorption)

@@ -1,0 +1,46 @@
+# Single Dockerfile for every Yome backend service.
+#
+# Build one image per service by passing SERVICE_DIR:
+#   docker build -f Dockerfile.service --build-arg SERVICE_DIR=services/gateway -t yome-gateway .
+#
+# The whole monorepo is the build context because services depend on workspace
+# packages (@repo/shared, @repo/database) that must be installed and built together.
+# Referenced by .github/workflows/deploy-services.yml.
+
+# ── Stage 1: install + build via Turbo ────────────────────────────────────
+FROM oven/bun:1.3.5 AS builder
+
+ARG SERVICE_DIR
+RUN test -n "$SERVICE_DIR" || (echo "SERVICE_DIR build-arg is required" && exit 1)
+
+WORKDIR /app
+
+# Copy the whole workspace. .dockerignore keeps node_modules / dist / .next out.
+COPY . .
+
+# Install all workspace deps. @repo/database postinstall runs `prisma generate`
+# against packages/database/prisma/schema.prisma.
+RUN bun install --frozen-lockfile
+
+# Derive the workspace name (@services/<name>) from the directory and build it.
+# Turbo's build task depends on ^build, so workspace packages are built first.
+RUN SERVICE_NAME="@$(echo "$SERVICE_DIR" | sed 's#/#/#')" \
+  && bunx turbo run build --filter="$SERVICE_NAME"
+
+# ── Stage 2: runtime ─────────────────────────────────────────────────────
+FROM oven/bun:1.3.5 AS runner
+
+ARG SERVICE_DIR
+ENV NODE_ENV=production
+ENV SERVICE_DIR=${SERVICE_DIR}
+
+WORKDIR /app
+
+# Copy the resolved workspace (node_modules, built dist/, generated Prisma client).
+COPY --from=builder /app /app
+
+USER bun
+
+# Env (ports, DATABASE_URL, GATEWAY_SHARED_TOKEN, AWS_*, ...) is injected at deploy time.
+# Each service reads its port from *_SERVICE_PORT via @repo/shared servicePorts.
+CMD ["sh", "-c", "bun ${SERVICE_DIR}/dist/index.js"]

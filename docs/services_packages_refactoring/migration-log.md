@@ -74,28 +74,27 @@ Deploy (`.github/workflows/deploy-services.yml`):
 
 ## Baseline Validation
 
-Not yet captured. Baseline is captured at the start of **B02** (first implementation batch),
-because B01 changes no `services/*` or `packages/*` source and adding a baseline run here
-would only measure the pre-existing state that B02 will re-measure anyway.
-
-Baseline to record at B02 start:
+Captured at the start of **B02** on 2026-09-04, before any B02 change, at commit `75b49f0`.
+Runtime: `bun@1.3.5`, `node v22.19.0`, `turbo 2.8.7`, `docker 28.3.3`.
 
 | Area | Command | Exit status | Result |
 | --- | --- | --- | --- |
-| Turbo typecheck | `bun run check-types` | _pending_ | |
-| Per-service typecheck | `bun run check-types:all` | _pending_ | |
-| Chat tests | `bun run --cwd services/chat test` | _pending_ | |
-| Resources tests | `bun run --cwd services/resources test` | _pending_ | |
-| Shared tests | `bun run --cwd packages/shared test` | _pending_ | |
-| Turbo build | `bun run build` | _pending_ | |
-| Turbo lint | `bun run lint` | _pending_ | |
-| Turbo tests | `bun run test` | _pending_ | |
-| Integration smoke | `bun run test:integration` | _pending_ | |
+| Turbo typecheck | `bun run check-types` | 0 | Pass. 8 tasks, all cached (FULL TURBO). |
+| Chat tests | `bun run --cwd services/chat test` | 0 | Pass. 16 tests, 4 files. |
+| Resources tests | `bun run --cwd services/resources test` | 0 | Pass. 5 tests, 1 file. |
+| Shared tests | `bun run --cwd packages/shared test` | 0 | Pass. 4 tests, 1 file. |
+| Turbo build | `bun run build` | 0 | Pass. 9 tasks (8 cached); `@apps/web` builds all routes. |
+| Turbo lint | `bun run lint` | 0 | Pass with **174 pre-existing warnings** (0 errors): `turbo/no-undeclared-env-vars`, `no-undef` on config files, `no-img-element`, React hook deps. |
+| Turbo tests | `bun run test` | 0 | Pass. 12 tests in `@apps/web`; harmless `no output files for @apps/web#test` Turbo warning. |
+| Integration smoke | `bun run test:integration` | not run | Needs running services; `INTEGRATION_STRICT` unset = non-blocking by design. |
+| Per-service typecheck | `bun run check-types:all` | not run | Redundant with Turbo `check-types`, which passed. |
 
-Known environment caveat carried over from `docs/app_web_refactoring/migration-log.md`:
-root Turbo `lint` / `test` / `build` panicked on this machine with a `system-configuration`
-crash (Turbo 2.8.7). If that reproduces, it is classified `ENVIRONMENT`, not a regression,
-and per-workspace commands are used instead.
+**The Turbo `system-configuration` panic noted in `docs/app_web_refactoring/migration-log.md`
+did NOT reproduce.** Root `bun run lint` / `test` / `build` all exit 0 on this machine; that
+prior failure is treated as environment-transient and is no longer a carried caveat.
+
+Classification: no command fails. The only noise is 174 `@apps/web` lint **warnings**, all
+pre-existing and documented in `docs/app_web_refactoring/`. B02 must not increase this count.
 
 ## Pre-existing Issues Inventory (from B01 audit)
 
@@ -103,9 +102,9 @@ These exist before any change in this migration and must not be counted as regre
 
 | # | Issue | Location | Batch that resolves it |
 | --- | --- | --- | --- |
-| 1 | `@services/user` and `@services/resources` not in CI `build-services` matrix | `.github/workflows/ci.yml` | B02 |
-| 2 | `@services/user` and `@services/resources` not in `deploy-services.yml` matrix | `.github/workflows/deploy-services.yml` | B02 |
-| 3 | `deploy-services.yml` references missing `./Dockerfile.service` | `.github/workflows/deploy-services.yml` | B02 (BLOCKED pending the file) |
+| 1 | ✅ `@services/user` and `@services/resources` not in CI `build-services` matrix | `.github/workflows/ci.yml` | **B02 — done** |
+| 2 | ✅ `@services/user` and `@services/resources` not in `deploy-services.yml` matrix | `.github/workflows/deploy-services.yml` | **B02 — done** |
+| 3 | ✅ `deploy-services.yml` references missing `./Dockerfile.service` | `.github/workflows/deploy-services.yml` | **B02 — done** (file added) |
 | 4 | `services/media` imports `@repo/database` (violates `SCHEMA_OWNERSHIP.md`) | `services/media/src/controllers/media.controller.ts`, `package.json` | B09 |
 | 5 | `Group` writes split across `auth` (seed + `createEducationGroups`) and `user` (runtime) | `services/auth`, `services/user` | B04, B06 |
 | 6 | `Resource` writes split across `auth` (seed) and `resources` (runtime) | `services/auth`, `services/resources` | B04, B07 |
@@ -117,7 +116,7 @@ These exist before any change in this migration and must not be counted as regre
 | 12 | No ESLint config in any service (`"lint": "echo ..."`) | every `services/*/package.json` | B10 |
 | 13 | Only `chat`, `resources`, `shared` have tests | every other `services/*` / `packages/*` | ongoing; enforced from B05 |
 | 14 | Gateway route/upstream map hardcoded with special-cased rewrites | `services/gateway/src/index.ts` | B10 |
-| 15 | `tests/contracts.smoke.mjs` health list omits `resources` | `tests/contracts.smoke.mjs` | B02 / B10 |
+| 15 | ✅ `tests/contracts.smoke.mjs` health list omits `resources` | `tests/contracts.smoke.mjs` | **B02 — done** |
 | 16 | Presence is a process-local `Map`; `messaging` cannot run >1 replica without silent delivery bugs | `services/chat/src/state/online-users.ts:2`, `services/chat/src/socket/handlers.ts` | B11 |
 | 17 | Rate-limit buckets are a process-local `Map`; N `gateway` replicas grant N× the configured limit | `services/gateway/src/index.ts:79` | B11 |
 | 18 | No caching layer anywhere; every read hits Postgres, incl. the 7-query dashboard fan-out | `services/user/src/controllers/user.controller.ts` (`getDashboardHome`) | B12, B15 |
@@ -135,14 +134,14 @@ These exist before any change in this migration and must not be counted as regre
 | 25 | **`apps/web` bypasses the gateway and impersonates it.** `stream.actions.ts` calls `CHAT_SERVICE_URL` directly, forging `x-internal-token` (= `GATEWAY_SHARED_TOKEN`) and `x-user-id`. Violates the "gateway is the only synchronous entry point" invariant | `apps/web/actions/stream.actions.ts` | **High** | B09 |
 | 26 | **Video calling has no service owner.** Stream token minting (`generateUserToken`), `upsertUsers`, and call authorization live in a Next.js server action. An entire domain is missing from the service map | `apps/web/actions/stream.actions.ts` | **High** | B09 |
 | 27 | **`STREAM_SECRET_KEY` and `GATEWAY_SHARED_TOKEN` are held by `apps/web`.** The frontend deploy carries backend secrets | `apps/web`, root `.env` | **High** | B09 |
-| 28 | **Dev auth bypass in `sync-user`.** When `NODE_ENV !== "production"` the route accepts `email`/`name`/`image` from the request body with no session — an account-takeover primitive if `NODE_ENV` is unset in a deployed environment | `apps/web/app/api/auth/sync-user/route.ts` | **High** | B02 |
-| 29 | `visual-qa=1` query param bypasses `withAuth` (gated on dev + localhost). Inventory and confirm the gate cannot be reached in production | `apps/web/middleware.ts` | Medium | B02 |
-| 30 | **CI references `apps/mobile`, which does not exist.** `deploy-mobile.yml` in full, plus the `build-mobile` job and `mobile` paths-filter in `ci.yml`. `turbo run build --filter=@apps/mobile` would fail if it ever ran | `.github/workflows/ci.yml`, `deploy-mobile.yml` | Medium | B02 |
-| 31 | **`turbo.json` `globalEnv` is incomplete** — missing `AUTH_SERVICE_URL`, `USER_SERVICE_URL`, `MEDIA_SERVICE_URL`, `NOTIFICATIONS_SERVICE_URL`, every `*_SERVICE_PORT`, `GATEWAY_PORT`, `GATEWAY_RATE_WINDOW_MS`, `GATEWAY_RATE_MAX_REQUESTS`, `STORAGE_PROVIDER`, and every `AWS_*`. Turbo cache keys therefore omit them, so changing one can serve a stale cached build | `turbo.json` | **High** | B02 |
-| 32 | `JWT_KEY` is declared in `.env` and used nowhere in the repository — dead config | `.env` | Low | B02 |
-| 33 | `DEV_SEED_ROUTE_TOKEN` is required by the seed reset route but is absent from `.env`; the documented reset command cannot succeed | `.env`, `README.md` | Low | B02 / B04 |
-| 34 | **No containerization exists.** Zero Docker, compose, k8s, helm, or terraform files are tracked, yet `deploy-services.yml` builds `./Dockerfile.service` | repo root | **High** | B02 |
-| 35 | No migration coordination strategy — the docs never state who runs `db:migrate` during deploy, or how migrations are ordered against service renames and the `OutboxEvent` addition | `packages/database`, deploy workflows | Medium | B02 / B13 |
+| 28 | ✅ **Dev auth bypass in `sync-user`.** Was gated on `NODE_ENV !== "production"`; now gated on `ENABLE_DEV_USER_SYNC === "true"` (defaults off). Session-only without the flag | `apps/web/app/api/auth/sync-user/route.ts` | **B02 — done** |
+| 29 | ✅ `visual-qa=1` bypass audited and documented in `middleware.ts` — three AND-ed conditions, the exact-host check unreachable in production; logic unchanged | `apps/web/middleware.ts` | **B02 — done** |
+| 30 | ✅ **CI references `apps/mobile`.** `deploy-mobile.yml` deleted; `build-mobile` job, `mobile` outputs and paths-filter removed from `ci.yml` | `.github/workflows/ci.yml`, `deploy-mobile.yml` | **B02 — done** |
+| 31 | ✅ **`turbo.json` `globalEnv` incomplete.** Expanded 18 → 51 entries covering every var application code reads | `turbo.json` | **B02 — done** |
+| 32 | ✅ `JWT_KEY` — dead config. Removed from local `.env`; absent from `.env.example` | `.env` | **B02 — done** |
+| 33 | ✅ `DEV_SEED_ROUTE_TOKEN` missing. Added to local `.env` and `.env.example` | `.env`, `.env.example` | **B02 — done** |
+| 34 | ✅ **No containerization.** `Dockerfile.service`, `.dockerignore`, `docker-compose.yml` (Postgres + Redis) added | repo root | **B02 — done** |
+| 35 | ✅ Migration coordination policy documented (see "Migration Coordination Policy" below); release-pipeline wiring lands with B13 | `packages/database`, deploy workflows | **B02 — done** |
 | 36 | No observability plan. `createLogger` emits JSON but nothing aggregates it; `x-request-id` is generated and forwarded but never correlated; no metrics, no tracing | all services | Medium | B10 |
 | 37 | No per-batch rollback strategy documented | all batches | Medium | B02 |
 | 38 | 5 of 7 services have `"test": "echo ..."` stubs; no coverage target or unit/contract/integration split is defined | `auth`, `user`, `gateway`, `media`, `notifications` | Medium | B10 |
@@ -153,7 +152,7 @@ These exist before any change in this migration and must not be counted as regre
 | Batch | Status | Started | Completed | Validation Result | Notes |
 | --- | --- | --- | --- | --- | --- |
 | B01 — Documentation Foundation | COMPLETE | 2026-09-04 | 2026-09-04 | Manifest row count == eligible file count (78); every actionable row has a batch | Docs only. No `services/*` / `packages/*` source changed. |
-| B02 — CI/CD and Deploy Parity | PENDING | | | | |
+| B02 — Foundation: CI/CD, Build Integrity, Security Baseline | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 0; `build` 0; service tests 16/5/4 pass; `lint` 0 with 166 warnings (↓ from 174 baseline); `docker build -f Dockerfile.service --build-arg SERVICE_DIR=services/gateway .` exit 0, image runs to env-check | Infra + config only. No `services/*` / `packages/*` source moved. `apps/web` touched for the `sync-user` auth fix and a `middleware.ts` doc comment. |
 | B03 — Shared Package Split | PENDING | | | | |
 | B04 — Seed Extraction | PENDING | | | | |
 | B05 — identity Service | PENDING | | | | |
@@ -190,6 +189,102 @@ not an opinion.
 Measurement commands to run before opening any P4/P5 batch are listed under each trigger in
 `data-architecture-plan.md`. T-05 additionally requires that `Messages` partitioning has
 already been applied and its ceiling measured.
+
+## Rollback Procedure (all batches)
+
+Every batch is one or more commits on `refactor/services-packages-architecture`. Nothing is
+force-pushed and history is not rewritten on this branch until it merges. The commit boundary
+is the rollback boundary, so **batches are never squashed together during development**.
+
+| Situation | Command | Effect |
+| --- | --- | --- |
+| Inspect what a batch changed | `git show --stat HEAD` | Read-only. |
+| Undo a batch, keep the changes staged | `git reset --soft HEAD~1` | Commit gone; files still modified. |
+| Undo a batch completely | `git reset --hard HEAD~1` | Commit and file changes gone. |
+| Undo a batch several commits back | `git revert <sha>` (newest first) | Adds inverse commits; safe once other work sits on top. |
+| The batch was pushed / shared | `git revert`, never `reset` | Avoids diverging a shared branch. |
+
+Batch-specific notes:
+
+- **B02** touches only workflow files, `turbo.json`, `Dockerfile.service`,
+  `docker-compose.yml`, `.dockerignore`, `.env.example`, `tests/contracts.smoke.mjs`,
+  `package.json`, and two `apps/web` auth files. `git revert` of the B02 commit is fully
+  safe; it restores the prior (broken) CI matrices and the `NODE_ENV`-gated `sync-user`
+  fallback. The **local `.env` edits are not committed** (`.env` is gitignored) — to undo
+  them, re-add `JWT_KEY` and remove `DEV_SEED_ROUTE_TOKEN` / `ENABLE_DEV_USER_SYNC` by hand.
+- **B03–B09** move code between packages/services. Prefer `git revert` of the whole batch
+  range once later batches exist; otherwise `git reset --hard` to the sha recorded at the top
+  of that batch's execution section.
+- Record the current `HEAD` sha at the start of each batch's execution section as an explicit
+  rollback target.
+
+## Migration Coordination Policy
+
+Migrations live in `packages/database/prisma/migrations` and are applied with
+`bun run --cwd packages/database db:migrate` (`prisma migrate deploy`).
+
+- **Who runs it in deploy:** a dedicated one-shot step that runs **once per release, before**
+  any service image rolls out — not inside a service container's start-up, and never in
+  parallel across services. `deploy-services.yml` builds images only; a migration step is
+  added to the release pipeline in the same change that first needs a new migration (B13's
+  `OutboxEvent` is the first).
+- **Ordering against renames:** schema changes and service renames go in **separate batches**.
+  Renames (B05 `auth`→`identity`, B09 `chat`→`messaging`) change no tables. B13 adds
+  `OutboxEvent` with **no change to existing tables**, so it is backward compatible: old
+  images keep working after it applies.
+- **Expand/contract:** any column/table removal is two migrations across two releases
+  (add-new / dual-write, then remove-old once no running image reads it). No P1 batch removes
+  a column.
+- **Local:** `bun run infra:up` starts Postgres + Redis; point `DATABASE_URL` / `DIRECT_URL`
+  at the local instance, then `bun run --cwd packages/database db:migrate`.
+
+## B02 Execution
+
+- Rollback target: parent commit `75b49f0`.
+- Scope: infrastructure and configuration only. **No `services/**` or `packages/**` source
+  file moved, renamed, or deleted.** Two `apps/web` files changed for the security fix.
+- Manifest IDs: none (`SP-*` rows untouched; B02 is infra-only per the plan).
+
+Changes:
+
+| Area | Change | Issue(s) |
+| --- | --- | --- |
+| Baseline | Recorded the validation table above; Turbo panic did not reproduce. | #37 |
+| Containerization | Added `Dockerfile.service` (multi-stage, `SERVICE_DIR` build-arg, `bun` + Turbo) — `deploy-services.yml` already referenced it. Added `.dockerignore`. Added `docker-compose.yml`: Postgres 16 + Redis 7 (Redis unused until B11). Verified: `docker build --build-arg SERVICE_DIR=services/gateway` exits 0; the image runs `bun services/gateway/dist/index.js` to its env check. Image is ~1.85 GB (copies the full resolved workspace) — a prod-slimming pass is a later follow-up, not a B02 blocker. | #34 |
+| CI matrices | `ci.yml`: removed the `mobile` paths-filter, `build-mobile` job, and `mobile` from `changes` outputs and the `quality` gate; added `.github/workflows/**` to the `packages` filter; added `@services/user` and `@services/resources` to `build-services`. | #1, #2, #30 |
+| Deploy matrix | `deploy-services.yml`: added `user` (`yome-user`) and `resources` (`yome-resources`); added `Dockerfile.service` to trigger paths. **Deleted `deploy-mobile.yml`** (no `apps/mobile`). | #2, #30 |
+| Turbo cache | `turbo.json` `globalEnv` 18 → 51 entries: every `*_SERVICE_URL` / `*_SERVICE_PORT`, `GATEWAY_PORT`, `GATEWAY_RATE_*`, `INTERNAL_TOKEN_GUARD_ENABLED`, `DATABASE_POOL_MAX`, all `AWS_*`, `STORAGE_PROVIDER`, OAuth provider vars, `NEXTAUTH_URL`, `ENABLE_DEV_USER_SYNC`. Confirmed effective: the change busted the `check-types` cache (0 cached) and removed 8 `turbo/no-undeclared-env-vars` lint warnings (174 → 166). | #31 |
+| Security — `sync-user` | The request-body identity fallback is now gated on `ENABLE_DEV_USER_SYNC === "true"` (defaults off) instead of `NODE_ENV !== "production"`. Session-only without the flag. | #28 |
+| Security — middleware | Documented the `visual-qa=1` bypass: three AND-ed conditions; the exact-host check is the production-unreachable boundary. Logic unchanged. | #29 |
+| Config hygiene | Removed dead `JWT_KEY` (local `.env` only — gitignored). Added `DEV_SEED_ROUTE_TOKEN` and `ENABLE_DEV_USER_SYNC` to local `.env`. Added committed **`.env.example`** — every key, no values. | #32, #33 |
+| Smoke test | `tests/contracts.smoke.mjs` now includes `resources` (4106). Verified locally: all 7 services return `[OK] 200`. Added root `smoke` script. | #15 |
+| Scripts | Added `infra:up` / `infra:down` / `infra:reset` (docker compose) and `smoke` to root `package.json`. | — |
+| Migration policy | Documented above. | #35 |
+
+Deferred (not B02): observability (#36 → B10); test-coverage strategy (#38 → B10);
+`apps/web` BFF cleanup (#39 → B09); the malformed `process.env.GOOGLE_Secret` case-variant
+fallback in `apps/web/app/api/auth/[...nextauth]/options.ts` (still emits one
+`turbo/no-undeclared-env-vars` warning — intentionally not added to `globalEnv` since the
+correct `GOOGLE_CLIENT_SECRET` is already declared; noted as an app-level typo).
+
+Validation:
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `bun run check-types` | 0 | Pass (cache correctly busted by the `globalEnv` change). |
+| `bunx tsc --noEmit` (in `apps/web`) | 0 | Pass — `sync-user` / `middleware` edits typecheck. |
+| `bun run --cwd services/chat test` | 0 | 16 pass. |
+| `bun run --cwd services/resources test` | 0 | 5 pass. |
+| `bun run --cwd packages/shared test` | 0 | 4 pass. |
+| `bun run build` | 0 | Pass. |
+| `bun run lint` | 0 | **166 warnings** (↓ 8 from 174 baseline; 0 errors). No new warning introduced. |
+| `node tests/contracts.smoke.mjs` | 0 | All 7 services `[OK] 200`, incl. `resources`. |
+| `docker build -f Dockerfile.service --build-arg SERVICE_DIR=services/gateway .` | 0 | Image builds; entrypoint resolves and runs. |
+
+Security note surfaced during B02 (no B02 action): the working-tree `.env` contains
+live-looking AWS access keys, a real database password, and a real Stream secret. `.env` is
+correctly gitignored so none of it is in the repository, but rotate these if they were ever
+shared or committed elsewhere.
 
 ## B01 Execution
 

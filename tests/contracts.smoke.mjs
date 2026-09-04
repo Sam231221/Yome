@@ -1,16 +1,37 @@
 const services = [
-  { name: "gateway", url: process.env.GATEWAY_URL || "http://localhost:4100/health" },
-  { name: "auth", url: process.env.AUTH_SERVICE_URL || "http://localhost:4101/health" },
-  { name: "user", url: process.env.USER_SERVICE_URL || "http://localhost:4102/health" },
-  { name: "chat", url: process.env.CHAT_SERVICE_URL || "http://localhost:4103/health" },
-  { name: "media", url: process.env.MEDIA_SERVICE_URL || "http://localhost:4104/health" },
+  {
+    name: "gateway",
+    url: process.env.GATEWAY_URL || "http://localhost:4100/health",
+  },
+  {
+    name: "auth",
+    url: process.env.AUTH_SERVICE_URL || "http://localhost:4101/health",
+  },
+  {
+    name: "user",
+    url: process.env.USER_SERVICE_URL || "http://localhost:4102/health",
+  },
+  {
+    name: "chat",
+    url: process.env.CHAT_SERVICE_URL || "http://localhost:4103/health",
+  },
+  {
+    name: "media",
+    url: process.env.MEDIA_SERVICE_URL || "http://localhost:4104/health",
+  },
   {
     name: "notifications",
-    url: process.env.NOTIFICATIONS_SERVICE_URL || "http://localhost:4105/health",
+    url:
+      process.env.NOTIFICATIONS_SERVICE_URL || "http://localhost:4105/health",
+  },
+  {
+    name: "resources",
+    url: process.env.RESOURCES_SERVICE_URL || "http://localhost:4106/health",
   },
 ];
 
-const withHealthPath = (url) => (url.endsWith("/health") ? url : `${url}/health`);
+const withHealthPath = (url) =>
+  url.endsWith("/health") ? url : `${url}/health`;
 
 let failed = false;
 let passed = 0;
@@ -36,6 +57,6 @@ if (failed && process.env.INTEGRATION_STRICT === "true") {
 
 if (failed && passed === 0) {
   console.warn(
-    "[SKIP] No service health endpoints were reachable. Set INTEGRATION_STRICT=true to fail."
+    "[SKIP] No service health endpoints were reachable. Set INTEGRATION_STRICT=true to fail.",
   );
 }

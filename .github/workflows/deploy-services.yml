@@ -7,6 +7,7 @@ on:
     paths:
       - "services/**"
       - "packages/**"
+      - "Dockerfile.service"
 
 jobs:
   deploy:
@@ -23,6 +24,9 @@ jobs:
           - service: "@services/auth"
             service_dir: "services/auth"
             image_name: "yome-auth"
+          - service: "@services/user"
+            service_dir: "services/user"
+            image_name: "yome-user"
           - service: "@services/chat"
             service_dir: "services/chat"
             image_name: "yome-chat"
@@ -32,6 +36,9 @@ jobs:
           - service: "@services/notifications"
             service_dir: "services/notifications"
             image_name: "yome-notifications"
+          - service: "@services/resources"
+            service_dir: "services/resources"
+            image_name: "yome-resources"
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2

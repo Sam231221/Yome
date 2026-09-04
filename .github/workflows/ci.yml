@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       web: ${{ steps.filter.outputs.web }}
-      mobile: ${{ steps.filter.outputs.mobile }}
       services: ${{ steps.filter.outputs.services }}
       packages: ${{ steps.filter.outputs.packages }}
     steps:
@@ -21,19 +20,18 @@ jobs:
           filters: |
             web:
               - 'apps/web/**'
-            mobile:
-              - 'apps/mobile/**'
             services:
               - 'services/**'
             packages:
               - 'packages/**'
               - 'turbo.json'
               - 'package.json'
+              - '.github/workflows/**'
 
   quality:
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.web == 'true' || needs.changes.outputs.mobile == 'true' || needs.changes.outputs.services == 'true' || needs.changes.outputs.packages == 'true'
+    if: needs.changes.outputs.web == 'true' || needs.changes.outputs.services == 'true' || needs.changes.outputs.packages == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -52,16 +50,6 @@ jobs:
       - run: bun install
       - run: bunx turbo run build --filter=@apps/web
 
-  build-mobile:
-    runs-on: ubuntu-latest
-    needs: [changes, quality]
-    if: needs.changes.outputs.mobile == 'true' || needs.changes.outputs.packages == 'true'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install
-      - run: bunx turbo run build --filter=@apps/mobile
-
   build-services:
     runs-on: ubuntu-latest
     needs: [changes, quality]
@@ -71,9 +59,11 @@ jobs:
         service:
           - "@services/gateway"
           - "@services/auth"
+          - "@services/user"
           - "@services/chat"
           - "@services/media"
           - "@services/notifications"
+          - "@services/resources"
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
