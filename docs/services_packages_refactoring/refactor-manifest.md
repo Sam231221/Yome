@@ -9,6 +9,14 @@ rows. No `services/*` or `packages/*` source was changed. No implementation rows
 to B01; `SP-001`–`SP-078` are inventory inputs only. Files that a batch *creates* get fresh
 IDs when they are created (see "Files this migration will create" at the end).
 
+B03 completed (2026-09-04): `packages/shared` split into `@repo/contracts`, `@repo/service-kit`,
+and `@repo/storage`; `@repo/shared` kept as a re-export shim (`SP-011`–`SP-024`, excluding
+`SP-013` which stays with `packages/shared` until B04). The four duplicated helpers
+(`getAuthenticatedUserId`, `slugify`, `uuidPattern`/`isUuid`, `formatCount`/`compactNumber`)
+now live in `@repo/contracts` and are imported by `auth`, `user`, `chat`, and `resources`
+(`SP-030`, `SP-041`, `SP-067`, `SP-074` gain a note; their MOVE to the target service is
+still a later batch). New files created: see "Files this migration will create".
+
 **This manifest tracks Phase 1 (B01–B10) — the existing files and where they go.** Phase 2+
 work (Redis, event backbone, read models, database extraction) creates new files rather than
 relocating existing ones, so it appears here only in the creation list. Those batches are
@@ -57,27 +65,27 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-008 | `packages/eslint-config/next.js` | tooling | LINT_CONFIG | KEEP | Same | — | eslint-config | Low | KEEP |
 | SP-009 | `packages/eslint-config/package.json` | tooling | PKG_MANIFEST | REFACTOR | Add a `./service` export for service linting | B10 | eslint-config | Low | PENDING |
 | SP-010 | `packages/eslint-config/react-internal.js` | tooling | LINT_CONFIG | KEEP | Same | — | eslint-config | Low | KEEP |
-| SP-011 | `packages/shared/package.json` | shared | PKG_MANIFEST | SPLIT | Becomes `@repo/service-kit`; new manifests for `@repo/storage`, `@repo/contracts`, `@repo/seed`; `@repo/shared` kept as shim then deleted | B03 / B10 | service-kit | Medium | PENDING |
-| SP-012 | `packages/shared/src/config/env.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/config/env.ts`; `servicePorts` gains `core` (value wired B06) | B03 | service-kit | Medium | PENDING |
+| SP-011 | `packages/shared/package.json` | shared | PKG_MANIFEST | SPLIT | `@repo/shared` now depends on `@repo/contracts`, `@repo/service-kit`, `@repo/storage` only; kept as shim, deleted B10 | B03 / B10 | service-kit | Medium | DONE (B03; shim removal B10) |
+| SP-012 | `packages/shared/src/config/env.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/config/env.ts`; `servicePorts` gained a `core` getter (value wired B06) | B03 | service-kit | Medium | DONE |
 | SP-013 | `packages/shared/src/data/groups.ts` | seed | SEED_DATA | MOVE | `packages/seed/src/fixtures/groups.ts`; runtime consumers in `services/user` removed (B04) | B04 | seed | Medium | PENDING |
-| SP-014 | `packages/shared/src/errors.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/errors.ts` | B03 | service-kit | Low | PENDING |
-| SP-015 | `packages/shared/src/index.ts` | shared | PKG_ENTRY | SPLIT | Re-export shim during transition; deleted in B10 | B03 / B10 | service-kit | Medium | PENDING |
-| SP-016 | `packages/shared/src/logger.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/logger.ts` | B03 | service-kit | Low | PENDING |
-| SP-017 | `packages/shared/src/middleware/errorHandler.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/middleware/errorHandler.ts` | B03 | service-kit | Low | PENDING |
-| SP-018 | `packages/shared/src/middleware/internalTokenGuard.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/middleware/internalTokenGuard.ts` | B03 | service-kit | Low | PENDING |
-| SP-019 | `packages/shared/src/middleware/validateRequest.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/middleware/validateRequest.ts` | B03 | service-kit | Low | PENDING |
-| SP-020 | `packages/shared/src/storage/s3.test.ts` | shared | TEST | MOVE | `packages/storage/src/s3.test.ts` | B03 | storage | Low | PENDING |
-| SP-021 | `packages/shared/src/storage/s3.ts` | shared | PKG_MODULE | MOVE | `packages/storage/src/s3.ts` | B03 | storage | Medium | PENDING |
-| SP-022 | `packages/shared/src/types/contracts.ts` | shared | PKG_MODULE | MOVE + REFACTOR | `packages/contracts/src/`; add request/response DTOs + shared zod primitives; `ServiceName` → target unit list | B03 | contracts | Medium | PENDING |
-| SP-023 | `packages/shared/src/utils/url.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/utils/url.ts` | B03 | service-kit | Low | PENDING |
-| SP-024 | `packages/shared/tsconfig.json` | shared | TS_CONFIG | SPLIT | One tsconfig per new package | B03 | service-kit | Low | PENDING |
+| SP-014 | `packages/shared/src/errors.ts` | shared | PKG_MODULE | MOVE + REFACTOR | Content moved to `packages/contracts/src/errors.ts` (kept with `ErrorEnvelope`, not service-kit — pure, no Express dep) | B03 | contracts | Low | DONE |
+| SP-015 | `packages/shared/src/index.ts` | shared | PKG_ENTRY | SPLIT | Re-export shim (`@repo/contracts` + `@repo/service-kit` + `@repo/storage` + local `groupData`); deleted in B10 | B03 / B10 | service-kit | Medium | DONE (B03; shim removal B10) |
+| SP-016 | `packages/shared/src/logger.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/logger.ts` | B03 | service-kit | Low | DONE |
+| SP-017 | `packages/shared/src/middleware/errorHandler.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/middleware/errorHandler.ts`; `ErrorEnvelope` import repointed to `@repo/contracts` | B03 | service-kit | Low | DONE |
+| SP-018 | `packages/shared/src/middleware/internalTokenGuard.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/middleware/internalTokenGuard.ts` | B03 | service-kit | Low | DONE |
+| SP-019 | `packages/shared/src/middleware/validateRequest.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/middleware/validateRequest.ts` | B03 | service-kit | Low | DONE |
+| SP-020 | `packages/shared/src/storage/s3.test.ts` | shared | TEST | MOVE | `packages/storage/src/s3.test.ts`; test script fixed to `bun test ./src` (glob bug found in B03) | B03 | storage | Low | DONE |
+| SP-021 | `packages/shared/src/storage/s3.ts` | shared | PKG_MODULE | MOVE | `packages/storage/src/s3.ts`; `createHttpError` import repointed to `@repo/contracts` | B03 | storage | Medium | DONE |
+| SP-022 | `packages/shared/src/types/contracts.ts` | shared | PKG_MODULE | MOVE + REFACTOR | `packages/contracts/src/service.ts`; `ServiceName` now includes `resources`, `identity`, `core`, `messaging` | B03 | contracts | Medium | DONE |
+| SP-023 | `packages/shared/src/utils/url.ts` | shared | PKG_MODULE | MOVE | `packages/service-kit/src/utils/url.ts` | B03 | service-kit | Low | DONE |
+| SP-024 | `packages/shared/tsconfig.json` | shared | TS_CONFIG | SPLIT | One tsconfig per new package (`contracts`, `service-kit`, `storage`); `packages/shared/tsconfig.json` kept for the shim build | B03 | service-kit | Low | DONE |
 | SP-025 | `packages/typescript-config/base.json` | tooling | TS_CONFIG | KEEP | Same | — | typescript-config | Low | KEEP |
 | SP-026 | `packages/typescript-config/nextjs.json` | tooling | TS_CONFIG | KEEP | Same | — | typescript-config | Low | KEEP |
 | SP-027 | `packages/typescript-config/package.json` | tooling | PKG_MANIFEST | KEEP | Same | — | typescript-config | Low | KEEP |
 | SP-028 | `packages/typescript-config/react-library.json` | tooling | TS_CONFIG | KEEP | Same | — | typescript-config | Low | KEEP |
 | SP-029 | `services/auth/package.json` | identity | PKG_MANIFEST | RENAME | `@services/identity`; drop seed-only deps; add `@repo/storage` for avatar upload | B05 | identity | Medium | PENDING |
-| SP-030 | `services/auth/src/controllers/auth.controller.ts` | identity | CONTROLLER | MOVE | `services/identity/src/modules/credentials/`; adopt shared `getAuthenticatedUserId` / `slugify` from `@repo/contracts` | B05 | identity | Medium | PENDING |
-| SP-031 | `services/auth/src/controllers/seed.controller.ts` | seed | SEED_CONTROLLER | EXTRACT | `packages/seed/src/runners/*`; invoked only by the dev seed route | B04 | seed | High | PENDING |
+| SP-030 | `services/auth/src/controllers/auth.controller.ts` | identity | CONTROLLER | MOVE | `services/identity/src/modules/credentials/`; **B03: now imports `getAuthenticatedUserId` from `@repo/shared`, local copy deleted.** Destination MOVE still pending | B05 | identity | Medium | PENDING |
+| SP-031 | `services/auth/src/controllers/seed.controller.ts` | seed | SEED_CONTROLLER | EXTRACT | `packages/seed/src/runners/*`; invoked only by the dev seed route. **B03: now imports `slugify` from `@repo/shared`, local copy deleted.** Extraction still pending | B04 | seed | High | PENDING |
 | SP-032 | `services/auth/src/data/dashboard.ts` | seed | SEED_DATA | MOVE | `packages/seed/src/fixtures/dashboard.ts` | B04 | seed | Low | PENDING |
 | SP-033 | `services/auth/src/data/resources.ts` | seed | SEED_DATA | MOVE | `packages/seed/src/fixtures/resources.ts` | B04 | seed | Low | PENDING |
 | SP-034 | `services/auth/src/data/users.ts` | seed | SEED_DATA | MOVE | `packages/seed/src/fixtures/users.ts` | B04 | seed | Low | PENDING |
@@ -87,7 +95,7 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-038 | `services/auth/src/routes/db.routes.ts` | seed | ROUTE | REFACTOR | `services/identity/src/dev/seed-route.ts`; imports `@repo/seed`; dev-guarded; external `/api/db` path preserved | B04 | identity (dev) | Medium | PENDING |
 | SP-039 | `services/auth/tsconfig.json` | identity | TS_CONFIG | MOVE | `services/identity/tsconfig.json` | B05 | identity | Low | PENDING |
 | SP-040 | `services/chat/package.json` | messaging | PKG_MANIFEST | RENAME | `@services/messaging` | B09 | messaging | Medium | PENDING |
-| SP-041 | `services/chat/src/controllers/message.controller.ts` | messaging | CONTROLLER | SPLIT | `messaging/src/modules/messages/*`; call-prep handlers → `modules/calls/*` | B09 | messaging | Medium | PENDING |
+| SP-041 | `services/chat/src/controllers/message.controller.ts` | messaging | CONTROLLER | SPLIT | `messaging/src/modules/messages/*`; call-prep handlers → `modules/calls/*`. **B03: now imports `getAuthenticatedUserId` from `@repo/shared`, local copy deleted.** Split still pending | B09 | messaging | Medium | PENDING |
 | SP-042 | `services/chat/src/index.ts` | messaging | SERVICE_ENTRY | REFACTOR | `services/messaging/src/index.ts`; mount `messages` / `calls` / `realtime` | B09 | messaging | Medium | PENDING |
 | SP-043 | `services/chat/src/lib/conversations.test.ts` | messaging | TEST | MOVE | `messaging/src/modules/messages/conversations.test.ts` | B09 | messaging | Low | PENDING |
 | SP-044 | `services/chat/src/lib/conversations.ts` | messaging | DOMAIN_LIB | MOVE | `messaging/src/modules/messages/conversations.ts` | B09 | messaging | Low | PENDING |
@@ -113,14 +121,14 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-064 | `services/notifications/src/routes/notifications.routes.ts` | notifications | ROUTE | REFACTOR | Extract the inline `/send` handler into a controller for structural parity | B10 | notifications | Low | PENDING |
 | SP-065 | `services/notifications/tsconfig.json` | notifications | TS_CONFIG | KEEP | Same | — | notifications | Low | KEEP |
 | SP-066 | `services/resources/package.json` | learning | PKG_MANIFEST | DELETE | Folded into `services/core`; deps merged into the core manifest | B07 | core | Medium | PENDING |
-| SP-067 | `services/resources/src/controllers/resource.controller.ts` | learning | CONTROLLER | MOVE | `services/core/src/modules/learning/resources/resources.controller.ts`; adopt shared primitives | B07 | core | Medium | PENDING |
+| SP-067 | `services/resources/src/controllers/resource.controller.ts` | learning | CONTROLLER | MOVE | `services/core/src/modules/learning/resources/resources.controller.ts`. **B03: now imports `getAuthenticatedUserId`, `isUuid`, `slugify` from `@repo/shared`; local `uuidPattern`/`getAuthenticatedUserId`/`slugify` deleted.** Move still pending | B07 | core | Medium | PENDING |
 | SP-068 | `services/resources/src/index.ts` | learning | SERVICE_ENTRY | DELETE | Entry replaced by `services/core/src/index.ts` | B07 | core | Medium | PENDING |
 | SP-069 | `services/resources/src/routes/resource.routes.ts` | learning | ROUTE | MOVE | `services/core/src/modules/learning/resources/resources.routes.ts` | B07 | core | Low | PENDING |
 | SP-070 | `services/resources/src/routes/resource.validation.test.ts` | learning | TEST | MOVE | `services/core/src/modules/learning/resources/` | B07 | core | Low | PENDING |
 | SP-071 | `services/resources/src/routes/resource.validation.ts` | learning | VALIDATION | MOVE | Learning module; `resourceToneSchema` → `@repo/contracts` | B07 | core | Low | PENDING |
 | SP-072 | `services/resources/tsconfig.json` | learning | TS_CONFIG | DELETE | Replaced by `services/core/tsconfig.json` | B07 | core | Low | PENDING |
 | SP-073 | `services/user/package.json` | multi | PKG_MANIFEST | DELETE | Replaced by `services/core`; profile deps → `identity`, rest → `core` | B06 | core | Medium | PENDING |
-| SP-074 | `services/user/src/controllers/user.controller.ts` | multi | CONTROLLER | SPLIT | profile → `identity/modules/profile` (B05); groups + connections + group-events → `core/modules/community` (B06); learning projects/events reads → `core/modules/learning` (B07); dashboard aggregation → `core/modules/dashboard` (B08) | B05–B08 | identity + core | High | PENDING |
+| SP-074 | `services/user/src/controllers/user.controller.ts` | multi | CONTROLLER | SPLIT | profile → `identity/modules/profile` (B05); groups + connections + group-events → `core/modules/community` (B06); learning projects/events reads → `core/modules/learning` (B07); dashboard aggregation → `core/modules/dashboard` (B08). **B03: now imports `getAuthenticatedUserId`, `isUuid`, `slugify`, `formatCount`, `compactNumber` from `@repo/shared`; all five local duplicates deleted.** Domain split still pending | B05–B08 | identity + core | High | PENDING |
 | SP-075 | `services/user/src/index.ts` | multi | SERVICE_ENTRY | DELETE | Entry replaced by `services/core/src/index.ts` | B06 | core | Medium | PENDING |
 | SP-076 | `services/user/src/routes/user.routes.ts` | multi | ROUTE | SPLIT | Same fan-out as the controller; every external path preserved through the gateway route manifest | B05–B08 | identity + core | High | PENDING |
 | SP-077 | `services/user/src/routes/user.validation.ts` | multi | VALIDATION | SPLIT | Profile schemas → `identity`; group/connection schemas → `core`; primitives → `@repo/contracts` | B05–B08 | identity + core | Medium | PENDING |
@@ -154,22 +162,25 @@ tracked in `migration-log.md` under "Trigger Measurements".
 - Rows: 78. Duplicate IDs: 0. Duplicate files: 0.
 - `KEEP` (no change intended): SP-002, SP-004, SP-005, SP-007, SP-008, SP-010, SP-025,
   SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065 — 14 rows.
-- `PENDING` (actionable, batch assigned): 64 rows.
-- `BLOCKED`: 0 in the manifest. One infra blocker tracked in
-  `service-decomposition-plan.md`: the missing `Dockerfile.service` (B02).
-- `DONE`: 0 — no implementation batch has run.
+- `DONE`: SP-011, SP-012, SP-014–SP-024 (13 rows) — the B03 `packages/shared` split.
+- `PENDING` (actionable, batch assigned): 51 rows — includes `SP-030`, `SP-041`, `SP-067`,
+  `SP-074`, which carry a B03 adoption note but are not `DONE` because their MOVE to the
+  target service is a separate, later batch.
+- `BLOCKED`: 0 in the manifest. One infra blocker was tracked in
+  `service-decomposition-plan.md` (the missing `Dockerfile.service`) and was resolved in B02.
 
 ## Files this migration will create (IDs assigned on creation)
 
 **Phase 1 (B01–B10):**
 
-- `packages/service-kit/**`, `packages/storage/**`, `packages/contracts/**`,
-  `packages/seed/**` (B03, B04)
+- ✅ `packages/service-kit/**`, `packages/storage/**`, `packages/contracts/**` — **created in
+  B03** (also: `packages/contracts/src/helpers.test.ts`, new coverage). `packages/seed/**` is
+  still B04.
 - `services/identity/**` (rename target of `services/auth`; new `modules/profile/**`) (B05)
 - `services/core/**` with `src/modules/{community,learning,feed,dashboard}/**` (B06–B08)
 - `services/messaging/**` (rename target of `services/chat`; new `modules/calls/**`) (B09)
 - `services/gateway/src/routes/route-manifest.ts`, `services/gateway/src/middleware/**` (B10)
-- `Dockerfile.service` (B02)
+- ✅ `Dockerfile.service` — **created in B02**
 - `packages/eslint-config/service.js` (B10)
 
 **Phase 2+ (B11–B18+), planned in the companion documents:**

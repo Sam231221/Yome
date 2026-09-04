@@ -36,4 +36,8 @@ export const servicePorts = {
   get resources() {
     return toPort(process.env.RESOURCES_SERVICE_PORT, 4106);
   },
+  /** The consolidated service introduced in B06 (community + learning + feed + dashboard). */
+  get core() {
+    return toPort(process.env.CORE_SERVICE_PORT, 4107);
+  },
 } as const;

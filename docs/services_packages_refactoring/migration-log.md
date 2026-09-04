@@ -110,9 +110,9 @@ These exist before any change in this migration and must not be counted as regre
 | 6 | `Resource` writes split across `auth` (seed) and `resources` (runtime) | `services/auth`, `services/resources` | B04, B07 |
 | 7 | ~600-line seed subsystem + fixtures ship in the `auth` production image | `services/auth/src/{seed.controller.ts,data/*}` | B04 |
 | 8 | `services/user` is a single ~1000-line controller spanning 4 domains | `services/user/src/controllers/user.controller.ts` | B05–B08 |
-| 9 | `groupData` (523-line seed fixture) lives in `packages/shared` and is imported by `user` runtime code | `packages/shared/src/data/groups.ts` | B03/B04 |
-| 10 | `ServiceName` union in `packages/shared` omits `resources` (and has no DTOs) | `packages/shared/src/types/contracts.ts` | B03 |
-| 11 | `getAuthenticatedUserId` / `slugify` / `uuidPattern` / `formatCount` duplicated across `auth`, `user`, `chat`, `resources` | multiple | B03 (shared primitives), B05–B09 (adoption) |
+| 9 | `groupData` (523-line seed fixture) lives in `packages/shared` and is imported by `user` runtime code | `packages/shared/src/data/groups.ts` | B03/B04 — **deliberately left in place for B03**; extraction + runtime-fallback removal is B04 |
+| 10 | ✅ `ServiceName` union in `packages/shared` omits `resources` (and has no DTOs) | now `packages/contracts/src/service.ts` | **B03 — done.** Added `resources`, `identity`, `core`, `messaging` |
+| 11 | ✅ `getAuthenticatedUserId` / `slugify` / `uuidPattern` / `formatCount` duplicated across `auth`, `user`, `chat`, `resources` | now `packages/contracts/src/helpers.ts` | **B03 — done, both parts.** Consolidated *and* adopted (all four services import them; five local duplicates deleted from `user.controller.ts` alone) |
 | 12 | No ESLint config in any service (`"lint": "echo ..."`) | every `services/*/package.json` | B10 |
 | 13 | Only `chat`, `resources`, `shared` have tests | every other `services/*` / `packages/*` | ongoing; enforced from B05 |
 | 14 | Gateway route/upstream map hardcoded with special-cased rewrites | `services/gateway/src/index.ts` | B10 |
@@ -146,6 +146,7 @@ These exist before any change in this migration and must not be counted as regre
 | 37 | No per-batch rollback strategy documented | all batches | Medium | B02 |
 | 38 | 5 of 7 services have `"test": "echo ..."` stubs; no coverage target or unit/contract/integration split is defined | `auth`, `user`, `gateway`, `media`, `notifications` | Medium | B10 |
 | 39 | `apps/web` is a de-facto BFF (holds `axios`, `jsonwebtoken`, `@stream-io/node-sdk`, service URLs, and backend secrets) but the docs treat it purely as a frontend | `apps/web` | Medium | B09 |
+| 40 | `check-types` silently depends on `dist/*.d.ts` existing from a prior `build`, but Turbo's `check-types` task only depends on `^check-types` (which runs `tsc --noEmit`, emitting nothing) — not `^build`. After a clean `rm -rf packages/*/dist`, `check-types` fails on any package importing another workspace package's types, until `build` runs once. Found while validating B03 (`@repo/service-kit` → `@repo/contracts`); pre-existing pattern, not introduced by B03. Workaround: always run `build` before `check-types` on a clean checkout | root `turbo.json`, every package `tsconfig.json` | Low | B10 (add `check-types.dependsOn: ["^build"]`, or ship a committed `dist`) |
 
 ## Batch Execution History
 
@@ -153,7 +154,7 @@ These exist before any change in this migration and must not be counted as regre
 | --- | --- | --- | --- | --- | --- |
 | B01 — Documentation Foundation | COMPLETE | 2026-09-04 | 2026-09-04 | Manifest row count == eligible file count (78); every actionable row has a batch | Docs only. No `services/*` / `packages/*` source changed. |
 | B02 — Foundation: CI/CD, Build Integrity, Security Baseline | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 0; `build` 0; service tests 16/5/4 pass; `lint` 0 with 166 warnings (↓ from 174 baseline); `docker build -f Dockerfile.service --build-arg SERVICE_DIR=services/gateway .` exit 0, image runs to env-check | Infra + config only. No `services/*` / `packages/*` source moved. `apps/web` touched for the `sync-user` auth fix and a `middleware.ts` doc comment. |
-| B03 — Shared Package Split | PENDING | | | | |
+| B03 — Shared Package Split | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 0 (11/11); `build` 0 (12/12); `test` 0 (12/12, incl. new `@repo/contracts` suite); `lint` 0 (166 warnings, unchanged); `docker build --build-arg SERVICE_DIR=services/user` exit 0 | No `services/**` runtime behaviour changed. `@repo/shared` is now a shim; 4 duplicated helpers consolidated into `@repo/contracts` and adopted by `auth`, `user`, `chat`, `resources`. |
 | B04 — Seed Extraction | PENDING | | | | |
 | B05 — identity Service | PENDING | | | | |
 | B06 — core Scaffold + community Module | PENDING | | | | |
@@ -237,6 +238,86 @@ Migrations live in `packages/database/prisma/migrations` and are applied with
   a column.
 - **Local:** `bun run infra:up` starts Postgres + Redis; point `DATABASE_URL` / `DIRECT_URL`
   at the local instance, then `bun run --cwd packages/database db:migrate`.
+
+## B03 Execution
+
+- Rollback target: parent commit `727d4d3`.
+- Scope: `packages/shared/**` split, three new packages created, import-site cleanup in four
+  services. **No `services/*` runtime behaviour changed** — every consolidated helper is
+  byte-identical to the code it replaced (verified by the new `@repo/contracts` test suite).
+- Manifest IDs: `SP-011`–`SP-024` (all `DONE` except `SP-013`, deliberately deferred to B04);
+  `SP-030`, `SP-041`, `SP-067`, `SP-074` gain an adoption note (destination MOVE still
+  pending their own batch).
+
+New packages:
+
+| Package | Contents | Depends on |
+| --- | --- | --- |
+| `@repo/contracts` | `service.ts` (`ServiceName`, `HealthResponse`), `errors.ts` (`ErrorEnvelope`, `createHttpError`), `helpers.ts` (`getAuthenticatedUserId`, `slugify`, `UUID_PATTERN`/`isUuid`, `compactNumber`/`formatCount`), `schemas.ts` (`positiveInt`, `positiveIntString`, `slugOrUuidSchema`, `toneSchema` — available for B05+ adoption, not force-adopted here) | `zod` only — **zero Express, zero `@repo/service-kit`**, confirmed by `check-types` |
+| `@repo/service-kit` | `logger.ts`, `config/env.ts` (`getRequiredEnv`, `servicePorts` — gained a `core` getter), `middleware/{errorHandler,internalTokenGuard,validateRequest}.ts`, `utils/url.ts` | `@repo/contracts` (for `ErrorEnvelope`), `zod`, `express` (peer, optional) |
+| `@repo/storage` | `s3.ts`, `s3.test.ts` | `@aws-sdk/client-s3`, `@repo/contracts` (for `createHttpError` — a deliberate deviation from the plan's "storage depends on nothing" table, made because `createHttpError` is pure and belongs with the error-envelope contract, not duplicated) |
+| `@repo/shared` | Shim: `export * from "@repo/contracts" / "@repo/service-kit" / "@repo/storage"`, plus local `groupData` (B04 still owns moving it) | the three packages above |
+
+Deviation from the plan recorded: `createHttpError` was originally listed only as an
+`@repo/service-kit` consumer concern; it is defined in `@repo/contracts` instead so
+`@repo/storage` does not need to depend on `@repo/service-kit` (which pulls in Express types)
+just to throw a typed HTTP error. This keeps the dependency graph exactly as specified —
+`contracts → (nothing)`, `service-kit → contracts`, `storage → contracts` — with no cycle.
+
+Helper consolidation (issue #11), by file:
+
+| File | Local duplicates removed | Now imports (from `@repo/shared`) |
+| --- | --- | --- |
+| `services/auth/src/controllers/auth.controller.ts` | `getAuthenticatedUserId` | `getAuthenticatedUserId` |
+| `services/auth/src/controllers/seed.controller.ts` | `slugify` | `slugify` (added to its existing `@repo/shared` import) |
+| `services/chat/src/controllers/message.controller.ts` | `getAuthenticatedUserId` | `getAuthenticatedUserId` |
+| `services/resources/src/controllers/resource.controller.ts` | `getAuthenticatedUserId`, `uuidPattern`, `slugify` | `getAuthenticatedUserId`, `isUuid`, `slugify` |
+| `services/user/src/controllers/user.controller.ts` | `getAuthenticatedUserId`, `uuidPattern`, `slugify`, `formatCount`, `getCompactCount` | `getAuthenticatedUserId`, `isUuid`, `slugify`, `formatCount`, `compactNumber` |
+
+A bug was found and fixed while doing this: the `test` script pattern `bun test
+src/**/*.test.ts` only worked in `packages/shared` because `s3.test.ts` sat one directory
+deep (`src/storage/`) and the unquoted glob is expanded by `sh`, not `bun`, before bun ever
+sees it — `sh` has no globstar, so `src/**/*.test.ts` behaves like `src/*/*.test.ts`. Moving
+`s3.test.ts` to `packages/storage/src/s3.test.ts` (one level shallower) broke that pattern
+silently — `bun test src/**/*.test.ts` matched nothing (script exited 1). Separately, TypeScript
+was compiling `*.test.ts` into `dist/`, so a bare `bun test` (no path) double-counted every
+test (found it in the built `.js` *and* the `.ts` source — 8 results instead of 4). Fixed for
+all three new packages: `tsconfig.json` now excludes `**/*.test.ts` from the build, and the
+`test` script is `bun test ./src` (packages with no tests use the `echo` convention already
+used by services). `@repo/shared`'s own `test` script was also changed to `echo` — it has no
+test files any more and the old glob-based script would fail the same way.
+
+Also added: `packages/contracts/src/helpers.test.ts` — 4 tests (Bun runner) proving the
+consolidated helpers match the behaviour of every local implementation they replaced
+(`getAuthenticatedUserId` header parsing incl. array headers; `slugify` trim/lowercase/dash
+collapsing/120-char cap; `isUuid` accept/reject; `compactNumber`/`formatCount` thousand-suffix
+formatting). This is new coverage `@repo/shared` never had.
+
+Infra touched: `turbo.json` `globalEnv` gained `CORE_SERVICE_PORT` / `CORE_SERVICE_URL`
+(service-kit's new `servicePorts.core` getter); `.env.example` documents both as reserved for
+B06; root `package.json` `check-types:all` gained the three new packages.
+
+Validation (run `build` before `check-types` on a clean tree — see issue #40):
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `bun install` | 0 | Links the 3 new workspace packages; `bun.lock` updated. |
+| `bun run build` | 0 | 12/12 tasks. |
+| `bun run check-types` | 0 | 11/11 tasks (was 8 baseline; +3 new packages). One transient failure caught and diagnosed during this batch (see issue #40): running `check-types` against a freshly `rm -rf`'d `dist/` failed with `Cannot find module '@repo/contracts'` in `@repo/service-kit`, because `check-types` doesn't depend on `build`. Re-running after `build` passed; not a code defect. |
+| `bunx tsc --noEmit` (in `apps/web`) | 0 | Unaffected by the split (no direct `@repo/shared` import in `apps/web`). |
+| `bun run test` (turbo) | 0 | 12/12 tasks — chat 16, resources 5, `@repo/storage` 4, `@repo/contracts` 4 (new), `@apps/web` 12. |
+| `bun run lint` | 0 | 166 warnings — **unchanged** from B02. |
+| `node tests/contracts.smoke.mjs` | 0 | All 7 services `[OK] 200` (services were left running locally throughout). |
+| `docker build -f Dockerfile.service --build-arg SERVICE_DIR=services/user .` | 0 | Chosen deliberately — `user` is the heaviest consumer of the consolidated helpers. Confirms the split resolves correctly inside the container build, not just local `bun`. |
+
+Risks called out in the plan and their outcome: circular dependency — none; verified acyclic
+(`contracts` has zero workspace deps, `service-kit`/`storage` depend only on `contracts`).
+Barrel-export churn — contained to `packages/shared/src/index.ts`, which is a 5-line shim.
+An unplanned but real finding, not in the original risk list: `bun run lint` and `bun run
+test/build/check-types` reformatted five controller files far beyond the intended edit when
+run through `bunx prettier --write` (the repo's controllers are not prettier-clean today).
+Reverted and reapplied the same semantic edits by hand so the B03 diff stays scoped to the
+helper consolidation — same lesson as the doc-formatting issue caught during B02.
 
 ## B02 Execution
 

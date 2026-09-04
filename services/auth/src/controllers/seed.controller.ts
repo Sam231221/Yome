@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import getPrismaInstance from "@repo/database";
-import { createLogger, groupData } from "@repo/shared";
+import { createLogger, groupData, slugify } from "@repo/shared";
 import { usersData } from "../data/users.js";
 import { resourcesData } from "../data/resources.js";
 import {
@@ -12,15 +12,6 @@ import {
 import bcryptjs from "bcryptjs";
 
 const logger = createLogger("auth-seed");
-
-function slugify(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 120);
-}
 
 function canRunSeedMutations(): boolean {
   return (

@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
+import { getAuthenticatedUserId } from "@repo/shared";
 import { getOnlineUserIds, isUserOnline } from "../state/online-users.js";
 import {
   getDirectConversation,
@@ -14,13 +15,6 @@ import {
 
 type PrismaClient = ReturnType<typeof getPrismaInstance>;
 type ChatRequestKind = "user" | "group";
-
-function getAuthenticatedUserId(req: Request): number | null {
-  const raw = req.headers["x-user-id"];
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  const id = Number.parseInt(String(value ?? ""), 10);
-  return Number.isNaN(id) ? null : id;
-}
 
 function parseRequiredUserId(value: unknown): number | null {
   const id = Number.parseInt(String(value ?? ""), 10);

@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import crypto from "node:crypto";
 import getPrismaInstance from "@repo/database";
+import { getAuthenticatedUserId, isUuid, slugify } from "@repo/shared";
 
 type PrismaClient = ReturnType<typeof getPrismaInstance>;
 type TransactionClient = Pick<
@@ -63,27 +64,8 @@ type ResourceRecord = {
   helpfulVotes?: Array<{ userId: number }>;
 };
 
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function getAuthenticatedUserId(req: Request): number | null {
-  const raw = req.headers["x-user-id"];
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  const id = Number.parseInt(String(value ?? ""), 10);
-  return Number.isNaN(id) ? null : id;
-}
-
-function slugify(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 120);
-}
-
 function getResourceWhere(id: string) {
-  return uuidPattern.test(id) ? { id } : { slug: id };
+  return isUuid(id) ? { id } : { slug: id };
 }
 
 function buildAuthorName(resource: ResourceRecord): string {

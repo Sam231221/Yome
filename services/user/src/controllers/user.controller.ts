@@ -3,34 +3,20 @@ import getPrismaInstance from "@repo/database";
 import {
   ALLOWED_IMAGE_MIME_TYPES,
   assertAllowedMimeType,
+  compactNumber,
   createLogger,
+  formatCount,
+  getAuthenticatedUserId,
   groupData,
+  isUuid,
+  slugify,
   uploadBufferToS3,
 } from "@repo/shared";
 
 const logger = createLogger("user");
 
-function getAuthenticatedUserId(req: Request): number | null {
-  const raw = req.headers["x-user-id"];
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  const id = Number.parseInt(String(value ?? ""), 10);
-  return Number.isNaN(id) ? null : id;
-}
-
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function slugify(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 120);
-}
-
 function getGroupWhere(id: string) {
-  return uuidPattern.test(id) ? { id } : { slug: id };
+  return isUuid(id) ? { id } : { slug: id };
 }
 
 function getUserName(user: {
@@ -54,14 +40,6 @@ function getInitials(name: string): string {
     .join("")
     .slice(0, 2)
     .toUpperCase();
-}
-
-function formatCount(value: number, noun: string): string {
-  const compact =
-    value >= 1000
-      ? `${Number((value / 1000).toFixed(value >= 10000 ? 0 : 1))}k`
-      : String(value);
-  return `${compact} ${noun}${value === 1 ? "" : "s"}`;
 }
 
 function mapUserCard(
@@ -300,11 +278,6 @@ const dashboardSidebarGroupSlugs = [
   "robotics-team",
 ];
 
-function getCompactCount(value: number): string {
-  if (value >= 1000) return `${Number((value / 1000).toFixed(value >= 10000 ? 0 : 1))}k`;
-  return String(value);
-}
-
 function getRelativeTimeLabel(date: Date): string {
   const diffMs = Date.now() - date.getTime();
   const minutes = Math.max(1, Math.round(diffMs / 60_000));
@@ -403,7 +376,7 @@ function mapDashboardTopic(topic: DashboardTopicRecord) {
     id: topic.slug || topic.id,
     title: topic.title,
     tone: topic.tone,
-    posts: `${getCompactCount(topic.postCount)} ${topic.discussionLabel}`,
+    posts: `${compactNumber(topic.postCount)} ${topic.discussionLabel}`,
   };
 }
 

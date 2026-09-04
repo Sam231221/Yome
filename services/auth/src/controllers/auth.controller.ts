@@ -1,14 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
+import { getAuthenticatedUserId } from "@repo/shared";
 import bcryptjs from "bcryptjs";
 import crypto from "node:crypto";
-
-function getAuthenticatedUserId(req: Request): number | null {
-  const raw = req.headers["x-user-id"];
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  const id = Number.parseInt(String(value ?? ""), 10);
-  return Number.isNaN(id) ? null : id;
-}
 
 function stripPassword<T extends { password: string }>(user: T): Omit<T, "password"> {
   const { password: _password, ...safeUser } = user;

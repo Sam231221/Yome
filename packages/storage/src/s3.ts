@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { createHttpError } from "../errors.js";
+import { createHttpError } from "@repo/contracts";
 
 const DEFAULT_CACHE_CONTROL = "public, max-age=31536000, immutable";
 

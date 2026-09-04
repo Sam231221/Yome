@@ -4,9 +4,10 @@ You have eight planning documents. **You only need this one to begin.** The othe
 reference material you open when a batch tells you to.
 
 - **Branch:** `refactor/services-packages-architecture`
-- **Status:** B01 (planning) and **B02 (foundation) complete**. No `services/*` or
-  `packages/*` source has moved yet — B02 was infra + config only, plus two `apps/web` auth
-  fixes. **B03 is next.**
+- **Status:** B01, B02, and **B03 (shared package split) complete**. `packages/shared` is now
+  a thin shim over `@repo/contracts` / `@repo/service-kit` / `@repo/storage`; four duplicated
+  helpers were consolidated and adopted by `auth`, `user`, `chat`, `resources`. No
+  `services/*` file has moved location yet. **B04 is next.**
 - **How work happens:** you paste one command per batch into Claude Code. Claude does the
   batch, updates `migration-log.md`, and commits. You verify, then move to the next.
 
@@ -372,7 +373,7 @@ Tick these off as you go.
 
 - [x] **B01** Documentation — *complete 2026-09-04*
 - [x] **B02** CI, Docker, turbo env, security baseline — *complete 2026-09-04 (issues #1–3, #15, #28–35, #37 resolved)*
-- [ ] **B03** Split `packages/shared`
+- [x] **B03** Split `packages/shared` — *complete 2026-09-04 (issues #10, #11 resolved; new `@repo/contracts`/`@repo/service-kit`/`@repo/storage`)*
 - [ ] **B04** Seed extraction to `packages/seed`
 - [ ] **B05** `identity` service (rename + profile absorption)
 - [ ] **B06** `core` service + `community` module

@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import type { ErrorEnvelope } from "../types/contracts.js";
+import type { ErrorEnvelope } from "@repo/contracts";
 
 /**
  * Express error-handling middleware. Attach as the last middleware.
