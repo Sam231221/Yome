@@ -31,3 +31,25 @@ export const toneSchema = z.enum([
   "neutral",
 ]);
 export type Tone = z.infer<typeof toneSchema>;
+
+/**
+ * A person's display name. Promoted here in B05 — it was byte-identical between
+ * `services/auth` and `services/user`, the two services merging into `identity`.
+ */
+export const nameSchema = z
+  .string()
+  .trim()
+  .min(2)
+  .max(40)
+  .regex(/^[A-Za-z][A-Za-z' -]{1,39}$/, "Name must be 2-40 valid characters.");
+
+/** A login username. Promoted alongside `nameSchema` for the same reason. */
+export const usernameSchema = z
+  .string()
+  .trim()
+  .min(3)
+  .max(24)
+  .regex(
+    /^[A-Za-z0-9._@-]{3,24}$/,
+    "Username must be 3-24 characters and may include letters, numbers, dots, underscores, @, or hyphens.",
+  );

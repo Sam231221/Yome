@@ -1,20 +1,6 @@
 import { z } from "zod";
+import { nameSchema, usernameSchema } from "@repo/shared";
 const emailSchema = z.string().trim().toLowerCase().email();
-const nameSchema = z
-  .string()
-  .trim()
-  .min(2)
-  .max(40)
-  .regex(/^[A-Za-z][A-Za-z' -]{1,39}$/, "Name must be 2-40 valid characters.");
-const usernameSchema = z
-  .string()
-  .trim()
-  .min(3)
-  .max(24)
-  .regex(
-    /^[A-Za-z0-9._@-]{3,24}$/,
-    "Username must be 3-24 characters and may include letters, numbers, dots, underscores, @, or hyphens."
-  );
 const strongPasswordSchema = z
   .string()
   .min(8)

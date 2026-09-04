@@ -1,11 +1,5 @@
 import { Router } from "express";
-import multer from "multer";
-import {
-  ALLOWED_IMAGE_MIME_TYPES,
-  createHttpError,
-  isAllowedMimeType,
-  validateRequest,
-} from "@repo/shared";
+import { validateRequest } from "@repo/shared";
 import {
   createGroup,
   discoverGroups,
@@ -18,9 +12,6 @@ import {
   getLearningEvents,
   getLearningProjectById,
   getLearningProjects,
-  getUserById,
-  updateUser,
-  getAllUsers,
   getAllGroups,
   getJoinedGroups,
   getFollowedUsersByUser,
@@ -37,37 +28,18 @@ import {
   discoverGroupsSchema,
   followUnfollowedUserSchema,
   groupIdParamsSchema,
-  getUserByIdSchema,
   joinGroupByIdSchema,
   joinUnjoinedGroupsSchema,
   joinedGroupsParamsSchema,
   loggedInUserIdParamsSchema,
   projectIdParamsSchema,
-  updateUserSchema,
 } from "./user.validation.js";
 
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_req, file, callback) => {
-    if (!isAllowedMimeType(ALLOWED_IMAGE_MIME_TYPES, file.mimetype)) {
-      callback(createHttpError("Unsupported avatar image type.", 400));
-      return;
-    }
-    callback(null, true);
-  },
-});
 const router = Router();
 
-router.post("/get-user-by-id", validateRequest(getUserByIdSchema), getUserById);
-router.post(
-  "/update-user",
-  upload.single("avatar"),
-  validateRequest(updateUserSchema),
-  updateUser
-);
-router.get("/get-all-users", getAllUsers);
+// Profile endpoints (get-user-by-id, update-user, get-all-users) moved to
+// services/identity in B05 — see its profile.routes.ts. The gateway routes those
+// three /api/user paths to identity; everything below still goes to this service.
 router.get("/events", getLearningEvents);
 router.get("/projects", getLearningProjects);
 router.get(

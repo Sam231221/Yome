@@ -200,8 +200,8 @@ sequenceDiagram
 - `apps/web/app/api/auth/[...nextauth]/options.ts`
 - `apps/web/utils/ApiRoutes.ts`
 - `services/gateway/src/index.ts`
-- `services/auth/src/routes/auth.routes.ts`
-- `services/auth/src/controllers/auth.controller.ts`
+- `services/identity/src/modules/credentials/credentials.routes.ts`
+- `services/identity/src/modules/credentials/credentials.controller.ts`
 - `packages/database/prisma/schema.prisma`
 
 ## 6. Flow D: How Frontend REST Calls Reach The Microservices

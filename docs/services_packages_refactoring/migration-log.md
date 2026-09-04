@@ -50,7 +50,7 @@ From root `package.json`:
 - `bun run test` (`turbo run test`)
 - `bun run test:integration` (`turbo run test:integration` → `tests/contracts.smoke.mjs`)
 - `bun run db:migrate` (`turbo run db:migrate`)
-- `bun run dev:services` (concurrently: gateway, auth, user, chat, media, notifications, resources)
+- `bun run dev:services` (concurrently: gateway, identity, user, chat, media, notifications, resources)
 
 Per-package / per-service:
 
@@ -109,13 +109,13 @@ These exist before any change in this migration and must not be counted as regre
 | 5 | `Group` writes split across `auth` (seed + `createEducationGroups`) and `user` (runtime) | `services/auth`, `services/user` | B04, B06 |
 | 6 | `Resource` writes split across `auth` (seed) and `resources` (runtime) | `services/auth`, `services/resources` | B04, B07 |
 | 7 | ✅ ~600-line seed subsystem + fixtures ship in the `auth` production image | now `packages/seed/src/{runners.ts,fixtures/*}` | **B04 — done.** `services/auth` (soon `identity`) has no `src/data/*` and no seed business logic; `packages/seed` owns it |
-| 8 | `services/user` is a single ~1000-line controller spanning 4 domains | `services/user/src/controllers/user.controller.ts` | B05–B08 |
+| 8 | `services/user` is a single ~1000-line controller spanning 4 domains | `services/user/src/controllers/user.controller.ts` | B05–B08 (**B05: profile domain out, ~170 lines, to `services/identity/src/modules/profile/`; community/learning/dashboard remain**) |
 | 9 | ✅ `groupData` (523-line seed fixture) lived in `packages/shared` and was imported by `user` runtime code | now `packages/seed/src/fixtures/groups.ts` | **B04 — done.** Fixture moved; the two `services/user` runtime call sites removed (decision: remove, confirmed with the user) |
 | 10 | ✅ `ServiceName` union in `packages/shared` omits `resources` (and has no DTOs) | now `packages/contracts/src/service.ts` | **B03 — done.** Added `resources`, `identity`, `core`, `messaging` |
 | 11 | ✅ `getAuthenticatedUserId` / `slugify` / `uuidPattern` / `formatCount` duplicated across `auth`, `user`, `chat`, `resources` | now `packages/contracts/src/helpers.ts` | **B03 — done, both parts.** Consolidated *and* adopted (all four services import them; five local duplicates deleted from `user.controller.ts` alone) |
 | 12 | No ESLint config in any service (`"lint": "echo ..."`) | every `services/*/package.json` | B10 |
 | 13 | Only `chat`, `resources`, `shared` have tests | every other `services/*` / `packages/*` | ongoing; enforced from B05 |
-| 14 | Gateway route/upstream map hardcoded with special-cased rewrites | `services/gateway/src/index.ts` | B10 |
+| 14 | Gateway route/upstream map hardcoded with special-cased rewrites | `services/gateway/src/index.ts` | B10 (**B05: extracted to a tested, declarative `routeRules.ts` table — a scoped precursor; the full `routes/route-manifest.ts` + `middleware/**` split from `SP-055` is still B10**) |
 | 15 | ✅ `tests/contracts.smoke.mjs` health list omits `resources` | `tests/contracts.smoke.mjs` | **B02 — done** |
 | 16 | Presence is a process-local `Map`; `messaging` cannot run >1 replica without silent delivery bugs | `services/chat/src/state/online-users.ts:2`, `services/chat/src/socket/handlers.ts` | B11 |
 | 17 | Rate-limit buckets are a process-local `Map`; N `gateway` replicas grant N× the configured limit | `services/gateway/src/index.ts:79` | B11 |
@@ -144,7 +144,7 @@ These exist before any change in this migration and must not be counted as regre
 | 35 | ✅ Migration coordination policy documented (see "Migration Coordination Policy" below); release-pipeline wiring lands with B13 | `packages/database`, deploy workflows | **B02 — done** |
 | 36 | No observability plan. `createLogger` emits JSON but nothing aggregates it; `x-request-id` is generated and forwarded but never correlated; no metrics, no tracing | all services | Medium | B10 |
 | 37 | No per-batch rollback strategy documented | all batches | Medium | B02 |
-| 38 | 5 of 7 services have `"test": "echo ..."` stubs; no coverage target or unit/contract/integration split is defined | `auth`, `user`, `gateway`, `media`, `notifications` | Medium | B10 |
+| 38 | 5 of 7 services have `"test": "echo ..."` stubs; no coverage target or unit/contract/integration split is defined | `auth`, `user`, `gateway`, `media`, `notifications` | Medium | B10 (**B05: `gateway` now has a real suite, `routeRules.test.ts` — 4 stubs remain: `identity`, `user`, `media`, `notifications`**) |
 | 39 | `apps/web` is a de-facto BFF (holds `axios`, `jsonwebtoken`, `@stream-io/node-sdk`, service URLs, and backend secrets) but the docs treat it purely as a frontend | `apps/web` | Medium | B09 |
 | 40 | `check-types` silently depends on `dist/*.d.ts` existing from a prior `build`, but Turbo's `check-types` task only depends on `^check-types` (which runs `tsc --noEmit`, emitting nothing) — not `^build`. After a clean `rm -rf packages/*/dist`, `check-types` fails on any package importing another workspace package's types, until `build` runs once. Found while validating B03 (`@repo/service-kit` → `@repo/contracts`); pre-existing pattern, not introduced by B03. Workaround: always run `build` before `check-types` on a clean checkout | root `turbo.json`, every package `tsconfig.json` | Low | B10 (add `check-types.dependsOn: ["^build"]`, or ship a committed `dist`) |
 
@@ -156,7 +156,7 @@ These exist before any change in this migration and must not be counted as regre
 | B02 — Foundation: CI/CD, Build Integrity, Security Baseline | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 0; `build` 0; service tests 16/5/4 pass; `lint` 0 with 166 warnings (↓ from 174 baseline); `docker build -f Dockerfile.service --build-arg SERVICE_DIR=services/gateway .` exit 0, image runs to env-check | Infra + config only. No `services/*` / `packages/*` source moved. `apps/web` touched for the `sync-user` auth fix and a `middleware.ts` doc comment. |
 | B03 — Shared Package Split | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 0 (11/11); `build` 0 (12/12); `test` 0 (12/12, incl. new `@repo/contracts` suite); `lint` 0 (166 warnings, unchanged); `docker build --build-arg SERVICE_DIR=services/user` exit 0 | No `services/**` runtime behaviour changed. `@repo/shared` is now a shim; 4 duplicated helpers consolidated into `@repo/contracts` and adopted by `auth`, `user`, `chat`, `resources`. |
 | B04 — Seed Extraction | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 12/12; `build` 13/13; `lint` 166 (unchanged); `test` 13/13; live-verified against both an unreachable DB (guard) and a disposable local Postgres (fallback removal) with zero risk to real data | Seed subsystem fully extracted to `packages/seed`. `groupData` fallback in `services/user` removed per explicit user decision. |
-| B05 — identity Service | PENDING | | | | |
+| B05 — identity Service | COMPLETE | 2026-09-05 | 2026-09-05 | `check-types` 12/12; `build` 13/13; `test` 13/13 (incl. new 42-path `routeRules.test.ts`); `lint` 0 errors, 166 warnings (unchanged); live-verified against a disposable Postgres instance (register-user, get-user-by-id, get-all-groups routed correctly; cross-service 404 checks confirmed no duplication) | `services/auth` renamed to `services/identity`; profile endpoints moved from `services/user`; gateway routing extracted to `routeRules.ts`; `AUTH_SERVICE_URL`/`PORT` fully renamed to `IDENTITY_SERVICE_URL`/`PORT` repo-wide per explicit user decision. |
 | B06 — core Scaffold + community Module | PENDING | | | | |
 | B07 — core/learning Module (fold in resources) | PENDING | | | | |
 | B08 — core/feed + core/dashboard Modules | PENDING | | | | |
@@ -238,6 +238,113 @@ Migrations live in `packages/database/prisma/migrations` and are applied with
   a column.
 - **Local:** `bun run infra:up` starts Postgres + Redis; point `DATABASE_URL` / `DIRECT_URL`
   at the local instance, then `bun run --cwd packages/database db:migrate`.
+
+## B05 Execution
+
+- Rollback target: parent commit `a9e0a45`.
+- Manifest IDs done: `SP-029`, `SP-030`, `SP-035`–`SP-039` (the identity rename), `SP-095`–
+  `SP-099` (new profile module + gateway route rules). Profile portions of `SP-074`, `SP-076`,
+  `SP-077` done; their community/learning/dashboard portions remain `PENDING` for B06–B08.
+
+### Routing approach (presented before implementation, per the batch's own instruction)
+
+The gateway previously had one `app.use("/api/user", ...)` mount forwarding the whole prefix to
+`user`. B05 needed 3 of `/api/user`'s sub-paths (`/get-user-by-id`, `/update-user`,
+`/get-all-users`) to go to `identity` instead, while every other `/api/user` path keeps going
+to `user`. Two options were considered:
+
+1. **Inline the 3 extra routes as more specific `app.use()` mounts above the general one**,
+   relying on Express's own mount-order precedence (`app.use` doesn't stop at a full path
+   match — the first matching prefix in registration order wins, so a more specific mount
+   registered earlier "wins" the split). Minimal diff, but the routing decision stays buried
+   in imperative bootstrap code, and there is no way to unit-test "does path X go to service Y"
+   without booting Express.
+2. **Extract an ordered, declarative route-rule table** (`routeRules.ts`) with a pure
+   `resolveRoute(path)` function, and have `index.ts` mount from a loop over that table. Same
+   runtime precedence semantics (first array entry wins, matched on a path-segment boundary —
+   `pathMatchesPrefix` mirrors Express's own prefix matching exactly), but the table is now a
+   plain data structure that can be asserted against in a test with no Express instance, and
+   it is a direct, scoped precursor to the full declarative route manifest already planned for
+   B10 (`SP-055`) rather than a one-off.
+
+Went with (2): it costs one new file and doesn't change runtime behavior, and it directly
+supports the batch's explicit ask for a route-manifest test. `index.ts` still owns bootstrap,
+CORS, rate limiting, and auth — `routeRules.ts` owns only "which upstream does this path go
+to".
+
+### Changes made
+
+| Area | Change |
+| --- | --- |
+| `services/auth` → `services/identity` | `git mv`'d as a unit: `package.json` (renamed to `@services/identity`, `@repo/storage`/`@repo/seed`/`multer` deps added, matching what the profile module needs), `src/index.ts` (rewritten to mount `credentials`, `profile`, and `dev/seed-route` modules), `tsconfig.json` (unchanged). `src/controllers/auth.controller.ts` → `src/modules/credentials/credentials.controller.ts`; `src/routes/auth.routes.ts` → `src/modules/credentials/credentials.routes.ts`; `src/routes/auth.validation.ts` → `src/modules/credentials/credentials.validation.ts` (now imports `nameSchema`/`usernameSchema` from `@repo/contracts` instead of a local definition — see below). `src/routes/db.routes.ts` (already rewritten in B04) → `src/dev/seed-route.ts`, content unchanged. Old `services/auth/` directory (incl. stale `dist`/`.turbo`) removed after the moves. |
+| New `services/identity/src/modules/profile/` | `profile.controller.ts`: `getUserById`, `updateUser`, `getAllUsers` extracted verbatim from `services/user/src/controllers/user.controller.ts` (logger renamed `"identity-profile"`). `profile.validation.ts`: `getUserByIdSchema`/`updateUserSchema` moved from `user.validation.ts`, now importing `nameSchema`/`usernameSchema`/`positiveInt` from `@repo/contracts`. `profile.routes.ts`: the 3 routes + the `multer` avatar-upload setup, moved from `user.routes.ts`. Mounted at `/api/user` **inside** identity — the external gateway path is unchanged, only the upstream changes. |
+| `services/user` cleanup | `user.controller.ts`: removed the 3 functions and their now-unused imports (`ALLOWED_IMAGE_MIME_TYPES`, `assertAllowedMimeType`, `createLogger`, `uploadBufferToS3`) and the `logger` const. `user.routes.ts`: removed `multer`, the upload setup, the 3 route registrations and their imports; left a comment pointing at the new location. `user.validation.ts`: removed `getUserByIdSchema`/`updateUserSchema` and the local `nameSchema`/`usernameSchema` (now dead — `positiveInt` stays, still used elsewhere in the file). `package.json`: dropped `multer`/`@types/multer` (grep-confirmed no remaining references). |
+| `@repo/contracts` | `schemas.ts` gained `nameSchema`/`usernameSchema` (`SP-083`), promoted from byte-identical definitions duplicated in `auth.validation.ts` and `user.validation.ts` — the fourth instance of this exact duplication pattern this refactor has found (see issue #11 in the inventory below). |
+| `packages/service-kit` | `config/env.ts`: `servicePorts.auth` → `servicePorts.identity`, now reads `IDENTITY_SERVICE_PORT` (default unchanged, 4101). |
+| `services/gateway` | New `src/routeRules.ts` (`Upstream` type, `RouteRule` type, the ordered `routeRules` table, `pathMatchesPrefix`, `resolveRoute`) and `src/routeRules.test.ts` (see below). `src/index.ts`: `services` object → `serviceBaseUrls: Record<Upstream, string>` (the `auth` key renamed `identity`, now reading `IDENTITY_SERVICE_URL`); `/health` handler updated to the renamed variable; the 8 hand-written `app.use("/api/X", ...)` calls replaced with one loop over `routeRules`. `package.json`: `test` script switched from the echo-stub to `bun test ./src`. `tsconfig.json`: excludes `**/*.test.ts` (same fix as B03's glob bug — see below). |
+| Env var rename (explicit user decision: fully rename, not alias) | `AUTH_SERVICE_URL`/`AUTH_SERVICE_PORT` → `IDENTITY_SERVICE_URL`/`IDENTITY_SERVICE_PORT` in: `turbo.json` (`globalEnv`), `.env.example`, the working-tree `.env`, `README.md`'s env-var list, `tests/contracts.smoke.mjs` (label `"auth"` → `"identity"` too). |
+| Path/label rename cascade | `.github/workflows/ci.yml` (`@services/auth` → `@services/identity` in the build matrix), `.github/workflows/deploy-services.yml` (`@services/auth`/`services/auth`/`yome-auth` → the `identity` equivalents), root `package.json` (`dev:services` concurrently label + `--cwd`, `check-types:all`). |
+| Docs | `README.md`, `docs/PROJECT_ARCHITECTURE_AND_WORKFLOWS.md` (12 references), `docs/LOCALHOST_3000_REQUEST_WORKFLOW.md` (2 references): every `services/auth/...` path reference updated to its current `services/identity/...` path; narrative text updated from "the auth service" to "the identity service" where it described current behaviour. `architecture-plan.md`'s manifest-ID citation for B05 was already corrected earlier in this session (before this batch's implementation started) — see its own diff. |
+
+### `routeRules.test.ts` — the route-manifest test
+
+Per the batch's own instruction ("Add a route-manifest test asserting every path in
+`apps/web/utils/ApiRoutes.ts` resolves to exactly one upstream"): the test reads
+`apps/web/utils/ApiRoutes.ts` as text and walks its two constant-declaration shapes with
+regex (a base constant built from a `${HOST}/api/...` template literal, then exported
+constants built from `${BASE}/suffix` templates or plain aliases) to recover the `/api/...`
+path each of its 42 exported route constants resolves to — without needing a bundler to
+actually import a file that also exports an unrelated `CHAT_SOCKET_URL`. Every extracted path
+is then asserted to resolve through `resolveRoute()` to exactly one rule, plus targeted checks:
+the 3 profile paths resolve to `identity` (not `user`); a sample of other `/api/user` paths
+still resolve to `user`; `/api/messages` resolves to `chat` with the rewrite intact; `/api/db`
+resolves to `identity`; an unrecognised prefix resolves to nothing. 42 assertions, all passing.
+
+### Validation
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `bun run --cwd services/gateway test` | 0 | 42 pass, 0 fail, 84 `expect()` calls. |
+| `bun install` | 0 | Regenerates `bun.lock` — confirms no lingering `@services/auth` entry. |
+| `bun run build` | 0 | 13/13 tasks (unchanged count; `@services/auth` → `@services/identity` is a rename, not a new package). |
+| `bun run check-types` | 0 | 12/12 tasks. |
+| `bun run lint` | 0 | 166 warnings, 0 errors — unchanged from B04 (all pre-existing `apps/web` warnings, unrelated to this batch). |
+| `bun run test` | 0 | 13/13 tasks, including the new gateway suite. |
+
+### Live verification (disposable Postgres, zero risk to real data)
+
+Started a fresh `postgres:16-alpine` container on an alternate port (`5433`), applied every
+Prisma migration to get a byte-for-byte schema match with zero rows, then started `identity`,
+`user`, and `gateway` standalone on non-default ports, all pointed at the disposable database
+via env-var overrides (`GATEWAY_REQUIRE_AUTH=false` so no session/token setup was needed for
+this check). Confirmed:
+
+- `GET /health` on the gateway reports `services.identity` (not `services.auth`), pointing at
+  the identity instance's URL — the rename is live, not just in source.
+- `POST /api/auth/register-user` through the gateway reaches `identity` and successfully
+  writes a `User`/`UserProfile` pair to the disposable database (200, full user object back).
+- `POST /api/user/get-user-by-id` through the gateway reaches `identity` (returns the joined
+  profile with `bio`/`address`) — confirms the 3-path split works through the real gateway,
+  not just in the `routeRules.ts` unit test.
+- `GET /api/user/get-all-groups` through the gateway still reaches `user` (`{"groups":[]}` on
+  the empty database) — confirms the general `/api/user` prefix still lands on `user`.
+- Hitting the moved profile path directly against `user` (internal-token guard satisfied)
+  returns `404` — the route is gone, not duplicated. Hitting a `user`-only path directly
+  against `identity` also returns `404` — same check in the other direction. Together these
+  rule out the failure mode where both services still respond and the gateway is silently
+  masking a duplicate.
+- Disposable container and all three service processes were torn down immediately after; the
+  real `.env` and the real (Supabase) database were read but never written to during this
+  verification, and remain exactly as they were beforehand aside from the two intentional
+  `.env` edits (`AUTH_SERVICE_PORT`/`URL` → `IDENTITY_SERVICE_PORT`/`URL`) that are part of
+  this batch's own scope.
+
+Definition of Done for B05, fully met: `services/auth` no longer exists; `services/identity`
+owns credentials and profile; the gateway routes the 3 profile paths to `identity` and every
+other `/api/user` path to `user`, proven by both a unit test over the full `ApiRoutes.ts`
+surface and a live end-to-end check; the env var rename the user explicitly chose is applied
+everywhere it appears in source, config, CI, and docs; full validation and live verification
+both pass with zero risk to shared/real data.
 
 ## B04 Execution
 

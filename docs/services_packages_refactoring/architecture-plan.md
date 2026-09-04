@@ -427,10 +427,11 @@ parallel with B05–B08 since it touches only `messaging` and `gateway`; B13 req
 - Purpose: one service owns `User`/`UserProfile` row writes.
 - Scope: rename `services/auth` → `services/identity`; move profile read/update/avatar from
   `services/user` into it.
-- Manifest IDs: `SP-029`–`SP-038` (`services/auth/*`), and from `services/user`:
-  `getUserById`, `updateUser`, `getAllUsers` in `user.controller.ts` (`SP-076`, partial),
-  the matching routes in `user.routes.ts` (`SP-077`, partial), and the profile schemas in
-  `user.validation.ts` (`SP-078`, partial).
+- Manifest IDs: `SP-029`, `SP-030`, `SP-035`–`SP-039` (the `services/auth/*` files remaining
+  after B04's seed extraction — `SP-031`–`SP-034`/`SP-038` are seed rows already `DONE`), and
+  from `services/user`: `getUserById`, `updateUser`, `getAllUsers` in `user.controller.ts`
+  (`SP-074`, partial), the matching routes in `user.routes.ts` (`SP-076`, partial), and the
+  profile schemas in `user.validation.ts` (`SP-077`, partial).
 - Dependencies: B03, B04.
 - Expected moves: `services/identity/src/modules/credentials/` (from `auth`),
   `services/identity/src/modules/profile/` (from `user`); avatar upload uses

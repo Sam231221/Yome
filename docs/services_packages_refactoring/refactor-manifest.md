@@ -56,6 +56,33 @@ before; with it `=true` and a deliberately unreachable `DATABASE_URL`, all 5 pas
 and reach the moved `packages/seed/dist/runners.js` code (confirmed in the error stack trace)
 before failing on `ECONNREFUSED`.
 
+B05 completed (2026-09-05): `services/auth` renamed to `services/identity` (`SP-029`,
+`SP-030`, `SP-035`–`SP-037`, `SP-039` now `DONE`); the credentials module moved verbatim into
+`src/modules/credentials/`. The profile portion of `services/user/src/controllers/user.controller.ts`
+(`getUserById`, `updateUser`, `getAllUsers`) was extracted into a new `src/modules/profile/`
+module (`SP-095`–`SP-097`), leaving `SP-074`/`SP-076`/`SP-077` with their community/learning/
+dashboard portions still pending in B06–B08. `SP-038`'s "Current File" is corrected to its
+further-renamed path, `services/identity/src/dev/seed-route.ts` (its B04 `DONE` status is
+unaffected — only the path moved again). The gateway's routing table was extracted into a
+tested, framework-free module (`services/gateway/src/routeRules.ts` + `routeRules.test.ts`,
+`SP-098`–`SP-099`) so `index.ts` mounts routes from one ordered array instead of 8 hand-written
+`app.use()` calls; the route test parses `apps/web/utils/ApiRoutes.ts` and asserts all 42
+externally-visible paths resolve to exactly one upstream, including the 3 profile paths now
+resolving to `identity` instead of `user`. Per an explicit user decision, `AUTH_SERVICE_URL`/
+`AUTH_SERVICE_PORT` were fully renamed (not kept as aliases) to `IDENTITY_SERVICE_URL`/
+`IDENTITY_SERVICE_PORT` everywhere: `turbo.json`, `.env.example`, `.env`, `package.json`
+(service-kit's `servicePorts`, gateway's `serviceBaseUrls`), `tests/contracts.smoke.mjs`, both
+CI workflows (`@services/auth` → `@services/identity`, `yome-auth` → `yome-identity`), and the
+narrative docs. Live-verified end-to-end against a disposable Postgres instance (docker,
+migrated schema, ports remapped, no shared data at risk): gateway `/health` reports
+`serviceBaseUrls.identity`; `POST /api/auth/register-user` through the gateway reaches
+identity and writes a user; `POST /api/user/get-user-by-id` through the gateway reaches
+identity (returns the joined profile), while `GET /api/user/get-all-groups` still reaches
+`user`; hitting the moved profile path directly against `user` (with the internal token
+satisfied) now 404s, and hitting a `user`-only path directly against `identity` also 404s —
+confirming a clean split, not an accidental duplication. Disposable container and processes
+torn down after verification; the real `.env`/database were never touched.
+
 **This manifest tracks Phase 1 (B01–B10) — the existing files and where they go.** Phase 2+
 work (Redis, event backbone, read models, database extraction) creates new files rather than
 relocating existing ones, so it appears here only in the creation list. Those batches are
@@ -124,17 +151,17 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-026 | `packages/typescript-config/nextjs.json` | tooling | TS_CONFIG | KEEP | Same | — | typescript-config | Low | KEEP |
 | SP-027 | `packages/typescript-config/package.json` | tooling | PKG_MANIFEST | KEEP | Same | — | typescript-config | Low | KEEP |
 | SP-028 | `packages/typescript-config/react-library.json` | tooling | TS_CONFIG | KEEP | Same | — | typescript-config | Low | KEEP |
-| SP-029 | `services/auth/package.json` | identity | PKG_MANIFEST | RENAME | `@services/identity`; drop seed-only deps; add `@repo/storage` for avatar upload | B05 | identity | Medium | PENDING |
-| SP-030 | `services/auth/src/controllers/auth.controller.ts` | identity | CONTROLLER | MOVE | `services/identity/src/modules/credentials/`; **B03: now imports `getAuthenticatedUserId` from `@repo/shared`, local copy deleted.** Destination MOVE still pending | B05 | identity | Medium | PENDING |
+| SP-029 | `services/identity/package.json` | identity | PKG_MANIFEST | RENAME | Renamed to `@services/identity`; dropped seed-only deps, added `@repo/storage` for avatar upload and `@repo/seed`/`multer` (absorbed from `services/user`) | B05 | identity | Medium | DONE |
+| SP-030 | `services/identity/src/modules/credentials/credentials.controller.ts` | identity | CONTROLLER | MOVE | Moved from `services/auth/src/controllers/auth.controller.ts`. **B03: now imports `getAuthenticatedUserId` from `@repo/shared`, local copy deleted.** | B05 | identity | Medium | DONE |
 | SP-031 | `packages/seed/src/runners.ts` | seed | SEED_CONTROLLER | EXTRACT | Moved from `services/auth/src/controllers/seed.controller.ts`; per-handler `rejectIfSeedDisabled` calls removed (5x), guard now applied once at the route layer — see `SP-091` | B04 | seed | High | DONE |
 | SP-032 | `packages/seed/src/fixtures/dashboard.ts` | seed | SEED_DATA | MOVE | Moved from `services/auth/src/data/dashboard.ts`, unchanged | B04 | seed | Low | DONE |
 | SP-033 | `packages/seed/src/fixtures/resources.ts` | seed | SEED_DATA | MOVE | Moved from `services/auth/src/data/resources.ts`, unchanged | B04 | seed | Low | DONE |
 | SP-034 | `packages/seed/src/fixtures/users.ts` | seed | SEED_DATA | MOVE | Moved from `services/auth/src/data/users.ts`, unchanged | B04 | seed | Low | DONE |
-| SP-035 | `services/auth/src/index.ts` | identity | SERVICE_ENTRY | REFACTOR | `services/identity/src/index.ts`; mount `credentials` + `profile` modules; dev seed route only when `ENABLE_DEV_SEED_ROUTES` | B05 | identity | Medium | PENDING |
-| SP-036 | `services/auth/src/routes/auth.routes.ts` | identity | ROUTE | MOVE | `services/identity/src/modules/credentials/credentials.routes.ts` | B05 | identity | Low | PENDING |
-| SP-037 | `services/auth/src/routes/auth.validation.ts` | identity | VALIDATION | MOVE | Credentials module; reusable primitives lifted to `@repo/contracts` | B05 | identity | Low | PENDING |
-| SP-038 | `services/auth/src/routes/db.routes.ts` | seed | ROUTE | REFACTOR | Thin route: mounts `devSeedGuard` from `@repo/seed` once, then the 5 seed handlers; external `/api/db` path preserved. Path itself unchanged in B04 — the further rename to `services/identity/src/dev/seed-route.ts` is B05's job | B04 | identity (dev) | Medium | DONE |
-| SP-039 | `services/auth/tsconfig.json` | identity | TS_CONFIG | MOVE | `services/identity/tsconfig.json` | B05 | identity | Low | PENDING |
+| SP-035 | `services/identity/src/index.ts` | identity | SERVICE_ENTRY | REFACTOR | Moved from `services/auth/src/index.ts`; mounts `credentials` (`/api/auth`), `profile` (`/api/user`), and `dev/seed-route` (`/api/db`) modules | B05 | identity | Medium | DONE |
+| SP-036 | `services/identity/src/modules/credentials/credentials.routes.ts` | identity | ROUTE | MOVE | Moved from `services/auth/src/routes/auth.routes.ts`, imports repointed to `credentials.controller.ts`/`credentials.validation.ts` | B05 | identity | Low | DONE |
+| SP-037 | `services/identity/src/modules/credentials/credentials.validation.ts` | identity | VALIDATION | MOVE | Moved from `services/auth/src/routes/auth.validation.ts`; `nameSchema`/`usernameSchema` now imported from `@repo/contracts` (promoted, byte-identical duplicate in `user.validation.ts` removed — see SP-077) | B05 | identity | Low | DONE |
+| SP-038 | `services/identity/src/dev/seed-route.ts` | seed | ROUTE | REFACTOR | B04: rewritten from `services/auth/src/routes/db.routes.ts` as a thin route mounting one `devSeedGuard` from `@repo/seed`. **B05: further moved (path only, no content change) from `services/auth/src/routes/db.routes.ts` to this path as part of the identity rename** — external `/api/db` path preserved throughout | B04 (content), B05 (path) | identity (dev) | Medium | DONE |
+| SP-039 | `services/identity/tsconfig.json` | identity | TS_CONFIG | MOVE | Moved from `services/auth/tsconfig.json`, unchanged content | B05 | identity | Low | DONE |
 | SP-040 | `services/chat/package.json` | messaging | PKG_MANIFEST | RENAME | `@services/messaging` | B09 | messaging | Medium | PENDING |
 | SP-041 | `services/chat/src/controllers/message.controller.ts` | messaging | CONTROLLER | SPLIT | `messaging/src/modules/messages/*`; call-prep handlers → `modules/calls/*`. **B03: now imports `getAuthenticatedUserId` from `@repo/shared`, local copy deleted.** Split still pending | B09 | messaging | Medium | PENDING |
 | SP-042 | `services/chat/src/index.ts` | messaging | SERVICE_ENTRY | REFACTOR | `services/messaging/src/index.ts`; mount `messages` / `calls` / `realtime` | B09 | messaging | Medium | PENDING |
@@ -169,16 +196,16 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-071 | `services/resources/src/routes/resource.validation.ts` | learning | VALIDATION | MOVE | Learning module; `resourceToneSchema` → `@repo/contracts` | B07 | core | Low | PENDING |
 | SP-072 | `services/resources/tsconfig.json` | learning | TS_CONFIG | DELETE | Replaced by `services/core/tsconfig.json` | B07 | core | Low | PENDING |
 | SP-073 | `services/user/package.json` | multi | PKG_MANIFEST | DELETE | Replaced by `services/core`; profile deps → `identity`, rest → `core` | B06 | core | Medium | PENDING |
-| SP-074 | `services/user/src/controllers/user.controller.ts` | multi | CONTROLLER | SPLIT | profile → `identity/modules/profile` (B05); groups + connections + group-events → `core/modules/community` (B06); learning projects/events reads → `core/modules/learning` (B07); dashboard aggregation → `core/modules/dashboard` (B08). **B03: now imports `getAuthenticatedUserId`, `isUuid`, `slugify`, `formatCount`, `compactNumber` from `@repo/shared`; all five local duplicates deleted.** **B04: the `groupData` zero-seed fallback removed from `getUnassociatedGroupsForUser` and `joinUnjoinedGroups` (user decision: remove, not keep) — live-verified against a disposable Postgres instance.** Domain split still pending | B05–B08 | identity + core | High | PENDING |
+| SP-074 | `services/user/src/controllers/user.controller.ts` | multi | CONTROLLER | SPLIT | profile → `identity/modules/profile` (B05); groups + connections + group-events → `core/modules/community` (B06); learning projects/events reads → `core/modules/learning` (B07); dashboard aggregation → `core/modules/dashboard` (B08). **B03: now imports `getAuthenticatedUserId`, `isUuid`, `slugify`, `formatCount`, `compactNumber` from `@repo/shared`; all five local duplicates deleted.** **B04: the `groupData` zero-seed fallback removed from `getUnassociatedGroupsForUser` and `joinUnjoinedGroups` (user decision: remove, not keep) — live-verified against a disposable Postgres instance.** **B05: profile portion (`getUserById`, `updateUser`, `getAllUsers`) extracted verbatim into `services/identity/src/modules/profile/profile.controller.ts` — see SP-095; deleted from this file.** Community/learning/dashboard split still pending | B05–B08 | identity + core | High | PENDING |
 | SP-075 | `services/user/src/index.ts` | multi | SERVICE_ENTRY | DELETE | Entry replaced by `services/core/src/index.ts` | B06 | core | Medium | PENDING |
-| SP-076 | `services/user/src/routes/user.routes.ts` | multi | ROUTE | SPLIT | Same fan-out as the controller; every external path preserved through the gateway route manifest | B05–B08 | identity + core | High | PENDING |
-| SP-077 | `services/user/src/routes/user.validation.ts` | multi | VALIDATION | SPLIT | Profile schemas → `identity`; group/connection schemas → `core`; primitives → `@repo/contracts` | B05–B08 | identity + core | Medium | PENDING |
+| SP-076 | `services/user/src/routes/user.routes.ts` | multi | ROUTE | SPLIT | Same fan-out as the controller; every external path preserved through the gateway route manifest. **B05: the 3 profile routes (`get-user-by-id`, `update-user`, `get-all-users`) and the `multer` upload setup they used moved to `services/identity/src/modules/profile/profile.routes.ts` — see SP-097.** Community/learning/dashboard fan-out still pending | B05–B08 | identity + core | High | PENDING |
+| SP-077 | `services/user/src/routes/user.validation.ts` | multi | VALIDATION | SPLIT | Profile schemas → `identity`; group/connection schemas → `core`; primitives → `@repo/contracts`. **B05: `getUserByIdSchema`/`updateUserSchema` moved to `services/identity/src/modules/profile/profile.validation.ts` (see SP-096); the `nameSchema`/`usernameSchema` they and `credentials.validation.ts` both duplicated were promoted to `@repo/contracts` (SP-083) and both local copies deleted** | B05–B08 | identity + core | Medium | PENDING |
 | SP-078 | `services/user/tsconfig.json` | multi | TS_CONFIG | DELETE | Replaced by `services/core/tsconfig.json` | B06 | core | Low | PENDING |
 | SP-079 | `packages/contracts/package.json` | shared | PKG_MANIFEST | CREATE | New in B03 | B03 | contracts | Low | DONE |
 | SP-080 | `packages/contracts/src/helpers.test.ts` | shared | TEST | CREATE | New in B03 — coverage `@repo/shared` never had, proving the 4 consolidated helpers match every implementation they replaced | B03 | contracts | Low | DONE |
 | SP-081 | `packages/contracts/src/helpers.ts` | shared | PKG_MODULE | CREATE | New in B03: `getAuthenticatedUserId`, `slugify`, `UUID_PATTERN`/`isUuid`, `compactNumber`/`formatCount` — consolidated from 4 duplicate per-service definitions (issue #11) | B03 | contracts | Low | DONE |
 | SP-082 | `packages/contracts/src/index.ts` | shared | PKG_ENTRY | CREATE | New in B03 | B03 | contracts | Low | DONE |
-| SP-083 | `packages/contracts/src/schemas.ts` | shared | PKG_MODULE | CREATE | New in B03: `positiveInt`, `positiveIntString`, `slugOrUuidSchema`, `toneSchema` zod primitives, available for B05+ adoption (not force-adopted in B03) | B03 | contracts | Low | DONE |
+| SP-083 | `packages/contracts/src/schemas.ts` | shared | PKG_MODULE | CREATE | New in B03: `positiveInt`, `positiveIntString`, `slugOrUuidSchema`, `toneSchema` zod primitives, available for B05+ adoption (not force-adopted in B03). **B05: `nameSchema`/`usernameSchema` added, promoted from byte-identical duplicates in `services/auth`'s and `services/user`'s validation files (see SP-037, SP-077)** | B03, B05 | contracts | Low | DONE |
 | SP-084 | `packages/contracts/tsconfig.json` | shared | TS_CONFIG | CREATE | New in B03 | B03 | contracts | Low | DONE |
 | SP-085 | `packages/service-kit/package.json` | shared | PKG_MANIFEST | CREATE | New in B03 | B03 | service-kit | Low | DONE |
 | SP-086 | `packages/service-kit/src/index.ts` | shared | PKG_ENTRY | CREATE | New in B03 | B03 | service-kit | Low | DONE |
@@ -190,6 +217,11 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-092 | `packages/seed/src/index.ts` | seed | PKG_ENTRY | CREATE | New in B04 | B04 | seed | Low | DONE |
 | SP-093 | `packages/seed/package.json` | seed | PKG_MANIFEST | CREATE | New in B04; depends on `@repo/database`, `@repo/shared`, `bcryptjs` | B04 | seed | Low | DONE |
 | SP-094 | `packages/seed/tsconfig.json` | seed | TS_CONFIG | CREATE | New in B04 | B04 | seed | Low | DONE |
+| SP-095 | `services/identity/src/modules/profile/profile.controller.ts` | identity | CONTROLLER | CREATE | New in B05: `getUserById`, `updateUser`, `getAllUsers` extracted verbatim from `services/user/src/controllers/user.controller.ts` (see SP-074); logger renamed `"identity-profile"` | B05 | identity | Medium | DONE |
+| SP-096 | `services/identity/src/modules/profile/profile.validation.ts` | identity | VALIDATION | CREATE | New in B05: `getUserByIdSchema`/`updateUserSchema` moved from `services/user/src/routes/user.validation.ts` (see SP-077); now imports `nameSchema`/`usernameSchema`/`positiveInt` from `@repo/contracts` | B05 | identity | Low | DONE |
+| SP-097 | `services/identity/src/modules/profile/profile.routes.ts` | identity | ROUTE | CREATE | New in B05: the 3 profile routes + `multer` avatar-upload setup moved from `services/user/src/routes/user.routes.ts` (see SP-076); mounted at `/api/user` within identity — external paths unchanged | B05 | identity | Low | DONE |
+| SP-098 | `services/gateway/src/routeRules.ts` | edge | PKG_MODULE | CREATE | New in B05: ordered upstream route-rule table + `resolveRoute()`/`pathMatchesPrefix()`, extracted so `index.ts`'s 8 hand-written `app.use()` calls become one loop, and so routing is unit-testable without booting Express. A scoped precursor to the full B10 gateway modularization (SP-055), not that refactor itself | B05 | gateway | Medium | DONE |
+| SP-099 | `services/gateway/src/routeRules.test.ts` | edge | TEST | CREATE | New in B05: parses `apps/web/utils/ApiRoutes.ts` and asserts every one of its 42 externally-visible `/api/*` paths resolves through `routeRules` to exactly one upstream, including the 3 profile paths now resolving to `identity` | B05 | gateway | Low | DONE |
 
 Note: `packages/contracts/src/errors.ts` and `packages/contracts/src/service.ts` are **not**
 `CREATE` rows — they are the MOVE destinations already tracked by `SP-014` and `SP-022`
@@ -208,8 +240,9 @@ have been a duplicate-file-entry bug; caught and corrected before commit.
 - **B04** (seed extraction): SP-013, SP-031, SP-032, SP-033, SP-034, SP-038, SP-091–SP-094
   **done**, incl. the fallback-removal portions of SP-074/SP-076 (decision: remove — see
   migration-log.md).
-- **B05** (identity): SP-029, SP-030, SP-035, SP-036, SP-037, SP-039 (+ profile portions of
-  SP-074, SP-076, SP-077).
+- **B05** (identity): SP-029, SP-030, SP-035, SP-036, SP-037, SP-039, SP-095–SP-099 **done**
+  (+ profile portions of SP-074, SP-076, SP-077 — also done; row status stays `PENDING` since
+  their community/learning/dashboard portions are still B06–B08).
 - **B06** (core scaffold + community): SP-073, SP-075, SP-078 (+ community portions of
   SP-074, SP-076, SP-077).
 - **B07** (core/learning + fold resources): SP-066, SP-067, SP-068, SP-069, SP-070, SP-071,
@@ -226,21 +259,25 @@ have been a duplicate-file-entry bug; caught and corrected before commit.
 Counts below are machine-verified (`grep`-extracted from the actual table, not hand-tallied
 — a hand-tally error during the B03 completeness audit is exactly why this rule exists now).
 
-- Rows: 94 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`, plus 4 B04-created
-  rows `SP-091`–`SP-094`). Duplicate IDs: 0. Duplicate current-file entries: 0.
+- Rows: 99 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`, plus 4 B04-created
+  rows `SP-091`–`SP-094`, plus 5 B05-created rows `SP-095`–`SP-099`). Duplicate IDs: 0.
+  Duplicate current-file entries: 0.
 - `KEEP` (no change intended): SP-002, SP-004, SP-005, SP-007, SP-008, SP-010, SP-025,
   SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065 — **14 rows**.
 - `DONE`: SP-011, SP-012, SP-014–SP-024 (13 rows, B03's `packages/shared` split) + SP-013,
   SP-031–SP-034, SP-038 (6 rows, B04's seed extraction incl. the `groupData` fixture) +
-  SP-079–SP-090 (12 rows, B03-created files) + SP-091–SP-094 (4 rows, B04-created files) —
-  **35 rows**.
-- `PENDING` (actionable, batch assigned): **45 rows** — includes `SP-030`, `SP-041`, `SP-067`,
-  `SP-074`, `SP-076`, which carry an adoption note but are not `DONE` because their full
-  MOVE/domain-split is a separate, later batch (`SP-074`/`SP-076`'s B04-scoped fallback
-  removal specifically is done; their remaining domain-split content is still B05–B08).
+  SP-079–SP-090 (12 rows, B03-created files) + SP-091–SP-094 (4 rows, B04-created files) +
+  SP-029, SP-030, SP-035–SP-037, SP-039 (6 rows, B05's identity rename) + SP-095–SP-099
+  (5 rows, B05-created profile module + gateway route rules) — **46 rows**.
+- `PENDING` (actionable, batch assigned): **39 rows** — includes `SP-041`, `SP-067`, `SP-074`,
+  `SP-076`, `SP-077`, which carry an adoption/partial-completion note but are not `DONE`
+  because their full MOVE/domain-split is a separate, later batch (`SP-074`/`SP-076`'s B04
+  fallback removal and B05 profile-portion extraction are both done; their remaining
+  community/learning/dashboard content is still B06–B08).
 - `BLOCKED`: 0 in the manifest. One infra blocker was tracked in
   `service-decomposition-plan.md` (the missing `Dockerfile.service`) and was resolved in B02.
-- Row-count check: 14 KEEP + 35 DONE + 45 PENDING = 94. ✓
+- Row-count check: 14 KEEP + 46 DONE + 39 PENDING = 99. ✓ (machine-counted via
+  `grep -cE "^\| SP-[0-9]+"` and per-status `grep`, not hand-tallied.)
 
 ## Files this migration will create (IDs assigned on creation)
 
@@ -251,10 +288,13 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
   coverage).
 - ✅ `packages/seed/**` — **created in B04**, tracked as `SP-091`–`SP-094` (the fixtures and
   runners are moves, tracked by `SP-013`, `SP-031`–`SP-034`).
-- `services/identity/**` (rename target of `services/auth`; new `modules/profile/**`) (B05)
+- ✅ `services/identity/**` (rename target of `services/auth`; new `modules/profile/**`) —
+  **created in B05**, tracked as `SP-029`, `SP-030`, `SP-035`–`SP-039`, `SP-095`–`SP-097`.
 - `services/core/**` with `src/modules/{community,learning,feed,dashboard}/**` (B06–B08)
 - `services/messaging/**` (rename target of `services/chat`; new `modules/calls/**`) (B09)
-- `services/gateway/src/routes/route-manifest.ts`, `services/gateway/src/middleware/**` (B10)
+- ✅ `services/gateway/src/routeRules.ts` + `routeRules.test.ts` — **created in B05**, tracked
+  as `SP-098`–`SP-099`; a scoped precursor to the full `services/gateway/src/routes/route-manifest.ts`
+  + `services/gateway/src/middleware/**` split, still planned for B10 (SP-055).
 - ✅ `Dockerfile.service` — **created in B02**
 - `packages/eslint-config/service.js` (B10)
 

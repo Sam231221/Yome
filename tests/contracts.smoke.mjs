@@ -4,8 +4,8 @@ const services = [
     url: process.env.GATEWAY_URL || "http://localhost:4100/health",
   },
   {
-    name: "auth",
-    url: process.env.AUTH_SERVICE_URL || "http://localhost:4101/health",
+    name: "identity",
+    url: process.env.IDENTITY_SERVICE_URL || "http://localhost:4101/health",
   },
   {
     name: "user",

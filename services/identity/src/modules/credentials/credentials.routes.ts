@@ -6,14 +6,14 @@ import {
   registerUser,
   upsertOAuthUser,
   changePassword,
-} from "../controllers/auth.controller.js";
+} from "./credentials.controller.js";
 import {
   changePasswordSchema,
   getUserByEmailSchema,
   registerUserSchema,
   upsertOAuthUserSchema,
   verifyCredentialsSchema,
-} from "./auth.validation.js";
+} from "./credentials.validation.js";
 
 const router = Router();
 

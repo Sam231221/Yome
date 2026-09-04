@@ -58,7 +58,7 @@ jobs:
       matrix:
         service:
           - "@services/gateway"
-          - "@services/auth"
+          - "@services/identity"
           - "@services/user"
           - "@services/chat"
           - "@services/media"

@@ -9,44 +9,12 @@ const slugOrUuidSchema = z
   .max(160)
   .regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/, "must be an id or slug");
 const toneSchema = z.enum(["blue", "teal", "amber", "violet", "neutral"]);
-const nameSchema = z
-  .string()
-  .trim()
-  .min(2)
-  .max(40)
-  .regex(/^[A-Za-z][A-Za-z' -]{1,39}$/, "Name must be 2-40 valid characters.");
-const usernameSchema = z
-  .string()
-  .trim()
-  .min(3)
-  .max(24)
-  .regex(
-    /^[A-Za-z0-9._@-]{3,24}$/,
-    "Username must be 3-24 characters and may include letters, numbers, dots, underscores, @, or hyphens."
-  );
 const userIdParamsSchema = z.object({
   loggedInUserId: z.coerce.string().regex(/^\d+$/, "loggedInUserId must be a positive integer"),
 });
 
-export const getUserByIdSchema = {
-  body: z.object({
-    userId: positiveInt,
-  }),
-};
-
-export const updateUserSchema = {
-  query: z.object({
-    userId: positiveInt,
-  }),
-  body: z.object({
-    email: z.string().trim().toLowerCase().email(),
-    username: usernameSchema,
-    firstname: nameSchema,
-    lastname: nameSchema,
-    bio: z.string().trim().max(160).optional().default(""),
-    address: z.string().trim().max(255).optional().default(""),
-  }),
-};
+// getUserByIdSchema and updateUserSchema (and the nameSchema/usernameSchema they used)
+// moved to services/identity/src/modules/profile/profile.validation.ts in B05.
 
 export const loggedInUserIdParamsSchema = {
   params: userIdParamsSchema,

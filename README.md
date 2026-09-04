@@ -23,8 +23,8 @@ Yome includes:
 ### Services
 
 - `services/gateway`: API gateway and auth-aware routing
-- `services/auth`: authentication and credential flows
-- `services/user`: profile and user operations, including avatar upload
+- `services/identity`: authentication/credential flows and profile operations (avatar upload, get/update/list users) — renamed from `services/auth` in B05, which absorbed the profile endpoints
+- `services/user`: groups, connections, dashboard, and learning reads
 - `services/chat`: direct/group messaging, Socket.IO, conversation resolution
 - `services/media`: image/audio upload endpoints for chat media
 - `services/notifications`: stub notification endpoint returning `202 Accepted`
@@ -99,12 +99,12 @@ Gateway and auth:
 Service ports and URLs:
 
 - `GATEWAY_PORT`
-- `AUTH_SERVICE_PORT`
+- `IDENTITY_SERVICE_PORT`
 - `USER_SERVICE_PORT`
 - `CHAT_SERVICE_PORT`
 - `MEDIA_SERVICE_PORT`
 - `NOTIFICATIONS_SERVICE_PORT`
-- `AUTH_SERVICE_URL`
+- `IDENTITY_SERVICE_URL`
 - `USER_SERVICE_URL`
 - `CHAT_SERVICE_URL`
 - `MEDIA_SERVICE_URL`

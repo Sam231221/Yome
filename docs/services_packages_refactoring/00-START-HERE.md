@@ -4,12 +4,16 @@ You have eight planning documents. **You only need this one to begin.** The othe
 reference material you open when a batch tells you to.
 
 - **Branch:** `refactor/services-packages-architecture`
-- **Status:** B01–B04 complete. `packages/shared` is now a thin shim over `@repo/contracts` /
+- **Status:** B01–B05 complete. `packages/shared` is now a thin shim over `@repo/contracts` /
   `@repo/service-kit` / `@repo/storage`; four duplicated helpers were consolidated and adopted
   by `auth`, `user`, `chat`, `resources`. `packages/seed` now owns all dev seed logic and
   fixtures (including the `groupData` zero-seed fallback, which was removed from
   `services/user` after an explicit product decision — a fresh database now shows zero
-  groups until seeded, matching "no seed code in production"). **B05 is next.**
+  groups until seeded, matching "no seed code in production"). `services/auth` is now
+  `services/identity`, which also absorbed the 3 profile endpoints from `services/user`; the
+  gateway's routing table is now a tested `routeRules.ts` module; `AUTH_SERVICE_URL`/`PORT`
+  were fully renamed to `IDENTITY_SERVICE_URL`/`PORT` everywhere per an explicit user decision.
+  **B06 is next.**
 - **How work happens:** you paste one command per batch into Claude Code. Claude does the
   batch, updates `migration-log.md`, and commits. You verify, then move to the next.
 
@@ -377,7 +381,7 @@ Tick these off as you go.
 - [x] **B02** CI, Docker, turbo env, security baseline — *complete 2026-09-04 (issues #1–3, #15, #28–35, #37 resolved)*
 - [x] **B03** Split `packages/shared` — *complete 2026-09-04 (issues #10, #11 resolved; new `@repo/contracts`/`@repo/service-kit`/`@repo/storage`)*
 - [x] **B04** Seed extraction to `packages/seed` — *complete 2026-09-04 (issue #7, #9 resolved; `groupData` fallback removed per user decision)*
-- [ ] **B05** `identity` service (rename + profile absorption)
+- [x] **B05** `identity` service (rename + profile absorption) — *complete 2026-09-05 (`services/auth` → `services/identity`; profile endpoints moved from `user`; gateway routing extracted to tested `routeRules.ts`; `AUTH_SERVICE_URL`/`PORT` fully renamed to `IDENTITY_SERVICE_URL`/`PORT`; live-verified against a disposable Postgres instance)*
 - [ ] **B06** `core` service + `community` module
 - [ ] **B07** `learning` module (fold in `resources`)
 - [ ] **B08** `feed` + `dashboard` modules

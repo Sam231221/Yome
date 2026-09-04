@@ -18,8 +18,9 @@ export const servicePorts = {
   get gateway() {
     return toPort(process.env.GATEWAY_PORT, 4100);
   },
-  get auth() {
-    return toPort(process.env.AUTH_SERVICE_PORT, 4101);
+  /** Renamed from `auth` in B05. Reads `IDENTITY_SERVICE_PORT` (was `AUTH_SERVICE_PORT`). */
+  get identity() {
+    return toPort(process.env.IDENTITY_SERVICE_PORT, 4101);
   },
   get user() {
     return toPort(process.env.USER_SERVICE_PORT, 4102);

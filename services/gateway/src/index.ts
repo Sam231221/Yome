@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
 import { createLogger, servicePorts } from "@repo/shared";
+import { routeRules, type Upstream } from "./routeRules.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, "../../../.env") });
@@ -41,8 +42,9 @@ if (authEnabled && !nextAuthSecret) {
   );
 }
 
-const services = {
-  auth: process.env.AUTH_SERVICE_URL || "http://127.0.0.1:4101",
+const serviceBaseUrls: Record<Upstream, string> = {
+  // Renamed from `auth` in B05; reads IDENTITY_SERVICE_URL (was AUTH_SERVICE_URL).
+  identity: process.env.IDENTITY_SERVICE_URL || "http://127.0.0.1:4101",
   user: process.env.USER_SERVICE_URL || "http://127.0.0.1:4102",
   chat: process.env.CHAT_SERVICE_URL || "http://127.0.0.1:4103",
   media: process.env.MEDIA_SERVICE_URL || "http://127.0.0.1:4104",
@@ -236,7 +238,7 @@ app.use(async (req: Request, res, next) => {
 });
 
 app.get("/health", (_req, res: Response) =>
-  res.status(200).json({ ok: true, service: "gateway", services })
+  res.status(200).json({ ok: true, service: "gateway", services: serviceBaseUrls })
 );
 
 const readBody = (req: Request): Promise<Buffer> =>
@@ -367,36 +369,22 @@ async function proxyRequest(
   });
 }
 
-app.use("/api/auth", (req, res) =>
-  proxyRequest(req as GatewayRequest, res, services.auth)
-);
-app.use("/api/user", (req, res) =>
-  proxyRequest(req as GatewayRequest, res, services.user)
-);
-app.use("/api/db", (req, res) =>
-  proxyRequest(req as GatewayRequest, res, services.auth)
-);
-app.use("/api/media", (req, res) =>
-  proxyRequest(req as GatewayRequest, res, services.media)
-);
-app.use("/api/notifications", (req, res) =>
-  proxyRequest(req as GatewayRequest, res, services.notifications)
-);
-app.use("/api/resources", (req, res) =>
-  proxyRequest(req as GatewayRequest, res, services.resources)
-);
-app.use("/api/chat", (req, res) =>
-  proxyRequest(req as GatewayRequest, res, services.chat)
-);
-app.use("/api/messages", (req, res) =>
-  proxyRequest(
-    req as GatewayRequest,
-    res,
-    services.chat,
-    "/api/messages",
-    "/api/chat"
-  )
-);
+// Routing table lives in routeRules.ts (see routeRules.test.ts for the manifest coverage
+// check). Each rule is mounted at its own prefix so Express's own prefix-matching keeps
+// doing the segment-boundary work; array order in routeRules.ts controls precedence when
+// prefixes overlap (e.g. the three /api/user/... profile paths before the general
+// /api/user rule).
+for (const rule of routeRules) {
+  app.use(rule.prefix, (req, res) =>
+    proxyRequest(
+      req as GatewayRequest,
+      res,
+      serviceBaseUrls[rule.upstream],
+      rule.rewriteFrom ?? "",
+      rule.rewriteTo ?? ""
+    )
+  );
+}
 
 app.listen(port, () => {
   logger.info("Gateway service listening", { port });

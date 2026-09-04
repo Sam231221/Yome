@@ -21,10 +21,11 @@ Yome is a Bun + Turbo monorepo with a Next.js frontend and several backend micro
 - `services/gateway`
   - API gateway
   - central entry point for frontend-to-backend traffic
-- `services/auth`
+- `services/identity` (renamed from `services/auth` in B05)
   - registration, credential verification, OAuth user upsert, password changes, seed endpoints
+  - also owns profile reads/updates (`get-user-by-id`, `update-user`, `get-all-users`), moved here from `services/user` in B05
 - `services/user`
-  - profile reads and updates
+  - groups, connections, dashboard, and learning reads
 - `services/chat`
   - chat HTTP APIs and Socket.IO realtime connection
 - `services/media`
@@ -163,10 +164,10 @@ Gateway:
 
 - `services/gateway/src/index.ts`
 
-Auth service:
+Identity service:
 
-- `services/auth/src/routes/auth.routes.ts`
-- `services/auth/src/controllers/auth.controller.ts`
+- `services/identity/src/modules/credentials/credentials.routes.ts`
+- `services/identity/src/modules/credentials/credentials.controller.ts`
 
 Database:
 
@@ -180,13 +181,13 @@ Database:
 2. `REGISTER_USER` is defined in `apps/web/utils/ApiRoutes.ts` as:
    - `${NEXT_PUBLIC_BACKEND_API || "http://localhost:4100"}/api/auth/register-user`
 3. The request reaches the gateway on port `4100`.
-4. The gateway treats `/api/auth/register-user` as a public auth route and forwards it to the auth service.
-5. The auth service receives the request on port `4101`.
-6. `registerUser` in `services/auth/src/controllers/auth.controller.ts` validates and writes the new user to the database.
+4. The gateway treats `/api/auth/register-user` as a public auth route and forwards it to the identity service.
+5. The identity service receives the request on port `4101`.
+6. `registerUser` in `services/identity/src/modules/credentials/credentials.controller.ts` validates and writes the new user to the database.
 7. Prisma creates:
    - a `UserProfile`
    - a `User`
-8. The auth service returns a success response.
+8. The identity service returns a success response.
 9. The frontend shows a success toast and switches the UI back to the login tab.
 
 ### Important current behavior
@@ -225,7 +226,7 @@ After registration succeeds, the next expected workflow is login.
 - `apps/web/app/(general)/(authentication)/login/components/LoginContainer.tsx`
 - `apps/web/app/api/auth/[...nextauth]/options.ts`
 - `apps/web/app/api/auth/[...nextauth]/route.ts`
-- `services/auth/src/controllers/auth.controller.ts`
+- `services/identity/src/modules/credentials/credentials.controller.ts`
 
 ### Credential login flow
 
@@ -236,8 +237,8 @@ After registration succeeds, the next expected workflow is login.
    - `VERIFY_CREDENTIALS_ROUTE`
 5. That route points to the gateway:
    - `/api/auth/verify-credentials`
-6. The gateway forwards the request to the auth service.
-7. The auth service verifies the password with bcrypt.
+6. The gateway forwards the request to the identity service.
+7. The identity service verifies the password with bcrypt.
 8. If valid, NextAuth stores session data in its JWT/session cookie.
 9. The user can now access protected pages.
 
@@ -251,7 +252,7 @@ After registration succeeds, the next expected workflow is login.
 - `apps/web/app/(main)/(dashboard)/dashboard/components/facebook/DashboardShell.tsx`
 - `apps/web/app/(main)/(dashboard)/dashboard/components/facebook/TopNav.tsx`
 - `services/gateway/src/index.ts`
-- `services/auth/src/routes/auth.routes.ts`
+- `services/identity/src/modules/credentials/credentials.routes.ts`
 
 ### What happens
 
@@ -322,14 +323,14 @@ The app also supports OAuth login providers and then syncs those users into the 
 - `apps/web/app/api/auth/[...nextauth]/options.ts`
 - `apps/web/app/api/auth/sync-user/route.ts`
 - `apps/web/lib/auth/userInfo.ts`
-- `services/auth/src/controllers/auth.controller.ts`
+- `services/identity/src/modules/credentials/credentials.controller.ts`
 
 ### What happens
 
 1. A user signs in with Google, GitHub, or Facebook.
 2. NextAuth receives provider profile data.
 3. The `signIn` callback posts to the gateway route for OAuth/local user upsert.
-4. The auth service creates or reuses a local user record.
+4. The identity service creates or reuses a local user record.
 5. Later, `ensureUserInfo` can fetch the full database user.
 6. In development, `/api/auth/sync-user` can also backfill the local app user if the session exists but the DB record is missing.
 
@@ -343,8 +344,8 @@ The project includes development seed endpoints, but they are intentionally guar
 - `apps/web/app/api/dev/db/seed-groups/route.ts`
 - `apps/web/app/api/dev/db/reset/route.ts`
 - `apps/web/app/api/dev/db/_lib/devDbProxy.ts`
-- `services/auth/src/routes/db.routes.ts`
-- `services/auth/src/controllers/seed.controller.ts`
+- `services/identity/src/dev/seed-route.ts`
+- `packages/seed/src/runners.ts` (seed handler implementations, extracted to `@repo/seed` in B03)
 - `.env`
 
 ### Seeding in Terminal
@@ -422,8 +423,8 @@ flowchart TD
 ### Gateway and service routing
 
 - `services/gateway/src/index.ts`
-- `services/auth/src/routes/auth.routes.ts`
-- `services/auth/src/controllers/auth.controller.ts`
+- `services/identity/src/modules/credentials/credentials.routes.ts`
+- `services/identity/src/modules/credentials/credentials.controller.ts`
 - `services/user/src/controllers/user.controller.ts`
 - `services/chat/src/index.ts`
 
@@ -438,7 +439,7 @@ The app behaves like this:
 
 - `apps/web` owns the browser experience and NextAuth session
 - `services/gateway` is the main API entry point
-- `services/auth` handles registration and login verification
+- `services/identity` handles registration, login verification, and profile reads/updates
 - protected pages depend on middleware plus a valid NextAuth session
 - after login, the frontend still fetches the full application user from backend services
 - chat requires an extra websocket token step beyond normal login
