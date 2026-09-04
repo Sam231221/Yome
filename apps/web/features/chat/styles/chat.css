@@ -756,6 +756,25 @@
   z-index: 40;
 }
 
+.composer-emoji-picker-loading {
+  width: 300px;
+  height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #f4f6fb;
+  color: #7a8699;
+  font-size: 13px;
+}
+
+.audio-recorder-shell--loading {
+  align-items: center;
+  justify-content: center;
+  color: #7a8699;
+  font-size: 13px;
+}
+
 .chat-profile {
   padding: 28px 18px 22px;
   text-align: center;

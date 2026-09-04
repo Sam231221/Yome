@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import toast from "react-hot-toast";
-import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { BsEmojiSmile, BsPlusLg } from "react-icons/bs";
 import { ImAttachment } from "react-icons/im";
 import { FaMicrophone } from "react-icons/fa";
@@ -22,10 +21,31 @@ import {
   sendTextMessage as postTextMessage,
 } from "@/features/chat/api/chatApi";
 
+// CS-001: WaveSurfer + MediaRecorder recorder UI is browser-only and needed only
+// when the composer enters audio mode. Keep it out of the initial chat bundle.
 const CaptureAudio = dynamic(
   () => import("@/features/chat/components/message-composer/CaptureAudio"),
   {
     ssr: false,
+    loading: () => (
+      <div className="audio-recorder-shell audio-recorder-shell--loading" aria-hidden>
+        Preparing recorder…
+      </div>
+    ),
+  }
+);
+
+// CS-003: `emoji-picker-react` ships a large emoji dataset and is only shown after
+// the user opens the emoji popover. Load it lazily on first open.
+const EmojiPickerPanel = dynamic(
+  () => import("@/features/chat/components/message-composer/EmojiPickerPanel"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="composer-emoji-picker-loading" aria-hidden>
+        Loading emoji…
+      </div>
+    ),
   }
 );
 
@@ -118,8 +138,8 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
     setShowEmojiPicker(!showEmojiPicker);
   };
 
-  const handleEmojiClick = (emoji: EmojiClickData) => {
-    setMessage((prevMessage) => (prevMessage += emoji.emoji));
+  const handleEmojiClick = (emoji: string) => {
+    setMessage((prevMessage) => prevMessage + emoji);
   };
 
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -201,10 +221,7 @@ export default function MessageSendBar({ id, chatType }: MessageSendBarProps) {
                   className="composer-emoji-picker"
                   ref={emojiPickerRef}
                 >
-                  <EmojiPicker
-                    onEmojiClick={handleEmojiClick}
-                    theme={Theme.LIGHT}
-                  />
+                  <EmojiPickerPanel onEmojiSelect={handleEmojiClick} />
                 </div>
               )}
               <button
