@@ -7,7 +7,6 @@ import {
   createLogger,
   formatCount,
   getAuthenticatedUserId,
-  groupData,
   isUuid,
   slugify,
   uploadBufferToS3,
@@ -1015,34 +1014,10 @@ export async function getUnassociatedGroupsForUser(
       },
     });
 
-    if (unassociatedGroups.length === 0) {
-      const totalGroups = await prisma.group.count();
-      if (totalGroups === 0 && groupData.length > 0) {
-        const allUsers = await prisma.user.findMany({
-          select: { id: true },
-          orderBy: { id: "asc" },
-        });
-        const oneBasedIndex =
-          allUsers.findIndex((u: { id: number }) => u.id === loggedInUserId) + 1;
-        const fromData = groupData
-          .map((data, index) => ({ data, index }))
-          .filter(
-            ({ data }) =>
-              ![
-                ...(data.adminUserIDs ?? []),
-                ...(data.memberUserIDs ?? []),
-              ].includes(oneBasedIndex)
-          )
-          .map(({ data, index }) => ({
-            id: `groupData-${index}`,
-            name: data.name ?? "Untitled group",
-            about: data.about ?? "Community group on Yome",
-            thumbnail: data.thumbnail ?? "",
-          }));
-        res.status(200).json({ unassociatedGroups: fromData });
-        return;
-      }
-    }
+    // An empty database returns an empty list here, same as any other genuinely
+    // group-less state. Seeding a fresh database is a deliberate operator action
+    // (POST /api/db/create-multiple-groups, dev-guarded, see @repo/seed) rather than
+    // something this endpoint synthesises on the caller's behalf.
     res.status(200).json({ unassociatedGroups });
   } catch (error) {
     next(error);
@@ -1708,78 +1683,10 @@ export async function joinUnjoinedGroups(
       return;
     }
     const prisma = getPrismaInstance();
+    // Only real groups can be joined. A synthetic "groupData-N" id (from the retired
+    // zero-seed fallback — see @repo/seed) simply fails the lookup below like any other
+    // unrecognised id or slug.
     let groupId: string = groupIdToJoin!;
-
-    if (
-      typeof groupIdToJoin === "string" &&
-      groupIdToJoin.startsWith("groupData-")
-    ) {
-      const index = parseInt(groupIdToJoin.replace("groupData-", ""), 10);
-      if (
-        Number.isNaN(index) ||
-        index < 0 ||
-        index >= groupData.length
-      ) {
-        res.status(400).json({ msg: "Invalid group to join." });
-        return;
-      }
-      const data = groupData[index]!;
-      const allUsers = await prisma.user.findMany({
-        select: { id: true },
-        orderBy: { id: "asc" },
-      });
-      const mapUserId = (oldId: number) => {
-        const i = oldId - 1;
-        return i < allUsers.length ? allUsers[i]!.id : null;
-      };
-      let group = await prisma.group.findFirst({
-        where: { name: data.name },
-      });
-      if (!group) {
-        const actualAdminIds = (data.adminUserIDs ?? [])
-          .map(mapUserId)
-          .filter((id): id is number => id !== null);
-        const actualMemberIds = (data.memberUserIDs ?? [])
-          .map(mapUserId)
-          .filter((id): id is number => id !== null);
-        group = await prisma.group.create({
-          data: {
-            slug: "slug" in data && data.slug ? data.slug : slugify(data.name),
-            name: data.name,
-            about: data.about ?? "",
-            subject: "subject" in data && data.subject ? data.subject : "General",
-            category: "category" in data && data.category ? data.category : "Community",
-            tone: "tone" in data && data.tone ? data.tone : "blue",
-            symbol: "symbol" in data && data.symbol ? data.symbol : "Y",
-            privacy: "privacy" in data && data.privacy ? data.privacy : "Public group",
-            location: "location" in data && data.location ? data.location : "Global",
-            featured: "featured" in data ? Boolean(data.featured) : false,
-            activeThisWeek:
-              "activeThisWeek" in data && typeof data.activeThisWeek === "number"
-                ? data.activeThisWeek
-                : actualMemberIds.length + actualAdminIds.length,
-            projectCount:
-              "projectCount" in data && typeof data.projectCount === "number"
-                ? data.projectCount
-                : 0,
-            mentorCount:
-              "mentorCount" in data && typeof data.mentorCount === "number"
-                ? data.mentorCount
-                : actualAdminIds.length,
-            thumbnail: data.thumbnail ?? "",
-            admins:
-              actualAdminIds.length > 0
-                ? { connect: actualAdminIds.map((id) => ({ id })) }
-                : undefined,
-            members:
-              actualMemberIds.length > 0
-                ? { connect: actualMemberIds.map((id) => ({ id })) }
-                : undefined,
-          },
-        });
-      }
-      groupId = group.id;
-    }
 
     const groupToJoin = await prisma.group.findUnique({
       where: getGroupWhere(groupId),

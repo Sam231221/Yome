@@ -9,8 +9,10 @@
  * This file only re-exports them so existing `import ... from "@repo/shared"` sites keep
  * working during the migration. Import sites are repointed to the specific package in
  * B05–B09, and this shim is deleted in B10 (see docs/services_packages_refactoring).
+ *
+ * `groupData` moved to `@repo/seed` in B04 — it is dev-seed fixture data and must never be
+ * reachable from a production runtime path. Do not re-add it here.
  */
 export * from "@repo/contracts";
 export * from "@repo/service-kit";
 export * from "@repo/storage";
-export { groupData } from "./data/groups.js";

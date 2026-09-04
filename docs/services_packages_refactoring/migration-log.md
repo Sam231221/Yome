@@ -110,7 +110,7 @@ These exist before any change in this migration and must not be counted as regre
 | 6 | `Resource` writes split across `auth` (seed) and `resources` (runtime) | `services/auth`, `services/resources` | B04, B07 |
 | 7 | ✅ ~600-line seed subsystem + fixtures ship in the `auth` production image | now `packages/seed/src/{runners.ts,fixtures/*}` | **B04 — done.** `services/auth` (soon `identity`) has no `src/data/*` and no seed business logic; `packages/seed` owns it |
 | 8 | `services/user` is a single ~1000-line controller spanning 4 domains | `services/user/src/controllers/user.controller.ts` | B05–B08 |
-| 9 | `groupData` (523-line seed fixture) lives in `packages/shared` and is imported by `user` runtime code | `packages/shared/src/data/groups.ts` | B03/B04 — **deliberately left in place for B03**; extraction + runtime-fallback removal is B04 |
+| 9 | ✅ `groupData` (523-line seed fixture) lived in `packages/shared` and was imported by `user` runtime code | now `packages/seed/src/fixtures/groups.ts` | **B04 — done.** Fixture moved; the two `services/user` runtime call sites removed (decision: remove, confirmed with the user) |
 | 10 | ✅ `ServiceName` union in `packages/shared` omits `resources` (and has no DTOs) | now `packages/contracts/src/service.ts` | **B03 — done.** Added `resources`, `identity`, `core`, `messaging` |
 | 11 | ✅ `getAuthenticatedUserId` / `slugify` / `uuidPattern` / `formatCount` duplicated across `auth`, `user`, `chat`, `resources` | now `packages/contracts/src/helpers.ts` | **B03 — done, both parts.** Consolidated *and* adopted (all four services import them; five local duplicates deleted from `user.controller.ts` alone) |
 | 12 | No ESLint config in any service (`"lint": "echo ..."`) | every `services/*/package.json` | B10 |
@@ -155,7 +155,7 @@ These exist before any change in this migration and must not be counted as regre
 | B01 — Documentation Foundation | COMPLETE | 2026-09-04 | 2026-09-04 | Manifest row count == eligible file count (78); every actionable row has a batch | Docs only. No `services/*` / `packages/*` source changed. |
 | B02 — Foundation: CI/CD, Build Integrity, Security Baseline | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 0; `build` 0; service tests 16/5/4 pass; `lint` 0 with 166 warnings (↓ from 174 baseline); `docker build -f Dockerfile.service --build-arg SERVICE_DIR=services/gateway .` exit 0, image runs to env-check | Infra + config only. No `services/*` / `packages/*` source moved. `apps/web` touched for the `sync-user` auth fix and a `middleware.ts` doc comment. |
 | B03 — Shared Package Split | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 0 (11/11); `build` 0 (12/12); `test` 0 (12/12, incl. new `@repo/contracts` suite); `lint` 0 (166 warnings, unchanged); `docker build --build-arg SERVICE_DIR=services/user` exit 0 | No `services/**` runtime behaviour changed. `@repo/shared` is now a shim; 4 duplicated helpers consolidated into `@repo/contracts` and adopted by `auth`, `user`, `chat`, `resources`. |
-| B04 — Seed Extraction | IN PROGRESS | 2026-09-04 | | `check-types` 12/12; `build` 13/13; `lint` 166 (unchanged); `test` 13/13; live guard verification against an unreachable DB (no data touched) | Seed controller + 3 fixtures + `db.routes.ts` extraction done and committed. `groupData` (`SP-013`) and the `services/user` runtime fallback are paused pending an explicit product decision — see "B04 Execution" below. |
+| B04 — Seed Extraction | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 12/12; `build` 13/13; `lint` 166 (unchanged); `test` 13/13; live-verified against both an unreachable DB (guard) and a disposable local Postgres (fallback removal) with zero risk to real data | Seed subsystem fully extracted to `packages/seed`. `groupData` fallback in `services/user` removed per explicit user decision. |
 | B05 — identity Service | PENDING | | | | |
 | B06 — core Scaffold + community Module | PENDING | | | | |
 | B07 — core/learning Module (fold in resources) | PENDING | | | | |
@@ -239,7 +239,7 @@ Migrations live in `packages/database/prisma/migrations` and are applied with
 - **Local:** `bun run infra:up` starts Postgres + Redis; point `DATABASE_URL` / `DIRECT_URL`
   at the local instance, then `bun run --cwd packages/database db:migrate`.
 
-## B04 Execution (in progress — one product decision pending)
+## B04 Execution
 
 - Rollback target: parent commit `ebf93d4`.
 - Scope so far: `services/auth/src/controllers/seed.controller.ts`,
@@ -295,7 +295,46 @@ unrecognised group rather than silently materialising one. This is more architec
 correct (no phantom data appears without someone deciding to seed) but changes what a fresh
 deploy or fresh local checkout looks like out of the box.
 
-**Decision: pending.** Asked the user directly (see chat) rather than choosing internally.
+**Decision: remove.** Asked the user directly rather than choosing internally; the answer
+matches B04's original plan.
+
+### Fallback removal — what changed and how it was verified
+
+- `packages/shared/src/data/groups.ts` moved to `packages/seed/src/fixtures/groups.ts`
+  (`SP-013`, now `DONE`). `packages/shared/src/index.ts` no longer re-exports `groupData` —
+  the shim's `src/` directory now contains only `index.ts`, matching its final B10 shape
+  early. `packages/seed/src/runners.ts` now imports `groupData` from its own
+  `./fixtures/groups.js` instead of `@repo/shared`.
+- `services/user/src/controllers/user.controller.ts`: dropped `groupData` from its
+  `@repo/shared` import. `getUnassociatedGroupsForUser` no longer special-cases
+  `totalGroups === 0`; it now always returns the real (possibly empty) query result.
+  `joinUnjoinedGroups` no longer special-cases a `groupIdToJoin` starting with
+  `"groupData-"`; such an id now falls through to the normal `getGroupWhere` lookup, which
+  finds nothing and 400s "Invalid group to join" — the same response any other unrecognised
+  id or slug already produced.
+- **Live-verified against a disposable local Postgres** (not the shared/remote database in
+  the working-tree `.env`): started `postgres:16-alpine` in Docker on an alternate port,
+  applied every Prisma migration (`bun run --cwd packages/database db:migrate`) to get a
+  byte-for-byte schema match with zero data, started `services/auth` and `services/user`
+  standalone against it, seeded exactly one real user via the (now `@repo/seed`-backed)
+  `/api/db/create-multiple-users` endpoint, and confirmed:
+  - `GET /api/user/get-unassociated-groups/1` on the empty-of-groups database returns
+    `{"unassociatedGroups":[]}` (200) — not the ~15 synthetic cards the old fallback produced.
+  - `POST /api/user/connect-user-to-group` with `{"groupIdToJoin":"groupData-0"}` returns
+    `{"msg":"Invalid group to join."}` (400) — no group is materialised.
+  - `POST /api/db/create-multiple-groups` (the real seed endpoint) is still reachable and
+    still works (201) — an operator can still populate the same 15 groups deliberately.
+  - The disposable Postgres container and its volume were removed immediately after; nothing
+    was written to the real database at any point in this verification.
+- Validation after the removal: `bun run build` 13/13, `bun run check-types` 12/12,
+  `bun run lint` 166 warnings (unchanged), `bun run test` 13/13, `bunx tsc --noEmit`
+  (`apps/web`) clean.
+
+Definition of Done for B04, fully met: `services/auth` (soon `identity`) contains no
+`src/data/*` and no seed business logic; `packages/seed` owns all of it, including the
+`groupData` fixture; dev seed endpoints behave identically (verified live, both disabled and
+enabled); and the one open risk called out in the plan (the runtime fallback) was resolved by
+an explicit product decision rather than a unilateral code change.
 
 ## B03 Execution
 

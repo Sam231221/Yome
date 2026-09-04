@@ -1,8 +1,9 @@
 import type { Request, Response } from "express";
 import getPrismaInstance from "@repo/database";
-import { createLogger, groupData, slugify } from "@repo/shared";
+import { createLogger, slugify } from "@repo/shared";
 import { usersData } from "./fixtures/users.js";
 import { resourcesData } from "./fixtures/resources.js";
+import { groupData } from "./fixtures/groups.js";
 import {
   dashboardPostsData,
   dashboardSessionsData,

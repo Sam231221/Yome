@@ -39,18 +39,22 @@ said `ErrorEnvelope` moved with `ServiceName` into
 `createHttpError` — the manifest's stated destination didn't match the shipped code; the row
 now reflects reality. No source code changed during this audit, only manifest accuracy.
 
-B04 in progress (2026-09-04): `packages/seed` created; `SP-031`–`SP-034` and `SP-038` are
-`DONE` (seed controller + 3 fixture files extracted verbatim; `db.routes.ts` rewritten as a
-thin route mounting one `devSeedGuard` middleware instead of 5 repeated per-handler checks).
-4 new files assigned `SP-091`–`SP-094`. Verified locally end-to-end without touching a real
+B04 completed (2026-09-04): `packages/seed` created; `SP-031`–`SP-034`, `SP-038`, and `SP-013`
+are `DONE` (seed controller + 4 fixture files extracted verbatim; `db.routes.ts` rewritten as
+a thin route mounting one `devSeedGuard` middleware instead of 5 repeated per-handler checks).
+4 new files assigned `SP-091`–`SP-094`. The batch's own spec required presenting the
+first-run behaviour change before touching the `groupData` runtime fallback in
+`services/user/src/controllers/user.controller.ts` (`getUnassociatedGroupsForUser`,
+`joinUnjoinedGroups`) — asked the user; **decision: remove it**, matching the batch's original
+goal of zero seed code reachable from a production runtime path. Verified end-to-end against
+a disposable local Postgres instance (docker, migrated schema, no shared data at risk): a
+zero-group database now returns `{"unassociatedGroups":[]}` instead of ~15 synthetic cards,
+and `joinUnjoinedGroups` with a `groupData-N` id now 400s "Invalid group to join" instead of
+materialising a group. The seed subsystem guard was also verified without touching a real
 database: with `ENABLE_DEV_SEED_ROUTES=false` all 5 `/api/db/*` paths still 404 exactly as
-before; with it `=true` and a deliberately unreachable `DATABASE_URL`, all 5 pass the guard,
-reach the moved `packages/seed/dist/runners.js` code (confirmed in the error stack trace), and
-fail on `ECONNREFUSED` — proving the guard and route wiring are correct with zero write risk.
-**`SP-013` (`packages/shared/src/data/groups.ts`) and the `groupData` runtime fallback in
-`services/user/src/controllers/user.controller.ts` (`SP-076` partial) are intentionally not
-yet touched** — the batch's own spec requires presenting the first-run behaviour change and
-waiting for explicit confirmation before removing that fallback (see `migration-log.md`).
+before; with it `=true` and a deliberately unreachable `DATABASE_URL`, all 5 pass the guard
+and reach the moved `packages/seed/dist/runners.js` code (confirmed in the error stack trace)
+before failing on `ECONNREFUSED`.
 
 **This manifest tracks Phase 1 (B01–B10) — the existing files and where they go.** Phase 2+
 work (Redis, event backbone, read models, database extraction) creates new files rather than
@@ -104,7 +108,7 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-010 | `packages/eslint-config/react-internal.js` | tooling | LINT_CONFIG | KEEP | Same | — | eslint-config | Low | KEEP |
 | SP-011 | `packages/shared/package.json` | shared | PKG_MANIFEST | SPLIT | Unchanged path (still the shim's manifest); now depends on `@repo/contracts`, `@repo/service-kit`, `@repo/storage` only, dropped `zod`/`@aws-sdk/client-s3`/`express` peer | B03 / B10 | service-kit | Medium | DONE (B03; shim removal B10) |
 | SP-012 | `packages/service-kit/src/config/env.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/config/env.ts`; `servicePorts` gained a `core` getter (value wired B06) | B03 | service-kit | Medium | DONE |
-| SP-013 | `packages/shared/src/data/groups.ts` | seed | SEED_DATA | MOVE | `packages/seed/src/fixtures/groups.ts`; runtime consumers in `services/user` removed (B04) | B04 | seed | Medium | PENDING |
+| SP-013 | `packages/seed/src/fixtures/groups.ts` | seed | SEED_DATA | MOVE | Moved from `packages/shared/src/data/groups.ts`. Decision confirmed with the user: the `services/user` runtime fallback that read it directly was removed rather than kept (see `SP-074`/`SP-076`) — this fixture is now reachable only from `@repo/seed`, never from a production runtime path | B04 | seed | Medium | DONE |
 | SP-014 | `packages/contracts/src/errors.ts` | shared | PKG_MODULE | MOVE + REFACTOR | Moved from `packages/shared/src/errors.ts` (`createHttpError`); also absorbed `ErrorEnvelope` from the old `types/contracts.ts` (see SP-022) — both are pure, no Express dep | B03 | contracts | Low | DONE |
 | SP-015 | `packages/shared/src/index.ts` | shared | PKG_ENTRY | SPLIT | Unchanged path; content replaced with a re-export shim (`@repo/contracts` + `@repo/service-kit` + `@repo/storage` + local `groupData`); deleted in B10 | B03 / B10 | service-kit | Medium | DONE (B03; shim removal B10) |
 | SP-016 | `packages/service-kit/src/logger.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/logger.ts`, unchanged | B03 | service-kit | Low | DONE |
@@ -165,7 +169,7 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-071 | `services/resources/src/routes/resource.validation.ts` | learning | VALIDATION | MOVE | Learning module; `resourceToneSchema` → `@repo/contracts` | B07 | core | Low | PENDING |
 | SP-072 | `services/resources/tsconfig.json` | learning | TS_CONFIG | DELETE | Replaced by `services/core/tsconfig.json` | B07 | core | Low | PENDING |
 | SP-073 | `services/user/package.json` | multi | PKG_MANIFEST | DELETE | Replaced by `services/core`; profile deps → `identity`, rest → `core` | B06 | core | Medium | PENDING |
-| SP-074 | `services/user/src/controllers/user.controller.ts` | multi | CONTROLLER | SPLIT | profile → `identity/modules/profile` (B05); groups + connections + group-events → `core/modules/community` (B06); learning projects/events reads → `core/modules/learning` (B07); dashboard aggregation → `core/modules/dashboard` (B08). **B03: now imports `getAuthenticatedUserId`, `isUuid`, `slugify`, `formatCount`, `compactNumber` from `@repo/shared`; all five local duplicates deleted.** Domain split still pending | B05–B08 | identity + core | High | PENDING |
+| SP-074 | `services/user/src/controllers/user.controller.ts` | multi | CONTROLLER | SPLIT | profile → `identity/modules/profile` (B05); groups + connections + group-events → `core/modules/community` (B06); learning projects/events reads → `core/modules/learning` (B07); dashboard aggregation → `core/modules/dashboard` (B08). **B03: now imports `getAuthenticatedUserId`, `isUuid`, `slugify`, `formatCount`, `compactNumber` from `@repo/shared`; all five local duplicates deleted.** **B04: the `groupData` zero-seed fallback removed from `getUnassociatedGroupsForUser` and `joinUnjoinedGroups` (user decision: remove, not keep) — live-verified against a disposable Postgres instance.** Domain split still pending | B05–B08 | identity + core | High | PENDING |
 | SP-075 | `services/user/src/index.ts` | multi | SERVICE_ENTRY | DELETE | Entry replaced by `services/core/src/index.ts` | B06 | core | Medium | PENDING |
 | SP-076 | `services/user/src/routes/user.routes.ts` | multi | ROUTE | SPLIT | Same fan-out as the controller; every external path preserved through the gateway route manifest | B05–B08 | identity + core | High | PENDING |
 | SP-077 | `services/user/src/routes/user.validation.ts` | multi | VALIDATION | SPLIT | Profile schemas → `identity`; group/connection schemas → `core`; primitives → `@repo/contracts` | B05–B08 | identity + core | Medium | PENDING |
@@ -201,8 +205,8 @@ have been a duplicate-file-entry bug; caught and corrected before commit.
 - **B03** (shared split): SP-011, SP-012, SP-014, SP-015, SP-016, SP-017, SP-018, SP-019,
   SP-020, SP-021, SP-022, SP-023, SP-024, SP-079–SP-090 (+ import updates in SP-030, SP-041,
   SP-067, SP-074).
-- **B04** (seed extraction): SP-031, SP-032, SP-033, SP-034, SP-038, SP-091–SP-094 **done**;
-  SP-013 and the SP-074/SP-076 runtime-fallback removal **pending a product decision** (see
+- **B04** (seed extraction): SP-013, SP-031, SP-032, SP-033, SP-034, SP-038, SP-091–SP-094
+  **done**, incl. the fallback-removal portions of SP-074/SP-076 (decision: remove — see
   migration-log.md).
 - **B05** (identity): SP-029, SP-030, SP-035, SP-036, SP-037, SP-039 (+ profile portions of
   SP-074, SP-076, SP-077).
@@ -226,17 +230,17 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
   rows `SP-091`–`SP-094`). Duplicate IDs: 0. Duplicate current-file entries: 0.
 - `KEEP` (no change intended): SP-002, SP-004, SP-005, SP-007, SP-008, SP-010, SP-025,
   SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065 — **14 rows**.
-- `DONE`: SP-011, SP-012, SP-014–SP-024 (13 rows, B03's `packages/shared` split) +
-  SP-031–SP-034, SP-038 (5 rows, B04's seed extraction) + SP-079–SP-090 (12 rows, B03-created
-  files) + SP-091–SP-094 (4 rows, B04-created files) — **34 rows**.
-- `PENDING` (actionable, batch assigned): **46 rows** — includes `SP-013` (the `groupData`
-  fixture, deliberately not yet moved — see the B04-in-progress note above) and `SP-030`,
-  `SP-041`, `SP-067`, `SP-074`, `SP-076`, which carry an adoption note but are not `DONE`
-  because their full MOVE/domain-split is a separate, later batch or (for `SP-074`/`SP-076`)
-  gated on the same product decision as `SP-013`.
+- `DONE`: SP-011, SP-012, SP-014–SP-024 (13 rows, B03's `packages/shared` split) + SP-013,
+  SP-031–SP-034, SP-038 (6 rows, B04's seed extraction incl. the `groupData` fixture) +
+  SP-079–SP-090 (12 rows, B03-created files) + SP-091–SP-094 (4 rows, B04-created files) —
+  **35 rows**.
+- `PENDING` (actionable, batch assigned): **45 rows** — includes `SP-030`, `SP-041`, `SP-067`,
+  `SP-074`, `SP-076`, which carry an adoption note but are not `DONE` because their full
+  MOVE/domain-split is a separate, later batch (`SP-074`/`SP-076`'s B04-scoped fallback
+  removal specifically is done; their remaining domain-split content is still B05–B08).
 - `BLOCKED`: 0 in the manifest. One infra blocker was tracked in
   `service-decomposition-plan.md` (the missing `Dockerfile.service`) and was resolved in B02.
-- Row-count check: 14 KEEP + 34 DONE + 46 PENDING = 94. ✓
+- Row-count check: 14 KEEP + 35 DONE + 45 PENDING = 94. ✓
 
 ## Files this migration will create (IDs assigned on creation)
 
@@ -246,8 +250,7 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
   B03**, tracked as `SP-079`–`SP-090` (also: `packages/contracts/src/helpers.test.ts`, new
   coverage).
 - ✅ `packages/seed/**` — **created in B04**, tracked as `SP-091`–`SP-094` (the fixtures and
-  runners are moves, tracked by `SP-031`–`SP-034`). `SP-013` (`groupData`) has not moved
-  into it yet — pending the product decision on the runtime fallback.
+  runners are moves, tracked by `SP-013`, `SP-031`–`SP-034`).
 - `services/identity/**` (rename target of `services/auth`; new `modules/profile/**`) (B05)
 - `services/core/**` with `src/modules/{community,learning,feed,dashboard}/**` (B06–B08)
 - `services/messaging/**` (rename target of `services/chat`; new `modules/calls/**`) (B09)

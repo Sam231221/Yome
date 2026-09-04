@@ -4,10 +4,12 @@ You have eight planning documents. **You only need this one to begin.** The othe
 reference material you open when a batch tells you to.
 
 - **Branch:** `refactor/services-packages-architecture`
-- **Status:** B01, B02, and **B03 (shared package split) complete**. `packages/shared` is now
-  a thin shim over `@repo/contracts` / `@repo/service-kit` / `@repo/storage`; four duplicated
-  helpers were consolidated and adopted by `auth`, `user`, `chat`, `resources`. No
-  `services/*` file has moved location yet. **B04 is next.**
+- **Status:** B01–B04 complete. `packages/shared` is now a thin shim over `@repo/contracts` /
+  `@repo/service-kit` / `@repo/storage`; four duplicated helpers were consolidated and adopted
+  by `auth`, `user`, `chat`, `resources`. `packages/seed` now owns all dev seed logic and
+  fixtures (including the `groupData` zero-seed fallback, which was removed from
+  `services/user` after an explicit product decision — a fresh database now shows zero
+  groups until seeded, matching "no seed code in production"). **B05 is next.**
 - **How work happens:** you paste one command per batch into Claude Code. Claude does the
   batch, updates `migration-log.md`, and commits. You verify, then move to the next.
 
@@ -374,7 +376,7 @@ Tick these off as you go.
 - [x] **B01** Documentation — *complete 2026-09-04*
 - [x] **B02** CI, Docker, turbo env, security baseline — *complete 2026-09-04 (issues #1–3, #15, #28–35, #37 resolved)*
 - [x] **B03** Split `packages/shared` — *complete 2026-09-04 (issues #10, #11 resolved; new `@repo/contracts`/`@repo/service-kit`/`@repo/storage`)*
-- [ ] **B04** Seed extraction to `packages/seed`
+- [x] **B04** Seed extraction to `packages/seed` — *complete 2026-09-04 (issue #7, #9 resolved; `groupData` fallback removed per user decision)*
 - [ ] **B05** `identity` service (rename + profile absorption)
 - [ ] **B06** `core` service + `community` module
 - [ ] **B07** `learning` module (fold in `resources`)
