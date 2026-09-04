@@ -1,28 +1,28 @@
 import React, { useEffect, useRef } from "react";
-import { useStateProvider } from "@/context/StateContext";
 
 import ChatListItem from "./ChatListItem";
 
-import { reducerCases } from "@/context/constants";
+import { chatReducerCases } from "@/features/chat/state/chat-reducer";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
 import {
   resolveChatKind,
   type ChatListItem as ChatListItemData,
-} from "@/types/chat";
+} from "@/features/chat/types";
 import {
   getInitialGroupMeta,
   getInitialUserMeta,
   logChatBootstrapError,
-} from "@/lib/chat/chatApi";
+} from "@/features/chat/api/chatApi";
 
 export default function List({
   onBootstrapStateChange,
 }: {
   onBootstrapStateChange?: (loading: boolean) => void;
 }) {
-  const [
-    { userInfo, userContacts, groupContacts, filteredContacts },
-    dispatch,
-  ] = useStateProvider();
+  const [chatState, dispatch] = useChatState();
+  const [{ userInfo }] = useAuthState();
+  const { userContacts, groupContacts, filteredContacts } = chatState;
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
@@ -40,10 +40,10 @@ export default function List({
         if (cancelled) return;
 
         dispatch({
-          type: reducerCases.SET_USER_CONTACTS,
+          type: chatReducerCases.SET_USER_CONTACTS,
           userContacts: usersWithLatestPrivateMessages,
         });
-        dispatch({ type: reducerCases.SET_ONLINE_USERS, onlineUsers });
+        dispatch({ type: chatReducerCases.SET_ONLINE_USERS, onlineUsers });
       } catch (error) {
         if (!cancelled) {
           logChatBootstrapError("initial contacts", error);
@@ -60,7 +60,7 @@ export default function List({
         if (cancelled) return;
 
         dispatch({
-          type: reducerCases.SET_GROUP_CONTACTS,
+          type: chatReducerCases.SET_GROUP_CONTACTS,
           groupContacts: groupsWithLatestGroupMessages,
         });
       } catch (error) {

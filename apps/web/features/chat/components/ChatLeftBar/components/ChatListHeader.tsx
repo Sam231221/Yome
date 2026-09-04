@@ -2,16 +2,18 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { BsFillChatLeftTextFill, BsThreeDotsVertical } from "react-icons/bs";
-import { useStateProvider } from "@/context/StateContext";
-import { reducerCases } from "@/context/constants";
-import ContextMenu from "@/components/common/ContextMenu";
-import ProfileSkeleton from "@/components/Loading/Skeletons";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
+import { chatReducerCases } from "@/features/chat/state/chat-reducer";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
+import ContextMenu from "@/components/shared/ContextMenu";
+import ProfileSkeleton from "@/features/chat/components/loading/ProfileSkeleton";
 export default function ChatListHeader({
   isUserLoading,
 }: {
   isUserLoading: boolean;
 }) {
-  const [{ userInfo, socket }, dispatch] = useStateProvider();
+  const [{ userInfo }] = useAuthState();
+  const [{ socket }, chatDispatch] = useChatState();
   const router = useRouter();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,
@@ -40,7 +42,7 @@ export default function ChatListHeader({
   ];
 
   const handleAllContactsPage = () => {
-    dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
+    chatDispatch({ type: chatReducerCases.SET_ALL_CONTACTS_PAGE });
   };
 
   return (

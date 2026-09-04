@@ -1,10 +1,11 @@
-import type { ChatKind, ChatListItem as ChatContact } from "@/types/chat";
+import type { ChatKind, ChatListItem as ChatContact } from "@/features/chat/types";
 import toast from "react-hot-toast";
 import React, { useEffect, useState } from "react";
 import { BiArrowBack, BiSearchAlt2 } from "react-icons/bi";
-import { useStateProvider } from "@/context/StateContext";
-import { reducerCases } from "@/context/constants";
-import { getAllChatContacts, getChatErrorMessage } from "@/lib/chat/chatApi";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
+import { chatReducerCases } from "@/features/chat/state/chat-reducer";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
+import { getAllChatContacts, getChatErrorMessage } from "@/features/chat/api/chatApi";
 
 import ChatListItem from "./ChatListItem";
 
@@ -18,7 +19,8 @@ type Contact = ChatContact & {
 };
 
 function AllContactsList() {
-  const [{ userInfo }, dispatch] = useStateProvider();
+  const [{ userInfo }] = useAuthState();
+  const [, chatDispatch] = useChatState();
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
 
@@ -81,7 +83,7 @@ function AllContactsList() {
           <BiArrowBack
             className=" cursor-pointer text-xl"
             onClick={() =>
-              dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE })
+              chatDispatch({ type: chatReducerCases.SET_ALL_CONTACTS_PAGE })
             }
           />
           <h1 className="text-2xl text-panel-header-icon font-bold">

@@ -1,11 +1,10 @@
 import "./globals.css";
 import "./app-theme.css";
-import "./chat.css";
+import "@/features/chat/styles/chat.css";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
-import { StateProvider } from "@/context/StateContext";
 import { ReactNode } from "react";
-import AuthProvider from "@/context/AuthProvider";
-import ModalContextProvider from "@/context/ModalContextProvider";
+import AuthProvider from "@/features/auth/providers/AuthProvider";
+import { AuthStateProvider } from "@/features/auth/providers/AuthStateProvider";
 import { Toaster } from "react-hot-toast";
 
 export const metadata = {
@@ -37,13 +36,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body suppressHydrationWarning={true}>
         <AuthProvider>
-          <ModalContextProvider>
-            <StateProvider>
-              <Toaster />
-              <div id="photo-picker-element"></div>
-              <>{children}</>
-            </StateProvider>
-          </ModalContextProvider>
+          <AuthStateProvider>
+            <Toaster />
+            <div id="photo-picker-element"></div>
+            <>{children}</>
+          </AuthStateProvider>
         </AuthProvider>
       </body>
     </html>

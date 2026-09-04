@@ -1,4 +1,4 @@
-import HomePageContent from "@/features/landing/HomePageContent";
+import HomePageContent from "@/features/landing/components/HomePageContent";
 
 export default function Home() {
   return <HomePageContent />;

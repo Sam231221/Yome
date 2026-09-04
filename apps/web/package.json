@@ -7,7 +7,7 @@
     "build": "bun --env-file=../../.env next build --webpack",
     "start": "bun --env-file=../../.env next start",
     "lint": "eslint .",
-    "test": "bun test lib/**/*.test.ts"
+    "test": "bun test ./lib/**/*.test.ts ./features/*/*/*.test.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

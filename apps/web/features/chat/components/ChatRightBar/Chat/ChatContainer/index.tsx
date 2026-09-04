@@ -1,24 +1,21 @@
 import React, { useEffect, useRef } from "react";
-import dynamic from "next/dynamic";
-import { useStateProvider } from "@/context/StateContext";
-import { calculateTime } from "@/utils/CalculateTime";
-import MessageStatus from "@/components/common/MessageStatus";
-import Avatar from "@/components/common/Avatar";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
+import { calculateTime } from "@/features/chat/lib/calculateTime";
+import MessageStatus from "@/features/chat/components/message-status";
+import Avatar from "@/components/shared/media/Avatar";
 import ImageMessage from "./ImageMessage";
-import type { ChatMessage } from "@/types/chat";
-
-const VoiceMessage = dynamic(() => import("./VoiceMessage"), {
-  ssr: false,
-});
+import VoiceMessage from "./VoiceMessage";
+import type { ChatMessage } from "@/features/chat/types";
 
 export default function ChatContainer({ chatType }: { chatType: string }) {
-  const [{ messages, currentChatUser, userInfo }] = useStateProvider();
-  if (!currentChatUser || !userInfo) return null;
-
+  const [{ userInfo }] = useAuthState();
+  const [{ messages, currentChatUser }] = useChatState();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  //On Message Updates
   useEffect(() => {
+    if (!currentChatUser || !userInfo) return;
+
     const container = containerRef.current;
     if (container) {
       const lastMessage =
@@ -29,7 +26,9 @@ export default function ChatContainer({ chatType }: { chatType: string }) {
         lastMessage.scrollIntoView({ behavior: "smooth" });
       }
     }
-  }, [messages]);
+  }, [currentChatUser, messages, userInfo]);
+
+  if (!currentChatUser || !userInfo) return null;
 
   const renderMessageMeta = (message: ChatMessage, isOwnMessage: boolean) => (
     <div className={`chat-message-meta ${isOwnMessage ? "mine" : ""}`}>

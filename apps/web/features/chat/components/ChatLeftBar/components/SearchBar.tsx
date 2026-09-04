@@ -1,9 +1,9 @@
 import { BiSearchAlt2 } from "react-icons/bi";
-import { useStateProvider } from "@/context/StateContext";
-import { reducerCases } from "@/context/constants";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
+import { chatReducerCases } from "@/features/chat/state/chat-reducer";
 
 export default function SearchBar() {
-  const [{ contactSearch }, dispatch] = useStateProvider();
+  const [{ contactSearch }, dispatch] = useChatState();
 
   return (
     <label className="messages-search">
@@ -14,7 +14,7 @@ export default function SearchBar() {
         value={contactSearch}
         onChange={(e) =>
           dispatch({
-            type: reducerCases.SET_CONTACT_SEARCH,
+            type: chatReducerCases.SET_CONTACT_SEARCH,
             contactSearch: e.target.value,
           })
         }

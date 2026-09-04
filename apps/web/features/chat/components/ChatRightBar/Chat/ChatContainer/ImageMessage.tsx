@@ -1,15 +1,17 @@
-import { useStateProvider } from "@/context/StateContext";
-import { calculateTime } from "@/utils/CalculateTime";
+import { useAuthState } from "@/features/auth/providers/AuthStateProvider";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
+import { calculateTime } from "@/features/chat/lib/calculateTime";
 import Image from "next/image";
 import React from "react";
-import MessageStatus from "@/components/common/MessageStatus";
-import type { ChatMessage } from "@/types/chat";
+import MessageStatus from "@/features/chat/components/message-status";
+import type { ChatMessage } from "@/features/chat/types";
 
 interface ImageMessageProps {
   message: ChatMessage;
 }
 function ImageMessage({ message }: ImageMessageProps) {
-  const [{ currentChatUser, userInfo }] = useStateProvider();
+  const [{ userInfo }] = useAuthState();
+  const [{ currentChatUser }] = useChatState();
   if (!currentChatUser || !userInfo) return null;
   const isOwnMessage = message.senderId === userInfo.id;
   return (

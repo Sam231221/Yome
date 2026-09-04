@@ -1,18 +1,18 @@
-import { useStateProvider } from "@/context/StateContext";
+import { chatReducerCases } from "@/features/chat/state/chat-reducer";
+import { useChatState } from "@/features/chat/state/ChatStateContext";
 import React, { useEffect, useState } from "react";
 import { IoClose } from "react-icons/io5";
 import { BiFilter, BiSearchAlt2, BiArrowBack } from "react-icons/bi";
 import { FiBellOff, FiSearch, FiUser } from "react-icons/fi";
-import { reducerCases } from "@/context/constants";
-import { calculateTime } from "@/utils/CalculateTime";
-import type { ChatMessage } from "@/types/chat";
+import { calculateTime } from "@/features/chat/lib/calculateTime";
+import type { ChatMessage } from "@/features/chat/types";
 
 function SearchMessagesRightMostChatContainer({
   onClose,
 }: {
   onClose: () => void;
 }) {
-  const [{ currentChatUser, messages, messageSearch }, dispatch] = useStateProvider();
+  const [{ currentChatUser, messages, messageSearch }, chatDispatch] = useChatState();
   const [searchBarFocus, setSearchBarFocus] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchedMessages, setSearchedMessages] = useState<ChatMessage[]>([]);
@@ -56,7 +56,7 @@ function SearchMessagesRightMostChatContainer({
           </div>
 
           <div className="chat-detail-actions">
-            <button type="button" onClick={() => dispatch({ type: reducerCases.SET_MESSAGES_SEARCH })}>
+            <button type="button" onClick={() => chatDispatch({ type: chatReducerCases.SET_MESSAGES_SEARCH })}>
               <FiSearch />
               <span>Search</span>
             </button>
@@ -74,7 +74,7 @@ function SearchMessagesRightMostChatContainer({
             <strong>Shared files</strong>
             <button
               type="button"
-              onClick={() => dispatch({ type: reducerCases.SET_MESSAGES_SEARCH })}
+              onClick={() => chatDispatch({ type: chatReducerCases.SET_MESSAGES_SEARCH })}
             >
               View all
             </button>
@@ -113,7 +113,7 @@ function SearchMessagesRightMostChatContainer({
               onClick={() => {
                 setSearchTerm("");
                 setSearchBarFocus(false);
-                dispatch({ type: reducerCases.SET_MESSAGES_SEARCH });
+                chatDispatch({ type: chatReducerCases.SET_MESSAGES_SEARCH });
                 onClose();
               }}
               type="button"

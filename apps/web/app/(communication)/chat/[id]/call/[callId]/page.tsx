@@ -1,4 +1,4 @@
-import { DirectCallRouteClient } from "@/features/chat/direct-call/DirectCallRouteClient";
+import { DirectCallRouteClient } from "@/features/direct-call/components/DirectCallRouteClient";
 
 export default async function DirectConversationCallPage({
   params,

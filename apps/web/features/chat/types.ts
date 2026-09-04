@@ -1,0 +1,23 @@
+export type {
+  ChatConversationRef,
+  ChatGroupRef,
+  ChatIdentity,
+  ChatIdentityId,
+  ChatKind,
+  ChatListItem,
+  ChatMessage,
+  ChatMessageParty,
+  ChatSocketRef,
+  ChatStateUser,
+  ChatTargetId,
+  ConversationId,
+  GroupId,
+  GroupMessageEvent,
+  MarkReadEvent,
+  MessageId,
+  MessageKind,
+  OnlineUsersEvent,
+  PrivateMessageEvent,
+  UserId,
+} from "@/types/chat-contracts";
+export { isGroupId, isUserId, resolveChatKind } from "@/types/chat-contracts";

@@ -1,0 +1,27 @@
+export type YomeTone = "blue" | "teal" | "amber" | "violet" | "neutral";
+
+export type YomeIconName =
+  | "home"
+  | "compass"
+  | "users"
+  | "profile"
+  | "message"
+  | "headphones"
+  | "library"
+  | "flask"
+  | "calendar"
+  | "settings"
+  | "search"
+  | "bell"
+  | "moon"
+  | "sun"
+  | "plus"
+  | "more"
+  | "help"
+  | "code"
+  | "file"
+  | "comment"
+  | "share"
+  | "bookmark"
+  | "check"
+  | "arrow";
