@@ -21,7 +21,7 @@ flowchart LR
     W -.socket token.-> A1[Next.js route<br/>/api/auth/socket-token]
     A1 -.JWT.-> C[Chat service socket<br/>:4103]
 
-    G --> A[Auth service<br/>:4101]
+    G --> A[Identity service<br/>:4101]
     G --> B[User service<br/>:4102]
     G --> C
     G --> D[Media service<br/>:4104]
@@ -170,7 +170,7 @@ flowchart TD
 
 ## 5. Flow C: Login And Session Creation
 
-The frontend login page delegates credential verification to NextAuth, and NextAuth delegates credential checking to the auth microservice through the gateway.
+The frontend login page delegates credential verification to NextAuth, and NextAuth delegates credential checking to the identity microservice through the gateway.
 
 ```mermaid
 sequenceDiagram
@@ -178,7 +178,7 @@ sequenceDiagram
     participant W as apps/web
     participant NA as NextAuth route
     participant G as Gateway :4100
-    participant A as Auth service :4101
+    participant A as Identity service :4101
     participant DB as PostgreSQL
 
     U->>W: Submit login form
@@ -206,15 +206,15 @@ sequenceDiagram
 
 ## 6. Flow D: How Frontend REST Calls Reach The Microservices
 
-For most REST operations, the frontend does not call the auth/user/chat/media services directly. It calls the gateway on port `4100`.
+For most REST operations, the frontend does not call the identity/user/chat/media services directly. It calls the gateway on port `4100`.
 
 ```mermaid
 flowchart LR
     A[apps/web code] --> B[utils/ApiRoutes.ts]
     B --> C[NEXT_PUBLIC_BACKEND_API<br/>http://localhost:4100]
     C --> D[services/gateway/src/index.ts]
-    D --> E[/api/auth -> auth service]
-    D --> F[/api/user -> user service]
+    D --> E[/api/auth -> identity service]
+    D --> F["/api/user -> user service<br/>(3 profile paths -> identity, see routeRules.ts)"]
     D --> G[/api/messages or /api/chat -> chat service]
     D --> H[/api/media -> media service]
     D --> I[/api/notifications -> notifications service]
@@ -350,7 +350,7 @@ These defaults come from `packages/service-kit/src/config/env.ts` and the root `
 
 - `3000`: Next.js frontend in `apps/web`
 - `4100`: gateway
-- `4101`: auth service
+- `4101`: identity service
 - `4102`: user service
 - `4103`: chat service and Socket.IO
 - `4104`: media service
@@ -365,6 +365,6 @@ From there:
 1. public pages render directly in Next.js
 2. protected pages are checked by `apps/web/middleware.ts`
 3. most backend REST calls go to the gateway on `:4100`
-4. the gateway forwards them to auth, user, chat, media, or notifications
+4. the gateway forwards them to identity, user, chat, media, or notifications
 5. chat realtime events connect directly to the chat service on `:4103`
-6. auth, user, and chat data finally live in PostgreSQL through Prisma in `packages/database`
+6. identity, user, and chat data finally live in PostgreSQL through Prisma in `packages/database`

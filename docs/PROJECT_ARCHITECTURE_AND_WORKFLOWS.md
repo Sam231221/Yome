@@ -49,7 +49,7 @@ flowchart LR
     B --> D[Frontend API routes<br/>apps/web/app/api/*]
     B --> E[Gateway<br/>localhost:4100]
 
-    E --> F[Auth Service<br/>localhost:4101]
+    E --> F[Identity Service<br/>localhost:4101]
     E --> G[User Service<br/>localhost:4102]
     E --> H[Chat Service<br/>localhost:4103]
     E --> I[Media Service<br/>localhost:4104]
@@ -203,7 +203,7 @@ sequenceDiagram
     participant U as User
     participant W as apps/web
     participant G as Gateway:4100
-    participant A as Auth Service:4101
+    participant A as Identity Service:4101
     participant DB as Postgres/Prisma
 
     U->>W: Open /login and fill registration form
@@ -261,7 +261,7 @@ After registration succeeds, the next expected workflow is login.
 3. If authorized, `dashboard/page.tsx` renders.
 4. The page calls `ensureUserInfo(...)`.
 5. `ensureUserInfo` posts to `GET_USER_ROUTE` through the gateway.
-6. The auth service resolves the app-level user record using the session email.
+6. The identity service resolves the app-level user record using the session email.
 7. The frontend stores the returned user details in shared state.
 8. `DashboardShell` renders the main app shell.
 9. `TopNav` uses the resolved user profile image if available, otherwise falls back to a default avatar.
@@ -362,8 +362,8 @@ curl -X POST http://localhost:3000/api/dev/db/reset \
 ### What happens
 
 1. Frontend dev-only database routes forward seed requests to the gateway.
-2. The gateway forwards them to auth service DB routes.
-3. The auth service performs bulk create or update operations.
+2. The gateway forwards them to identity service DB routes.
+3. The identity service performs bulk create or update operations.
 4. These routes are only intended for local development.
 5. They are controlled by `ENABLE_DEV_SEED_ROUTES` in `.env`.
 6. The destructive reset route also requires `DEV_SEED_ROUTE_TOKEN`.
@@ -383,7 +383,7 @@ flowchart TD
     C --> D[Login/Register page]
     D --> E[Submit registration form]
     E --> F[Gateway /api/auth/register-user]
-    F --> G[Auth service registerUser]
+    F --> G[Identity service registerUser]
     G --> H[(Database)]
     H --> I[Success response]
     I --> J[Switch back to login tab]

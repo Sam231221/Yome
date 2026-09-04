@@ -346,6 +346,87 @@ surface and a live end-to-end check; the env var rename the user explicitly chos
 everywhere it appears in source, config, CI, and docs; full validation and live verification
 both pass with zero risk to shared/real data.
 
+## B05 Completeness Audit (2026-09-05, same day)
+
+Requested explicitly, following the same method as the B03 completeness audit: manifest
+structural checks (duplicate IDs, duplicate current-file entries, ID-sequence gaps —
+grep-derived, not hand-tallied), a filesystem existence check for every row this batch
+claims `DONE`, a fresh full-repo validation run, a live Docker build/boot of the renamed
+service (not run during B05 itself), and a repo-wide sweep for stale naming — extended past
+`services/auth` path strings this time to also catch "auth service" **prose**, since that
+was the B03 audit's blind spot pattern repeating. Found and fixed 2 real gaps and corrected
+9 stale prose mentions; shipped code (routing, controllers, tests) was otherwise correct.
+
+1. **Manifest structure**: 99 rows, 0 duplicate IDs, 0 duplicate current-file entries, no
+   ID-sequence gaps (`SP-001`–`SP-099` all present exactly once). Status accounting
+   re-verified by grep: 14 KEEP + 46 DONE + 39 PENDING = 99. ✓ All 12 files the manifest
+   marks `DONE` for B05 (`SP-029`, `SP-030`, `SP-035`–`SP-039`, `SP-095`–`SP-099`) confirmed
+   to exist on disk at their recorded "Current File" path.
+2. **Unused direct dependency** (real gap): `services/identity/package.json` listed
+   `@repo/storage` as a direct dependency, but `services/identity/src` has zero direct
+   `@repo/storage` imports — `uploadBufferToS3` is only reached via `@repo/shared`'s
+   re-export, exactly like `services/user` (the code's original owner) did before the move.
+   `services/identity` is the only `package.json` in the repo that listed `@repo/storage`
+   directly while never importing it directly. Removed; `build`/`check-types` confirmed
+   unaffected (both were already resolving the type through `@repo/shared` transitively).
+   `SP-029`'s manifest note corrected to stop claiming this dependency was needed.
+3. **Stale "auth service" prose, 9 instances** (real gap; B05's own stale-reference sweep
+   only grepped the path string `services/auth`, not the prose phrase "auth service" — the
+   same category of miss the B03 audit warned about, just a different string this time):
+   - `docs/PROJECT_ARCHITECTURE_AND_WORKFLOWS.md`: 2 numbered-step sentences ("The auth
+     service resolves...", "The auth service performs bulk...") + 2 mermaid diagram node
+     labels ("Auth Service", "Auth service registerUser").
+   - `docs/LOCALHOST_3000_REQUEST_WORKFLOW.md`: 2 mermaid labels ("Auth service"), 1 mermaid
+     flowchart edge label ("`/api/auth -> auth service`", extended with a note that 3
+     profile sub-paths now go to `identity` instead), 1 sequence-diagram participant alias
+     display name, 1 prose sentence ("the auth microservice"), 2 list items ("the gateway
+     forwards them to auth, ...", "auth, user, and chat data finally live in Postgres"), and
+     the port-list entry "`4101`: auth service".
+   - `packages/database/SCHEMA_OWNERSHIP.md`: **not touched at all during B05** — a genuine
+     miss, since this file is exactly the kind of cross-cutting doc a service rename should
+     update. Rewrote the `User`/`UserProfile` and `Group` ownership rows and the "Auth
+     service" boundary bullet to say `Identity`/`User service` and reflect current (not
+     B01-era) ownership — the `Group` row previously said "Auth (current) / User service
+     (future)", which was stale even before B05 (B04 already moved runtime Group CRUD to
+     `user`; only the dev-seed path stays reachable from `identity` via `@repo/seed`). This
+     is a **name + accuracy** fix only — the full ownership-model rewrite this file's own
+     `SP-001` row defers to B10 was deliberately left alone.
+   - `services/identity/src/modules/credentials/credentials.controller.ts`: one doc-comment
+     ("...so the password never leaves the auth service") — the one source-code (not docs)
+     instance found.
+   - Deliberately left unchanged (historical, not stale): `README.md`'s "Completed recently"
+     changelog line ("auth, user, and chat route validation" — true of the work at the time
+     it was done, before the rename existed); `migration-log.md`'s own B01-era "Detected
+     Validation Commands" section (explicitly a frozen snapshot of the *original* repo state,
+     evidenced by its own uncorrected "note: `@services/user` and `@services/resources` are
+     absent" / "note: `Dockerfile.service` does not exist" — both fixed in B02 but the B01
+     snapshot was never rewritten, by design); `architecture-plan.md` and
+     `service-decomposition-plan.md`'s "Current" column describing pre-refactor state.
+4. **Live-verified the Docker path, which B05 itself skipped** (B02/B03 ran
+   `docker build -f Dockerfile.service --build-arg SERVICE_DIR=...`; B04 and B05 did not):
+   `docker build -f Dockerfile.service --build-arg SERVICE_DIR=services/identity` succeeds
+   (`Dockerfile.service` derives the workspace name generically from `SERVICE_DIR`, no
+   hardcoded `auth` string to update), and the resulting image boots cleanly
+   (`{"level":"info","service":"identity","msg":"Identity service listening",...,"port":4101}`
+   with only `IDENTITY_SERVICE_PORT` set). Test image and container removed after.
+5. **Verified against the whole project, not just `services/**`**: grepped all of
+   `apps/web` for `AUTH_SERVICE`/hardcoded `4101`/`SERVICE_URL` — none found outside the
+   pre-existing, out-of-scope `stream.actions.ts` gateway-bypass (issue #25/#26, tracked for
+   B09). Confirmed every `apps/web` file calling a moved-or-adjacent route
+   (`userInfo.ts`, `options.ts`, `sync-user/route.ts`, `RegisterContainer.tsx`,
+   `dashboardApi.ts`, `chatApi.ts`, `accountApi.ts`, `devDbProxy.ts`) does so through
+   `ApiRoutes.ts`/the gateway, never a direct service URL. Ran `apps/web`'s own test suite
+   (12/12 pass) and standalone `tsc --noEmit` (clean) — neither had been run standalone
+   specifically for B05 before (only via the aggregate `turbo run` tasks).
+6. Full validation re-run clean after every fix above: `build` 13/13, `check-types` 12/12,
+   `check-types:all` (11 sequential per-package `tsc --noEmit`, the actual root script,
+   not previously run for B05) all pass, `test` 13/13 (incl. gateway's 42 and `apps/web`'s
+   12), `lint` 0 errors / 166 warnings (unchanged, all pre-existing `apps/web`).
+
+No functional/runtime behavior changed by this audit beyond the one dependency removal
+(which had zero build/runtime effect, confirmed above) — everything else was doc/comment
+text. B05 stands as complete.
+
 ## B04 Execution
 
 - Rollback target: parent commit `ebf93d4`.

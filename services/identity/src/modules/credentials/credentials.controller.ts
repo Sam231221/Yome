@@ -40,7 +40,7 @@ export async function getUserByEmail(
 
 /**
  * Verify email + password. Returns user without password hash on success, 401 otherwise.
- * Used by NextAuth credentials provider so the password never leaves the auth service.
+ * Used by NextAuth credentials provider so the password never leaves the identity service.
  */
 export async function verifyCredentials(
   req: Request,
