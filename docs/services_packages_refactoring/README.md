@@ -6,10 +6,17 @@ Planning set for re-architecting the Yome backend. Sibling of `docs/app_web_refa
 **Status: planning only.** Phase 1 batch B01 (documentation) is complete. No `services/*` or
 `packages/*` source has been changed. Branch: `refactor/services-packages-architecture`.
 
+## ▶ Start with [00-START-HERE.md](./00-START-HERE.md)
+
+It is the run book: the order to execute batches in, the exact command to paste into Claude
+Code for each one, how to verify, how to roll back, and a progress tracker. Everything below
+is reference material you open when a batch tells you to.
+
 ## Read in this order
 
 | # | Document | Answers |
 | --- | --- | --- |
+| 0 | [**00-START-HERE.md**](./00-START-HERE.md) | **How do I actually run this?** Execution order, per-batch commands, verification, rollback, progress tracker. |
 | 1 | [architecture-plan.md](./architecture-plan.md) | **Where does the code live?** Current assessment, domain → owner map, target directory structure, architecture rules, Phase 1 batches B01–B10. |
 | 2 | [service-decomposition-plan.md](./service-decomposition-plan.md) | **What runs as its own process?** Runtime-driver audit per domain, why most domains are modules rather than services, gateway route map before/after, shared-package extraction. |
 | 3 | [data-architecture-plan.md](./data-architecture-plan.md) | **Where does the data live?** Target store per model, trigger definitions T-01…T-07 with thresholds, Redis introduction, database-split mechanics, cross-domain reads that break under a split. |

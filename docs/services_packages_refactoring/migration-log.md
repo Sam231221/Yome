@@ -128,6 +128,26 @@ These exist before any change in this migration and must not be counted as regre
 | 23 | `apps/web` `/notifications` route has no backing API; `User.notificationCount` is a hardcoded schema default (`3`) | `services/notifications`, `schema.prisma` | B14 |
 | 24 | Response envelopes are inconsistent — some `{ ok, ... }`, some bare (`{ users }`, `{ groups }`, `{ messages }`) | all services | B03 |
 
+### Added by the B01 validation audit (2026-09-04)
+
+| # | Issue | Location | Severity | Batch |
+| --- | --- | --- | --- | --- |
+| 25 | **`apps/web` bypasses the gateway and impersonates it.** `stream.actions.ts` calls `CHAT_SERVICE_URL` directly, forging `x-internal-token` (= `GATEWAY_SHARED_TOKEN`) and `x-user-id`. Violates the "gateway is the only synchronous entry point" invariant | `apps/web/actions/stream.actions.ts` | **High** | B09 |
+| 26 | **Video calling has no service owner.** Stream token minting (`generateUserToken`), `upsertUsers`, and call authorization live in a Next.js server action. An entire domain is missing from the service map | `apps/web/actions/stream.actions.ts` | **High** | B09 |
+| 27 | **`STREAM_SECRET_KEY` and `GATEWAY_SHARED_TOKEN` are held by `apps/web`.** The frontend deploy carries backend secrets | `apps/web`, root `.env` | **High** | B09 |
+| 28 | **Dev auth bypass in `sync-user`.** When `NODE_ENV !== "production"` the route accepts `email`/`name`/`image` from the request body with no session — an account-takeover primitive if `NODE_ENV` is unset in a deployed environment | `apps/web/app/api/auth/sync-user/route.ts` | **High** | B02 |
+| 29 | `visual-qa=1` query param bypasses `withAuth` (gated on dev + localhost). Inventory and confirm the gate cannot be reached in production | `apps/web/middleware.ts` | Medium | B02 |
+| 30 | **CI references `apps/mobile`, which does not exist.** `deploy-mobile.yml` in full, plus the `build-mobile` job and `mobile` paths-filter in `ci.yml`. `turbo run build --filter=@apps/mobile` would fail if it ever ran | `.github/workflows/ci.yml`, `deploy-mobile.yml` | Medium | B02 |
+| 31 | **`turbo.json` `globalEnv` is incomplete** — missing `AUTH_SERVICE_URL`, `USER_SERVICE_URL`, `MEDIA_SERVICE_URL`, `NOTIFICATIONS_SERVICE_URL`, every `*_SERVICE_PORT`, `GATEWAY_PORT`, `GATEWAY_RATE_WINDOW_MS`, `GATEWAY_RATE_MAX_REQUESTS`, `STORAGE_PROVIDER`, and every `AWS_*`. Turbo cache keys therefore omit them, so changing one can serve a stale cached build | `turbo.json` | **High** | B02 |
+| 32 | `JWT_KEY` is declared in `.env` and used nowhere in the repository — dead config | `.env` | Low | B02 |
+| 33 | `DEV_SEED_ROUTE_TOKEN` is required by the seed reset route but is absent from `.env`; the documented reset command cannot succeed | `.env`, `README.md` | Low | B02 / B04 |
+| 34 | **No containerization exists.** Zero Docker, compose, k8s, helm, or terraform files are tracked, yet `deploy-services.yml` builds `./Dockerfile.service` | repo root | **High** | B02 |
+| 35 | No migration coordination strategy — the docs never state who runs `db:migrate` during deploy, or how migrations are ordered against service renames and the `OutboxEvent` addition | `packages/database`, deploy workflows | Medium | B02 / B13 |
+| 36 | No observability plan. `createLogger` emits JSON but nothing aggregates it; `x-request-id` is generated and forwarded but never correlated; no metrics, no tracing | all services | Medium | B10 |
+| 37 | No per-batch rollback strategy documented | all batches | Medium | B02 |
+| 38 | 5 of 7 services have `"test": "echo ..."` stubs; no coverage target or unit/contract/integration split is defined | `auth`, `user`, `gateway`, `media`, `notifications` | Medium | B10 |
+| 39 | `apps/web` is a de-facto BFF (holds `axios`, `jsonwebtoken`, `@stream-io/node-sdk`, service URLs, and backend secrets) but the docs treat it purely as a frontend | `apps/web` | Medium | B09 |
+
 ## Batch Execution History
 
 | Batch | Status | Started | Completed | Validation Result | Notes |

@@ -178,6 +178,52 @@ WebSocket cannot traverse the HTTP proxy gateway, so `apps/web` connects directl
 | `online-users` | server → client | Presence broadcast | Sourced from Redis |
 | `signout` / `disconnect` | client → server | Presence teardown | Redis + TTL expiry |
 
+## The `apps/web` Server-Side Surface
+
+`apps/web` is not purely a frontend. It ships `axios`, `jsonwebtoken`, `@stream-io/node-sdk`,
+`next-auth`, backend service URLs, and **backend secrets**. Any API catalogue that ignores it
+is incomplete.
+
+| Route / action | What it does | Verdict |
+| --- | --- | --- |
+| `app/api/auth/[...nextauth]/route.ts` + `options.ts` | NextAuth handler; Credentials provider posts to `/api/auth/verify-credentials` through the gateway | **Correct.** The web app owns the browser session; this is its job |
+| `app/api/auth/session/route.ts` | Returns the decoded session | **Correct** |
+| `app/api/auth/socket-token/route.ts` | Mints a 5-minute JWT signed with `NEXTAUTH_SECRET` for the Socket.IO handshake | **Acceptable.** The web app owns the session, so it is the natural minter. `messaging` verifies with the same secret. Revisit only if session ownership moves |
+| `app/api/auth/sync-user/route.ts` | Upserts an OAuth user via the gateway | **Correct path, unsafe fallback.** When `NODE_ENV !== "production"` it accepts `email`/`name`/`image` **from the request body with no session** — an account-takeover primitive if `NODE_ENV` is unset in a deployed environment (issue #28, fixed in B02) |
+| `app/api/dev/db/*` + `_lib/devDbProxy.ts` | Proxies dev seed calls to the gateway | **Correct.** Dev-only, gated |
+| `middleware.ts` | `withAuth` route protection | **Correct**, but carries a `visual-qa=1` bypass gated on dev + localhost (issue #29 — audit in B02) |
+| **`actions/stream.actions.ts`** | Mints Stream video tokens with `STREAM_SECRET_KEY`; upserts participants into Stream; **calls `CHAT_SERVICE_URL` directly, forging `x-internal-token` from `GATEWAY_SHARED_TOKEN` and `x-user-id`** | **Violation.** See below |
+
+### The gateway-bypass violation
+
+`stream.actions.ts` breaks the invariant stated at the top of this document — that the gateway
+is the only synchronous entry point — in three ways at once:
+
+1. **It bypasses the gateway.** It talks to `services/chat` on `CHAT_SERVICE_URL` directly, so
+   the request never passes gateway rate limiting, session decoding, or request-id assignment.
+2. **It impersonates the gateway.** It sets `x-internal-token: GATEWAY_SHARED_TOKEN` and
+   `x-user-id` itself. `internalTokenGuard` cannot distinguish this from a real gateway call,
+   which means the shared token's security value is only as strong as the frontend deploy.
+3. **It holds backend secrets.** `STREAM_SECRET_KEY` and `GATEWAY_SHARED_TOKEN` are in the web
+   app's environment. A compromised or misconfigured frontend deploy leaks both.
+
+It also means **video calling has no service owner** — token minting, participant
+provisioning, and call authorization are a Next.js server action rather than a domain module.
+
+**Target (B09):** the Stream server logic moves into `services/messaging/src/modules/calls`
+and is exposed through the gateway:
+
+| Method | External path | Owner | Replaces |
+| --- | --- | --- | --- |
+| POST | `/api/chat/call-token` | messaging/calls | `tokenProvider()` in `stream.actions.ts` |
+| POST | `/api/chat/call-participants` | messaging/calls | `ensureDirectCallUsers()` in `stream.actions.ts` |
+| POST | `/api/chat/prepare-direct-call-conversation` | messaging/calls | already a service endpoint; `apps/web` stops calling it directly |
+| POST | `/api/chat/validate-direct-conversation` | messaging/calls | same |
+
+After B09, `apps/web` keeps only `NEXT_PUBLIC_STREAM_API_KEY` (a public client key) and drops
+`@stream-io/node-sdk`, `STREAM_SECRET_KEY`, `GATEWAY_SHARED_TOKEN`, and `CHAT_SERVICE_URL`.
+The acceptance check is mechanical: `grep -r "x-internal-token" apps/web` must return nothing.
+
 ## Gateway Route Manifest
 
 The hardcoded `app.use("/api/...", proxyRequest(...))` list becomes
@@ -242,6 +288,8 @@ failure. The allowed set is deliberately tiny.
 | any | any (other) | **No** | Use events, or an in-process module call within `core` |
 | core module | core module | **Yes** | In-process call through `modules/<domain>/index.ts` only — never a direct Prisma query into another module's tables |
 | any | notifications | **No sync calls** | Events only. The existing `POST /api/notifications/send` is retained for operational/manual sends, not for domain flows |
+| `apps/web` | any service directly | **No** | Must go through the gateway. **Currently violated** by `actions/stream.actions.ts` (issue #25) — fixed in B09 |
+| anything | forging `x-internal-token` | **Never** | Only the gateway sets it. `apps/web` currently does (issue #25); after B09 the token exists in exactly one deploy |
 
 The rule that matters most: **`core` modules call each other in-process, not over HTTP.**
 Cross-module reads 3, 4, and 5 in `data-architecture-plan.md` (community→learning,

@@ -98,9 +98,17 @@ Study Rooms, Resources, Projects, Events, Settings, plus Account) and from the P
   project view over `Post`.
 - **feed**: posts, comments, likes, and the read-only dashboard aggregation (a BFF read
   that composes community + learning + feed). Data: `Post`, `Comment`, `Like`.
-- **messaging**: direct and group messages, conversations, direct-call conversation
-  preparation/validation, Socket.IO realtime (presence, push, read receipts). Data:
-  `Messages`, `Conversation`.
+- **messaging**: direct and group messages, conversations, Socket.IO realtime (presence,
+  push, read receipts), **and calls** — direct-call conversation preparation/validation plus
+  Stream video token minting and participant provisioning. Data: `Messages`, `Conversation`.
+
+  The calls half is currently **not in any service**: `apps/web/actions/stream.actions.ts` is
+  a Next.js server action that holds `STREAM_SECRET_KEY`, mints Stream user tokens, upserts
+  participants into Stream, and calls `CHAT_SERVICE_URL` **directly — bypassing the gateway**
+  by forging `x-internal-token` (from `GATEWAY_SHARED_TOKEN`) and `x-user-id` headers. This
+  is the single largest boundary violation in the repository: the frontend deploy carries
+  backend secrets and impersonates the gateway. B09 moves it into
+  `services/messaging/src/modules/calls`.
 - **media**: image and audio upload to object storage. Owns **no** database tables.
 - **notifications**: notification delivery. Currently a stub acceptance endpoint. Owns no
   tables yet.
@@ -322,25 +330,48 @@ parallel with B05–B08 since it touches only `messaging` and `gateway`; B13 req
 - Definition of Done: four docs exist, manifest covers every eligible file, actionable rows
   carry a batch, and no `services/*` or `packages/*` source is modified.
 
-### B02 — CI/CD and Deploy Parity
+### B02 — Foundation: CI/CD, Build Integrity, and Security Baseline
 
-- Purpose: make the build/deploy pipeline real and honest before any code moves.
-- Scope: `.github/workflows/ci.yml`, `.github/workflows/deploy-services.yml`, a new
-  `Dockerfile.service`, root `package.json` scripts.
-- Manifest IDs: infra only (no `SP-*` source rows); `SP-060` (`gateway` package.json) and the
-  root workflow files are touched.
+- Purpose: make the build, deploy, and config foundation honest before any code moves. This
+  batch fixes things that are broken *today* and are independent of the architecture.
+- Scope: `.github/workflows/{ci.yml,deploy-services.yml,deploy-mobile.yml}`, a new
+  `Dockerfile.service` and `docker-compose.yml`, `turbo.json`, root `package.json` scripts,
+  `.env` / `.env.example`, `apps/web/app/api/auth/sync-user/route.ts`,
+  `apps/web/middleware.ts`, `tests/contracts.smoke.mjs`.
+- Manifest IDs: infra only (no `SP-*` source rows).
 - Dependencies: B01.
-- Expected changes: add the missing `Dockerfile.service`; correct the `build-services` and
-  deploy matrices to include every service that is supposed to ship (`user`, `resources`
-  added in the interim, or matrix aligned directly to the target unit list if B05–B08 land
-  first); capture a baseline validation run (see `migration-log.md`).
+- Expected changes:
+  - **Baseline capture** — record the validation table in `migration-log.md` before anything
+    else (issue #37 also requires documenting the rollback procedure).
+  - **Containerization (#34)** — add the missing `Dockerfile.service` that
+    `deploy-services.yml` already references, plus `docker-compose.yml` for local
+    Postgres (and Redis, ready for B11).
+  - **CI matrices (#1, #2, #30)** — add `user` and `resources` to `build-services` and
+    `deploy-services`; delete `deploy-mobile.yml` and the `build-mobile` job and `mobile`
+    paths-filter, since `apps/mobile` does not exist.
+  - **Turbo cache correctness (#31)** — add every env var services actually read to
+    `turbo.json` `globalEnv`: `AUTH_SERVICE_URL`, `USER_SERVICE_URL`, `MEDIA_SERVICE_URL`,
+    `NOTIFICATIONS_SERVICE_URL`, all `*_SERVICE_PORT`, `GATEWAY_PORT`,
+    `GATEWAY_RATE_WINDOW_MS`, `GATEWAY_RATE_MAX_REQUESTS`, `STORAGE_PROVIDER`, all `AWS_*`.
+  - **Security (#28, #29)** — remove the `sync-user` dev body-fallback that accepts identity
+    from the request body when `NODE_ENV !== "production"`, or hard-gate it behind an
+    explicit `ENABLE_DEV_USER_SYNC` flag that defaults off; audit and document the
+    `visual-qa=1` middleware bypass.
+  - **Config hygiene (#32, #33)** — remove the dead `JWT_KEY`; add the missing
+    `DEV_SEED_ROUTE_TOKEN`; add a committed `.env.example` listing every key with no values.
+  - **Smoke test (#15)** — extend `tests/contracts.smoke.mjs` to include `resources`.
+  - **Migration policy (#35)** — document who runs `db:migrate` in deploy and in what order.
 - Expected code moves: none.
-- Validation: `bun run check-types`, `bun run --cwd services/chat test`,
-  `bun run --cwd services/resources test`, `bun run --cwd packages/shared test`; CI green on
-  the branch.
-- Risks: deploy workflow secrets/registry differences surface only in CI.
+- Validation: `bun run check-types`; `bun run --cwd services/chat test`;
+  `bun run --cwd services/resources test`; `bun run --cwd packages/shared test`;
+  `docker build -f Dockerfile.service --build-arg SERVICE_DIR=services/gateway .` succeeds;
+  CI green on the branch.
+- Risks: deploy-workflow secrets and registry differences surface only in CI; the `sync-user`
+  change can break a local OAuth dev flow — verify sign-in still works before merging.
 - Definition of Done: CI builds every service that is meant to deploy; `deploy-services.yml`
-  references a build file that exists; baseline recorded.
+  references a build file that exists; no dead workflow references a non-existent workspace;
+  `turbo.json` `globalEnv` covers every consumed variable; no dev-only auth bypass is
+  reachable without an explicit opt-in flag; baseline and rollback procedure recorded.
 
 ### B03 — Shared Package Split
 
@@ -479,27 +510,44 @@ parallel with B05–B08 since it touches only `messaging` and `gateway`; B13 req
 - Definition of Done: no direct `prisma.post.*` writes outside `feed`; dashboard composes
   module reads.
 
-### B09 — messaging + media Boundary Cleanup
+### B09 — messaging + media Boundary Cleanup, and Call Extraction from apps/web
 
-- Purpose: rename `chat` → `messaging`, split calls out as a module, and remove DB access
-  from `media`.
-- Scope: `services/chat/**` → `services/messaging/**` with `modules/{messages,calls,realtime}`;
-  `services/media/src/controllers/media.controller.ts` and `package.json`.
-- Manifest IDs: `SP-040`–`SP-052` (`services/chat/*`), `SP-060`–`SP-064` (`services/media/*`).
+- Purpose: rename `chat` → `messaging`, give calls a real service owner, stop `apps/web`
+  impersonating the gateway, and remove DB access from `media`.
+- Scope: `services/chat/**` → `services/messaging/**` with
+  `modules/{messages,calls,realtime}`; `services/media/src/controllers/media.controller.ts`
+  and `package.json`; **`apps/web/actions/stream.actions.ts`** and its callers under
+  `apps/web/features/direct-call/`.
+- Manifest IDs: `SP-040`–`SP-052` (`services/chat/*`), `SP-057`–`SP-059`
+  (`services/media/*`). The `apps/web` files are outside this manifest's scope
+  (`services/**` + `packages/**`) and are tracked as issues #25–#27 and #39.
 - Dependencies: B03. (Independent of B05–B08; can run in parallel.)
-- Expected moves: chat controller/lib/socket/state into messaging modules; call-prep
-  functions (`prepareDirectCallConversation`, `validateDirectConversation`) into
-  `modules/calls`.
-- Expected refactors: `services/media` drops `@repo/database`; `getChatUploadScope` is
-  replaced by a gateway-injected scope claim or an internal call to `messaging`; gateway
-  `route-manifest.ts` `chat`/`messages` upstream → `messaging`.
-- Expected deploy changes: CI/deploy matrix `chat` → `messaging`.
-- Validation: `bun run --cwd services/messaging test` (moved chat tests),
-  `bun run check-types`, chat send/receive + audio/image upload + direct call flow.
-- Risks: socket auth and the media upload-scope check are behaviour-sensitive; keep payloads
-  byte-compatible.
+- Expected moves:
+  - chat controller/lib/socket/state → messaging modules;
+  - `prepareDirectCallConversation` / `validateDirectConversation` → `modules/calls`;
+  - **Stream server logic out of `apps/web`** — `tokenProvider` (Stream user-token minting)
+    and `ensureDirectCallUsers` (Stream `upsertUsers` + participant authorization) become
+    `POST /api/chat/call-token` and `POST /api/chat/call-participants` on `messaging`,
+    reached **through the gateway** like every other call.
+- Expected refactors:
+  - `apps/web` loses `STREAM_SECRET_KEY`, `GATEWAY_SHARED_TOKEN`, `CHAT_SERVICE_URL`, and the
+    `@stream-io/node-sdk` dependency. It keeps only `NEXT_PUBLIC_STREAM_API_KEY` for the
+    client SDK. **No forged `x-internal-token` header remains anywhere outside the gateway.**
+  - `services/media` drops `@repo/database`; `getChatUploadScope` becomes a
+    gateway-injected scope claim or one internal call to `messaging`.
+  - gateway `route-manifest.ts` `chat`/`messages` upstream → `messaging`.
+- Expected deploy changes: CI/deploy matrix `chat` → `messaging`; `STREAM_SECRET_KEY` moves
+  from the web deploy's secret set to the messaging service's.
+- Validation: `bun run --cwd services/messaging test`; `bun run check-types`; chat
+  send/receive; audio/image upload; **full direct-call flow** (initiate, ring, accept, hang
+  up) against a locally running gateway; confirm `grep -r "x-internal-token" apps/web`
+  returns nothing.
+- Risks: **high.** The call flow is the least test-covered path in the repo and touches a
+  third-party SDK. Stream token minting must stay byte-compatible or in-flight calls break.
+  Socket auth and the media upload-scope check are equally behaviour-sensitive.
 - Definition of Done: `services/media` does not import `@repo/database`; `services/messaging`
-  owns messages + calls + realtime.
+  owns messages + calls + realtime; `apps/web` holds no backend secret and makes no direct
+  service call; every synchronous request from the browser goes through the gateway.
 
 ### B10 — Gateway Modularization + Final Reconciliation
 
