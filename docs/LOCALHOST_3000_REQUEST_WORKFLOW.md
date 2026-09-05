@@ -67,27 +67,29 @@ Yome/
 │       ├── middleware.ts
 │       └── utils/ApiRoutes.ts
 ├── services/
-│   ├── gateway/src/index.ts
-│   ├── auth/src/
+│   ├── gateway/src/
 │   │   ├── index.ts
-│   │   ├── routes/auth.routes.ts
-│   │   ├── routes/db.routes.ts
-│   │   └── controllers/auth.controller.ts
-│   ├── user/src/
+│   │   ├── routes/route-manifest.ts
+│   │   ├── middleware/{requestId,rateLimiter,auth,proxy}.ts
+│   │   └── types.ts
+│   ├── identity/src/
 │   │   ├── index.ts
-│   │   ├── routes/user.routes.ts
-│   │   └── controllers/user.controller.ts
-│   ├── chat/src/
+│   │   ├── modules/credentials/{credentials.routes,credentials.controller}.ts
+│   │   └── modules/profile/{profile.routes,profile.controller}.ts
+│   ├── core/src/
 │   │   ├── index.ts
-│   │   ├── routes/chat.routes.ts
-│   │   ├── controllers/message.controller.ts
-│   │   ├── socket/handlers.ts
-│   │   └── state/online-users.ts
+│   │   └── modules/{community,learning,feed,dashboard}/
+│   ├── messaging/src/
+│   │   ├── index.ts
+│   │   └── modules/{messages,calls,realtime}/
 │   ├── media/src/
 │   │   ├── index.ts
 │   │   ├── routes/media.routes.ts
 │   │   └── controllers/media.controller.ts
-│   └── notifications/src/index.ts
+│   └── notifications/src/
+│       ├── index.ts
+│       ├── routes/notifications.routes.ts
+│       └── controllers/notifications.controller.ts
 └── packages/
     ├── database/
     │   ├── prisma/schema.prisma
@@ -206,7 +208,7 @@ sequenceDiagram
 
 ## 6. Flow D: How Frontend REST Calls Reach The Microservices
 
-For most REST operations, the frontend does not call the identity/core/chat/media services directly. It calls the gateway on port `4100`.
+For most REST operations, the frontend does not call the identity/core/messaging/media services directly. It calls the gateway on port `4100`.
 
 ```mermaid
 flowchart LR
@@ -214,7 +216,7 @@ flowchart LR
     B --> C[NEXT_PUBLIC_BACKEND_API<br/>http://localhost:4100]
     C --> D[services/gateway/src/index.ts]
     D --> E[/api/auth -> identity service]
-    D --> F["/api/user -> core service (community, learning, dashboard)<br/>3 profile paths -> identity instead<br/>see routeRules.ts"]
+    D --> F["/api/user -> core service (community, learning, dashboard)<br/>3 profile paths -> identity instead<br/>see route-manifest.ts"]
     D --> G[/api/messages or /api/chat -> messaging service]
     D --> H[/api/media -> media service]
     D --> I[/api/notifications -> notifications service]

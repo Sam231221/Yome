@@ -33,7 +33,7 @@ app.get("/health", (_req, res) =>
 app.use(internalTokenGuard);
 
 // community (B06), learning (B07), and dashboard (B08) all mount at /api/user; each
-// owns a disjoint set of paths (see routeRules.ts on the gateway side for the external
+// owns a disjoint set of paths (see route-manifest.ts on the gateway side for the external
 // view — external paths were already 1:1 with core before this batch's dashboard mount).
 app.use("/api/user", communityRoutes);
 app.use("/api/user", learningRoutes);

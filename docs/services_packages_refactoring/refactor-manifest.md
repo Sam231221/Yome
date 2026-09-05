@@ -246,21 +246,21 @@ tracked in `migration-log.md` under "Trigger Measurements".
 
 | ID | Current File | Domain | Classification | Action | Proposed Destination / Change | Batch | Owner After | Risk | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| SP-001 | `packages/database/SCHEMA_OWNERSHIP.md` | database | DOC | REFACTOR | Rewrite as a model → owning-module write table; keep in sync with code. **B06: partial name/ownership-accuracy update — `Group*` tables reassigned to `Core (community module)`; `StudyRoom`/`Topic`/`Post`/`Comment`/`Like` rows added as planned-not-yet-owned.** **B07: `Resource*` reassigned to `Core (learning module)` (a row that didn't exist before B07 at all); `StudyRoom`/`Topic` upgraded from "planned" to "read-only, owned by learning" now that `reads.ts` formalizes those reads; noted `Post` is read (not written) by both `core`'s learning module and `services/user`'s dashboard.** **B08: `Post`/`Comment`/`Like` reassigned from "Feed (planned)" to `Core (feed module)` — still read-only, no write endpoint exists anywhere yet; new "Core service, feed module" and "Core service, dashboard module" boundary bullets added; every remaining mention of `services/user` as a currently-existing service removed (it's deleted).** Full model-per-owning-module rewrite still pending. | B10 | database | Low | PENDING |
+| SP-001 | `packages/database/SCHEMA_OWNERSHIP.md` | database | DOC | REFACTOR | **B10: full rewrite to a systematic one-row-per-model table (all 18 models, matching `schema.prisma` exactly).** Fixed a real gap: `Conversation` had never been listed at all, despite `messaging` owning it since B09 (and `chat` before that). B06-B08's incremental narrative-notes history is summarized in the new table's per-row notes rather than kept verbatim | B06 (partial), B07 (partial), B08 (partial), B10 (full rewrite) | database | Low | DONE |
 | SP-002 | `packages/database/package.json` | database | PKG_MANIFEST | KEEP | Same | B10 | database | Low | KEEP |
-| SP-003 | `packages/database/prisma/schema.prisma` | database | PRISMA_SCHEMA | KEEP | Single schema retained; add `/// owner: <module>` doc comment per model | B10 | database | Medium | PENDING |
+| SP-003 | `packages/database/prisma/schema.prisma` | database | PRISMA_SCHEMA | REFACTOR | Single schema retained (splitting it is P5, not this batch); added a `/// owner: <module>` doc comment above all 18 models, cross-referenced from `SCHEMA_OWNERSHIP.md`'s opening paragraph so the two can be diffed against each other instead of drifting independently. `prisma validate` and `prisma generate` both verified clean | B10 | database | Medium | DONE |
 | SP-004 | `packages/database/src/client.d.ts` | database | DB_CLIENT | KEEP | Same | — | database | Low | KEEP |
 | SP-005 | `packages/database/src/client.js` | database | DB_CLIENT | KEEP | Same | — | database | Low | KEEP |
-| SP-006 | `packages/eslint-config/README.md` | tooling | DOC | REFACTOR | Document the new `service` profile | B10 | eslint-config | Low | PENDING |
+| SP-006 | `packages/eslint-config/README.md` | tooling | DOC | REFACTOR | Documents the new `service` profile (SP-009) and every existing profile, which the README never described at all before B10 | B10 | eslint-config | Low | DONE |
 | SP-007 | `packages/eslint-config/base.js` | tooling | LINT_CONFIG | KEEP | Same | — | eslint-config | Low | KEEP |
 | SP-008 | `packages/eslint-config/next.js` | tooling | LINT_CONFIG | KEEP | Same | — | eslint-config | Low | KEEP |
-| SP-009 | `packages/eslint-config/package.json` | tooling | PKG_MANIFEST | REFACTOR | Add a `./service` export for service linting | B10 | eslint-config | Low | PENDING |
+| SP-009 | `packages/eslint-config/package.json` | tooling | PKG_MANIFEST | REFACTOR | Added a `./service` export pointing at the new `service.js` (base config + Node globals, no React/browser rules) | B10 | eslint-config | Low | DONE |
 | SP-010 | `packages/eslint-config/react-internal.js` | tooling | LINT_CONFIG | KEEP | Same | — | eslint-config | Low | KEEP |
-| SP-011 | `packages/shared/package.json` | shared | PKG_MANIFEST | SPLIT | Unchanged path (still the shim's manifest); now depends on `@repo/contracts`, `@repo/service-kit`, `@repo/storage` only, dropped `zod`/`@aws-sdk/client-s3`/`express` peer | B03 / B10 | service-kit | Medium | DONE (B03; shim removal B10) |
+| SP-011 | `packages/shared/package.json` | shared | PKG_MANIFEST | DELETE | **B03: unchanged path (still the shim's manifest); depended on `@repo/contracts`, `@repo/service-kit`, `@repo/storage` only, dropped `zod`/`@aws-sdk/client-s3`/`express` peer.** **B10: deleted along with the rest of `packages/shared`** — every one of the 28 remaining `@repo/shared` import sites was repointed to the specific package it needed in the same commit | B03 (split), B10 (delete) | service-kit | Medium | DONE |
 | SP-012 | `packages/service-kit/src/config/env.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/config/env.ts`; `servicePorts` gained a `core` getter (value wired B06). **B07: `resources` getter removed — dead now that `services/resources` no longer exists.** **B08: `user` getter removed for the same reason.** | B03 | service-kit | Medium | DONE |
 | SP-013 | `packages/seed/src/fixtures/groups.ts` | seed | SEED_DATA | MOVE | Moved from `packages/shared/src/data/groups.ts`. Decision confirmed with the user: the `services/user` runtime fallback that read it directly was removed rather than kept (see `SP-074`/`SP-076`) — this fixture is now reachable only from `@repo/seed`, never from a production runtime path | B04 | seed | Medium | DONE |
 | SP-014 | `packages/contracts/src/errors.ts` | shared | PKG_MODULE | MOVE + REFACTOR | Moved from `packages/shared/src/errors.ts` (`createHttpError`); also absorbed `ErrorEnvelope` from the old `types/contracts.ts` (see SP-022) — both are pure, no Express dep | B03 | contracts | Low | DONE |
-| SP-015 | `packages/shared/src/index.ts` | shared | PKG_ENTRY | SPLIT | Unchanged path; content replaced with a re-export shim (`@repo/contracts` + `@repo/service-kit` + `@repo/storage` + local `groupData`); deleted in B10 | B03 / B10 | service-kit | Medium | DONE (B03; shim removal B10) |
+| SP-015 | `packages/shared/src/index.ts` | shared | PKG_ENTRY | DELETE | **B03: content replaced with a re-export shim** (`@repo/contracts` + `@repo/service-kit` + `@repo/storage`; `groupData` moved out to `@repo/seed` in B04). **B10: deleted** — the shim's whole reason to exist | B03 (split), B10 (delete) | service-kit | Medium | DONE |
 | SP-016 | `packages/service-kit/src/logger.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/logger.ts`, unchanged | B03 | service-kit | Low | DONE |
 | SP-017 | `packages/service-kit/src/middleware/errorHandler.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/middleware/errorHandler.ts`; `ErrorEnvelope` import repointed to `@repo/contracts` | B03 | service-kit | Low | DONE |
 | SP-018 | `packages/service-kit/src/middleware/internalTokenGuard.ts` | shared | PKG_MODULE | MOVE | Moved from `packages/shared/src/middleware/internalTokenGuard.ts`, unchanged | B03 | service-kit | Low | DONE |
@@ -299,17 +299,17 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-051 | `services/messaging/src/modules/realtime/online-users.test.ts` | messaging | TEST | MOVE | Unchanged | B09 | messaging | Low | DONE |
 | SP-052 | `services/messaging/src/modules/realtime/online-users.ts` | messaging | STATE | MOVE | Unchanged | B09 | messaging | Low | DONE |
 | SP-053 | `services/messaging/tsconfig.json` | messaging | TS_CONFIG | MOVE | Unchanged | B09 | messaging | Low | DONE |
-| SP-054 | `services/gateway/package.json` | edge | PKG_MANIFEST | REFACTOR | Add real `eslint` lint script | B10 | gateway | Low | PENDING |
-| SP-055 | `services/gateway/src/index.ts` | edge | SERVICE_ENTRY | SPLIT + REFACTOR | Bootstrap + `routes/route-manifest.ts` (declarative upstream map, target units, `/api/user` split identity vs core) + `middleware/*` | B10 | gateway | High | PENDING |
+| SP-054 | `services/gateway/package.json` | edge | PKG_MANIFEST | REFACTOR | `"lint": "eslint ."` replaces the echo stub | B10 | gateway | Low | DONE |
+| SP-055 | `services/gateway/src/index.ts` | edge | SERVICE_ENTRY | SPLIT + REFACTOR | Split into bootstrap-only `index.ts` + `routes/route-manifest.ts` (renamed from B05's `routeRules.ts`, extended with per-rule `timeoutMs`) + `middleware/{requestId,rateLimiter,auth,proxy}.ts`. `proxy.ts` adds the resilience layer that never existed: per-route timeout (5s default, 30s for `/api/media`), retry for idempotent methods only (2 attempts, exponential backoff, never on an actual HTTP response), and a per-upstream circuit breaker (opens at 5 consecutive failures, half-opens after 30s). Live-verified against a controlled fake upstream: timeout returns 504, exactly 2 attempts hit the fake server per idempotent GET, the circuit opens on the 5th failure and short-circuits with zero further network calls after that | B10 | gateway | High | DONE |
 | SP-056 | `services/gateway/tsconfig.json` | edge | TS_CONFIG | KEEP | Same | — | gateway | Low | KEEP |
 | SP-057 | `services/media/package.json` | media | PKG_MANIFEST | REFACTOR | `@repo/database` dependency removed; `axios` added (for the new call to `messaging`). Note: media never actually depended on `@repo/storage` as a workspace package — S3 upload helpers reach it via `@repo/shared`'s re-export, same pattern the B05 audit found and fixed for `identity` | B09 | media | Medium | DONE |
 | SP-058 | `services/media/src/controllers/media.controller.ts` | media | CONTROLLER | REFACTOR | `getChatUploadScope`'s direct `Conversation`/`Group` Prisma reads replaced with one `POST /api/chat/authorize-upload-scope` call to `messaging` (per `api-and-dataflow-plan.md`'s Service-to-Service Call Rules — a sync call, not a gateway-injected claim). Fixed a real bug found while live-testing this: `GATEWAY_SHARED_TOKEN`/`MESSAGING_SERVICE_URL` must be read inside the function body, not as a module-level constant — this file is imported before `index.ts`'s own `dotenv.config()` call runs | B09 | media | High | DONE |
 | SP-059 | `services/media/src/index.ts` | media | SERVICE_ENTRY | REFACTOR | No change needed — it never had DB env validation to drop, only `validateObjectStorageEnv()`, which is kept | B09 | media | Low | DONE |
 | SP-060 | `services/media/src/routes/media.routes.ts` | media | ROUTE | KEEP | Same | B09 | media | Low | KEEP |
 | SP-061 | `services/media/tsconfig.json` | media | TS_CONFIG | KEEP | Same | — | media | Low | KEEP |
-| SP-062 | `services/notifications/package.json` | notifications | PKG_MANIFEST | REFACTOR | Add real `eslint` lint script | B10 | notifications | Low | PENDING |
-| SP-063 | `services/notifications/src/index.ts` | notifications | SERVICE_ENTRY | KEEP | Same. B10 review: keep as a process vs fold into `core/modules/notifications` | B10 | notifications | Low | PENDING |
-| SP-064 | `services/notifications/src/routes/notifications.routes.ts` | notifications | ROUTE | REFACTOR | Extract the inline `/send` handler into a controller for structural parity | B10 | notifications | Low | PENDING |
+| SP-062 | `services/notifications/package.json` | notifications | PKG_MANIFEST | REFACTOR | `"lint": "eslint ."` replaces the echo stub | B10 | notifications | Low | DONE |
+| SP-063 | `services/notifications/src/index.ts` | notifications | SERVICE_ENTRY | KEEP | **B10 review resolved: keep as its own process.** Not actually an open question by the time B10 ran — `service-decomposition-plan.md`'s locked design decisions already settled this (`services/notifications` is the designated first event consumer in B14, which is what justifies keeping it as its own deployable unit rather than folding into `core`) | B10 | notifications | Low | KEEP |
+| SP-064 | `services/notifications/src/routes/notifications.routes.ts` | notifications | ROUTE | REFACTOR | Extracted the inline `/send` handler to a new `controllers/notifications.controller.ts`, matching every other service's routes-import-from-controllers convention. Live-verified byte-identical behavior (same 202/400 responses) | B10 | notifications | Low | DONE |
 | SP-065 | `services/notifications/tsconfig.json` | notifications | TS_CONFIG | KEEP | Same | — | notifications | Low | KEEP |
 | SP-066 | `services/resources/package.json` | learning | PKG_MANIFEST | DELETE | Deleted — folded into `services/core`'s existing manifest (already had every dependency `resources` needed: `@repo/database`, `@repo/shared`, `@repo/contracts`, `zod`, `cors`, `dotenv`, `express`). No `core` package.json change needed | B07 | core | Medium | DONE |
 | SP-067 | `services/core/src/modules/learning/resources/resources.controller.ts` | learning | CONTROLLER | MOVE | Moved from `services/resources/src/controllers/resource.controller.ts`, unchanged. **B03: imports `getAuthenticatedUserId`, `isUuid`, `slugify` from `@repo/shared`; local duplicates deleted (predates this move).** | B07 | core | Medium | DONE |
@@ -401,8 +401,10 @@ have been a duplicate-file-entry bug; caught and corrected before commit.
   **created** (`services/messaging/src/modules/calls/**` — a genuinely new module, so its
   files get fresh IDs, same convention B06–B08 used for `core`'s new modules).
 - **B10** (gateway + reconciliation): SP-001, SP-003, SP-006, SP-009, SP-011 (shim delete),
-  SP-015 (shim delete), SP-054, SP-055, SP-062, SP-063, SP-064; final pass so every row is
-  `DONE` / `KEEP` / `BLOCKED`.
+  SP-015 (shim delete), SP-054, SP-055, SP-062, SP-064 **done**; SP-063 **resolved to `KEEP`**
+  (its "B10 review" was already answered by `service-decomposition-plan.md`'s locked design
+  decisions — not actually open by the time B10 ran). Final pass: **0 `PENDING` rows remain**,
+  every one of the 118 rows is `DONE` or `KEEP` — the manifest's own Definition of Done.
 
 ## Status accounting
 
@@ -415,10 +417,10 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
   `SP-110`–`SP-114`, plus 4 B09-created rows `SP-115`–`SP-118`). Duplicate IDs: 0. Duplicate
   current-file entries: 0.
 - `KEEP` (no change intended): SP-002, SP-004, SP-005, SP-007, SP-008, SP-010, SP-025,
-  SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065 — **14 rows**.
-- `DONE` (status column exactly `DONE`, including the 2 compound rows `SP-011`/`SP-015` whose
-  text reads `DONE (B03; shim removal B10)` — their B03 half is finished, only the B10 shim
-  deletion remains): SP-011, SP-012, SP-014–SP-024 (13 rows, B03's `packages/shared` split) +
+  SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065, SP-063 — **15 rows**. `SP-063`
+  joined this list in B10 (was `PENDING` pending a review that turned out to already be
+  answered — see the B10 summary line above).
+- `DONE`: SP-011, SP-012, SP-014–SP-024 (13 rows, B03's `packages/shared` split) +
   SP-013, SP-031–SP-034, SP-038 (6 rows, B04's seed extraction incl. the `groupData` fixture) +
   SP-079–SP-090 (12 rows, B03-created files) + SP-091–SP-094 (4 rows, B04-created files) +
   SP-029, SP-030, SP-035–SP-037, SP-039 (6 rows, B05's identity rename) + SP-095–SP-099
@@ -429,14 +431,16 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
   (6 rows, `services/user`'s multi-batch split finally complete — its last domain, dashboard,
   moved out in B08 and the service itself is deleted) + SP-040–SP-053, SP-057–SP-059 (17 rows,
   B09's `chat`→`messaging` rename + media de-DB) + SP-115–SP-118 (4 rows, B09-created `calls`
-  module) — **95 rows**.
-- `PENDING`: **9 rows** — `SP-001`, `SP-003`, `SP-006`, `SP-009` (all B10 doc/tooling), and
-  `SP-054`, `SP-055`, `SP-062`, `SP-063`, `SP-064` (all B10 gateway/notifications). `SP-041`
-  is no longer in this list — its full split (not just the adoption note it carried since
-  B03) finished in B09.
+  module) + SP-001, SP-003, SP-006, SP-009, SP-054, SP-055, SP-062, SP-064 (8 rows, B10's
+  schema-ownership docs, eslint service profile, gateway modularization, and notifications
+  controller extraction) — **103 rows**. The two former compound rows (`SP-011`/`SP-015`,
+  previously `DONE (B03; shim removal B10)`) are now plain `DONE`: the B10 half (deleting
+  `packages/shared` itself) is finished, so the caveat no longer applies.
+- `PENDING`: **0 rows.** The manifest's own Definition of Done: every row is now `DONE` or
+  `KEEP`.
 - `BLOCKED`: 0 in the manifest. One infra blocker was tracked in
   `service-decomposition-plan.md` (the missing `Dockerfile.service`) and was resolved in B02.
-- Row-count check: 14 KEEP + 95 DONE + 9 PENDING = 118. ✓ (machine-counted via
+- Row-count check: 15 KEEP + 103 DONE + 0 PENDING = 118. ✓ (machine-counted via
   `grep -cE "^\| SP-[0-9]+"` and per-status `grep` anchored to the status column specifically —
   a naive substring grep against the whole row over-counts, since some rows' ACTION column is
   also literally "KEEP" or "PENDING"-shaped text, not just their STATUS column; not
@@ -466,10 +470,15 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
   **created in B09**, tracked as `SP-040`–`SP-053`, `SP-057`–`SP-059` (renamed/moved files)
   and `SP-115`–`SP-118` (new `calls` module).
 - ✅ `services/gateway/src/routeRules.ts` + `routeRules.test.ts` — **created in B05**, tracked
-  as `SP-098`–`SP-099`; a scoped precursor to the full `services/gateway/src/routes/route-manifest.ts`
-  + `services/gateway/src/middleware/**` split, still planned for B10 (SP-055).
+  as `SP-098`–`SP-099`; a scoped precursor. **B10: renamed to `routes/route-manifest.ts` +
+  `route-manifest.test.ts`** (SP-055) and the full `services/gateway/src/middleware/**` split
+  (`requestId.ts`, `rateLimiter.ts`, `auth.ts`, `proxy.ts`) plus `types.ts` landed alongside it.
 - ✅ `Dockerfile.service` — **created in B02**
-- `packages/eslint-config/service.js` (B10)
+- ✅ `packages/eslint-config/service.js` — **created in B10** (SP-009), wired into all 6
+  services via `eslint.config.js` (relative-imported, matching `apps/web`'s existing
+  convention — `@repo/eslint-config` isn't a real workspace dependency anywhere).
+- ✅ `services/notifications/src/controllers/notifications.controller.ts` — **created in B10**
+  (SP-064), extracted from the inline handler in `notifications.routes.ts`.
 
 **Phase 2+ (B11–B18+), planned in the companion documents:**
 
