@@ -285,26 +285,26 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-037 | `services/identity/src/modules/credentials/credentials.validation.ts` | identity | VALIDATION | MOVE | Moved from `services/auth/src/routes/auth.validation.ts`; `nameSchema`/`usernameSchema` now imported from `@repo/contracts` (promoted, byte-identical duplicate in `user.validation.ts` removed — see SP-077) | B05 | identity | Low | DONE |
 | SP-038 | `services/identity/src/dev/seed-route.ts` | seed | ROUTE | REFACTOR | B04: rewritten from `services/auth/src/routes/db.routes.ts` as a thin route mounting one `devSeedGuard` from `@repo/seed`. **B05: further moved (path only, no content change) from `services/auth/src/routes/db.routes.ts` to this path as part of the identity rename** — external `/api/db` path preserved throughout | B04 (content), B05 (path) | identity (dev) | Medium | DONE |
 | SP-039 | `services/identity/tsconfig.json` | identity | TS_CONFIG | MOVE | Moved from `services/auth/tsconfig.json`, unchanged content | B05 | identity | Low | DONE |
-| SP-040 | `services/chat/package.json` | messaging | PKG_MANIFEST | RENAME | `@services/messaging` | B09 | messaging | Medium | PENDING |
-| SP-041 | `services/chat/src/controllers/message.controller.ts` | messaging | CONTROLLER | SPLIT | `messaging/src/modules/messages/*`; call-prep handlers → `modules/calls/*`. **B03: now imports `getAuthenticatedUserId` from `@repo/shared`, local copy deleted.** Split still pending | B09 | messaging | Medium | PENDING |
-| SP-042 | `services/chat/src/index.ts` | messaging | SERVICE_ENTRY | REFACTOR | `services/messaging/src/index.ts`; mount `messages` / `calls` / `realtime` | B09 | messaging | Medium | PENDING |
-| SP-043 | `services/chat/src/lib/conversations.test.ts` | messaging | TEST | MOVE | `messaging/src/modules/messages/conversations.test.ts` | B09 | messaging | Low | PENDING |
-| SP-044 | `services/chat/src/lib/conversations.ts` | messaging | DOMAIN_LIB | MOVE | `messaging/src/modules/messages/conversations.ts` | B09 | messaging | Low | PENDING |
-| SP-045 | `services/chat/src/lib/direct-messages.test.ts` | messaging | TEST | MOVE | `messaging/src/modules/messages/` | B09 | messaging | Low | PENDING |
-| SP-046 | `services/chat/src/lib/direct-messages.ts` | messaging | DOMAIN_LIB | MOVE | `messaging/src/modules/messages/` | B09 | messaging | Low | PENDING |
-| SP-047 | `services/chat/src/routes/chat.routes.ts` | messaging | ROUTE | SPLIT | Messages routes + calls routes; external `/api/chat` and `/api/messages` paths preserved | B09 | messaging | Medium | PENDING |
-| SP-048 | `services/chat/src/routes/chat.validation.test.ts` | messaging | TEST | MOVE | `messaging/src/modules/messages/` | B09 | messaging | Low | PENDING |
-| SP-049 | `services/chat/src/routes/chat.validation.ts` | messaging | VALIDATION | MOVE | `messages` / `calls` modules; primitives → `@repo/contracts` | B09 | messaging | Low | PENDING |
-| SP-050 | `services/chat/src/socket/handlers.ts` | messaging | SOCKET | MOVE | `messaging/src/modules/realtime/handlers.ts` | B09 | messaging | Medium | PENDING |
-| SP-051 | `services/chat/src/state/online-users.test.ts` | messaging | TEST | MOVE | `messaging/src/modules/realtime/` | B09 | messaging | Low | PENDING |
-| SP-052 | `services/chat/src/state/online-users.ts` | messaging | STATE | MOVE | `messaging/src/modules/realtime/online-users.ts` | B09 | messaging | Low | PENDING |
-| SP-053 | `services/chat/tsconfig.json` | messaging | TS_CONFIG | MOVE | `services/messaging/tsconfig.json` | B09 | messaging | Low | PENDING |
+| SP-040 | `services/messaging/package.json` | messaging | PKG_MANIFEST | RENAME | `@services/messaging`. `test` script also changed from `bun test src/**/*.test.ts` to `bun test ./src` — the exact B03 sh-vs-bun-glob bug recurred once test files moved under `modules/` | B09 | messaging | Medium | DONE |
+| SP-041 | `services/messaging/src/modules/messages/messages.controller.ts` | messaging | CONTROLLER | SPLIT | Messages handlers (`getMessages`, `getOrCreateConversation`, `addMessage`, `addMediaMessage`, `getInitialUsersWithMessages`, `getInitialGroupsWithMessages`) stay here, byte-identical; call-prep handlers (`prepareDirectCallConversation`, `validateDirectConversation`) moved to `modules/calls/calls.controller.ts` (see SP-115). New `authorizeUploadScope` handler added here too (no separate row — it's an addition to this same file, same convention as B08's community.controller.ts export additions in SP-103) | B09 | messaging | Medium | DONE |
+| SP-042 | `services/messaging/src/index.ts` | messaging | SERVICE_ENTRY | REFACTOR | Mounts `messages.routes.ts` and `calls.routes.ts`, both still at `/api/chat`; `attachSocketHandlers` now imported from `modules/realtime/handlers.ts`. `service`/`servicePorts` key `chat` → `messaging` | B09 | messaging | Medium | DONE |
+| SP-043 | `services/messaging/src/modules/messages/conversations.test.ts` | messaging | TEST | MOVE | Unchanged | B09 | messaging | Low | DONE |
+| SP-044 | `services/messaging/src/modules/messages/conversations.ts` | messaging | DOMAIN_LIB | MOVE | Unchanged | B09 | messaging | Low | DONE |
+| SP-045 | `services/messaging/src/modules/messages/direct-messages.test.ts` | messaging | TEST | MOVE | Unchanged | B09 | messaging | Low | DONE |
+| SP-046 | `services/messaging/src/modules/messages/direct-messages.ts` | messaging | DOMAIN_LIB | MOVE | Unchanged | B09 | messaging | Low | DONE |
+| SP-047 | `services/messaging/src/modules/messages/messages.routes.ts` | messaging | ROUTE | SPLIT | Messages routes stay here (+ new `authorize-upload-scope` route); calls routes moved to `modules/calls/calls.routes.ts` (see SP-116). Both mount at `/api/chat` in `index.ts`; external `/api/chat` and `/api/messages` paths preserved | B09 | messaging | Medium | DONE |
+| SP-048 | `services/messaging/src/modules/messages/messages.validation.test.ts` | messaging | TEST | SPLIT | Messages-schema tests stay here; call-schema tests moved to `modules/calls/calls.validation.test.ts` (new — see SP-118) | B09 | messaging | Low | DONE |
+| SP-049 | `services/messaging/src/modules/messages/messages.validation.ts` | messaging | VALIDATION | SPLIT | Messages schemas (+ new `authorizeUploadScopeSchema`) stay here; call schemas moved to `modules/calls/calls.validation.ts` (see SP-117). Primitives stayed local (each file only needs a subset — `uuidString`/`positiveIntString` aren't needed by any call schema), so nothing moved to `@repo/contracts` here | B09 | messaging | Low | DONE |
+| SP-050 | `services/messaging/src/modules/realtime/handlers.ts` | messaging | SOCKET | MOVE | Unchanged besides the relative import of `online-users.js` (now same-directory) | B09 | messaging | Medium | DONE |
+| SP-051 | `services/messaging/src/modules/realtime/online-users.test.ts` | messaging | TEST | MOVE | Unchanged | B09 | messaging | Low | DONE |
+| SP-052 | `services/messaging/src/modules/realtime/online-users.ts` | messaging | STATE | MOVE | Unchanged | B09 | messaging | Low | DONE |
+| SP-053 | `services/messaging/tsconfig.json` | messaging | TS_CONFIG | MOVE | Unchanged | B09 | messaging | Low | DONE |
 | SP-054 | `services/gateway/package.json` | edge | PKG_MANIFEST | REFACTOR | Add real `eslint` lint script | B10 | gateway | Low | PENDING |
 | SP-055 | `services/gateway/src/index.ts` | edge | SERVICE_ENTRY | SPLIT + REFACTOR | Bootstrap + `routes/route-manifest.ts` (declarative upstream map, target units, `/api/user` split identity vs core) + `middleware/*` | B10 | gateway | High | PENDING |
 | SP-056 | `services/gateway/tsconfig.json` | edge | TS_CONFIG | KEEP | Same | — | gateway | Low | KEEP |
-| SP-057 | `services/media/package.json` | media | PKG_MANIFEST | REFACTOR | Remove `@repo/database` dependency; keep `@repo/storage` | B09 | media | Medium | PENDING |
-| SP-058 | `services/media/src/controllers/media.controller.ts` | media | CONTROLLER | REFACTOR | Remove `getChatUploadScope` DB calls; upload scope from a gateway-injected claim or an internal `messaging` call | B09 | media | High | PENDING |
-| SP-059 | `services/media/src/index.ts` | media | SERVICE_ENTRY | REFACTOR | Drop any DB env validation; keep object-storage env validation | B09 | media | Low | PENDING |
+| SP-057 | `services/media/package.json` | media | PKG_MANIFEST | REFACTOR | `@repo/database` dependency removed; `axios` added (for the new call to `messaging`). Note: media never actually depended on `@repo/storage` as a workspace package — S3 upload helpers reach it via `@repo/shared`'s re-export, same pattern the B05 audit found and fixed for `identity` | B09 | media | Medium | DONE |
+| SP-058 | `services/media/src/controllers/media.controller.ts` | media | CONTROLLER | REFACTOR | `getChatUploadScope`'s direct `Conversation`/`Group` Prisma reads replaced with one `POST /api/chat/authorize-upload-scope` call to `messaging` (per `api-and-dataflow-plan.md`'s Service-to-Service Call Rules — a sync call, not a gateway-injected claim). Fixed a real bug found while live-testing this: `GATEWAY_SHARED_TOKEN`/`MESSAGING_SERVICE_URL` must be read inside the function body, not as a module-level constant — this file is imported before `index.ts`'s own `dotenv.config()` call runs | B09 | media | High | DONE |
+| SP-059 | `services/media/src/index.ts` | media | SERVICE_ENTRY | REFACTOR | No change needed — it never had DB env validation to drop, only `validateObjectStorageEnv()`, which is kept | B09 | media | Low | DONE |
 | SP-060 | `services/media/src/routes/media.routes.ts` | media | ROUTE | KEEP | Same | B09 | media | Low | KEEP |
 | SP-061 | `services/media/tsconfig.json` | media | TS_CONFIG | KEEP | Same | — | media | Low | KEEP |
 | SP-062 | `services/notifications/package.json` | notifications | PKG_MANIFEST | REFACTOR | Add real `eslint` lint script | B10 | notifications | Low | PENDING |
@@ -358,6 +358,10 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-112 | `services/core/src/modules/dashboard/dashboard.validation.ts` | dashboard | VALIDATION | CREATE | New in B08: `dashboardParamsSchema` moved from `services/user/src/routes/user.validation.ts` (see SP-077) | B08 | core | Low | DONE |
 | SP-113 | `services/core/src/modules/community/reads.ts` | community | PKG_MODULE | CREATE | New in B08: `getSidebarGroups`/`getUpcomingEvents` extract the `prisma.group.findMany`/`prisma.groupEvent.findMany` queries out of `getDashboardHome`'s inline `Promise.all`, mirroring `learning/reads.ts`'s B07 pattern for the community-owned tables (`Group`, `GroupEvent`) dashboard's sidebar/upcoming-sessions widgets read. `getSidebarGroups` returns raw sorted rows rather than fully-mapped cards (unlike `learning/reads.ts`'s helpers) because mapping needs the caller's `loggedInUserId` as `mapGroupCard`'s viewer context, plus a dashboard-only `physics-club` symbol override — both stay in `dashboard.controller.ts` | B08 | core | Medium | DONE |
 | SP-114 | `services/core/src/modules/feed/reads.ts` | feed | PKG_MODULE | CREATE | New in B08: `getRecentPosts` — the first (and, as of this batch, only) piece of the new `feed` module, the designated write owner for `Post`/`Comment`/`Like` per the batch's Definition of Done. No write endpoint exists for any of these tables anywhere in the app yet (confirmed by repo-wide grep before writing this module), so there is nothing to move except the one read `getDashboardHome` needs | B08 | core | Medium | DONE |
+| SP-115 | `services/messaging/src/modules/calls/calls.controller.ts` | messaging | CONTROLLER | CREATE | New in B09: `validateDirectConversation`/`prepareDirectCallConversation` moved here verbatim from `messages.controller.ts` (see SP-041). Two new handlers replace `apps/web/actions/stream.actions.ts`'s `tokenProvider()`/`ensureDirectCallUsers()`: `createCallToken` (byte-compatible `generateUserToken` call, same `@stream-io/node-sdk` version) and `createCallParticipants` (same participant-set validation, now checking `callerId` against the gateway-authenticated `x-user-id` instead of a Next.js server action's own session lookup). `checkDirectConversationAccess` factors out the DB check `validateDirectConversation` and `createCallParticipants` both need — an in-process call replacing what used to be `ensureDirectCallUsers`'s HTTP round trip to `stream.actions.ts`'s own `validateDirectCallConversation` helper, back when the two lived in different processes | B09 | messaging | High | DONE |
+| SP-116 | `services/messaging/src/modules/calls/calls.routes.ts` | messaging | ROUTE | CREATE | New in B09: `/validate-direct-conversation` and `/prepare-direct-call-conversation` moved here from `messages.routes.ts` (see SP-047); `POST /api/chat/call-token` and `/call-participants` added, replacing the two `apps/web` server actions | B09 | messaging | Medium | DONE |
+| SP-117 | `services/messaging/src/modules/calls/calls.validation.ts` | messaging | VALIDATION | CREATE | New in B09: `validateDirectConversationSchema`/`prepareDirectCallConversationSchema` moved here from `messages.validation.ts` (see SP-049); new `callParticipantsSchema` added for `createCallParticipants`. `call-token` takes no body, so it has no schema | B09 | messaging | Low | DONE |
+| SP-118 | `services/messaging/src/modules/calls/calls.validation.test.ts` | messaging | TEST | CREATE | New in B09: the call-schema tests split out of `chat.validation.test.ts` (see SP-048), plus new coverage for `callParticipantsSchema` | B09 | messaging | Low | DONE |
 | SP-098 | `services/gateway/src/routeRules.ts` | edge | PKG_MODULE | CREATE | New in B05: ordered upstream route-rule table + `resolveRoute()`/`pathMatchesPrefix()`, extracted so `index.ts`'s 8 hand-written `app.use()` calls become one loop, and so routing is unit-testable without booting Express. A scoped precursor to the full B10 gateway modularization (SP-055), not that refactor itself | B05 | gateway | Medium | DONE |
 | SP-099 | `services/gateway/src/routeRules.test.ts` | edge | TEST | CREATE | New in B05: parses `apps/web/utils/ApiRoutes.ts` and asserts every one of its 42 externally-visible `/api/*` paths resolves through `routeRules` to exactly one upstream, including the 3 profile paths now resolving to `identity` | B05 | gateway | Low | DONE |
 
@@ -393,7 +397,9 @@ have been a duplicate-file-entry bug; caught and corrected before commit.
   **done**; SP-073, SP-075, SP-078 **done** (`services/user` actually deleted, not just
   `KEEP (for now)`); dashboard portions of SP-074, SP-076, SP-077 done, and since that was the
   last portion of each, all three rows are now fully `DONE`.
-- **B09** (messaging + media): SP-040 … SP-053, SP-057, SP-058, SP-059.
+- **B09** (messaging + media): SP-040–SP-053, SP-057–SP-059 **done**; SP-115–SP-118
+  **created** (`services/messaging/src/modules/calls/**` — a genuinely new module, so its
+  files get fresh IDs, same convention B06–B08 used for `core`'s new modules).
 - **B10** (gateway + reconciliation): SP-001, SP-003, SP-006, SP-009, SP-011 (shim delete),
   SP-015 (shim delete), SP-054, SP-055, SP-062, SP-063, SP-064; final pass so every row is
   `DONE` / `KEEP` / `BLOCKED`.
@@ -403,28 +409,38 @@ have been a duplicate-file-entry bug; caught and corrected before commit.
 Counts below are machine-verified (`grep`-extracted from the actual table, not hand-tallied
 — a hand-tally error during the B03 completeness audit is exactly why this rule exists now).
 
-- Rows: 114 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`, plus 4 B04-created
+- Rows: 118 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`, plus 4 B04-created
   rows `SP-091`–`SP-094`, plus 5 B05-created rows `SP-095`–`SP-099`, plus 6 B06-created rows
   `SP-100`–`SP-105`, plus 4 B07-created rows `SP-106`–`SP-109`, plus 5 B08-created rows
-  `SP-110`–`SP-114`). Duplicate IDs: 0. Duplicate current-file entries: 0.
+  `SP-110`–`SP-114`, plus 4 B09-created rows `SP-115`–`SP-118`). Duplicate IDs: 0. Duplicate
+  current-file entries: 0.
 - `KEEP` (no change intended): SP-002, SP-004, SP-005, SP-007, SP-008, SP-010, SP-025,
   SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065 — **14 rows**.
-- `DONE`: SP-011, SP-012, SP-014–SP-024 (13 rows, B03's `packages/shared` split) + SP-013,
-  SP-031–SP-034, SP-038 (6 rows, B04's seed extraction incl. the `groupData` fixture) +
+- `DONE` (status column exactly `DONE`, including the 2 compound rows `SP-011`/`SP-015` whose
+  text reads `DONE (B03; shim removal B10)` — their B03 half is finished, only the B10 shim
+  deletion remains): SP-011, SP-012, SP-014–SP-024 (13 rows, B03's `packages/shared` split) +
+  SP-013, SP-031–SP-034, SP-038 (6 rows, B04's seed extraction incl. the `groupData` fixture) +
   SP-079–SP-090 (12 rows, B03-created files) + SP-091–SP-094 (4 rows, B04-created files) +
   SP-029, SP-030, SP-035–SP-037, SP-039 (6 rows, B05's identity rename) + SP-095–SP-099
   (5 rows, B05-created profile module + gateway route rules) + SP-100–SP-105 (6 rows,
   B06-created core service + community module) + SP-066–SP-072 (7 rows, B07's folded-in
   `resources`) + SP-106–SP-109 (4 rows, B07-created learning module) + SP-110–SP-114 (5 rows,
   B08-created dashboard + feed modules) + SP-073, SP-074, SP-075, SP-076, SP-077, SP-078
-  (6 rows, `services/user`'s multi-batch split finally complete — its last domain,
-  dashboard, moved out in B08 and the service itself is deleted) — **74 rows**.
-- `PENDING` (actionable, batch assigned): **26 rows** — includes `SP-041`, which carries an
-  adoption note but isn't `DONE` because its full MOVE is a separate, later batch (B09).
+  (6 rows, `services/user`'s multi-batch split finally complete — its last domain, dashboard,
+  moved out in B08 and the service itself is deleted) + SP-040–SP-053, SP-057–SP-059 (17 rows,
+  B09's `chat`→`messaging` rename + media de-DB) + SP-115–SP-118 (4 rows, B09-created `calls`
+  module) — **95 rows**.
+- `PENDING`: **9 rows** — `SP-001`, `SP-003`, `SP-006`, `SP-009` (all B10 doc/tooling), and
+  `SP-054`, `SP-055`, `SP-062`, `SP-063`, `SP-064` (all B10 gateway/notifications). `SP-041`
+  is no longer in this list — its full split (not just the adoption note it carried since
+  B03) finished in B09.
 - `BLOCKED`: 0 in the manifest. One infra blocker was tracked in
   `service-decomposition-plan.md` (the missing `Dockerfile.service`) and was resolved in B02.
-- Row-count check: 14 KEEP + 74 DONE + 26 PENDING = 114. ✓ (machine-counted via
-  `grep -cE "^\| SP-[0-9]+"` and per-status `grep`, not hand-tallied.)
+- Row-count check: 14 KEEP + 95 DONE + 9 PENDING = 118. ✓ (machine-counted via
+  `grep -cE "^\| SP-[0-9]+"` and per-status `grep` anchored to the status column specifically —
+  a naive substring grep against the whole row over-counts, since some rows' ACTION column is
+  also literally "KEEP" or "PENDING"-shaped text, not just their STATUS column; not
+  hand-tallied.)
 
 ## Files this migration will create (IDs assigned on creation)
 
@@ -446,7 +462,9 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
   now exist; Phase 1's `services/core/**` line item is complete.
 - ✅ `services/user` deleted — **B08**, tracked as `SP-073`/`SP-075`/`SP-078` (package
   manifest / entry point / tsconfig) finally `DONE`.
-- `services/messaging/**` (rename target of `services/chat`; new `modules/calls/**`) (B09)
+- ✅ `services/messaging/**` (rename target of `services/chat`; new `modules/calls/**`) —
+  **created in B09**, tracked as `SP-040`–`SP-053`, `SP-057`–`SP-059` (renamed/moved files)
+  and `SP-115`–`SP-118` (new `calls` module).
 - ✅ `services/gateway/src/routeRules.ts` + `routeRules.test.ts` — **created in B05**, tracked
   as `SP-098`–`SP-099`; a scoped precursor to the full `services/gateway/src/routes/route-manifest.ts`
   + `services/gateway/src/middleware/**` split, still planned for B10 (SP-055).
