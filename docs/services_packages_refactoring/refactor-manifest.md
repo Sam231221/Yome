@@ -285,9 +285,9 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-037 | `services/identity/src/modules/credentials/credentials.validation.ts` | identity | VALIDATION | MOVE | Moved from `services/auth/src/routes/auth.validation.ts`; `nameSchema`/`usernameSchema` now imported from `@repo/contracts` (promoted, byte-identical duplicate in `user.validation.ts` removed — see SP-077) | B05 | identity | Low | DONE |
 | SP-038 | `services/identity/src/dev/seed-route.ts` | seed | ROUTE | REFACTOR | B04: rewritten from `services/auth/src/routes/db.routes.ts` as a thin route mounting one `devSeedGuard` from `@repo/seed`. **B05: further moved (path only, no content change) from `services/auth/src/routes/db.routes.ts` to this path as part of the identity rename** — external `/api/db` path preserved throughout | B04 (content), B05 (path) | identity (dev) | Medium | DONE |
 | SP-039 | `services/identity/tsconfig.json` | identity | TS_CONFIG | MOVE | Moved from `services/auth/tsconfig.json`, unchanged content | B05 | identity | Low | DONE |
-| SP-040 | `services/messaging/package.json` | messaging | PKG_MANIFEST | RENAME | `@services/messaging`. `test` script also changed from `bun test src/**/*.test.ts` to `bun test ./src` — the exact B03 sh-vs-bun-glob bug recurred once test files moved under `modules/` | B09 | messaging | Medium | DONE |
-| SP-041 | `services/messaging/src/modules/messages/messages.controller.ts` | messaging | CONTROLLER | SPLIT | Messages handlers (`getMessages`, `getOrCreateConversation`, `addMessage`, `addMediaMessage`, `getInitialUsersWithMessages`, `getInitialGroupsWithMessages`) stay here, byte-identical; call-prep handlers (`prepareDirectCallConversation`, `validateDirectConversation`) moved to `modules/calls/calls.controller.ts` (see SP-115). New `authorizeUploadScope` handler added here too (no separate row — it's an addition to this same file, same convention as B08's community.controller.ts export additions in SP-103) | B09 | messaging | Medium | DONE |
-| SP-042 | `services/messaging/src/index.ts` | messaging | SERVICE_ENTRY | REFACTOR | Mounts `messages.routes.ts` and `calls.routes.ts`, both still at `/api/chat`; `attachSocketHandlers` now imported from `modules/realtime/handlers.ts`. `service`/`servicePorts` key `chat` → `messaging` | B09 | messaging | Medium | DONE |
+| SP-040 | `services/messaging/package.json` | messaging | PKG_MANIFEST | RENAME | `@services/messaging`. `test` script also changed from `bun test src/**/*.test.ts` to `bun test ./src` — the exact B03 sh-vs-bun-glob bug recurred once test files moved under `modules/`. **B11: added `@repo/cache` + `@socket.io/redis-adapter`** | B09, B11 | messaging | Medium | DONE |
+| SP-041 | `services/messaging/src/modules/messages/messages.controller.ts` | messaging | CONTROLLER | SPLIT | Messages handlers (`getMessages`, `getOrCreateConversation`, `addMessage`, `addMediaMessage`, `getInitialUsersWithMessages`, `getInitialGroupsWithMessages`) stay here, byte-identical; call-prep handlers (`prepareDirectCallConversation`, `validateDirectConversation`) moved to `modules/calls/calls.controller.ts` (see SP-115). New `authorizeUploadScope` handler added here too (no separate row — it's an addition to this same file, same convention as B08's community.controller.ts export additions in SP-103). **B11: `isUserOnline`/`getOnlineUserIds` now imported from `@repo/cache` (see SP-052) instead of the deleted local module, both calls now `await`ed** | B09, B11 | messaging | Medium | DONE |
+| SP-042 | `services/messaging/src/index.ts` | messaging | SERVICE_ENTRY | REFACTOR | Mounts `messages.routes.ts` and `calls.routes.ts`, both still at `/api/chat`; `attachSocketHandlers` now imported from `modules/realtime/handlers.ts`. `service`/`servicePorts` key `chat` → `messaging`. **B11: wires `@socket.io/redis-adapter` with two duplicated `@repo/cache` Redis connections (pub/sub), so `io.to(socketId).emit(...)` crosses replicas** | B09, B11 | messaging | Medium | DONE |
 | SP-043 | `services/messaging/src/modules/messages/conversations.test.ts` | messaging | TEST | MOVE | Unchanged | B09 | messaging | Low | DONE |
 | SP-044 | `services/messaging/src/modules/messages/conversations.ts` | messaging | DOMAIN_LIB | MOVE | Unchanged | B09 | messaging | Low | DONE |
 | SP-045 | `services/messaging/src/modules/messages/direct-messages.test.ts` | messaging | TEST | MOVE | Unchanged | B09 | messaging | Low | DONE |
@@ -295,11 +295,11 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-047 | `services/messaging/src/modules/messages/messages.routes.ts` | messaging | ROUTE | SPLIT | Messages routes stay here (+ new `authorize-upload-scope` route); calls routes moved to `modules/calls/calls.routes.ts` (see SP-116). Both mount at `/api/chat` in `index.ts`; external `/api/chat` and `/api/messages` paths preserved | B09 | messaging | Medium | DONE |
 | SP-048 | `services/messaging/src/modules/messages/messages.validation.test.ts` | messaging | TEST | SPLIT | Messages-schema tests stay here; call-schema tests moved to `modules/calls/calls.validation.test.ts` (new — see SP-118) | B09 | messaging | Low | DONE |
 | SP-049 | `services/messaging/src/modules/messages/messages.validation.ts` | messaging | VALIDATION | SPLIT | Messages schemas (+ new `authorizeUploadScopeSchema`) stay here; call schemas moved to `modules/calls/calls.validation.ts` (see SP-117). Primitives stayed local (each file only needs a subset — `uuidString`/`positiveIntString` aren't needed by any call schema), so nothing moved to `@repo/contracts` here | B09 | messaging | Low | DONE |
-| SP-050 | `services/messaging/src/modules/realtime/handlers.ts` | messaging | SOCKET | MOVE | Unchanged besides the relative import of `online-users.js` (now same-directory) | B09 | messaging | Medium | DONE |
+| SP-050 | `services/messaging/src/modules/realtime/handlers.ts` | messaging | SOCKET | MOVE | **B09:** unchanged besides the relative import of `online-users.js` (now same-directory). **B11: REFACTOR** — presence calls now import from `@repo/cache` (async), every handler that touches presence is now an `async` function; added a 20s per-socket heartbeat refreshing the presence TTL, cleared on signout/disconnect | B09, B11 | messaging | Medium | DONE |
 | SP-051 | `services/messaging/src/modules/realtime/online-users.test.ts` | messaging | TEST | MOVE | Unchanged | B09 | messaging | Low | DONE |
-| SP-052 | `services/messaging/src/modules/realtime/online-users.ts` | messaging | STATE | MOVE | Unchanged | B09 | messaging | Low | DONE |
+| SP-052 | `services/messaging/src/modules/realtime/online-users.ts` | messaging | STATE | DELETE | **B09:** moved unchanged from `services/chat`. **B11: deleted** — its Map-based API moved to `packages/cache/src/presence.ts` (see SP-127), now Redis-backed instead of in-process, fixing issue #16 | B09, B11 | messaging | Low | DONE |
 | SP-053 | `services/messaging/tsconfig.json` | messaging | TS_CONFIG | MOVE | Unchanged | B09 | messaging | Low | DONE |
-| SP-054 | `services/gateway/package.json` | edge | PKG_MANIFEST | REFACTOR | `"lint": "eslint ."` replaces the echo stub | B10 | gateway | Low | DONE |
+| SP-054 | `services/gateway/package.json` | edge | PKG_MANIFEST | REFACTOR | **B10:** `"lint": "eslint ."` replaces the echo stub. **B11: added `@repo/cache`** | B10, B11 | gateway | Low | DONE |
 | SP-055 | `services/gateway/src/index.ts` | edge | SERVICE_ENTRY | SPLIT + REFACTOR | Split into bootstrap-only `index.ts` + `routes/route-manifest.ts` (renamed from B05's `routeRules.ts`, extended with per-rule `timeoutMs`) + `middleware/{requestId,rateLimiter,auth,proxy}.ts`. `proxy.ts` adds the resilience layer that never existed: per-route timeout (5s default, 30s for `/api/media`), retry for idempotent methods only (2 attempts, exponential backoff, never on an actual HTTP response), and a per-upstream circuit breaker (opens at 5 consecutive failures, half-opens after 30s). Live-verified against a controlled fake upstream: timeout returns 504, exactly 2 attempts hit the fake server per idempotent GET, the circuit opens on the 5th failure and short-circuits with zero further network calls after that | B10 | gateway | High | DONE |
 | SP-056 | `services/gateway/tsconfig.json` | edge | TS_CONFIG | KEEP | Same | — | gateway | Low | KEEP |
 | SP-057 | `services/media/package.json` | media | PKG_MANIFEST | REFACTOR | `@repo/database` dependency removed; `axios` added (for the new call to `messaging`). Note: media never actually depended on `@repo/storage` as a workspace package — S3 upload helpers reach it via `@repo/shared`'s re-export, same pattern the B05 audit found and fixed for `identity` | B09 | media | Medium | DONE |
@@ -362,8 +362,21 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-116 | `services/messaging/src/modules/calls/calls.routes.ts` | messaging | ROUTE | CREATE | New in B09: `/validate-direct-conversation` and `/prepare-direct-call-conversation` moved here from `messages.routes.ts` (see SP-047); `POST /api/chat/call-token` and `/call-participants` added, replacing the two `apps/web` server actions | B09 | messaging | Medium | DONE |
 | SP-117 | `services/messaging/src/modules/calls/calls.validation.ts` | messaging | VALIDATION | CREATE | New in B09: `validateDirectConversationSchema`/`prepareDirectCallConversationSchema` moved here from `messages.validation.ts` (see SP-049); new `callParticipantsSchema` added for `createCallParticipants`. `call-token` takes no body, so it has no schema | B09 | messaging | Low | DONE |
 | SP-118 | `services/messaging/src/modules/calls/calls.validation.test.ts` | messaging | TEST | CREATE | New in B09: the call-schema tests split out of `chat.validation.test.ts` (see SP-048), plus new coverage for `callParticipantsSchema` | B09 | messaging | Low | DONE |
-| SP-098 | `services/gateway/src/routeRules.ts` | edge | PKG_MODULE | CREATE | New in B05: ordered upstream route-rule table + `resolveRoute()`/`pathMatchesPrefix()`, extracted so `index.ts`'s 8 hand-written `app.use()` calls become one loop, and so routing is unit-testable without booting Express. A scoped precursor to the full B10 gateway modularization (SP-055), not that refactor itself | B05 | gateway | Medium | DONE |
-| SP-099 | `services/gateway/src/routeRules.test.ts` | edge | TEST | CREATE | New in B05: parses `apps/web/utils/ApiRoutes.ts` and asserts every one of its 42 externally-visible `/api/*` paths resolves through `routeRules` to exactly one upstream, including the 3 profile paths now resolving to `identity` | B05 | gateway | Low | DONE |
+| SP-119 | `services/gateway/src/types.ts` | edge | PKG_MODULE | CREATE | New in B10: the `GatewayRequest` interface (`requestId`/`rawBody`/`gatewayUser`), extracted so every middleware file can share one augmented-request type instead of each redeclaring it. Backfilled — missed when B10 first shipped, caught while touching this area again in B11 (same lesson the B03 audit already established: assign IDs to new files in the same commit as the code move) | B10 | gateway | Low | DONE |
+| SP-120 | `services/gateway/src/middleware/requestId.ts` | edge | PKG_MODULE | CREATE | New in B10: request-id assignment, extracted verbatim from `index.ts`. Backfilled (see SP-119's note) | B10 | gateway | Low | DONE |
+| SP-121 | `services/gateway/src/middleware/rateLimiter.ts` | edge | PKG_MODULE | CREATE | New in B10: the in-process rate limiter, extracted verbatim from `index.ts` (backfilled, see SP-119's note). **B11: REFACTOR** — the in-process `Map` replaced with `@repo/cache`'s Redis sliding-window limiter, fixing issue #17. Live-verified across 2 real gateway replicas sharing one Redis: the combined limit holds, and the limiter fails open against an unreachable Redis | B10, B11 | gateway | Medium | DONE |
+| SP-122 | `services/gateway/src/middleware/auth.ts` | edge | PKG_MODULE | CREATE | New in B10: the NextAuth/shared-token auth middleware, extracted verbatim from `index.ts`. Backfilled (see SP-119's note) | B10 | gateway | Low | DONE |
+| SP-123 | `services/gateway/src/middleware/proxy.ts` | edge | PKG_MODULE | CREATE | New in B10: the reverse-proxy logic, extended with the timeout/retry/circuit-breaker resilience layer (see SP-055's note for detail). Backfilled (see SP-119's note) | B10 | gateway | High | DONE |
+| SP-124 | `packages/cache/package.json` | cache | PKG_MANIFEST | CREATE | New in B11: `@repo/cache`, depends on `ioredis` + `@repo/service-kit` | B11 | cache | Low | DONE |
+| SP-125 | `packages/cache/tsconfig.json` | cache | TS_CONFIG | CREATE | New in B11 | B11 | cache | Low | DONE |
+| SP-126 | `packages/cache/src/client.ts` | cache | PKG_MODULE | CREATE | New in B11: `getRedisClient()` (lazy singleton, read only inside a function body — never at module load, the same hazard B10 fixed for `GATEWAY_SHARED_TOKEN`/`STREAM_SECRET_KEY`) and `createRedisConnection()` (a fresh independent connection, for Socket.IO's adapter's pub/sub clients) | B11 | cache | Medium | DONE |
+| SP-127 | `packages/cache/src/presence.ts` | cache | PKG_MODULE | CREATE | New in B11: Redis-backed presence, replacing `services/messaging`'s in-process `online-users.ts` (see SP-052) — same function shapes, now async, each taking an optional injectable Redis client for testability. Every read degrades to empty and every write swallows its error on a Redis failure, per `data-architecture-plan.md`'s explicit risk mitigation. Adds a `yome:presence:socket:<socketId>` reverse index not in the plan's key table, needed for O(1) "which user owns this socket" lookups now that presence is shared state instead of one process's memory | B11 | cache | High | DONE |
+| SP-128 | `packages/cache/src/presence.test.ts` | cache | TEST | CREATE | New in B11: 10 tests (2 files) against a hand-rolled fake Redis client, matching this codebase's existing DI-for-testability pattern rather than a mocking library — covers multi-socket presence, the reverse-index disconnect path, and degraded-mode behavior on a throwing client | B11 | cache | Medium | DONE |
+| SP-129 | `packages/cache/src/rateLimiter.ts` | cache | PKG_MODULE | CREATE | New in B11: the sliding-window limiter as one atomic Lua script (`ZREMRANGEBYSCORE` + `ZCARD` + conditional `ZADD`), replacing `services/gateway`'s in-process `Map` (see SP-121). Fails open on any Redis error | B11 | cache | High | DONE |
+| SP-130 | `packages/cache/src/rateLimiter.test.ts` | cache | TEST | CREATE | New in B11: covers the allow/deny paths, the exact key/window/limit arguments passed to the script, and the fail-open path against a throwing client | B11 | cache | Low | DONE |
+| SP-131 | `packages/cache/src/index.ts` | cache | PKG_ENTRY | CREATE | New in B11: barrel re-exporting `client.ts` + `presence.ts` + `rateLimiter.ts` | B11 | cache | Low | DONE |
+| SP-098 | `services/gateway/src/routes/route-manifest.ts` | edge | PKG_MODULE | CREATE | New in B05: ordered upstream route-rule table + `resolveRoute()`/`pathMatchesPrefix()`, extracted so `index.ts`'s 8 hand-written `app.use()` calls become one loop, and so routing is unit-testable without booting Express. **B10: renamed from `routeRules.ts` to `routes/route-manifest.ts` and extended with per-rule `timeoutMs`** — the full gateway modularization SP-055 describes, not a precursor to it anymore | B05, B10 | gateway | Medium | DONE |
+| SP-099 | `services/gateway/src/routes/route-manifest.test.ts` | edge | TEST | CREATE | New in B05: parses `apps/web/utils/ApiRoutes.ts` and asserts every one of its 42 externally-visible `/api/*` paths resolves through the route manifest to exactly one upstream, including the 3 profile paths now resolving to `identity`. **B10: renamed alongside its source file; 2 new tests added covering `timeoutMs`** | B05, B10 | gateway | Low | DONE |
 
 Note: `packages/contracts/src/errors.ts` and `packages/contracts/src/service.ts` are **not**
 `CREATE` rows — they are the MOVE destinations already tracked by `SP-014` and `SP-022`
@@ -405,17 +418,28 @@ have been a duplicate-file-entry bug; caught and corrected before commit.
   (its "B10 review" was already answered by `service-decomposition-plan.md`'s locked design
   decisions — not actually open by the time B10 ran). Final pass: **0 `PENDING` rows remain**,
   every one of the 118 rows is `DONE` or `KEEP` — the manifest's own Definition of Done.
+  **SP-119–SP-123 backfilled** (gateway's `types.ts` + 4 `middleware/*.ts` files never got IDs
+  when B10 actually shipped them — caught while touching this area again in B11); **SP-098/
+  SP-099's own "Current File" paths were also stale** (still `routeRules.ts`, not updated when
+  B10 renamed it) — both fixed in the same B11 pass.
+- **B11** (Redis foundation): SP-124–SP-131 **created** (`packages/cache/**`, a new package —
+  fresh IDs, same convention every prior batch's new modules used). SP-040, SP-041, SP-042,
+  SP-050, SP-054 **updated in place** (Redis wiring added to already-tracked files). SP-052
+  **flipped from MOVE to DELETE** (`online-users.ts` removed once its logic moved into
+  `packages/cache`). SP-121 **updated in place** (its B10 backfill note now also covers B11's
+  Redis rewrite of the same file).
 
 ## Status accounting
 
 Counts below are machine-verified (`grep`-extracted from the actual table, not hand-tallied
 — a hand-tally error during the B03 completeness audit is exactly why this rule exists now).
 
-- Rows: 118 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`, plus 4 B04-created
+- Rows: 131 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`, plus 4 B04-created
   rows `SP-091`–`SP-094`, plus 5 B05-created rows `SP-095`–`SP-099`, plus 6 B06-created rows
   `SP-100`–`SP-105`, plus 4 B07-created rows `SP-106`–`SP-109`, plus 5 B08-created rows
-  `SP-110`–`SP-114`, plus 4 B09-created rows `SP-115`–`SP-118`). Duplicate IDs: 0. Duplicate
-  current-file entries: 0.
+  `SP-110`–`SP-114`, plus 4 B09-created rows `SP-115`–`SP-118`, plus 5 B10-created rows
+  `SP-119`–`SP-123` (backfilled — see the B10 summary line), plus 8 B11-created rows
+  `SP-124`–`SP-131`). Duplicate IDs: 0. Duplicate current-file entries: 0.
 - `KEEP` (no change intended): SP-002, SP-004, SP-005, SP-007, SP-008, SP-010, SP-025,
   SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065, SP-063 — **15 rows**. `SP-063`
   joined this list in B10 (was `PENDING` pending a review that turned out to already be
@@ -433,14 +457,16 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
   B09's `chat`→`messaging` rename + media de-DB) + SP-115–SP-118 (4 rows, B09-created `calls`
   module) + SP-001, SP-003, SP-006, SP-009, SP-054, SP-055, SP-062, SP-064 (8 rows, B10's
   schema-ownership docs, eslint service profile, gateway modularization, and notifications
-  controller extraction) — **103 rows**. The two former compound rows (`SP-011`/`SP-015`,
-  previously `DONE (B03; shim removal B10)`) are now plain `DONE`: the B10 half (deleting
-  `packages/shared` itself) is finished, so the caveat no longer applies.
+  controller extraction) + SP-119–SP-123 (5 rows, backfilled B10-created gateway middleware
+  files) + SP-124–SP-131 (8 rows, B11-created `packages/cache`) — **116 rows**. The two former
+  compound rows (`SP-011`/`SP-015`, previously `DONE (B03; shim removal B10)`) are now plain
+  `DONE`: the B10 half (deleting `packages/shared` itself) is finished, so the caveat no
+  longer applies.
 - `PENDING`: **0 rows.** The manifest's own Definition of Done: every row is now `DONE` or
   `KEEP`.
 - `BLOCKED`: 0 in the manifest. One infra blocker was tracked in
   `service-decomposition-plan.md` (the missing `Dockerfile.service`) and was resolved in B02.
-- Row-count check: 15 KEEP + 103 DONE + 0 PENDING = 118. ✓ (machine-counted via
+- Row-count check: 15 KEEP + 116 DONE + 0 PENDING = 131. ✓ (machine-counted via
   `grep -cE "^\| SP-[0-9]+"` and per-status `grep` anchored to the status column specifically —
   a naive substring grep against the whole row over-counts, since some rows' ACTION column is
   also literally "KEEP" or "PENDING"-shaped text, not just their STATUS column; not
@@ -482,7 +508,10 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
 
 **Phase 2+ (B11–B18+), planned in the companion documents:**
 
-- `packages/cache/**` — shared Redis client, presence, rate limiting, cache helpers (B11)
+- ✅ `packages/cache/**` — shared Redis client, presence, and rate limiting — **created in
+  B11**, tracked as `SP-124`–`SP-131`. Cache-aside helpers (dashboard/group-discover/resource
+  caching) are still B12's job — this batch only covers presence and rate limiting, the two
+  triggers (T-01/T-02) that had already fired.
 - ✅ `docker-compose.yml` — **created in B02** (Postgres + Redis; Redis unused until B11)
 - `packages/events/**` — event envelope, outbox publisher, consumer runtime, DLQ,
   idempotency helper (B13)

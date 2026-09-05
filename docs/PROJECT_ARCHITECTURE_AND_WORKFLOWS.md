@@ -37,6 +37,9 @@ Yome is a Bun + Turbo monorepo with a Next.js frontend and several backend micro
 - `packages/contracts`, `packages/service-kit`, `packages/storage`
   - shared contracts/helpers, middleware/logger/env, and S3 storage — split out of the old
     `packages/shared` (deleted in B10; see the [services/packages refactor](services_packages_refactoring/))
+- `packages/cache` (new in B11)
+  - Redis client, presence store, and sliding-window rate limiter — backs `messaging`'s
+    presence/Socket.IO fan-out and `gateway`'s rate limiter, both now correct across replicas
 
 ## 2. High-Level Architecture
 

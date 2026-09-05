@@ -35,6 +35,7 @@ Yome includes:
 - `packages/contracts`: service names, error envelope, and small cross-service helpers (zero framework dependencies)
 - `packages/service-kit`: Express middleware, logger, and service ports/env config
 - `packages/storage`: S3 upload helpers
+- `packages/cache`: Redis client, presence store, and sliding-window rate limiter (B11) — used by `services/messaging` (presence + Socket.IO fan-out) and `services/gateway` (rate limiting)
 - `packages/typescript-config`: shared TS configuration
 - `packages/eslint-config`: shared lint configuration
 
