@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
 import { getAuthenticatedUserId } from "@repo/contracts";
-import { getOnlineUserIds, isUserOnline } from "../realtime/online-users.js";
+import { getOnlineUserIds, isUserOnline } from "@repo/cache";
 import {
   getDirectConversation,
   getOrCreateDirectConversation,
@@ -72,7 +72,7 @@ async function createDirectMessage(params: {
     resolvedConversation ??
     (await getOrCreateDirectConversation(prisma, fromId, toId));
 
-  const isRecipientOnline = isUserOnline(toId);
+  const isRecipientOnline = await isUserOnline(toId);
 
   return prisma.messages.create({
     data: {
@@ -274,7 +274,7 @@ export async function getInitialUsersWithMessages(
 
     res.status(200).json({
       usersWithLatestPrivateMessages,
-      onlineUsers: getOnlineUserIds(),
+      onlineUsers: await getOnlineUserIds(),
     });
   } catch (error) {
     next(error);

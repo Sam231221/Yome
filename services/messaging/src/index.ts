@@ -3,6 +3,7 @@ import cors from "cors";
 import jwt from "jsonwebtoken";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
+import { createAdapter } from "@socket.io/redis-adapter";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
@@ -12,6 +13,7 @@ import {
   errorHandler,
   internalTokenGuard,
 } from "@repo/service-kit";
+import { createRedisConnection } from "@repo/cache";
 
 import messagesRoutes from "./modules/messages/messages.routes.js";
 import callsRoutes from "./modules/calls/calls.routes.js";
@@ -42,6 +44,13 @@ app.use(errorHandler);
 
 const httpServer = createServer(app);
 
+// B11: two independent Redis connections for Socket.IO's adapter (a client blocked on
+// SUBSCRIBE can't run other commands, so pub and sub each need their own). This is what
+// makes `io.to(socketId).emit(...)` reach a socket connected to a *different* messaging
+// replica — without it, emits only ever reach sockets on the same process.
+const pubClient = createRedisConnection();
+const subClient = pubClient.duplicate();
+
 const io = new Server(httpServer, {
   cors: {
     origin:
@@ -50,6 +59,7 @@ const io = new Server(httpServer, {
       "http://localhost:3000",
     credentials: true,
   },
+  adapter: createAdapter(pubClient, subClient),
 });
 
 const nextAuthSecret = process.env.NEXTAUTH_SECRET;

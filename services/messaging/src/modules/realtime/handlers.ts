@@ -4,9 +4,10 @@ import {
   addOnlineUserSocket,
   getOnlineUserIds,
   getOnlineUserSockets,
+  refreshPresence,
   removeOnlineUserSocket,
   removeSocketFromOnlineUsers,
-} from "./online-users.js";
+} from "@repo/cache";
 
 type SocketChatMessage = {
   id: number;
@@ -21,6 +22,11 @@ type SocketChatMessage = {
   groupId?: string | null;
 };
 
+/** How often a connected socket refreshes its presence key's TTL (B11 — see
+ * @repo/cache's PRESENCE_TTL_SECONDS, 60s). Comfortably under the TTL so a slow tick or two
+ * never lets a still-connected socket's presence expire. */
+const PRESENCE_HEARTBEAT_MS = 20_000;
+
 const parseSocketUserId = (value: unknown) => {
   const parsed = Number.parseInt(String(value ?? ""), 10);
   return Number.isNaN(parsed) ? null : parsed;
@@ -28,21 +34,34 @@ const parseSocketUserId = (value: unknown) => {
 
 export function attachSocketHandlers(io: Server): void {
   io.on("connection", (socket: Socket) => {
-    const emitOnlineUsers = () => {
+    const emitOnlineUsers = async () => {
       io.emit("online-users", {
-        onlineUsers: getOnlineUserIds(),
+        onlineUsers: await getOnlineUserIds(),
       });
     };
 
-    socket.on("add-user", () => {
+    const stopPresenceHeartbeat = () => {
+      const timer = socket.data.presenceHeartbeatTimer as
+        | ReturnType<typeof setInterval>
+        | undefined;
+      if (timer) clearInterval(timer);
+      socket.data.presenceHeartbeatTimer = undefined;
+    };
+
+    socket.on("add-user", async () => {
       const userId = socket.data.userId as string | undefined;
       if (!userId) {
         socket.disconnect(true);
         return;
       }
       socket.join(userId);
-      addOnlineUserSocket(userId, socket.id);
-      emitOnlineUsers();
+      await addOnlineUserSocket(userId, socket.id);
+      await emitOnlineUsers();
+
+      stopPresenceHeartbeat();
+      socket.data.presenceHeartbeatTimer = setInterval(() => {
+        void refreshPresence(userId, socket.id);
+      }, PRESENCE_HEARTBEAT_MS);
     });
 
     socket.on("join room", async (room: string) => {
@@ -99,7 +118,7 @@ export function attachSocketHandlers(io: Server): void {
           });
           if (!message) return;
 
-          for (const sendUserSocket of getOnlineUserSockets(toUserId)) {
+          for (const sendUserSocket of await getOnlineUserSockets(toUserId)) {
             socket.to(sendUserSocket).emit("privateMessageReceived", {
               from: data.from,
               msgType: "user",
@@ -135,7 +154,7 @@ export function attachSocketHandlers(io: Server): void {
 
         for (const user of recipients.values()) {
           if (user.id === data.from) continue;
-          for (const memberSocketId of getOnlineUserSockets(user.id)) {
+          for (const memberSocketId of await getOnlineUserSockets(user.id)) {
             socket.to(memberSocketId).emit("msg-receive", {
               from: data.from,
               message,
@@ -148,13 +167,13 @@ export function attachSocketHandlers(io: Server): void {
       }
     );
 
-    socket.on("mark-read", (payload: { id: number; receiverId?: number }) => {
+    socket.on("mark-read", async (payload: { id: number; receiverId?: number }) => {
       const { id, receiverId } = payload;
       const authedUserId = parseSocketUserId(socket.data.userId);
       if (authedUserId === null || receiverId !== authedUserId) return;
       if (id === authedUserId) return;
 
-      for (const sendUserSocket of getOnlineUserSockets(id)) {
+      for (const sendUserSocket of await getOnlineUserSockets(id)) {
         const data = {
           id,
           receiverId,
@@ -163,17 +182,19 @@ export function attachSocketHandlers(io: Server): void {
       }
     });
 
-    socket.on("signout", (id: string | number) => {
+    socket.on("signout", async (id: string | number) => {
       const normalizedUserId = String(id ?? socket.data.userId ?? "");
       if (!normalizedUserId) return;
-      removeOnlineUserSocket(normalizedUserId, socket.id);
+      stopPresenceHeartbeat();
+      await removeOnlineUserSocket(normalizedUserId, socket.id);
       socket.leave(normalizedUserId);
-      emitOnlineUsers();
+      await emitOnlineUsers();
     });
 
-    socket.on("disconnect", () => {
-      removeSocketFromOnlineUsers(socket.id);
-      emitOnlineUsers();
+    socket.on("disconnect", async () => {
+      stopPresenceHeartbeat();
+      await removeSocketFromOnlineUsers(socket.id);
+      await emitOnlineUsers();
     });
   });
 }
