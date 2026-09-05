@@ -8,8 +8,8 @@ const services = [
     url: process.env.IDENTITY_SERVICE_URL || "http://localhost:4101/health",
   },
   {
-    name: "chat",
-    url: process.env.CHAT_SERVICE_URL || "http://localhost:4103/health",
+    name: "messaging",
+    url: process.env.MESSAGING_SERVICE_URL || "http://localhost:4103/health",
   },
   {
     name: "media",

@@ -19,7 +19,7 @@ flowchart LR
     W --> N[NextAuth<br/>session cookies]
     W --> G[Gateway service<br/>:4100]
     W -.socket token.-> A1[Next.js route<br/>/api/auth/socket-token]
-    A1 -.JWT.-> C[Chat service socket<br/>:4103]
+    A1 -.JWT.-> C[Messaging service socket<br/>:4103]
 
     G --> A[Identity service<br/>:4101]
     G --> C
@@ -215,7 +215,7 @@ flowchart LR
     C --> D[services/gateway/src/index.ts]
     D --> E[/api/auth -> identity service]
     D --> F["/api/user -> core service (community, learning, dashboard)<br/>3 profile paths -> identity instead<br/>see routeRules.ts"]
-    D --> G[/api/messages or /api/chat -> chat service]
+    D --> G[/api/messages or /api/chat -> messaging service]
     D --> H[/api/media -> media service]
     D --> I[/api/notifications -> notifications service]
 ```
@@ -255,7 +255,7 @@ sequenceDiagram
     participant U as User
     participant W as apps/web /chat
     participant G as Gateway :4100
-    participant C as Chat service :4103
+    participant C as Messaging service :4103
     participant DB as PostgreSQL
 
     U->>W: Open /chat
@@ -276,11 +276,12 @@ sequenceDiagram
 - `apps/web/hooks/useChatSocket.ts`
 - `apps/web/lib/chat/chatApi.ts`
 - `apps/web/app/api/auth/socket-token/route.ts`
-- `services/chat/src/index.ts`
-- `services/chat/src/routes/chat.routes.ts`
-- `services/chat/src/controllers/message.controller.ts`
-- `services/chat/src/socket/handlers.ts`
-- `services/chat/src/state/online-users.ts`
+- `services/messaging/src/index.ts`
+- `services/messaging/src/modules/messages/messages.routes.ts`
+- `services/messaging/src/modules/calls/calls.routes.ts`
+- `services/messaging/src/modules/messages/messages.controller.ts`
+- `services/messaging/src/modules/realtime/handlers.ts`
+- `services/messaging/src/modules/realtime/online-users.ts`
 
 ### Chat split: REST vs Socket
 
@@ -310,11 +311,11 @@ That setup is defined in:
 - `apps/web/utils/ApiRoutes.ts`
 - the root `.env`
 
-So chat websocket traffic connects directly to the chat service.
+So chat websocket traffic connects directly to the messaging service.
 
 ## 8. Flow F: Media Upload In Chat
 
-When a user sends an image or audio message, Yome uses both the media service and the chat service.
+When a user sends an image or audio message, Yome uses both the media service and the messaging service.
 
 ```mermaid
 sequenceDiagram
@@ -322,7 +323,7 @@ sequenceDiagram
     participant G as Gateway :4100
     participant M as Media service :4104
     participant S3 as S3/Object storage
-    participant C as Chat service :4103
+    participant C as Messaging service :4103
     participant DB as PostgreSQL
 
     W->>G: POST /api/media/add-image-message or add-audio-message
@@ -342,7 +343,7 @@ sequenceDiagram
 - `services/media/src/routes/media.routes.ts`
 - `services/media/src/controllers/media.controller.ts`
 - `packages/storage/src/s3.ts`
-- `services/chat/src/controllers/message.controller.ts`
+- `services/messaging/src/modules/messages/messages.controller.ts`
 
 ## 9. Service Ports Used In This Workflow
 
@@ -351,7 +352,7 @@ These defaults come from `packages/service-kit/src/config/env.ts` and the root `
 - `3000`: Next.js frontend in `apps/web`
 - `4100`: gateway
 - `4101`: identity service
-- `4103`: chat service and Socket.IO
+- `4103`: messaging service and Socket.IO
 - `4104`: media service
 - `4105`: notifications service
 - `4107`: core service (community, learning, feed, and dashboard modules)
@@ -366,5 +367,5 @@ From there:
 2. protected pages are checked by `apps/web/middleware.ts`
 3. most backend REST calls go to the gateway on `:4100`
 4. the gateway forwards them to identity, core, chat, media, or notifications
-5. chat realtime events connect directly to the chat service on `:4103`
+5. chat realtime events connect directly to the messaging service on `:4103`
 6. identity, core, and chat data finally live in PostgreSQL through Prisma in `packages/database`

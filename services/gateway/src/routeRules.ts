@@ -21,7 +21,7 @@ export type Upstream =
   | "core"
   | "media"
   | "notifications"
-  | "chat";
+  | "messaging";
 
 export type RouteRule = {
   /** External path prefix, matched on a path-segment boundary (see `pathMatchesPrefix`). */
@@ -53,11 +53,11 @@ export const routeRules: RouteRule[] = [
 
   {
     prefix: "/api/messages",
-    upstream: "chat",
+    upstream: "messaging",
     rewriteFrom: "/api/messages",
     rewriteTo: "/api/chat",
   },
-  { prefix: "/api/chat", upstream: "chat" },
+  { prefix: "/api/chat", upstream: "messaging" },
 ];
 
 /** Matches on a path-segment boundary: `/api/user` matches `/api/user` and `/api/user/x`,

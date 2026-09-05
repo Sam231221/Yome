@@ -26,8 +26,8 @@ Yome is a Bun + Turbo monorepo with a Next.js frontend and several backend micro
   - also owns profile reads/updates (`get-user-by-id`, `update-user`, `get-all-users`), moved here from `services/user` in B05
 - `services/core` (new in B06)
   - community (groups, connections, invitations — B06), learning (events, projects, and everything from the now-deleted `services/resources` — B07), feed (reads only so far — B08), and dashboard (composes community/learning/feed reads instead of querying their tables directly — B08). `services/user`, the service all four modules were extracted from, no longer exists
-- `services/chat`
-  - chat HTTP APIs and Socket.IO realtime connection
+- `services/messaging` (renamed from `services/chat` in B09)
+  - chat HTTP APIs, Socket.IO realtime connection, and direct-call provisioning (Stream token minting + participant upsert, moved here from `apps/web/actions/stream.actions.ts` in B09)
 - `services/media`
   - media-related APIs
 - `services/notifications`
@@ -50,7 +50,7 @@ flowchart LR
     B --> E[Gateway<br/>localhost:4100]
 
     E --> F[Identity Service<br/>localhost:4101]
-    E --> H[Chat Service<br/>localhost:4103]
+    E --> H[Messaging Service<br/>localhost:4103]
     E --> I[Media Service<br/>localhost:4104]
     E --> J[Notifications Service<br/>localhost:4105]
     E --> N[Core Service<br/>localhost:4107]
@@ -286,7 +286,7 @@ The chat page depends on both page authorization and a separate realtime socket 
 - `apps/web/app/(communication)/chat/page.tsx`
 - `apps/web/hooks/useChatSocket.ts`
 - `apps/web/app/api/auth/socket-token/route.ts`
-- `services/chat/src/index.ts`
+- `services/messaging/src/index.ts`
 
 ### What happens
 
@@ -296,8 +296,8 @@ The chat page depends on both page authorization and a separate realtime socket 
 4. `useChatSocket.ts` requests a socket token from:
    - `/api/auth/socket-token`
 5. The frontend route decodes the active session and returns a short-lived JWT.
-6. The client uses that token to open a Socket.IO connection to the chat service.
-7. The chat service validates the token with `NEXTAUTH_SECRET`.
+6. The client uses that token to open a Socket.IO connection to the messaging service.
+7. The messaging service validates the token with `NEXTAUTH_SECRET`.
 8. Once the websocket connection succeeds, realtime chat features become available.
 
 ### Failure mode to watch
@@ -310,7 +310,7 @@ that usually means one of these layers is failing:
 
 - session cookie generation
 - socket token route
-- chat service startup
+- messaging service startup
 - socket URL configuration
 - websocket auth validation
 
@@ -426,7 +426,7 @@ flowchart TD
 - `services/identity/src/modules/credentials/credentials.routes.ts`
 - `services/identity/src/modules/credentials/credentials.controller.ts`
 - `services/core/src/index.ts`
-- `services/chat/src/index.ts`
+- `services/messaging/src/index.ts`
 
 ### Realtime chat
 

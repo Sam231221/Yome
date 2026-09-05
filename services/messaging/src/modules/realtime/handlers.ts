@@ -6,7 +6,7 @@ import {
   getOnlineUserSockets,
   removeOnlineUserSocket,
   removeSocketFromOnlineUsers,
-} from "../state/online-users.js";
+} from "./online-users.js";
 
 type SocketChatMessage = {
   id: number;

@@ -112,9 +112,9 @@ describe("gateway routeRules", () => {
     expect(resolveRoute("/api/resources/some-resource-slug")?.upstream).toBe("core");
   });
 
-  test("/api/messages is rewritten to /api/chat on the chat upstream", () => {
+  test("/api/messages is rewritten to /api/chat on the messaging upstream", () => {
     const rule = resolveRoute("/api/messages/get-messages");
-    expect(rule?.upstream).toBe("chat");
+    expect(rule?.upstream).toBe("messaging");
     expect(rule?.rewriteFrom).toBe("/api/messages");
     expect(rule?.rewriteTo).toBe("/api/chat");
   });

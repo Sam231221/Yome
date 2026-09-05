@@ -83,17 +83,20 @@ export const directConversationSchema = {
   }),
 };
 
-export const validateDirectConversationSchema = {
-  body: z.object({
-    callerId: z.coerce.number().int().positive(),
-    peerId: z.coerce.number().int().positive(),
-    conversationId: z.string().trim().min(1),
-  }),
-};
-
-export const prepareDirectCallConversationSchema = {
-  body: z.object({
-    callerId: z.coerce.number().int().positive(),
-    peerId: z.coerce.number().int().positive(),
-  }),
+/** Authorises a media upload before it reaches S3. Called by `services/media` only
+ * (B09 — replaces media's direct `Conversation`/`Group` Prisma reads). */
+export const authorizeUploadScopeSchema = {
+  body: z.discriminatedUnion("chatType", [
+    z.object({
+      chatType: z.literal("user"),
+      from: z.coerce.number().int().positive(),
+      to: z.coerce.number().int().positive(),
+      conversationId: z.string().trim().min(1),
+    }),
+    z.object({
+      chatType: z.literal("group"),
+      from: z.coerce.number().int().positive(),
+      to: uuidString,
+    }),
+  ]),
 };

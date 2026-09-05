@@ -1,27 +1,27 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
 import { getAuthenticatedUserId } from "@repo/shared";
-import { getOnlineUserIds, isUserOnline } from "../state/online-users.js";
+import { getOnlineUserIds, isUserOnline } from "../realtime/online-users.js";
 import {
   getDirectConversation,
   getOrCreateDirectConversation,
-} from "../lib/conversations.js";
+} from "./conversations.js";
 import {
   buildInitialDirectConversationSummaries,
   isMatchingDirectConversation,
   normalizeMessageType,
   type SupportedMessageType,
-} from "../lib/direct-messages.js";
+} from "./direct-messages.js";
 
 type PrismaClient = ReturnType<typeof getPrismaInstance>;
 type ChatRequestKind = "user" | "group";
 
-function parseRequiredUserId(value: unknown): number | null {
+export function parseRequiredUserId(value: unknown): number | null {
   const id = Number.parseInt(String(value ?? ""), 10);
   return Number.isNaN(id) ? null : id;
 }
 
-async function isGroupParticipant(
+export async function isGroupParticipant(
   prisma: PrismaClient,
   groupId: string,
   userId: number
@@ -37,21 +37,6 @@ async function isGroupParticipant(
   });
 
   return accessibleGroupCount > 0;
-}
-
-async function isConnectedDirectPeer(
-  prisma: PrismaClient,
-  callerId: number,
-  peerId: number
-): Promise<boolean> {
-  const connectedPeerCount = await prisma.user.count({
-    where: {
-      id: callerId,
-      following: { some: { id: peerId } },
-    },
-  });
-
-  return connectedPeerCount > 0;
 }
 
 async function createDirectMessage(params: {
@@ -134,90 +119,6 @@ export async function getOrCreateConversation(
     const prisma = getPrismaInstance();
     const conversation = await getOrCreateDirectConversation(prisma, fromId, toId);
 
-    res.status(200).json({ ok: true, conversation });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function validateDirectConversation(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const authenticatedUserId = getAuthenticatedUserId(req);
-    if (authenticatedUserId === null) {
-      res.status(401).json({ ok: false, error: "Unauthorized" });
-      return;
-    }
-
-    const callerId = parseRequiredUserId(req.body?.callerId);
-    const peerId = parseRequiredUserId(req.body?.peerId);
-    const conversationId = String(req.body?.conversationId ?? "").trim();
-
-    if (callerId === null || peerId === null || !conversationId) {
-      res.status(400).json({ ok: false, error: "Invalid direct conversation" });
-      return;
-    }
-    if (callerId !== authenticatedUserId) {
-      res.status(403).json({ ok: false, error: "Forbidden" });
-      return;
-    }
-
-    const prisma = getPrismaInstance();
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-    });
-
-    if (!conversation || !isMatchingDirectConversation(conversation, callerId, peerId)) {
-      res.status(404).json({ ok: false, error: "Direct conversation not found" });
-      return;
-    }
-
-    const isConnectedPeer = await isConnectedDirectPeer(prisma, callerId, peerId);
-    if (!isConnectedPeer) {
-      res.status(403).json({ ok: false, error: "Direct call peer is not connected" });
-      return;
-    }
-
-    res.status(200).json({ ok: true });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function prepareDirectCallConversation(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const authenticatedUserId = getAuthenticatedUserId(req);
-    if (authenticatedUserId === null) {
-      res.status(401).json({ ok: false, error: "Unauthorized" });
-      return;
-    }
-
-    const callerId = parseRequiredUserId(req.body?.callerId);
-    const peerId = parseRequiredUserId(req.body?.peerId);
-    if (callerId === null || peerId === null) {
-      res.status(400).json({ ok: false, error: "Invalid direct call participants" });
-      return;
-    }
-    if (callerId !== authenticatedUserId) {
-      res.status(403).json({ ok: false, error: "Forbidden" });
-      return;
-    }
-
-    const prisma = getPrismaInstance();
-    const isConnectedPeer = await isConnectedDirectPeer(prisma, callerId, peerId);
-    if (!isConnectedPeer) {
-      res.status(403).json({ ok: false, error: "Direct call peer is not connected" });
-      return;
-    }
-
-    const conversation = await getOrCreateDirectConversation(prisma, callerId, peerId);
     res.status(200).json({ ok: true, conversation });
   } catch (error) {
     next(error);
@@ -608,6 +509,84 @@ export async function addMediaMessage(
       res.status(400).json({ ok: false, error: "Invalid direct conversation" });
       return;
     }
+    next(error);
+  }
+}
+
+const normalizeDirectConversationParticipants = (
+  leftUserId: number,
+  rightUserId: number
+) =>
+  leftUserId < rightUserId
+    ? { participantAId: leftUserId, participantBId: rightUserId }
+    : { participantAId: rightUserId, participantBId: leftUserId };
+
+/** Authorises a media upload for `services/media` (B09). Ported verbatim from
+ * `getChatUploadScope` in `services/media/src/controllers/media.controller.ts`, which
+ * queried `Conversation`/`Group` directly — media no longer has database access. */
+export async function authorizeUploadScope(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+
+    const { chatType, from, to } = req.body as {
+      chatType: ChatRequestKind;
+      from: number;
+      to: number | string;
+    };
+    const fromId = parseRequiredUserId(from);
+    if (fromId === null || fromId !== authenticatedUserId) {
+      res.status(403).json({ ok: false, error: "Forbidden." });
+      return;
+    }
+
+    const prisma = getPrismaInstance();
+
+    if (chatType === "group") {
+      const groupId = String(to);
+      const canAccessGroup = await isGroupParticipant(
+        prisma,
+        groupId,
+        authenticatedUserId
+      );
+      if (!canAccessGroup) {
+        res.status(403).json({ ok: false, error: "Forbidden." });
+        return;
+      }
+
+      res.status(200).json({ ok: true, chatType: "group", groupId });
+      return;
+    }
+
+    const { conversationId } = req.body as { conversationId: string };
+    const toId = parseRequiredUserId(to);
+    if (toId === null) {
+      res.status(400).json({ ok: false, error: "Recipient id is required." });
+      return;
+    }
+
+    const pair = normalizeDirectConversationParticipants(authenticatedUserId, toId);
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        participantAId: pair.participantAId,
+        participantBId: pair.participantBId,
+      },
+    });
+    if (!conversation) {
+      res.status(403).json({ ok: false, error: "Forbidden." });
+      return;
+    }
+
+    res.status(200).json({ ok: true, chatType: "direct", conversationId });
+  } catch (error) {
     next(error);
   }
 }

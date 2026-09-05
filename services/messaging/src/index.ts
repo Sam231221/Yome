@@ -13,26 +13,30 @@ import {
   internalTokenGuard,
 } from "@repo/shared";
 
-import chatRoutes from "./routes/chat.routes.js";
-import { attachSocketHandlers } from "./socket/handlers.js";
+import messagesRoutes from "./modules/messages/messages.routes.js";
+import callsRoutes from "./modules/calls/calls.routes.js";
+import { attachSocketHandlers } from "./modules/realtime/handlers.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, "../../../.env") });
 dotenv.config();
 
 const app = express();
-const port = servicePorts.chat;
-const logger = createLogger("chat");
+const port = servicePorts.messaging;
+const logger = createLogger("messaging");
 
 app.use(cors());
 app.use(express.json());
 
 app.get("/health", (_req, res) =>
-  res.status(200).json({ ok: true, service: "chat" })
+  res.status(200).json({ ok: true, service: "messaging" })
 );
 app.use(internalTokenGuard);
 
-app.use("/api/chat", chatRoutes);
+// Both external prefixes (/api/chat, and /api/messages rewritten to /api/chat by the
+// gateway) land here unchanged (B09) — only the module split underneath moved.
+app.use("/api/chat", messagesRoutes);
+app.use("/api/chat", callsRoutes);
 
 app.use(errorHandler);
 
@@ -50,7 +54,7 @@ const io = new Server(httpServer, {
 
 const nextAuthSecret = process.env.NEXTAUTH_SECRET;
 if (!nextAuthSecret) {
-  throw new Error("NEXTAUTH_SECRET is required for chat socket authentication");
+  throw new Error("NEXTAUTH_SECRET is required for messaging socket authentication");
 }
 
 io.use((socket, next) => {
@@ -70,5 +74,5 @@ io.use((socket, next) => {
 attachSocketHandlers(io);
 
 httpServer.listen(port, () => {
-  logger.info("Chat service listening", { port });
+  logger.info("Messaging service listening", { port });
 });

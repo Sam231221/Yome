@@ -45,7 +45,8 @@ if (authEnabled && !nextAuthSecret) {
 const serviceBaseUrls: Record<Upstream, string> = {
   // Renamed from `auth` in B05; reads IDENTITY_SERVICE_URL (was AUTH_SERVICE_URL).
   identity: process.env.IDENTITY_SERVICE_URL || "http://127.0.0.1:4101",
-  chat: process.env.CHAT_SERVICE_URL || "http://127.0.0.1:4103",
+  // Renamed from `chat` in B09. Reads MESSAGING_SERVICE_URL (was CHAT_SERVICE_URL).
+  messaging: process.env.MESSAGING_SERVICE_URL || "http://127.0.0.1:4103",
   media: process.env.MEDIA_SERVICE_URL || "http://127.0.0.1:4104",
   notifications:
     process.env.NOTIFICATIONS_SERVICE_URL || "http://127.0.0.1:4105",

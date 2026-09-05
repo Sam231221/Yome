@@ -25,7 +25,7 @@ Yome includes:
 - `services/gateway`: API gateway and auth-aware routing
 - `services/identity`: authentication/credential flows and profile operations (avatar upload, get/update/list users) — renamed from `services/auth` in B05, which absorbed the profile endpoints
 - `services/core`: community (B06: groups, connections, invitations), learning (B07: events, projects, and everything from the now-deleted `services/resources`), feed (B08: reads for now — no write endpoint for posts/comments/likes exists yet), and dashboard (B08: composes the other three modules' reads) — `services/user`, which all four were extracted from, no longer exists
-- `services/chat`: direct/group messaging, Socket.IO, conversation resolution
+- `services/messaging`: direct/group messaging, Socket.IO, conversation resolution, and direct-call provisioning (Stream token minting + participant upsert) — renamed from `services/chat` in B09, which also absorbed call setup out of `apps/web/actions/stream.actions.ts`
 - `services/media`: image/audio upload endpoints for chat media
 - `services/notifications`: stub notification endpoint returning `202 Accepted`
 
@@ -101,12 +101,12 @@ Service ports and URLs:
 - `GATEWAY_PORT`
 - `IDENTITY_SERVICE_PORT`
 - `USER_SERVICE_PORT`
-- `CHAT_SERVICE_PORT`
+- `MESSAGING_SERVICE_PORT`
 - `MEDIA_SERVICE_PORT`
 - `NOTIFICATIONS_SERVICE_PORT`
 - `IDENTITY_SERVICE_URL`
 - `USER_SERVICE_URL`
-- `CHAT_SERVICE_URL`
+- `MESSAGING_SERVICE_URL`
 - `MEDIA_SERVICE_URL`
 - `NOTIFICATIONS_SERVICE_URL`
 
@@ -172,7 +172,7 @@ Useful verification commands:
 ```bash
 bun run check-types:all
 bunx tsc -p apps/web/tsconfig.json --noEmit
-bun run --cwd services/chat test
+bun run --cwd services/messaging test
 bun run --cwd packages/storage test
 bun run --cwd packages/contracts test
 ```

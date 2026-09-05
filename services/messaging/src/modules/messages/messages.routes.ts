@@ -7,19 +7,17 @@ import {
   addMessage,
   addMediaMessage,
   getOrCreateConversation,
-  prepareDirectCallConversation,
-  validateDirectConversation,
-} from "../controllers/message.controller.js";
+  authorizeUploadScope,
+} from "./messages.controller.js";
 import {
   addMediaMessageSchema,
   addMessageSchema,
+  authorizeUploadScopeSchema,
   directConversationSchema,
   getMessagesSchema,
   initialGroupMessagesSchema,
   initialContactsSchema,
-  prepareDirectCallConversationSchema,
-  validateDirectConversationSchema,
-} from "./chat.validation.js";
+} from "./messages.validation.js";
 
 const router = Router();
 
@@ -29,18 +27,13 @@ router.post(
   validateRequest(directConversationSchema),
   getOrCreateConversation
 );
-router.post(
-  "/validate-direct-conversation",
-  validateRequest(validateDirectConversationSchema),
-  validateDirectConversation
-);
-router.post(
-  "/prepare-direct-call-conversation",
-  validateRequest(prepareDirectCallConversationSchema),
-  prepareDirectCallConversation
-);
 router.post("/add-message", validateRequest(addMessageSchema), addMessage);
 router.post("/add-media-message", validateRequest(addMediaMessageSchema), addMediaMessage);
+router.post(
+  "/authorize-upload-scope",
+  validateRequest(authorizeUploadScopeSchema),
+  authorizeUploadScope
+);
 router.get(
   "/get-initial-group-messages/:userId",
   validateRequest(initialGroupMessagesSchema),

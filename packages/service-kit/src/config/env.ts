@@ -22,8 +22,9 @@ export const servicePorts = {
   get identity() {
     return toPort(process.env.IDENTITY_SERVICE_PORT, 4101);
   },
-  get chat() {
-    return toPort(process.env.CHAT_SERVICE_PORT, 4103);
+  /** Renamed from `chat` in B09. Reads `MESSAGING_SERVICE_PORT` (was `CHAT_SERVICE_PORT`). */
+  get messaging() {
+    return toPort(process.env.MESSAGING_SERVICE_PORT, 4103);
   },
   get media() {
     return toPort(process.env.MEDIA_SERVICE_PORT, 4104);
