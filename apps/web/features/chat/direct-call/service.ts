@@ -8,7 +8,7 @@ import type { DirectCallDescriptor, DirectCallMode } from "./types";
 import {
   ensureDirectCallUsers,
   prepareDirectCallConversation,
-} from "@/actions/stream.actions";
+} from "@/lib/chat/callApi";
 
 const DIRECT_CALL_TYPE = "default";
 

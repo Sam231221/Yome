@@ -7,6 +7,7 @@ const AUTH_ROUTE = `${HOST}/api/auth`;
 const USER_ROUTE = `${HOST}/api/user`;
 const MESSAGES_ROUTE = `${HOST}/api/messages`;
 const RESOURCES_ROUTE = `${HOST}/api/resources`;
+const CHAT_ROUTE = `${HOST}/api/chat`;
 
 export const REGISTER_USER = `${AUTH_ROUTE}/register-user`;
 export const GET_USER_ROUTE = `${AUTH_ROUTE}/get-user`;
@@ -53,3 +54,9 @@ export const ADD_MEDIA_MESSAGE_ROUTE = `${MESSAGES_ROUTE}/add-media-message`;
 
 // Learning resources
 export const RESOURCES_API_ROUTE = RESOURCES_ROUTE;
+
+// Direct calls (Stream token minting + participant provisioning) — moved from
+// apps/web/actions/stream.actions.ts into services/messaging/src/modules/calls in B09.
+export const PREPARE_DIRECT_CALL_CONVERSATION_ROUTE = `${CHAT_ROUTE}/prepare-direct-call-conversation`;
+export const CALL_TOKEN_ROUTE = `${CHAT_ROUTE}/call-token`;
+export const CALL_PARTICIPANTS_ROUTE = `${CHAT_ROUTE}/call-participants`;

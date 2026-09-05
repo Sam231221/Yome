@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { StreamVideoClient, StreamVideo } from "@stream-io/video-react-sdk";
 
-import { tokenProvider } from "@/actions/stream.actions";
+import { tokenProvider } from "@/lib/chat/callApi";
 import { useStateProvider } from "@/context/StateContext";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
