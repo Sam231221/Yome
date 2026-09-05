@@ -197,6 +197,7 @@
     "services/gateway": {
       "name": "@services/gateway",
       "dependencies": {
+        "@repo/cache": "workspace:*",
         "@repo/service-kit": "workspace:*",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
