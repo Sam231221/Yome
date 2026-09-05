@@ -4,9 +4,12 @@ import { getAuthenticatedUserId } from "@repo/shared";
 
 // Moved from services/user/src/controllers/user.controller.ts in B07. getUserName,
 // getInitials, formatDashboardEventMeta, and the Dashboard*Record types are duplicated
-// here (not deleted from user.controller.ts) — services/user's getDashboardHome still
-// needs them and can't import across a service boundary. This duplication resolves once
-// B08 moves dashboard into core too.
+// here rather than imported from elsewhere — at the time, getDashboardHome (in
+// services/user, since deleted) needed its own copies and couldn't import across a
+// service boundary. B08 moved getDashboardHome into core/modules/dashboard, but this
+// file's copies were left as-is (retroactively importing them from a sibling module
+// wasn't this refactor's scope at either point) — a small, deliberately accepted
+// duplicate, not a stale leftover.
 
 function getUserName(user: {
   firstname?: string | null;

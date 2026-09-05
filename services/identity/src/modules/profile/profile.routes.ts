@@ -24,7 +24,7 @@ const upload = multer({
 const router = Router();
 
 // Mounted at /api/user in index.ts — same external prefix apps/web already calls.
-// Everything else under /api/user is still served by services/user.
+// Everything else under /api/user is served by services/core.
 router.post("/get-user-by-id", validateRequest(getUserByIdSchema), getUserById);
 router.post(
   "/update-user",

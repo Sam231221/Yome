@@ -45,12 +45,12 @@ if (authEnabled && !nextAuthSecret) {
 const serviceBaseUrls: Record<Upstream, string> = {
   // Renamed from `auth` in B05; reads IDENTITY_SERVICE_URL (was AUTH_SERVICE_URL).
   identity: process.env.IDENTITY_SERVICE_URL || "http://127.0.0.1:4101",
-  user: process.env.USER_SERVICE_URL || "http://127.0.0.1:4102",
   chat: process.env.CHAT_SERVICE_URL || "http://127.0.0.1:4103",
   media: process.env.MEDIA_SERVICE_URL || "http://127.0.0.1:4104",
   notifications:
     process.env.NOTIFICATIONS_SERVICE_URL || "http://127.0.0.1:4105",
-  // The consolidated service B06 introduced (community, then learning + resources in B07).
+  // The consolidated service B06 introduced (community, then learning + resources in B07,
+  // then dashboard in B08 — services/user no longer exists).
   core: process.env.CORE_SERVICE_URL || "http://127.0.0.1:4107",
 };
 const logger = createLogger("gateway");

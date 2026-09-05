@@ -9,9 +9,9 @@ import { projectIdParamsSchema } from "./learning.validation.js";
 
 const router = Router();
 
-// Moved from services/user in B07. Dashboard aggregation (/dashboard/:id) stays in
-// services/user pending B08 — see routeRules.ts for how the gateway splits /api/user
-// across identity, this service (core), and user.
+// Moved from services/user in B07. Dashboard aggregation (/dashboard/:id) moved here
+// too in B08 — see dashboard.routes.ts, mounted alongside this router in index.ts —
+// once services/user (which owned it until then) was retired.
 router.get("/events", getLearningEvents);
 router.get("/projects", getLearningProjects);
 router.get(

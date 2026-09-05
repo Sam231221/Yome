@@ -4,7 +4,7 @@ You have eight planning documents. **You only need this one to begin.** The othe
 reference material you open when a batch tells you to.
 
 - **Branch:** `refactor/services-packages-architecture`
-- **Status:** B01–B07 complete. `packages/shared` is now a thin shim over `@repo/contracts` /
+- **Status:** B01–B08 complete. `packages/shared` is now a thin shim over `@repo/contracts` /
   `@repo/service-kit` / `@repo/storage`; four duplicated helpers were consolidated and adopted
   by `auth`, `user`, `chat`, `resources`. `packages/seed` now owns all dev seed logic and
   fixtures (including the `groupData` zero-seed fallback, which was removed from
@@ -13,10 +13,12 @@ reference material you open when a batch tells you to.
   `services/identity`, which also absorbed the 3 profile endpoints from `services/user`; the
   gateway's routing table is now a tested `routeRules.ts` module; `AUTH_SERVICE_URL`/`PORT`
   were fully renamed to `IDENTITY_SERVICE_URL`/`PORT` everywhere per an explicit user decision.
-  `services/core` now exists with `community` (B06: groups, connections, invitations) and
-  `learning` (B07: events, projects, and all of `services/resources`, now deleted) modules.
-  `services/user` stays alive for now, serving only dashboard-aggregation until B08 finishes
-  moving that too and retires it. **B08 is next.**
+  `services/core` now exists with all four planned modules: `community` (B06), `learning`
+  (B07, incl. all of `services/resources`, deleted), `feed` (B08, read-only so far — no
+  write endpoint for `Post`/`Comment`/`Like` exists anywhere yet), and `dashboard` (B08,
+  composing the other three modules' reads instead of querying their tables directly).
+  `services/user` is deleted — its last domain, dashboard, moved out in B08, verified
+  byte-for-byte identical against seeded data with no latency regression. **B09 is next.**
 - **How work happens:** you paste one command per batch into Claude Code. Claude does the
   batch, updates `migration-log.md`, and commits. You verify, then move to the next.
 
@@ -387,7 +389,7 @@ Tick these off as you go.
 - [x] **B05** `identity` service (rename + profile absorption) — *complete 2026-09-05 (`services/auth` → `services/identity`; profile endpoints moved from `user`; gateway routing extracted to tested `routeRules.ts`; `AUTH_SERVICE_URL`/`PORT` fully renamed to `IDENTITY_SERVICE_URL`/`PORT`; live-verified against a disposable Postgres instance)*
 - [x] **B06** `core` service + `community` module — *complete 2026-09-05 (16 functions moved from `services/user`; new `assertSelf` guard; `services/user` stays alive pending B07/B08 — see migration-log.md)*
 - [x] **B07** `learning` module (fold in `resources`) — *complete 2026-09-05 (`services/resources` deleted, folded into `core/modules/learning`; learning reads moved from `services/user`; new study-room/topic read helpers, not yet wired in — see migration-log.md)*
-- [ ] **B08** `feed` + `dashboard` modules
+- [x] **B08** `feed` + `dashboard` modules — *complete 2026-09-05 (`getDashboardHome` composes `community`/`learning`/`feed` reads instead of querying tables directly; `services/user` deleted; response verified byte-for-byte identical to the old code with no latency regression — see migration-log.md)*
 - [ ] **B09** `messaging`, media de-DB, call extraction from `apps/web`
 - [ ] **B10** Gateway modularization + final reconciliation
 - [ ] **B11** Redis (presence, socket adapter, rate limiting)

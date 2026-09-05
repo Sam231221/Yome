@@ -2,14 +2,13 @@ import getPrismaInstance from "@repo/database";
 import { compactNumber } from "@repo/shared";
 
 /**
- * Read helpers for the two dashboard widgets whose tables `SCHEMA_OWNERSHIP.md` now
- * assigns to `learning` (`StudyRoom`, `Topic`), extracted out of `getDashboardHome`'s
- * inline queries in B07 so `learning` owns the read logic for the tables it owns.
- *
- * Not wired to any route yet and not called by `services/user`'s `getDashboardHome` —
- * that still runs its own equivalent inline query, since it can't import across a service
- * boundary. B08 moves `getDashboardHome` into this same process and switches it to call
- * these instead, at which point the inline copy in `services/user` goes away for good.
+ * Read helpers for the two dashboard widgets whose tables `SCHEMA_OWNERSHIP.md` assigns to
+ * `learning` (`StudyRoom`, `Topic`), extracted out of `getDashboardHome`'s inline queries in
+ * B07 so `learning` owns the read logic for the tables it owns. Built a batch ahead of their
+ * first caller: `getDashboardHome` was still in `services/user` at the time (a separate
+ * process, unable to import these) and kept running its own equivalent inline query until
+ * B08 moved it into `core/modules/dashboard`, which now calls `getLiveStudyRooms`/
+ * `getTrendingTopics` from here instead of duplicating the query a third time.
  */
 
 type DashboardStudyRoomRecord = {

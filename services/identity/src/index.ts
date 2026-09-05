@@ -32,7 +32,7 @@ app.use(internalTokenGuard);
 
 app.use("/api/auth", credentialsRoutes);
 // Only get-user-by-id, update-user, and get-all-users are defined on this router.
-// Everything else under /api/user is served by services/user (see the gateway's
+// Everything else under /api/user is served by services/core (see the gateway's
 // routeRules.ts for the split).
 app.use("/api/user", profileRoutes);
 app.use("/api/db", seedRoutes);

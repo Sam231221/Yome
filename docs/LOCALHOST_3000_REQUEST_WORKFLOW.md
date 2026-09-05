@@ -22,7 +22,6 @@ flowchart LR
     A1 -.JWT.-> C[Chat service socket<br/>:4103]
 
     G --> A[Identity service<br/>:4101]
-    G --> B[User service<br/>:4102]
     G --> C
     G --> D[Media service<br/>:4104]
     G --> E[Notifications service<br/>:4105]
@@ -207,7 +206,7 @@ sequenceDiagram
 
 ## 6. Flow D: How Frontend REST Calls Reach The Microservices
 
-For most REST operations, the frontend does not call the identity/user/core/chat/media services directly. It calls the gateway on port `4100`.
+For most REST operations, the frontend does not call the identity/core/chat/media services directly. It calls the gateway on port `4100`.
 
 ```mermaid
 flowchart LR
@@ -215,7 +214,7 @@ flowchart LR
     B --> C[NEXT_PUBLIC_BACKEND_API<br/>http://localhost:4100]
     C --> D[services/gateway/src/index.ts]
     D --> E[/api/auth -> identity service]
-    D --> F["/api/user -> core service (community)<br/>3 profile paths -> identity, 3 learning/dashboard paths -> user<br/>see routeRules.ts"]
+    D --> F["/api/user -> core service (community, learning, dashboard)<br/>3 profile paths -> identity instead<br/>see routeRules.ts"]
     D --> G[/api/messages or /api/chat -> chat service]
     D --> H[/api/media -> media service]
     D --> I[/api/notifications -> notifications service]
@@ -352,11 +351,10 @@ These defaults come from `packages/service-kit/src/config/env.ts` and the root `
 - `3000`: Next.js frontend in `apps/web`
 - `4100`: gateway
 - `4101`: identity service
-- `4102`: user service
 - `4103`: chat service and Socket.IO
 - `4104`: media service
 - `4105`: notifications service
-- `4107`: core service (community module)
+- `4107`: core service (community, learning, feed, and dashboard modules)
 
 ## 10. Short Summary
 
@@ -367,6 +365,6 @@ From there:
 1. public pages render directly in Next.js
 2. protected pages are checked by `apps/web/middleware.ts`
 3. most backend REST calls go to the gateway on `:4100`
-4. the gateway forwards them to identity, user, core, chat, media, or notifications
+4. the gateway forwards them to identity, core, chat, media, or notifications
 5. chat realtime events connect directly to the chat service on `:4103`
-6. identity, user, core, and chat data finally live in PostgreSQL through Prisma in `packages/database`
+6. identity, core, and chat data finally live in PostgreSQL through Prisma in `packages/database`

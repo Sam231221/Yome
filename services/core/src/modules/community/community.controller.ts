@@ -26,7 +26,7 @@ function assertSelf(req: Request, res: Response, loggedInUserId: number): boolea
   return true;
 }
 
-function getUserName(user: {
+export function getUserName(user: {
   firstname?: string | null;
   lastname?: string | null;
   name?: string | null;
@@ -40,7 +40,7 @@ function getUserName(user: {
   );
 }
 
-function getInitials(name: string): string {
+export function getInitials(name: string): string {
   return name
     .split(/\s+/)
     .map((part) => part[0])
@@ -49,7 +49,7 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-function mapUserCard(
+export function mapUserCard(
   user: {
     id: number;
     firstname?: string | null;
@@ -123,7 +123,7 @@ function mapResourceCard(resource: {
   };
 }
 
-function mapGroupCard(
+export function mapGroupCard(
   group: {
     id: string;
     slug: string;
@@ -172,8 +172,8 @@ function mapGroupCard(
   };
 }
 
-type GroupCardRecord = Parameters<typeof mapGroupCard>[0];
-type UserCardRecord = Parameters<typeof mapUserCard>[0];
+export type GroupCardRecord = Parameters<typeof mapGroupCard>[0];
+export type UserCardRecord = Parameters<typeof mapUserCard>[0];
 type ResourceCardRecord = Parameters<typeof mapResourceCard>[0];
 type GroupInvitationRecord = {
   id: string;

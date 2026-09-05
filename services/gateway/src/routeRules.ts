@@ -8,18 +8,16 @@
  * (see routeRules.test.ts) independently of booting an Express app.
  *
  * Rules are checked in array order, and the first match wins — identical to how Express's
- * own `app.use(prefix, ...)` mounts behave today. That is why the specific `/api/user/...`
- * paths are listed before the general `/api/user` rule: B05 moved 3 profile paths to
- * `identity`; B06 moved the community domain (groups, connections, invitations) to `core`,
- * which is now the general `/api/user` catch-all; B07 moved the learning reads
- * (`events`, `projects`) to `core` too and folded `services/resources` into it, leaving only
- * `dashboard` on `user` until B08 finishes moving that too and `user` is retired.
+ * own `app.use(prefix, ...)` mounts behave today. That is why the 3 specific
+ * `/api/user/...` profile paths are listed before the general `/api/user` rule: B05 moved
+ * them to `identity`, while B06 (community), B07 (learning reads + resources), and B08
+ * (dashboard, the last domain) moved everything else on `/api/user` to `core` —
+ * `services/user` no longer exists.
  */
 
 /** Keys of `serviceBaseUrls` in index.ts. Add a new upstream there before adding a rule for it. */
 export type Upstream =
   | "identity"
-  | "user"
   | "core"
   | "media"
   | "notifications"
@@ -44,12 +42,8 @@ export const routeRules: RouteRule[] = [
   { prefix: "/api/auth", upstream: "identity" },
   { prefix: "/api/db", upstream: "identity" },
 
-  // Dashboard aggregation is the one domain still on user, pending B08. Must precede
-  // the general /api/user rule below.
-  { prefix: "/api/user/dashboard", upstream: "user" },
-
-  // Everything else on /api/user: groups/connections/invitations (community, B06) and
-  // events/projects (learning reads, B07) — both live in core now.
+  // Everything else on /api/user: groups/connections/invitations (community, B06),
+  // events/projects (learning reads, B07), and dashboard (B08) — all live in core now.
   { prefix: "/api/user", upstream: "core" },
 
   { prefix: "/api/media", upstream: "media" },

@@ -24,10 +24,8 @@ Yome is a Bun + Turbo monorepo with a Next.js frontend and several backend micro
 - `services/identity` (renamed from `services/auth` in B05)
   - registration, credential verification, OAuth user upsert, password changes, seed endpoints
   - also owns profile reads/updates (`get-user-by-id`, `update-user`, `get-all-users`), moved here from `services/user` in B05
-- `services/user`
-  - dashboard aggregation only — groups/connections moved to `services/core` in B06, learning reads (events, projects) in B07; retired once dashboard moves out too in B08
 - `services/core` (new in B06)
-  - community domain (groups, connections, invitations — moved from `services/user` in B06) and learning domain (events, projects, and everything from the now-deleted `services/resources` — moved in B07)
+  - community (groups, connections, invitations — B06), learning (events, projects, and everything from the now-deleted `services/resources` — B07), feed (reads only so far — B08), and dashboard (composes community/learning/feed reads instead of querying their tables directly — B08). `services/user`, the service all four modules were extracted from, no longer exists
 - `services/chat`
   - chat HTTP APIs and Socket.IO realtime connection
 - `services/media`
@@ -52,14 +50,12 @@ flowchart LR
     B --> E[Gateway<br/>localhost:4100]
 
     E --> F[Identity Service<br/>localhost:4101]
-    E --> G[User Service<br/>localhost:4102]
     E --> H[Chat Service<br/>localhost:4103]
     E --> I[Media Service<br/>localhost:4104]
     E --> J[Notifications Service<br/>localhost:4105]
     E --> N[Core Service<br/>localhost:4107]
 
     F --> K[(Postgres via Prisma)]
-    G --> K
     H --> K
     I --> K
     J --> K
@@ -429,7 +425,7 @@ flowchart TD
 - `services/gateway/src/index.ts`
 - `services/identity/src/modules/credentials/credentials.routes.ts`
 - `services/identity/src/modules/credentials/credentials.controller.ts`
-- `services/user/src/controllers/user.controller.ts`
+- `services/core/src/index.ts`
 - `services/chat/src/index.ts`
 
 ### Realtime chat

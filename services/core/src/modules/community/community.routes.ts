@@ -32,9 +32,10 @@ import {
 const router = Router();
 
 // Moved from services/user in B06. Profile endpoints (get-user-by-id, update-user,
-// get-all-users) went to services/identity in B05; learning reads (events, projects) and
-// dashboard aggregation still live in services/user, pending B07/B08 — see routeRules.ts
-// for how the gateway splits /api/user across identity, this service (core), and user.
+// get-all-users) went to services/identity in B05; learning reads (events, projects, B07)
+// and dashboard aggregation (B08) followed community here too — services/user, which owned
+// all of it originally, no longer exists. See routeRules.ts for how the gateway splits
+// /api/user between identity and this service.
 router.get("/groups/discover", validateRequest(discoverGroupsSchema), discoverGroups);
 router.get(
   "/groups/joined/:loggedInUserId",

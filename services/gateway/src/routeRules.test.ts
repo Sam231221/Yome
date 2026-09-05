@@ -75,7 +75,7 @@ describe("gateway routeRules", () => {
     }
   );
 
-  test("the three moved profile paths resolve to identity, not user", () => {
+  test("the three moved profile paths resolve to identity, not core", () => {
     for (const path of [
       "/api/user/get-user-by-id",
       "/api/user/update-user",
@@ -85,11 +85,7 @@ describe("gateway routeRules", () => {
     }
   });
 
-  test("the one remaining dashboard path still resolves to user", () => {
-    expect(resolveRoute("/api/user/dashboard/1")?.upstream).toBe("user");
-  });
-
-  test("everything else on /api/user (community + learning reads) resolves to core", () => {
+  test("everything else on /api/user (community + learning reads + dashboard) resolves to core", () => {
     for (const path of [
       "/api/user/get-all-groups",
       "/api/user/groups/discover",
@@ -105,6 +101,7 @@ describe("gateway routeRules", () => {
       "/api/user/events",
       "/api/user/projects",
       "/api/user/projects/some-project-slug",
+      "/api/user/dashboard/1",
     ]) {
       expect(resolveRoute(path)?.upstream).toBe("core");
     }

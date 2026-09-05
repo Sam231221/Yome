@@ -22,9 +22,6 @@ export const servicePorts = {
   get identity() {
     return toPort(process.env.IDENTITY_SERVICE_PORT, 4101);
   },
-  get user() {
-    return toPort(process.env.USER_SERVICE_PORT, 4102);
-  },
   get chat() {
     return toPort(process.env.CHAT_SERVICE_PORT, 4103);
   },
@@ -34,7 +31,8 @@ export const servicePorts = {
   get notifications() {
     return toPort(process.env.NOTIFICATIONS_SERVICE_PORT, 4105);
   },
-  /** The consolidated service introduced in B06 (community, then learning + resources in B07). */
+  /** The consolidated service introduced in B06 (community, then learning + resources in
+   * B07, then dashboard in B08 — services/user no longer exists). */
   get core() {
     return toPort(process.env.CORE_SERVICE_PORT, 4107);
   },

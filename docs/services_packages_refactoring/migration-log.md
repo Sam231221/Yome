@@ -109,7 +109,7 @@ These exist before any change in this migration and must not be counted as regre
 | 5 | ✅ `Group` writes split across `auth` (seed + `createEducationGroups`) and `user` (runtime) | now `services/identity` (dev-only seed via `@repo/seed`) and `services/core`'s community module (runtime) | **B04, B06 — done.** Seed path unchanged (dev-only, guarded); runtime Group CRUD/membership now owned solely by `core` |
 | 6 | ✅ `Resource` writes split across `auth` (seed) and `resources` (runtime) | now `services/identity` (dev-only seed via `@repo/seed`) and `services/core`'s learning module (runtime) | **B04, B07 — done.** Seed path unchanged (dev-only, guarded); runtime Resource CRUD/saves/helpful-votes now owned solely by `core` |
 | 7 | ✅ ~600-line seed subsystem + fixtures ship in the `auth` production image | now `packages/seed/src/{runners.ts,fixtures/*}` | **B04 — done.** `services/auth` (soon `identity`) has no `src/data/*` and no seed business logic; `packages/seed` owns it |
-| 8 | `services/user` is a single ~1000-line controller spanning 4 domains | `services/user/src/controllers/user.controller.ts` | B05–B08 (**B05: profile domain out, ~170 lines, to `services/identity/src/modules/profile/`. B06: community domain out, ~870 lines, to `services/core/src/modules/community/` — file was 669 lines afterward. B07: learning domain out, ~160 lines, to `services/core/src/modules/learning/` — file is now 509 lines, down from 1541 originally. Only dashboard remains, pending B08**) |
+| 8 | ✅ `services/user` is a single ~1000-line controller spanning 4 domains | now `services/identity/src/modules/profile/`, `services/core/src/modules/{community,learning,dashboard}/` | **B05–B08 — done.** B05: profile out (~170 lines). B06: community out (~870 lines). B07: learning out (~160 lines). B08: dashboard out (the last ~330 lines) — `services/user` deleted entirely |
 | 9 | ✅ `groupData` (523-line seed fixture) lived in `packages/shared` and was imported by `user` runtime code | now `packages/seed/src/fixtures/groups.ts` | **B04 — done.** Fixture moved; the two `services/user` runtime call sites removed (decision: remove, confirmed with the user) |
 | 10 | ✅ `ServiceName` union in `packages/shared` omits `resources` (and has no DTOs) | now `packages/contracts/src/service.ts` | **B03 — done.** Added `resources`, `identity`, `core`, `messaging`. **B07: `resources` removed again** — not a regression of this issue, `services/resources` itself was deleted (folded into `core`), so the union correctly has no member for it anymore |
 | 11 | ✅ `getAuthenticatedUserId` / `slugify` / `uuidPattern` / `formatCount` duplicated across `auth`, `user`, `chat`, `resources` | now `packages/contracts/src/helpers.ts` | **B03 — done, both parts.** Consolidated *and* adopted (all four services import them; five local duplicates deleted from `user.controller.ts` alone) |
@@ -119,7 +119,7 @@ These exist before any change in this migration and must not be counted as regre
 | 15 | ✅ `tests/contracts.smoke.mjs` health list omits `resources` | `tests/contracts.smoke.mjs` | **B02 — done. B07: `resources` entry replaced with `core`** (the service itself was deleted, folded into `core`) — **also caught, while making that edit, that B06 had introduced `core` as a real service without ever adding it here; fixed in the same commit rather than leaving it for another audit** |
 | 16 | Presence is a process-local `Map`; `messaging` cannot run >1 replica without silent delivery bugs | `services/chat/src/state/online-users.ts:2`, `services/chat/src/socket/handlers.ts` | B11 |
 | 17 | Rate-limit buckets are a process-local `Map`; N `gateway` replicas grant N× the configured limit | `services/gateway/src/index.ts:79` | B11 |
-| 18 | No caching layer anywhere; every read hits Postgres, incl. the 7-query dashboard fan-out | `services/user/src/controllers/user.controller.ts` (`getDashboardHome`) | B12, B15 |
+| 18 | No caching layer anywhere; every read hits Postgres, incl. the 7-query dashboard fan-out | `services/core/src/modules/dashboard/dashboard.controller.ts` (`getDashboardHome`, moved from `services/user` in B08 — still 7 queries, now split across `community`/`learning`/`feed` module calls instead of inline, but none of them cached) | B12, B15 |
 | 19 | Search uses Prisma `contains` + `mode: "insensitive"` → unindexed `ILIKE '%term%'` sequential scans | `discoverGroups`, `getResources` | B16 |
 | 20 | No event/outbox/pub-sub primitives exist; all cross-domain communication is a synchronous join or HTTP call | repo-wide | B13 |
 | 21 | Gateway proxies with no timeout, retry, or circuit breaker; an unresponsive upstream hangs the request | `services/gateway/src/index.ts` | B10 |
@@ -159,7 +159,7 @@ These exist before any change in this migration and must not be counted as regre
 | B05 — identity Service | COMPLETE | 2026-09-05 | 2026-09-05 | `check-types` 12/12; `build` 13/13; `test` 13/13 (incl. new 42-path `routeRules.test.ts`); `lint` 0 errors, 166 warnings (unchanged); live-verified against a disposable Postgres instance (register-user, get-user-by-id, get-all-groups routed correctly; cross-service 404 checks confirmed no duplication) | `services/auth` renamed to `services/identity`; profile endpoints moved from `services/user`; gateway routing extracted to `routeRules.ts`; `AUTH_SERVICE_URL`/`PORT` fully renamed to `IDENTITY_SERVICE_URL`/`PORT` repo-wide per explicit user decision. |
 | B06 — core Scaffold + community Module | COMPLETE | 2026-09-05 | 2026-09-05 | `check-types` 13/13; `build` 14/14; `test` 14/14; `lint` 0 errors, 166 warnings (unchanged); `docker build --build-arg SERVICE_DIR=services/core` exit 0, image boots; live-verified against a disposable Postgres instance (community routes reach core, learning/dashboard routes still reach user, cross-service 404 checks confirm no duplication, `assertSelf`'s 403 path verified directly) | `services/core` created with its `community` module (16 functions moved from `services/user`, plus a new `assertSelf` guard consolidating the repeated self-check). `services/user` is **not** deleted — `architecture-plan.md`'s B06 "Definition of Done" said it would be, but the actual code shows learning-reads and dashboard-aggregation are separate domains explicitly scoped to B07/B08; the batch's own conditional instruction ("delete when empty") already anticipated this. Also fixed a B05-leftover dead `validateObjectStorageEnv()` call in `services/user/src/index.ts`. |
 | B07 — core/learning Module (fold in resources) | COMPLETE | 2026-09-05 | 2026-09-05 | `check-types` 12/12; `build` 13/13; `test` 13/13; `lint` 0 errors, 166 warnings (unchanged); `docker build --build-arg SERVICE_DIR=services/core` exit 0, image boots; live-verified against a disposable Postgres instance (resource create+list round-trips through core, events/projects reach core, dashboard still reaches user, cross-service 404 checks in both directions confirm no duplication) | `services/resources` deleted, folded into `services/core/src/modules/learning/resources/`; learning reads (`getLearningEvents`/`getLearningProjects`/`getLearningProjectById`) moved from `services/user` into a new `core/modules/learning`; new `reads.ts` extracts study-room/topic queries out of `getDashboardHome` as standalone helpers, not yet wired in (B08's job). `ServiceName` and `servicePorts` both lost their `resources` member. |
-| B08 — core/feed + core/dashboard Modules | PENDING | | | | |
+| B08 — core/feed + core/dashboard Modules | COMPLETE | 2026-09-05 | 2026-09-05 | `check-types` 11/11; `build` 12/12; `test` 12/12; `lint` 0 errors, 166 warnings (unchanged); dashboard response verified byte-for-byte identical old vs. new against the same seeded data; latency unregressed (~0.010s → ~0.009s, in-process calls throughout); live-verified against a disposable Postgres instance (community/learning/resources/dashboard all reach `core` through the real gateway) | `getDashboardHome` (the last function in `services/user`) moved into `services/core/src/modules/dashboard`, composing new `community`/`learning`/`feed` read helpers instead of querying tables directly. `services/user` deleted. New `core/modules/feed` (read-only for now — no write endpoint for `Post`/`Comment`/`Like` exists anywhere yet). `community.controller.ts` now exports its card-mapping helpers so dashboard can import them instead of re-duplicating a 4th copy. |
 | B09 — messaging + media Boundary Cleanup | PENDING | | | | |
 | B10 — Gateway Modularization + Final Reconciliation | PENDING | | | | |
 | B11 — Redis Foundation (P2) | PENDING | | | | Trigger T-01/T-02 already fired. May run in parallel with B05–B08. |
@@ -238,6 +238,152 @@ Migrations live in `packages/database/prisma/migrations` and are applied with
   a column.
 - **Local:** `bun run infra:up` starts Postgres + Redis; point `DATABASE_URL` / `DIRECT_URL`
   at the local instance, then `bun run --cwd packages/database db:migrate`.
+
+## B08 Execution
+
+- Rollback target: parent commit `274d214`.
+- Manifest IDs done: `SP-110`–`SP-114` (new dashboard + feed modules). `SP-073`, `SP-074`,
+  `SP-075`, `SP-076`, `SP-077`, `SP-078` all `DONE` — `services/user`'s multi-batch split
+  (B05–B08) is finally complete and the service is deleted.
+
+### Composing modules instead of querying tables directly
+
+The batch's own instruction was explicit and non-negotiable: *"The dashboard must compose the
+community, learning, and feed module surfaces instead of querying their tables directly."*
+Before this batch, `getDashboardHome` ran 7 parallel queries — `User` (×2, profile +
+suggested-people), `Post` (feed), `StudyRoom`, `GroupEvent`, `Topic`, and `Group` — all inline
+`prisma.*` calls in a file that, as of B07, was about to be deleted. Since `learning`'s
+`reads.ts` already existed from B07 (`getLiveStudyRooms`/`getTrendingTopics`, built exactly
+for this moment but not yet called by anything), this batch's job was to build the
+community-side and feed-side equivalents and wire all three into the dashboard, now that it
+finally lives in the same process as the modules it reads from:
+
+- `community/reads.ts` (new): `getSidebarGroups(slugs, take)` — returns raw sorted `Group`
+  rows, not fully-mapped cards, because turning them into cards needs the caller's
+  `loggedInUserId` as `mapGroupCard`'s viewer-context argument, plus a dashboard-only
+  `physics-club` symbol swap — neither belongs in a general community read helper, so both
+  stay in `dashboard.controller.ts`. `getUpcomingEvents(titles, take)` — by contrast, needs no
+  per-caller context, so it returns fully-mapped event cards directly, matching `learning`'s
+  pattern.
+- `feed/reads.ts` (new): `getRecentPosts(take)` — fully self-contained, same reasoning as
+  `getUpcomingEvents`.
+- `dashboard.controller.ts` (new): composes all four (`getSidebarGroups`/`getUpcomingEvents`,
+  `getLiveStudyRooms`/`getTrendingTopics`, `getRecentPosts`) via `Promise.all`, in the exact
+  same parallel shape the original inline version used. Still queries `User` directly for the
+  two profile-adjacent reads — `User` belongs to `identity`, a separate deployable service
+  dashboard has no in-process access to, so this is the one place a direct query remains, and
+  it's why the batch's own instruction named exactly three modules (not four) to compose.
+
+### Resolving the community-vs-dashboard duplication B06/B07 left behind on purpose
+
+B06's and B07's migration-log entries both said some version of "this duplication resolves
+once B08 moves dashboard into core too" — referring to `getUserName`/`getInitials`/
+`mapUserCard`/`mapGroupCard`, each defined privately in both `community.controller.ts` and
+`services/user/src/controllers/user.controller.ts` because dashboard couldn't import across a
+service boundary. Now it can: `community.controller.ts`'s four functions (plus its
+`GroupCardRecord`/`UserCardRecord` types) gained `export`, and `dashboard.controller.ts`
+imports them directly instead of carrying a fourth copy. `learning.controller.ts` and
+`learning/reads.ts`'s own private copies (from B07) were **not** touched — retroactively
+refactoring already-shipped B07 code to also import from `community` is a separate cleanup,
+not something this batch's scope ("feed + dashboard modules") entailed, so it was left alone
+rather than scope-crept into.
+
+### `feed` module: read-only, by necessity not by half-measure
+
+The batch's other requirement — "give `Post`/`Comment`/`Like` an owner" — raised an obvious
+question: owner of what, if nothing writes them? A repo-wide grep (`prisma\.post\.\|prisma\.comment\.\|prisma\.like\.`)
+across `services/`, `packages/`, and `apps/web` before writing anything found exactly two
+existing call sites, both reads (`learning.controller.ts`'s `getLearningProjects`/
+`getLearningProjectById`, and the dashboard's own `feedPosts` query) plus the dev-only seed/
+reset handlers in `@repo/seed` (the same seeding carve-out already established for `Group`/
+`Resource`). No create-post, create-comment, or like endpoint exists anywhere in this app yet.
+So `feed`'s module for this batch is exactly one file, `reads.ts`, exporting the one read
+`getDashboardHome` needs — not a half-built write API invented to look complete. `feed` is
+now the designated, documented place a future compose-a-post feature would add its
+controller/routes/validation; `SCHEMA_OWNERSHIP.md` records this explicitly so nobody adds a
+`prisma.post.create` call to some other module later without checking here first.
+
+### Changes made
+
+| Area | Change |
+| --- | --- |
+| New `services/core/src/modules/dashboard/` | `dashboard.controller.ts`: `getDashboardHome` moved from `services/user/src/controllers/user.controller.ts`, rewritten to compose (see above); `mapDashboardSidebarGroup`/`mapDashboardSuggestedPerson` (the two dashboard-only personalization wrappers) stay local, now wrapping the *imported* `mapGroupCard`/`mapUserCard`. `dashboard.routes.ts`/`dashboard.validation.ts`: the one remaining route (`/dashboard/:loggedInUserId`) and schema (`dashboardParamsSchema`), moved verbatim. |
+| New `services/core/src/modules/community/reads.ts` | `getSidebarGroups`/`getUpcomingEvents` — see "Composing modules" above. |
+| New `services/core/src/modules/feed/` | `reads.ts`: `getRecentPosts`, combining the same `prisma.post.findMany` + `mapDashboardPost` mapping `getDashboardHome` ran inline, as one importable async call — first and only file in the new module. |
+| `community.controller.ts` exports | `getUserName`, `getInitials`, `mapUserCard`, `mapGroupCard`, `GroupCardRecord`, `UserCardRecord` all gained `export` (were private module-local helpers). No behavior change — a visibility change only, confirmed by the byte-for-byte response diff below. |
+| `services/user` deleted | `package.json`, `tsconfig.json`, `src/index.ts`, `src/controllers/user.controller.ts`, `src/routes/user.routes.ts`, `src/routes/user.validation.ts` — all removed. `services/core/src/index.ts` now mounts `dashboardRoutes` at `/api/user` alongside `communityRoutes`/`learningRoutes`. |
+| `packages/contracts/src/service.ts` | `"user"` removed from `ServiceName` (dead — `services/user` no longer exists). Also removed `"auth"`, dead since the B05 rename to `identity` but never cleaned up in that batch — caught here since the file was already open for the `"user"` removal, not left for a future audit. Confirmed via grep neither literal value is referenced anywhere as a `ServiceName`. |
+| `packages/service-kit/src/config/env.ts` | `servicePorts.user` getter removed (dead, confirmed via grep no remaining callers). |
+| `services/gateway` | `routeRules.ts`: `"user"` removed from `Upstream` — the one specific rule that still routed `/api/user/dashboard` to `user` is gone; the general `/api/user` catch-all (already pointing at `core` since B06) now covers every `/api/user` path with no exceptions. `index.ts`: `serviceBaseUrls` lost its `user` entry. `routeRules.test.ts`: folded the now-nonexistent "dashboard resolves to user" test into the "everything resolves to core" test; retitled the profile-paths test ("not user" → "not core"). |
+| Env var / CI / deploy | `turbo.json`: `USER_SERVICE_PORT`/`USER_SERVICE_URL` removed from `globalEnv`. `.env.example` and the local `.env`: same two lines removed from each. `.github/workflows/ci.yml` / `deploy-services.yml`: `@services/user` entry removed from both matrices. Root `package.json`: `dev:services` and `check-types:all` both lost their `user` clause. `tests/contracts.smoke.mjs`: `user` health-check entry removed (the `core` entry, added in the B07 audit, already covers the domains `user` used to own). |
+| `packages/database/SCHEMA_OWNERSHIP.md` | `Post, Comment, Like` row moved from "Feed (planned, B08)" to `Core (feed module)`, still read-only, with an explicit note that no write endpoint exists yet. New "Core service, feed module" and "Core service, dashboard module" boundary bullets; the dashboard bullet documents that it composes the other three modules' reads and is the reason this file's `services/user`-still-exists caveats are now gone. |
+
+### Validation
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `bun run --cwd services/core check-types` | 0 (after 2 fixes) | Two `implicitly has an 'any' type` errors on `sidebarGroups.map((group) => ...)` callbacks — `Promise.all`'s tuple destructuring doesn't propagate `GroupCardRecord[]`'s element type through automatically. Fixed by annotating the callback parameter explicitly (`(group: GroupCardRecord) => ...`), matching how the pre-B08 code already typed the same two call sites. |
+| `bun install` | 0 | Drops `@services/user` from `bun.lock`. |
+| `bun run build` | 0 | 12/12 tasks (was 13; `-1` for the deleted `@services/user` package). |
+| `bun run check-types` | 0 | 11/11 tasks (was 12; same `-1` reason). |
+| `bun run check-types:all` | 0 | All 10 sequential steps pass (was 11; `user` clause removed). |
+| `bun run test` | 0 | 12/12 tasks, 0 failures. |
+| `bun run lint` | 0 | 166 warnings, 0 errors — unchanged (all pre-existing `apps/web`). |
+| `bunx tsc --noEmit` / test suite (`apps/web`) | 0 / 12 pass | Unaffected — no `apps/web` source touched this batch. |
+
+### Response-shape and latency measurement (explicitly required by the batch)
+
+Used `git worktree add /tmp/yome-pre-b08 274d214` to check out the parent commit (the last
+commit before this batch) into a second working directory alongside the current one, so both
+the old (`services/user`, monolithic inline queries) and new (`services/core`, composed
+module calls) code could run against the exact same seeded data — a fair before/after
+comparison rather than two runs against different fixtures.
+
+1. Started a disposable `postgres:16-alpine` (port `5436`), migrated the schema.
+2. Booted the **old** code (`identity` + `user` + `core` + `gateway`, from the worktree) and
+   seeded it: registered one real user, then ran all 4 dev-seed handlers (users, groups,
+   resources, dashboard demo data) so the dashboard's every widget had real rows to return,
+   not empty arrays.
+3. Measured `GET /api/user/dashboard/1` 5 times: first request `0.088s` (connection/module
+   warm-up), next 4 averaging `~0.011s`. Saved the full JSON response.
+4. Stopped the old services; **did not touch the database** — same rows, now queried by the
+   new code.
+5. Booted the **new** code (`identity` + `core` + `gateway`, current working tree — no
+   `services/user` to start) against the same database, same port-remapping pattern.
+6. Measured the same endpoint 15 times total: first request `0.414s` (worse warm-up, since
+   the new code touches 3 more files than the old monolith on first import), then 14 more
+   averaging `~0.009s`.
+7. **`diff` on both saved JSON responses, pretty-printed: zero lines differ.** Every field —
+   profile, feed posts, live study rooms, upcoming sessions, suggested people, trending
+   topics, sidebar groups, down to emoji in post bodies and the exact `physics-club` symbol
+   override — is byte-for-byte identical between old and new.
+8. Live-verified the routing split beyond just the dashboard: `GET /api/user/groups/discover`
+   (community), `GET /api/user/events` (learning), `GET /api/resources` (resources), and
+   `GET /api/user/dashboard/1` all returned real content through the new gateway, confirming
+   `core` — not a 404 or a stale route — actually served each one. Gateway `/health` no longer
+   lists a `user` key.
+9. Torn down: killed old and new service processes, `git worktree remove /tmp/yome-pre-b08
+   --force`, removed the disposable Postgres container. The real `.env` and database were
+   never touched at any point.
+
+**Result: no latency regression (both ~0.01s warm, well within noise of each other) and zero
+shape regression (byte-for-byte identical JSON).** The batch's stated risk — "the dashboard
+query is a single large Prisma join today; splitting it into module calls must not regress
+latency or shape" — did not materialize, which makes sense in hindsight: every module call is
+still an in-process async function invocation within the same Node process and the same
+`Promise.all`, not a network hop, so there was no mechanism by which splitting the code could
+have added latency. Measuring rather than assuming was still the right call, per the batch's
+own instruction — the assumption could have been wrong (e.g. if a module boundary had
+introduced N+1 queries), and this proves it didn't.
+
+Definition of Done for B08, fully met: no direct `prisma.post.*` write exists anywhere outside
+`feed` (trivially true — no writes exist anywhere in the app yet, and `feed` is now documented
+as where the first one belongs); dashboard composes `community`/`learning`/`feed` module
+reads instead of querying their tables directly, proven both by the code (imports, not
+`prisma.*` calls, for every table `dashboard.controller.ts` doesn't itself own) and by the
+identical live output. `services/user` is deleted — the multi-batch split that started in B05
+(profile → identity) and continued through B06 (community → core) and B07 (learning →
+core) is complete.
 
 ## B07 Execution
 
