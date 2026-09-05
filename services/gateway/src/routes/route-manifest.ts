@@ -1,11 +1,12 @@
 /**
- * The gateway's upstream routing table.
+ * The gateway's declarative upstream routing table (B10).
  *
- * This is a precursor to the full declarative route manifest planned for B10 (see
- * docs/services_packages_refactoring/architecture-plan.md) — not that refactor itself.
- * `index.ts` still owns bootstrap, CORS, rate limiting, and auth; this module owns only
- * "which upstream does this external path go to", extracted so it can be unit-tested
- * (see routeRules.test.ts) independently of booting an Express app.
+ * `index.ts` owns only bootstrap: creating the app, wiring middleware in order, and mounting
+ * this manifest. This module owns "which upstream does this external path go to, and with
+ * what resilience budget" — extracted so it can be unit-tested (see route-manifest.test.ts)
+ * independently of booting an Express app. A scoped precursor to this file (`routeRules.ts`,
+ * without `timeoutMs`) shipped in B05; this is the full version architecture-plan.md's B10
+ * section describes.
  *
  * Rules are checked in array order, and the first match wins — identical to how Express's
  * own `app.use(prefix, ...)` mounts behave today. That is why the 3 specific
@@ -31,9 +32,14 @@ export type RouteRule = {
   rewriteFrom?: string;
   /** ...and this is prepended in its place before reaching the upstream. */
   rewriteTo?: string;
+  /** Per-request upstream timeout in ms. Defaults to 5s (see `middleware/proxy.ts`) if unset.
+   * `/api/media` sets 30s: multipart audio/image uploads take longer than a JSON round trip. */
+  timeoutMs?: number;
 };
 
-export const routeRules: RouteRule[] = [
+const MEDIA_UPLOAD_TIMEOUT_MS = 30_000;
+
+export const routeManifest: RouteRule[] = [
   // Profile endpoints B05 moved to identity. Must precede the general /api/user rule below.
   { prefix: "/api/user/get-user-by-id", upstream: "identity" },
   { prefix: "/api/user/update-user", upstream: "identity" },
@@ -46,7 +52,7 @@ export const routeRules: RouteRule[] = [
   // events/projects (learning reads, B07), and dashboard (B08) — all live in core now.
   { prefix: "/api/user", upstream: "core" },
 
-  { prefix: "/api/media", upstream: "media" },
+  { prefix: "/api/media", upstream: "media", timeoutMs: MEDIA_UPLOAD_TIMEOUT_MS },
   { prefix: "/api/notifications", upstream: "notifications" },
   // Folded into core's learning module in B07; external path unchanged.
   { prefix: "/api/resources", upstream: "core" },
@@ -68,5 +74,5 @@ export function pathMatchesPrefix(path: string, prefix: string): boolean {
 
 /** Returns the first rule (in array order) whose prefix matches `path`, or `undefined`. */
 export function resolveRoute(path: string): RouteRule | undefined {
-  return routeRules.find((rule) => pathMatchesPrefix(path, rule.prefix));
+  return routeManifest.find((rule) => pathMatchesPrefix(path, rule.prefix));
 }

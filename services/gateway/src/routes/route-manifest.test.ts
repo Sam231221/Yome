@@ -2,12 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { resolveRoute, routeRules, pathMatchesPrefix } from "./routeRules.js";
+import { resolveRoute, routeManifest, pathMatchesPrefix } from "./route-manifest.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const apiRoutesPath = join(
   __dirname,
-  "../../../apps/web/utils/ApiRoutes.ts"
+  "../../../../apps/web/utils/ApiRoutes.ts"
 );
 const source = readFileSync(apiRoutesPath, "utf8");
 
@@ -21,7 +21,7 @@ const source = readFileSync(apiRoutesPath, "utf8");
  * Rather than pulling in a bundler to import that file for real (it also has a
  * `CHAT_SOCKET_URL` export unrelated to gateway routing), this walks the same two
  * declaration shapes with regex to recover each exported constant's path — the part
- * after HOST — so we can assert every one of them resolves through routeRules.ts.
+ * after HOST — so we can assert every one of them resolves through route-manifest.ts.
  */
 function extractRoutePaths(src: string): Map<string, string> {
   const knownPaths = new Map<string, string>(); // any const name -> resolved "/api/..." path
@@ -57,7 +57,7 @@ function extractRoutePaths(src: string): Map<string, string> {
 
 const routePaths = extractRoutePaths(source);
 
-describe("gateway routeRules", () => {
+describe("gateway route-manifest", () => {
   test("extracted at least one /api path from apps/web/utils/ApiRoutes.ts", () => {
     // Guards against the regex above silently matching nothing if ApiRoutes.ts is
     // restructured — a passing suite with zero extracted paths would be a false negative.
@@ -67,7 +67,7 @@ describe("gateway routeRules", () => {
   test.each([...routePaths.entries()])(
     "%s (%s) resolves to exactly one upstream",
     (_name, path) => {
-      const matches = routeRules.filter((rule) =>
+      const matches = routeManifest.filter((rule) =>
         pathMatchesPrefix(path, rule.prefix)
       );
       expect(matches.length).toBeGreaterThanOrEqual(1);
@@ -125,5 +125,16 @@ describe("gateway routeRules", () => {
 
   test("an unknown prefix resolves to nothing", () => {
     expect(resolveRoute("/api/unknown-service/ping")).toBeUndefined();
+  });
+
+  test("/api/media carries a longer timeout budget for multipart uploads", () => {
+    expect(resolveRoute("/api/media/add-audio-message")?.timeoutMs).toBe(30_000);
+  });
+
+  test("every other rule leaves timeoutMs unset, deferring to the proxy's default", () => {
+    for (const rule of routeManifest) {
+      if (rule.upstream === "media") continue;
+      expect(rule.timeoutMs).toBeUndefined();
+    }
   });
 });
