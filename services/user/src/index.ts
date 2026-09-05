@@ -8,7 +8,6 @@ import {
   errorHandler,
   internalTokenGuard,
   servicePorts,
-  validateObjectStorageEnv,
 } from "@repo/shared";
 
 import userRoutes from "./routes/user.routes.js";
@@ -16,8 +15,6 @@ import userRoutes from "./routes/user.routes.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, "../../../.env") });
 dotenv.config();
-
-validateObjectStorageEnv();
 
 const logger = createLogger("user");
 
@@ -37,8 +34,5 @@ app.use("/api/user", userRoutes);
 app.use(errorHandler);
 
 app.listen(port, () => {
-  logger.info("User service listening", {
-    port,
-    storageProvider: process.env.STORAGE_PROVIDER?.trim() || "s3",
-  });
+  logger.info("User service listening", { port });
 });

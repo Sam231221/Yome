@@ -85,13 +85,32 @@ describe("gateway routeRules", () => {
     }
   });
 
-  test("every other /api/user path still resolves to user", () => {
+  test("the 3 remaining learning/dashboard paths still resolve to user", () => {
+    for (const path of [
+      "/api/user/events",
+      "/api/user/projects",
+      "/api/user/projects/some-project-slug",
+      "/api/user/dashboard/1",
+    ]) {
+      expect(resolveRoute(path)?.upstream).toBe("user");
+    }
+  });
+
+  test("the community domain (everything else on /api/user) resolves to core", () => {
     for (const path of [
       "/api/user/get-all-groups",
       "/api/user/groups/discover",
-      "/api/user/dashboard",
+      "/api/user/groups/joined/1",
+      "/api/user/groups/some-group-slug",
+      "/api/user/connections/summary/1",
+      "/api/user/connect-user-to-mentor",
+      "/api/user/connect-user-to-group",
+      "/api/user/get-connected-groups/1",
+      "/api/user/get-connected-users/1",
+      "/api/user/get-unfollowed-mentors/1",
+      "/api/user/get-unassociated-groups/1",
     ]) {
-      expect(resolveRoute(path)?.upstream).toBe("user");
+      expect(resolveRoute(path)?.upstream).toBe("core");
     }
   });
 

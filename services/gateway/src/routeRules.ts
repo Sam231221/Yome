@@ -8,16 +8,19 @@
  * (see routeRules.test.ts) independently of booting an Express app.
  *
  * Rules are checked in array order, and the first match wins — identical to how Express's
- * own `app.use(prefix, ...)` mounts behave today. That is why the three specific
- * `/api/user/...` profile paths are listed before the general `/api/user` rule: B05 moved
- * those three to `identity` while everything else on `/api/user` still goes to `user`
- * (soon `core`, see B06).
+ * own `app.use(prefix, ...)` mounts behave today. That is why the specific `/api/user/...`
+ * paths are listed before the general `/api/user` rule: B05 moved 3 profile paths to
+ * `identity`; B06 moved the community domain (groups, connections, invitations) to `core`,
+ * which is now the general `/api/user` catch-all, leaving only 3 learning/dashboard paths
+ * (`events`, `projects`, `dashboard`) on `user` until B07/B08 finish moving those too and
+ * `user` is retired.
  */
 
 /** Keys of `serviceBaseUrls` in index.ts. Add a new upstream there before adding a rule for it. */
 export type Upstream =
   | "identity"
   | "user"
+  | "core"
   | "media"
   | "notifications"
   | "resources"
@@ -42,8 +45,15 @@ export const routeRules: RouteRule[] = [
   { prefix: "/api/auth", upstream: "identity" },
   { prefix: "/api/db", upstream: "identity" },
 
-  // Every other /api/user path (groups, connections, dashboard, learning reads, ...).
-  { prefix: "/api/user", upstream: "user" },
+  // Learning reads + dashboard aggregation B06 left on user, pending B07/B08. Must precede
+  // the general /api/user rule below.
+  { prefix: "/api/user/events", upstream: "user" },
+  { prefix: "/api/user/projects", upstream: "user" },
+  { prefix: "/api/user/dashboard", upstream: "user" },
+
+  // Everything else on /api/user: groups, connections, invitations — the community
+  // domain B06 moved to core.
+  { prefix: "/api/user", upstream: "core" },
 
   { prefix: "/api/media", upstream: "media" },
   { prefix: "/api/notifications", upstream: "notifications" },

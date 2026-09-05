@@ -106,10 +106,10 @@ These exist before any change in this migration and must not be counted as regre
 | 2 | ✅ `@services/user` and `@services/resources` not in `deploy-services.yml` matrix | `.github/workflows/deploy-services.yml` | **B02 — done** |
 | 3 | ✅ `deploy-services.yml` references missing `./Dockerfile.service` | `.github/workflows/deploy-services.yml` | **B02 — done** (file added) |
 | 4 | `services/media` imports `@repo/database` (violates `SCHEMA_OWNERSHIP.md`) | `services/media/src/controllers/media.controller.ts`, `package.json` | B09 |
-| 5 | `Group` writes split across `auth` (seed + `createEducationGroups`) and `user` (runtime) | `services/auth`, `services/user` | B04, B06 |
+| 5 | ✅ `Group` writes split across `auth` (seed + `createEducationGroups`) and `user` (runtime) | now `services/identity` (dev-only seed via `@repo/seed`) and `services/core`'s community module (runtime) | **B04, B06 — done.** Seed path unchanged (dev-only, guarded); runtime Group CRUD/membership now owned solely by `core` |
 | 6 | `Resource` writes split across `auth` (seed) and `resources` (runtime) | `services/auth`, `services/resources` | B04, B07 |
 | 7 | ✅ ~600-line seed subsystem + fixtures ship in the `auth` production image | now `packages/seed/src/{runners.ts,fixtures/*}` | **B04 — done.** `services/auth` (soon `identity`) has no `src/data/*` and no seed business logic; `packages/seed` owns it |
-| 8 | `services/user` is a single ~1000-line controller spanning 4 domains | `services/user/src/controllers/user.controller.ts` | B05–B08 (**B05: profile domain out, ~170 lines, to `services/identity/src/modules/profile/`; community/learning/dashboard remain**) |
+| 8 | `services/user` is a single ~1000-line controller spanning 4 domains | `services/user/src/controllers/user.controller.ts` | B05–B08 (**B05: profile domain out, ~170 lines, to `services/identity/src/modules/profile/`. B06: community domain out, ~870 lines, to `services/core/src/modules/community/` — file is now 669 lines, down from 1541 originally. Learning/dashboard remain, pending B07/B08**) |
 | 9 | ✅ `groupData` (523-line seed fixture) lived in `packages/shared` and was imported by `user` runtime code | now `packages/seed/src/fixtures/groups.ts` | **B04 — done.** Fixture moved; the two `services/user` runtime call sites removed (decision: remove, confirmed with the user) |
 | 10 | ✅ `ServiceName` union in `packages/shared` omits `resources` (and has no DTOs) | now `packages/contracts/src/service.ts` | **B03 — done.** Added `resources`, `identity`, `core`, `messaging` |
 | 11 | ✅ `getAuthenticatedUserId` / `slugify` / `uuidPattern` / `formatCount` duplicated across `auth`, `user`, `chat`, `resources` | now `packages/contracts/src/helpers.ts` | **B03 — done, both parts.** Consolidated *and* adopted (all four services import them; five local duplicates deleted from `user.controller.ts` alone) |
@@ -157,7 +157,7 @@ These exist before any change in this migration and must not be counted as regre
 | B03 — Shared Package Split | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 0 (11/11); `build` 0 (12/12); `test` 0 (12/12, incl. new `@repo/contracts` suite); `lint` 0 (166 warnings, unchanged); `docker build --build-arg SERVICE_DIR=services/user` exit 0 | No `services/**` runtime behaviour changed. `@repo/shared` is now a shim; 4 duplicated helpers consolidated into `@repo/contracts` and adopted by `auth`, `user`, `chat`, `resources`. |
 | B04 — Seed Extraction | COMPLETE | 2026-09-04 | 2026-09-04 | `check-types` 12/12; `build` 13/13; `lint` 166 (unchanged); `test` 13/13; live-verified against both an unreachable DB (guard) and a disposable local Postgres (fallback removal) with zero risk to real data | Seed subsystem fully extracted to `packages/seed`. `groupData` fallback in `services/user` removed per explicit user decision. |
 | B05 — identity Service | COMPLETE | 2026-09-05 | 2026-09-05 | `check-types` 12/12; `build` 13/13; `test` 13/13 (incl. new 42-path `routeRules.test.ts`); `lint` 0 errors, 166 warnings (unchanged); live-verified against a disposable Postgres instance (register-user, get-user-by-id, get-all-groups routed correctly; cross-service 404 checks confirmed no duplication) | `services/auth` renamed to `services/identity`; profile endpoints moved from `services/user`; gateway routing extracted to `routeRules.ts`; `AUTH_SERVICE_URL`/`PORT` fully renamed to `IDENTITY_SERVICE_URL`/`PORT` repo-wide per explicit user decision. |
-| B06 — core Scaffold + community Module | PENDING | | | | |
+| B06 — core Scaffold + community Module | COMPLETE | 2026-09-05 | 2026-09-05 | `check-types` 13/13; `build` 14/14; `test` 14/14; `lint` 0 errors, 166 warnings (unchanged); `docker build --build-arg SERVICE_DIR=services/core` exit 0, image boots; live-verified against a disposable Postgres instance (community routes reach core, learning/dashboard routes still reach user, cross-service 404 checks confirm no duplication, `assertSelf`'s 403 path verified directly) | `services/core` created with its `community` module (16 functions moved from `services/user`, plus a new `assertSelf` guard consolidating the repeated self-check). `services/user` is **not** deleted — `architecture-plan.md`'s B06 "Definition of Done" said it would be, but the actual code shows learning-reads and dashboard-aggregation are separate domains explicitly scoped to B07/B08; the batch's own conditional instruction ("delete when empty") already anticipated this. Also fixed a B05-leftover dead `validateObjectStorageEnv()` call in `services/user/src/index.ts`. |
 | B07 — core/learning Module (fold in resources) | PENDING | | | | |
 | B08 — core/feed + core/dashboard Modules | PENDING | | | | |
 | B09 — messaging + media Boundary Cleanup | PENDING | | | | |
@@ -238,6 +238,151 @@ Migrations live in `packages/database/prisma/migrations` and are applied with
   a column.
 - **Local:** `bun run infra:up` starts Postgres + Redis; point `DATABASE_URL` / `DIRECT_URL`
   at the local instance, then `bun run --cwd packages/database db:migrate`.
+
+## B06 Execution
+
+- Rollback target: parent commit `9932e13`.
+- Manifest IDs done: `SP-100`–`SP-105` (new `services/core` + `community` module). Community
+  portions of `SP-074`, `SP-076`, `SP-077` done. `SP-073`/`SP-075`/`SP-078` corrected from
+  `DELETE`/B06 to reflect `services/user` staying alive until B08 (see below) — `SP-075` also
+  got a same-batch dead-code fix.
+
+### Plan-vs-reality check, done before writing any code
+
+The batch's own copy-paste instruction says: *"Create services/core and move the community
+domain (groups, membership, connections/follow, group events, invitations, announcements) out
+of services/user into core/src/modules/community. Delete services/user when empty."*
+`architecture-plan.md`'s B06 section separately states "Definition of Done: `services/user` is
+deleted" — unconditional, and the manifest itself had `SP-073`/`SP-075`/`SP-078`
+(`services/user`'s `package.json`/`index.ts`/`tsconfig.json`) pre-assigned `DELETE` at B06.
+
+Before moving anything, read the full 1541-line `user.controller.ts` to see what was
+actually in scope. Of its 20 exported functions, 16 are groups/connections/invitations
+(community); the other 4 — `getLearningEvents`, `getLearningProjects`,
+`getLearningProjectById`, `getDashboardHome` — are **not** community, despite one of them
+(`getLearningEvents`) reading the `GroupEvent` table. `getGroupDetail` (which *is* community)
+already returns a group's own `events`/`announcements` as nested Prisma includes — that's what
+"group events, ... announcements" in the batch instruction refers to, not the standalone
+`getLearningEvents` endpoint, which is a cross-group "browse all upcoming events" feed serving
+`apps/web`'s Learning section (`/api/user/events`, `LEARNING_EVENTS_ROUTE` in `ApiRoutes.ts`).
+Cross-checking `architecture-plan.md`'s own B07/B08 sections confirmed this: B07 explicitly
+says it will "move learning projects/events reads (`getLearningProjects`,
+`getLearningProjectById`, `getLearningEvents`) from the former `services/user` code," and
+*neither* B07 nor B08's own "Definition of Done" repeats B06's "services/user is deleted"
+claim — only B06's does, and only B06's turned out to be premature.
+
+**Resolution**: followed the batch's own conditional instruction ("delete when empty") over
+the imprecise "Definition of Done" prose. `services/user` is not empty after removing
+community — it still serves `/api/user/events`, `/api/user/projects`,
+`/api/user/projects/:id`, and `/api/user/dashboard/:id` — so it is not deleted in B06.
+`SP-073`/`SP-075`/`SP-078` corrected to reflect this; deletion is now tracked against B08
+(when dashboard, the last domain, finally moves out). This was a documentation/manifest
+inconsistency to resolve by re-reading the actual code and the plan's own later sections, not
+a product trade-off requiring a decision — so it was resolved directly rather than asked.
+
+### The `assertSelf` extraction
+
+The batch explicitly asked to "extract the repeated `x-user-id` vs `loggedInUserId` 403 check
+into a shared `assertSelf` guard rather than copying it." Reading all 16 community functions
+found the same three-step shape repeated ~11 times (with minor per-function variation): a 401
+check (`getAuthenticatedUserId(req) === null`), then a route/body-specific parse-and-400 check
+for `loggedInUserId` (response shape and exact position vary slightly per function — one
+returns `{msg, unassociatedGroups: []}` instead of `{ok:false, error}`; `joinUnjoinedGroups`
+uniquely parses and 400s *before* its `try` block, ahead of the 401 check), then a 403 check
+(`authenticatedUserId !== loggedInUserId`).
+
+Only the 401-and-403 pair — never the middle parse/400 step, which differs per function — was
+extracted into one local `assertSelf(req, res, loggedInUserId): boolean` in
+`community.controller.ts`, called in-place wherever the original two checks stood relative to
+each function's own parse/400 step. This preserves every function's existing check *order*
+exactly (including `joinUnjoinedGroups`'s outlier 400-before-401), with one narrow,
+deliberate exception: the ~11 functions that do [401 → 400 → 403] now effectively do
+[400 → assertSelf(401+403)], since `assertSelf` needs an already-parsed `loggedInUserId`
+number as its argument. This flips 401/400 precedence only in the edge case of a request that
+is simultaneously unauthenticated *and* carries a malformed `loggedInUserId` — such a request
+now gets 400 instead of 401. No legitimate caller can hit this (the frontend always sends a
+well-formed id together with its session), so this is judged an acceptable, narrow trade-off
+for eliminating a duplicated auth check across ~11 handlers, and is called out here rather
+than left undocumented, matching this refactor's practice of surfacing even minor behavior
+deltas explicitly (see B04's `groupData` fallback removal for precedent).
+
+Live-verified `assertSelf` directly: `POST /api/user/groups` with `x-user-id: 1` and
+`loggedInUserId: 1` in the body succeeded (201, group created); the same call with
+`loggedInUserId: 2` (mismatched) returned `{"ok":false,"error":"Forbidden"}` (403) — the guard
+works correctly in a real request, not just in isolated review.
+
+### Changes made
+
+| Area | Change |
+| --- | --- |
+| New `services/core` | `package.json` (`@services/core`; depends on `@repo/database`, `@repo/shared`, `@repo/contracts` directly — `community.validation.ts` imports `positiveInt`/`slugOrUuidSchema`/`toneSchema` from it rather than through `@repo/shared`'s re-export, since those primitives were made available in `@repo/contracts` back in B03 but not force-adopted then), `tsconfig.json` (same base as every other service), `src/index.ts` (bootstrap: cors, json, `/health`, `internalTokenGuard`, mounts `community` at `/api/user`, `errorHandler`). |
+| New `services/core/src/modules/community/` | `community.controller.ts`: all 16 group/connection/invitation functions moved verbatim from `user.controller.ts`, plus the new `assertSelf` guard (see above) and the shared display-mapping helpers they need (`getGroupWhere`, `getUserName`, `getInitials`, `mapUserCard`, `mapResourceCard`, `mapGroupCard`, and their supporting types). `community.validation.ts`: the 8 schemas those routes use, moved from `user.validation.ts`, adopting `@repo/contracts`'s `positiveInt`/`slugOrUuidSchema`/`toneSchema` instead of re-declaring them locally. `community.routes.ts`: the 16 route registrations, mounted at `/api/user` within `core` — **zero external path changes**, matching the batch's explicit instruction to preserve every path exactly. |
+| `services/user` cleanup | `user.controller.ts`: removed the 16 community functions and the community-only helpers/types (`getGroupWhere`, `mapResourceCard`, `ResourceCardRecord`, `GroupInvitationRecord`, `GroupDetailRecord`) — 872 lines removed (1541 → 669). `getUserName`/`getInitials`/`mapUserCard`/`mapGroupCard`/`GroupCardRecord`/`UserCardRecord` are **duplicated**, not deleted: `getDashboardHome` (via `mapDashboardSidebarGroup`/`mapDashboardSuggestedPerson`) still calls them, and this file can't import from a sibling deployable service. This duplication is temporary — it disappears entirely once B08 deletes `services/user`. `user.routes.ts`/`user.validation.ts`: trimmed to the 4 remaining routes and their 2 schemas (`dashboardParamsSchema`, `projectIdParamsSchema`), the latter now built directly against a local `userIdParamsSchema` and `@repo/contracts`'s `slugOrUuidSchema` instead of aliasing the (now-moved) community schemas. `package.json`: added `@repo/contracts` as a direct dependency (validation file now imports from it directly, not just via `@repo/shared`). |
+| B05-leftover fix, found while touching `services/user/src/index.ts` | A `validateObjectStorageEnv()` call and `storageProvider` boot-log field were still present, validating `AWS_*` env vars this service hasn't needed since B05 moved avatar upload to `identity`. Grepped `services/user/src` for any remaining S3/storage/multer usage — none — confirmed this was dead weight from an incomplete B05 cleanup, not something this service still needs. Removed both; zero behavior change for a correctly configured deploy, one fewer unnecessary startup dependency for a misconfigured one. |
+| `services/gateway` | `routeRules.ts`: `Upstream` gained `"core"`. Three new specific rules (`/api/user/events`, `/api/user/projects`, `/api/user/dashboard` → `user`) precede the general `/api/user` rule, which now points at `core` instead of `user` — same first-match-wins precedence pattern B05 established. `index.ts`: `serviceBaseUrls` gained `core: process.env.CORE_SERVICE_URL \|\| "http://127.0.0.1:4107"`. `routeRules.test.ts`: replaced the single "every other /api/user path still resolves to user" test (now false) with two — one asserting the 3 remaining paths resolve to `user`, one asserting 11 representative community paths resolve to `core`. All 42 auto-extracted `ApiRoutes.ts` paths still resolve to exactly one upstream regardless of which upstream changed. |
+| `packages/database/SCHEMA_OWNERSHIP.md` | `Group`, `GroupTag`, `GroupInvitation`, `GroupAnnouncement`, `GroupEvent` reassigned from `Auth`/`User service` to `Core (community module)`; noted that `User.following`/`followers` is written by `core` despite `User` itself belonging to `identity`. Added rows for `StudyRoom`/`Topic` (planned `learning`, B07) and `Post`/`Comment`/`Like` (planned `feed`, B08), which weren't listed at all before. This is a name/ownership-accuracy pass, not the full model-per-owning-module rewrite `SP-001` still defers to B10. |
+| Env var / CI / deploy | `.env.example`: uncommented `CORE_SERVICE_URL`. `.env` (local): added `CORE_SERVICE_PORT=4107`, `CORE_SERVICE_URL=http://localhost:4107` (`turbo.json`'s `globalEnv` already had both, added ahead of time when `servicePorts.core` was wired in B05). `.github/workflows/ci.yml`: added `@services/core` to the build-services matrix. `.github/workflows/deploy-services.yml`: added a `core`/`services/core`/`yome-core` entry. Root `package.json`: `dev:services` and `check-types:all` both gained `core`. |
+
+### Validation
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `bun run --cwd services/user check-types` | 0 | Confirms the trim compiles standalone (no routes.ts/validation.ts yet — caught expected import errors, then fixed them). |
+| `bun run --cwd services/core check-types` | 0 | New service typechecks clean. |
+| `bun run --cwd services/gateway test` | 0 | 43 pass, 0 fail, 96 `expect()` calls (was 42/84 in B05 — +1 test, +12 `expect()` calls for the new community-path assertions). |
+| `bun install` | 0 | Links `@services/core`'s and the updated `@repo/contracts` dependencies. |
+| `bun run build` | 0 | 14/14 tasks (was 13; +1 for `@services/core`). |
+| `bun run check-types` | 0 | 13/13 tasks (was 12; +1). |
+| `bun run check-types:all` | 0 | All 12 sequential per-package `tsc --noEmit` steps pass, including the newly added `core`. |
+| `bun run test` | 0 | 14/14 tasks, 0 failures. |
+| `bun run lint` | 0 | 166 warnings, 0 errors — unchanged (all pre-existing `apps/web`). |
+| `bunx tsc --noEmit` (`apps/web`) | 0 | Unaffected — no `apps/web` source touched this batch. |
+| `docker build -f Dockerfile.service --build-arg SERVICE_DIR=services/core` | 0 | Image builds; container boots and logs `"Core service listening"` on port 4107. Test image/container removed after. |
+
+### Live verification (disposable Postgres, zero risk to real data)
+
+Started a fresh `postgres:16-alpine` container on an alternate port (`5434`), applied every
+Prisma migration, then started `identity`, `user`, `core`, and `gateway` standalone on
+non-default ports, all pointed at the disposable database (`GATEWAY_REQUIRE_AUTH=false` so no
+session/token setup was needed). Confirmed:
+
+- `GET /health` on the gateway reports `services.core` alongside the others.
+- `POST /api/auth/register-user` through the gateway still reaches `identity` and writes a
+  user (unaffected by this batch, checked as a smoke test).
+- `GET /api/user/groups/discover` through the gateway reaches `core` (`{"ok":true,"groups":[]}`
+  on the empty database) — a public read, provable through the real gateway without simulating
+  a NextAuth session.
+- Auth-gated community/dashboard/learning calls through the gateway (`POST /api/user/groups`,
+  `GET /api/user/dashboard/1`, `GET /api/user/events`) all correctly 401'd, since
+  `GATEWAY_REQUIRE_AUTH=false` means the gateway never populates `x-user-id` — this by itself
+  confirms the request reached a real controller's own auth check (matching
+  `{"ok":false,"error":"Unauthorized"}` exactly) rather than 404ing or hitting a network error.
+- To verify the authenticated path and the routing split more precisely, hit each service
+  **directly** (bypassing the gateway) with the internal token and a manually-set `x-user-id`
+  header — the same headers the gateway would attach for a real authenticated request:
+  - `core` directly, `/api/user/dashboard/1` → **404** (route doesn't exist there).
+  - `core` directly, `/api/user/events` → **404**.
+  - `user` directly, `/api/user/groups/discover` → **404** (route no longer exists there).
+  - `user` directly, `/api/user/get-all-groups` → **404**.
+  - `core` directly, `/api/user/groups/discover` → **200**, `{"ok":true,"groups":[]}`.
+  - `core` directly, `POST /api/user/groups` with `x-user-id: 1`, `loggedInUserId: 1` →
+    **201**, a real group created and returned with the correct `mapGroupCard` shape.
+  - `core` directly, same call with `loggedInUserId: 2` (mismatched) → **403**, `assertSelf`'s
+    Forbidden path confirmed live.
+  - `user` directly, `/api/user/dashboard/1` with `x-user-id: 1` → **200**, full dashboard
+    shape including `sidebarGroups: []` — confirms the *duplicated* `mapGroupCard`/`mapUserCard`
+    helpers left in `user.controller.ts` still work correctly for `getDashboardHome`.
+  - Disposable container and all four service processes torn down immediately after; the real
+    `.env` and database were never written to.
+
+Definition of Done for B06, fully met on its actual scope: the community domain (groups,
+connections, invitations, and the events/announcements sub-fields group-detail already
+returned) is fully out of `services/user` and served by `core`; every external path is
+unchanged, proven by both the gateway route-rules test and a live end-to-end check in both
+directions; the repeated self-check across community handlers is now one `assertSelf` guard,
+not ~11 copies. `services/user` is not deleted — deliberately, per the corrected
+understanding above — and continues to build, typecheck, and serve its 3 remaining paths
+cleanly, including a same-batch fix for the B05-leftover dead storage-env check.
 
 ## B05 Execution
 

@@ -1,80 +1,24 @@
 import { z } from "zod";
+import { slugOrUuidSchema } from "@repo/contracts";
 
-const positiveInt = z.coerce.number().int().positive();
-const nonEmptyString = z.string().trim().min(1);
-const slugOrUuidSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(160)
-  .regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/, "must be an id or slug");
-const toneSchema = z.enum(["blue", "teal", "amber", "violet", "neutral"]);
+// getUserByIdSchema and updateUserSchema (and the nameSchema/usernameSchema they used)
+// moved to services/identity/src/modules/profile/profile.validation.ts in B05.
+// Community schemas (loggedInUserIdParamsSchema, groupIdParamsSchema, and everything
+// that aliased them) moved to
+// services/core/src/modules/community/community.validation.ts in B06 — only the two
+// aliases below stay, since getDashboardHome/getLearningProjectById remain in this
+// service pending B07/B08.
+
 const userIdParamsSchema = z.object({
   loggedInUserId: z.coerce.string().regex(/^\d+$/, "loggedInUserId must be a positive integer"),
 });
 
-// getUserByIdSchema and updateUserSchema (and the nameSchema/usernameSchema they used)
-// moved to services/identity/src/modules/profile/profile.validation.ts in B05.
-
-export const loggedInUserIdParamsSchema = {
+export const dashboardParamsSchema = {
   params: userIdParamsSchema,
 };
 
-export const dashboardParamsSchema = loggedInUserIdParamsSchema;
-
-export const followUnfollowedUserSchema = {
-  body: z.object({
-    loggedInUserId: positiveInt,
-    mentorId: positiveInt,
-  }),
-};
-
-export const joinUnjoinedGroupsSchema = {
-  body: z.object({
-    loggedInUserId: positiveInt,
-    groupIdToJoin: nonEmptyString.max(255),
-  }),
-};
-
-export const discoverGroupsSchema = {
-  query: z.object({
-    query: z.string().trim().max(160).optional(),
-    subject: z.string().trim().max(80).optional(),
-    sort: z.enum(["active", "members", "featured", "recent", "name"]).optional(),
-  }),
-};
-
-export const groupIdParamsSchema = {
+export const projectIdParamsSchema = {
   params: z.object({
     id: slugOrUuidSchema,
-  }),
-};
-
-export const projectIdParamsSchema = groupIdParamsSchema;
-
-export const joinedGroupsParamsSchema = loggedInUserIdParamsSchema;
-
-export const createGroupSchema = {
-  body: z.object({
-    loggedInUserId: positiveInt,
-    name: nonEmptyString.max(80),
-    about: z.string().trim().max(500).optional().default(""),
-    subject: nonEmptyString.max(80).optional().default("General"),
-    category: nonEmptyString.max(80).optional().default("Community"),
-    tone: toneSchema.optional().default("blue"),
-    symbol: nonEmptyString.max(12).optional().default("Y"),
-    privacy: nonEmptyString.max(80).optional().default("Public group"),
-    location: nonEmptyString.max(120).optional().default("Global"),
-    thumbnail: z.string().trim().max(2048).optional().default(""),
-    tags: z.array(nonEmptyString.max(40)).max(8).optional().default([]),
-  }),
-};
-
-export const joinGroupByIdSchema = {
-  params: z.object({
-    id: slugOrUuidSchema,
-  }),
-  body: z.object({
-    loggedInUserId: positiveInt,
   }),
 };

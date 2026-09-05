@@ -25,7 +25,9 @@ Yome is a Bun + Turbo monorepo with a Next.js frontend and several backend micro
   - registration, credential verification, OAuth user upsert, password changes, seed endpoints
   - also owns profile reads/updates (`get-user-by-id`, `update-user`, `get-all-users`), moved here from `services/user` in B05
 - `services/user`
-  - groups, connections, dashboard, and learning reads
+  - dashboard aggregation and learning reads (events, projects) — groups/connections moved to `services/core` in B06; the rest moves out in B07/B08, after which this service is retired
+- `services/core` (new in B06)
+  - community domain: groups, connections, invitations — moved here from `services/user`
 - `services/chat`
   - chat HTTP APIs and Socket.IO realtime connection
 - `services/media`

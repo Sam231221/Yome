@@ -83,6 +83,61 @@ satisfied) now 404s, and hitting a `user`-only path directly against `identity` 
 confirming a clean split, not an accidental duplication. Disposable container and processes
 torn down after verification; the real `.env`/database were never touched.
 
+B06 completed (2026-09-05): `services/core` created with its first module,
+`community` (`SP-100`–`SP-105`, all `DONE`). The 16 group/connection/invitation functions in
+`services/user/src/controllers/user.controller.ts` (community portion of `SP-074`) moved
+verbatim into `community.controller.ts`, along with a new local `assertSelf` guard that
+consolidates the repeated `x-user-id` vs `loggedInUserId` 401+403 check — explicitly requested
+by the batch rather than left copy-pasted across ~9 handlers. `services/user`'s validation
+file adopted `@repo/contracts`'s `positiveInt`/`slugOrUuidSchema`/`toneSchema` primitives
+(available since B03, not previously force-adopted here) instead of re-declaring them.
+
+**Plan-vs-reality correction, resolved before implementation, not after:** `architecture-plan.md`'s
+B06 "Definition of Done" says `services/user` is deleted, and this manifest's own
+`SP-073`/`SP-075`/`SP-078` rows were pre-assigned `DELETE`/B06. Reading the actual controller
+before moving anything showed `getLearningEvents`, `getLearningProjects`,
+`getLearningProjectById`, and `getDashboardHome` are **not** community-domain — they read
+`GroupEvent`/`Post`/`StudyRoom`/`Topic` for the "learning" and "dashboard" pages, and
+`architecture-plan.md`'s own B07/B08 sections independently confirm this (B07: "move learning
+projects/events reads ... from the former `services/user` code"; neither B07 nor B08's own
+Definition of Done repeats B06's "services/user is deleted" claim). Community was the only
+domain in scope for this batch's copy-paste instruction, which itself says "delete
+`services/user` **when empty**" — conditional wording that already anticipated this exact
+case. Followed the more precise, conditional instruction over the imprecise prose:
+`services/user` stays alive, now serving only 3 external paths (`events`, `projects`,
+`dashboard`); `SP-073`/`SP-075`/`SP-078` corrected from `DELETE`/B06 to `KEEP (for now)`/B08 (or
+`REFACTOR`/B06 for `SP-075`, which got a same-batch dead-code fix — see below). No user
+decision was needed here: this was a documentation/manifest inconsistency to resolve by
+re-deriving the split from the actual code and the plan's own later sections, not a product
+trade-off.
+
+**Also fixed, found while touching `services/user/src/index.ts` for the split**: a stale
+`validateObjectStorageEnv()` call and `storageProvider` boot-log field, left over from B05 —
+this service stopped touching S3/multer entirely when avatar upload moved to `identity`, but
+the startup validation call for those env vars was never removed. Zero behavior change for a
+correctly configured deploy; a previously-unnecessary startup dependency on `AWS_*` env vars
+being set is now gone.
+
+`SCHEMA_OWNERSHIP.md` (`SP-001`) got a real content update — `Group`, `GroupTag`,
+`GroupInvitation`, `GroupAnnouncement`, `GroupEvent` reassigned from `Auth`/`User service` to
+`Core (community module)`, plus new rows for `StudyRoom`/`Topic` (planned `learning`, B07) and
+`Post`/`Comment`/`Like` (planned `feed`, B08) that weren't listed at all before. This is a
+partial, name-and-ownership-accuracy pass, not the full model-per-owning-module rewrite
+`SP-001`'s own row still defers to B10.
+
+Live-verified end-to-end against a disposable Postgres instance (docker, migrated schema,
+remapped ports, `identity` + `user` + `core` + `gateway` all running together): gateway
+`/health` reports `serviceBaseUrls.core`; `discoverGroups` and `createGroup` through the
+gateway both reach `core` (the latter proven with a direct-to-service call satisfying the
+internal-token + `x-user-id` headers the gateway would normally attach, since the gateway's
+own NextAuth-cookie auth can't be simulated without a real browser session); `dashboard` and
+`events` through the gateway still reach `user`. Cross-service checks in both directions
+(`core` hit directly for `/api/user/dashboard` → 404; `user` hit directly for
+`/api/user/groups/discover` and `/api/user/get-all-groups` → 404) confirm a clean split, no
+duplication. `assertSelf`'s 403 path verified directly (mismatched `x-user-id` vs
+`loggedInUserId` on `createGroup` → `{"ok":false,"error":"Forbidden"}`). Disposable
+infrastructure torn down after; the real `.env`/database were never touched.
+
 **This manifest tracks Phase 1 (B01–B10) — the existing files and where they go.** Phase 2+
 work (Redis, event backbone, read models, database extraction) creates new files rather than
 relocating existing ones, so it appears here only in the creation list. Those batches are
@@ -123,7 +178,7 @@ tracked in `migration-log.md` under "Trigger Measurements".
 
 | ID | Current File | Domain | Classification | Action | Proposed Destination / Change | Batch | Owner After | Risk | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| SP-001 | `packages/database/SCHEMA_OWNERSHIP.md` | database | DOC | REFACTOR | Rewrite as a model → owning-module write table; keep in sync with code | B10 | database | Low | PENDING |
+| SP-001 | `packages/database/SCHEMA_OWNERSHIP.md` | database | DOC | REFACTOR | Rewrite as a model → owning-module write table; keep in sync with code. **B06: partial name/ownership-accuracy update — `Group*` tables reassigned to `Core (community module)`; `StudyRoom`/`Topic`/`Post`/`Comment`/`Like` rows added as planned-not-yet-owned. Full model-per-owning-module rewrite still pending.** | B10 | database | Low | PENDING |
 | SP-002 | `packages/database/package.json` | database | PKG_MANIFEST | KEEP | Same | B10 | database | Low | KEEP |
 | SP-003 | `packages/database/prisma/schema.prisma` | database | PRISMA_SCHEMA | KEEP | Single schema retained; add `/// owner: <module>` doc comment per model | B10 | database | Medium | PENDING |
 | SP-004 | `packages/database/src/client.d.ts` | database | DB_CLIENT | KEEP | Same | — | database | Low | KEEP |
@@ -195,12 +250,12 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-070 | `services/resources/src/routes/resource.validation.test.ts` | learning | TEST | MOVE | `services/core/src/modules/learning/resources/` | B07 | core | Low | PENDING |
 | SP-071 | `services/resources/src/routes/resource.validation.ts` | learning | VALIDATION | MOVE | Learning module; `resourceToneSchema` → `@repo/contracts` | B07 | core | Low | PENDING |
 | SP-072 | `services/resources/tsconfig.json` | learning | TS_CONFIG | DELETE | Replaced by `services/core/tsconfig.json` | B07 | core | Low | PENDING |
-| SP-073 | `services/user/package.json` | multi | PKG_MANIFEST | DELETE | Replaced by `services/core`; profile deps → `identity`, rest → `core` | B06 | core | Medium | PENDING |
-| SP-074 | `services/user/src/controllers/user.controller.ts` | multi | CONTROLLER | SPLIT | profile → `identity/modules/profile` (B05); groups + connections + group-events → `core/modules/community` (B06); learning projects/events reads → `core/modules/learning` (B07); dashboard aggregation → `core/modules/dashboard` (B08). **B03: now imports `getAuthenticatedUserId`, `isUuid`, `slugify`, `formatCount`, `compactNumber` from `@repo/shared`; all five local duplicates deleted.** **B04: the `groupData` zero-seed fallback removed from `getUnassociatedGroupsForUser` and `joinUnjoinedGroups` (user decision: remove, not keep) — live-verified against a disposable Postgres instance.** **B05: profile portion (`getUserById`, `updateUser`, `getAllUsers`) extracted verbatim into `services/identity/src/modules/profile/profile.controller.ts` — see SP-095; deleted from this file.** Community/learning/dashboard split still pending | B05–B08 | identity + core | High | PENDING |
-| SP-075 | `services/user/src/index.ts` | multi | SERVICE_ENTRY | DELETE | Entry replaced by `services/core/src/index.ts` | B06 | core | Medium | PENDING |
-| SP-076 | `services/user/src/routes/user.routes.ts` | multi | ROUTE | SPLIT | Same fan-out as the controller; every external path preserved through the gateway route manifest. **B05: the 3 profile routes (`get-user-by-id`, `update-user`, `get-all-users`) and the `multer` upload setup they used moved to `services/identity/src/modules/profile/profile.routes.ts` — see SP-097.** Community/learning/dashboard fan-out still pending | B05–B08 | identity + core | High | PENDING |
-| SP-077 | `services/user/src/routes/user.validation.ts` | multi | VALIDATION | SPLIT | Profile schemas → `identity`; group/connection schemas → `core`; primitives → `@repo/contracts`. **B05: `getUserByIdSchema`/`updateUserSchema` moved to `services/identity/src/modules/profile/profile.validation.ts` (see SP-096); the `nameSchema`/`usernameSchema` they and `credentials.validation.ts` both duplicated were promoted to `@repo/contracts` (SP-083) and both local copies deleted** | B05–B08 | identity + core | Medium | PENDING |
-| SP-078 | `services/user/tsconfig.json` | multi | TS_CONFIG | DELETE | Replaced by `services/core/tsconfig.json` | B06 | core | Low | PENDING |
+| SP-073 | `services/user/package.json` | multi | PKG_MANIFEST | KEEP (for now) | **B06 correction: not deleted — `services/user` still owns learning-reads and dashboard-aggregation code pending B07/B08, so it stays a real, running service.** `@repo/contracts` added (its validation file now imports `slugOrUuidSchema` directly). Deletion deferred to B08, once the last domain (dashboard) moves out | B08 | user (until B08) | Medium | PENDING |
+| SP-074 | `services/user/src/controllers/user.controller.ts` | multi | CONTROLLER | SPLIT | profile → `identity/modules/profile` (B05); groups + connections + group-events → `core/modules/community` (B06); learning projects/events reads → `core/modules/learning` (B07); dashboard aggregation → `core/modules/dashboard` (B08). **B03: now imports `getAuthenticatedUserId`, `isUuid`, `slugify`, `formatCount`, `compactNumber` from `@repo/shared`; all five local duplicates deleted.** **B04: the `groupData` zero-seed fallback removed from `getUnassociatedGroupsForUser` and `joinUnjoinedGroups` (user decision: remove, not keep) — live-verified against a disposable Postgres instance.** **B05: profile portion (`getUserById`, `updateUser`, `getAllUsers`) extracted verbatim into `services/identity/src/modules/profile/profile.controller.ts` — see SP-095; deleted from this file.** **B06: the 16 community functions (groups, connections, invitations — see SP-103 for the full list) extracted into `services/core/src/modules/community/community.controller.ts`; the repeated `x-user-id` vs `loggedInUserId` 401+403 check across ~9 of them consolidated into one local `assertSelf` guard in the new file per the batch's explicit instruction, rather than copied. `getGroupWhere`/`mapResourceCard` and their community-only types deleted from this file entirely (no longer needed here); `getUserName`/`getInitials`/`mapUserCard`/`mapGroupCard`/`GroupCardRecord`/`UserCardRecord` stay duplicated in both files — `getDashboardHome`, which remains here, still needs them.** Learning/dashboard portion still pending | B05–B08 | identity + core | High | PENDING |
+| SP-075 | `services/user/src/index.ts` | multi | SERVICE_ENTRY | REFACTOR | **B06 correction: not deleted (see SP-073) — only refactored.** Dropped the `community` route mount (see `services/core/src/index.ts`, SP-102) and, separately, a stale `validateObjectStorageEnv()` call + `storageProvider` boot-log field left over from B05 (this service stopped touching S3/multer when avatar upload moved to `identity`, but the call to validate its env vars was never removed — found and fixed here, zero behavior change intended, only removes a startup check this service no longer needs) | B06 (fix), B08 (delete) | user (until B08) | Medium | PENDING |
+| SP-076 | `services/user/src/routes/user.routes.ts` | multi | ROUTE | SPLIT | Same fan-out as the controller; every external path preserved through the gateway route manifest. **B05: the 3 profile routes (`get-user-by-id`, `update-user`, `get-all-users`) and the `multer` upload setup they used moved to `services/identity/src/modules/profile/profile.routes.ts` — see SP-097.** **B06: the 16 community routes moved to `services/core/src/modules/community/community.routes.ts` (SP-105); only the 4 learning/dashboard routes (`/events`, `/projects`, `/projects/:id`, `/dashboard/:id`) remain, still mounted at `/api/user`.** Learning/dashboard fan-out still pending | B05–B08 | identity + core | High | PENDING |
+| SP-077 | `services/user/src/routes/user.validation.ts` | multi | VALIDATION | SPLIT | Profile schemas → `identity`; group/connection schemas → `core`; primitives → `@repo/contracts`. **B05: `getUserByIdSchema`/`updateUserSchema` moved to `services/identity/src/modules/profile/profile.validation.ts` (see SP-096); the `nameSchema`/`usernameSchema` they and `credentials.validation.ts` both duplicated were promoted to `@repo/contracts` (SP-083) and both local copies deleted.** **B06: `loggedInUserIdParamsSchema`/`groupIdParamsSchema` and everything that aliased them moved to `services/core/src/modules/community/community.validation.ts` (SP-104); only `dashboardParamsSchema`/`projectIdParamsSchema` stay, now defined directly against a local `userIdParamsSchema` and `@repo/contracts`'s `slugOrUuidSchema` instead of aliasing the (now moved) community schemas** | B05–B08 | identity + core | Medium | PENDING |
+| SP-078 | `services/user/tsconfig.json` | multi | TS_CONFIG | KEEP (for now) | **B06 correction: not deleted (see SP-073) — unchanged content, still builds the shrinking `services/user`.** Deletion deferred to B08 | B08 | user (until B08) | Low | PENDING |
 | SP-079 | `packages/contracts/package.json` | shared | PKG_MANIFEST | CREATE | New in B03 | B03 | contracts | Low | DONE |
 | SP-080 | `packages/contracts/src/helpers.test.ts` | shared | TEST | CREATE | New in B03 — coverage `@repo/shared` never had, proving the 4 consolidated helpers match every implementation they replaced | B03 | contracts | Low | DONE |
 | SP-081 | `packages/contracts/src/helpers.ts` | shared | PKG_MODULE | CREATE | New in B03: `getAuthenticatedUserId`, `slugify`, `UUID_PATTERN`/`isUuid`, `compactNumber`/`formatCount` — consolidated from 4 duplicate per-service definitions (issue #11) | B03 | contracts | Low | DONE |
@@ -220,6 +275,12 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-095 | `services/identity/src/modules/profile/profile.controller.ts` | identity | CONTROLLER | CREATE | New in B05: `getUserById`, `updateUser`, `getAllUsers` extracted verbatim from `services/user/src/controllers/user.controller.ts` (see SP-074); logger renamed `"identity-profile"` | B05 | identity | Medium | DONE |
 | SP-096 | `services/identity/src/modules/profile/profile.validation.ts` | identity | VALIDATION | CREATE | New in B05: `getUserByIdSchema`/`updateUserSchema` moved from `services/user/src/routes/user.validation.ts` (see SP-077); now imports `nameSchema`/`usernameSchema`/`positiveInt` from `@repo/contracts` | B05 | identity | Low | DONE |
 | SP-097 | `services/identity/src/modules/profile/profile.routes.ts` | identity | ROUTE | CREATE | New in B05: the 3 profile routes + `multer` avatar-upload setup moved from `services/user/src/routes/user.routes.ts` (see SP-076); mounted at `/api/user` within identity — external paths unchanged | B05 | identity | Low | DONE |
+| SP-100 | `services/core/package.json` | core | PKG_MANIFEST | CREATE | New in B06: `@services/core`, first module is `community`. Depends on `@repo/contracts` directly (community's validation imports `positiveInt`/`slugOrUuidSchema`/`toneSchema` from it, not via `@repo/shared`) | B06 | core | Medium | DONE |
+| SP-101 | `services/core/tsconfig.json` | core | TS_CONFIG | CREATE | New in B06 | B06 | core | Low | DONE |
+| SP-102 | `services/core/src/index.ts` | core | SERVICE_ENTRY | CREATE | New in B06: mounts `community` at `/api/user`; `learning` (B07) and `feed`/`dashboard` (B08) mount alongside it as they land | B06 | core | Medium | DONE |
+| SP-103 | `services/core/src/modules/community/community.controller.ts` | core | CONTROLLER | CREATE | New in B06: `getFollowedUsersByUser`, `getUnfollowedMentors`, `getUnassociatedGroupsForUser`, `getAllGroupsForUser`, `getAllGroups`, `discoverGroups`, `getJoinedGroups`, `getGroupInvitations`, `getGroupDetail`, `createGroup`, `joinGroupById`, `getConnectionSummary`, `getConnectionSuggestions`, `getFollowingConnections`, `followUnfollowedUser`, `joinUnjoinedGroups` — all 16 extracted verbatim from `services/user/src/controllers/user.controller.ts` (see SP-074), plus a new local `assertSelf` guard consolidating the repeated auth-and-self-match check (explicitly requested by the batch). `getGroupWhere`/`mapResourceCard`/`mapGroupCard`/`mapUserCard` and their supporting types moved here too; `mapGroupCard`/`mapUserCard` (and the types built from them) are duplicated back in `user.controller.ts` since `getDashboardHome` still needs them | B06 | core | High | DONE |
+| SP-104 | `services/core/src/modules/community/community.validation.ts` | core | VALIDATION | CREATE | New in B06: `loggedInUserIdParamsSchema`, `joinedGroupsParamsSchema`, `followUnfollowedUserSchema`, `joinUnjoinedGroupsSchema`, `discoverGroupsSchema`, `groupIdParamsSchema`, `createGroupSchema`, `joinGroupByIdSchema` moved from `services/user/src/routes/user.validation.ts` (see SP-077); `positiveInt`/`slugOrUuidSchema`/`toneSchema` now imported from `@repo/contracts` instead of re-declared locally (adopting primitives SP-083 made available in B03) | B06 | core | Low | DONE |
+| SP-105 | `services/core/src/modules/community/community.routes.ts` | core | ROUTE | CREATE | New in B06: the 16 community routes moved from `services/user/src/routes/user.routes.ts` (see SP-076); mounted at `/api/user` within core — external paths unchanged | B06 | core | Low | DONE |
 | SP-098 | `services/gateway/src/routeRules.ts` | edge | PKG_MODULE | CREATE | New in B05: ordered upstream route-rule table + `resolveRoute()`/`pathMatchesPrefix()`, extracted so `index.ts`'s 8 hand-written `app.use()` calls become one loop, and so routing is unit-testable without booting Express. A scoped precursor to the full B10 gateway modularization (SP-055), not that refactor itself | B05 | gateway | Medium | DONE |
 | SP-099 | `services/gateway/src/routeRules.test.ts` | edge | TEST | CREATE | New in B05: parses `apps/web/utils/ApiRoutes.ts` and asserts every one of its 42 externally-visible `/api/*` paths resolves through `routeRules` to exactly one upstream, including the 3 profile paths now resolving to `identity` | B05 | gateway | Low | DONE |
 
@@ -243,11 +304,15 @@ have been a duplicate-file-entry bug; caught and corrected before commit.
 - **B05** (identity): SP-029, SP-030, SP-035, SP-036, SP-037, SP-039, SP-095–SP-099 **done**
   (+ profile portions of SP-074, SP-076, SP-077 — also done; row status stays `PENDING` since
   their community/learning/dashboard portions are still B06–B08).
-- **B06** (core scaffold + community): SP-073, SP-075, SP-078 (+ community portions of
-  SP-074, SP-076, SP-077).
+- **B06** (core scaffold + community): SP-100–SP-105 **done** (+ community portions of
+  SP-074, SP-076, SP-077 — also done; row status stays `PENDING` since their learning/dashboard
+  portions are still B07/B08). SP-073/SP-075/SP-078 corrected from `DELETE`/B06 to
+  `KEEP (for now)`/B08 — see the B06-completed note above for why `services/user` isn't
+  deleted yet.
 - **B07** (core/learning + fold resources): SP-066, SP-067, SP-068, SP-069, SP-070, SP-071,
   SP-072 (+ learning portions of SP-074, SP-076, SP-077).
-- **B08** (core/feed + core/dashboard): dashboard/feed portions of SP-074, SP-076, SP-077;
+- **B08** (core/feed + core/dashboard, and `services/user`'s actual deletion): SP-073, SP-075,
+  SP-078 (now that the last domain is out); dashboard/feed portions of SP-074, SP-076, SP-077;
   new feed module files get fresh IDs.
 - **B09** (messaging + media): SP-040 … SP-053, SP-057, SP-058, SP-059.
 - **B10** (gateway + reconciliation): SP-001, SP-003, SP-006, SP-009, SP-011 (shim delete),
@@ -259,24 +324,30 @@ have been a duplicate-file-entry bug; caught and corrected before commit.
 Counts below are machine-verified (`grep`-extracted from the actual table, not hand-tallied
 — a hand-tally error during the B03 completeness audit is exactly why this rule exists now).
 
-- Rows: 99 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`, plus 4 B04-created
-  rows `SP-091`–`SP-094`, plus 5 B05-created rows `SP-095`–`SP-099`). Duplicate IDs: 0.
-  Duplicate current-file entries: 0.
+- Rows: 105 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`, plus 4 B04-created
+  rows `SP-091`–`SP-094`, plus 5 B05-created rows `SP-095`–`SP-099`, plus 6 B06-created rows
+  `SP-100`–`SP-105`). Duplicate IDs: 0. Duplicate current-file entries: 0.
 - `KEEP` (no change intended): SP-002, SP-004, SP-005, SP-007, SP-008, SP-010, SP-025,
-  SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065 — **14 rows**.
+  SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065 — **14 rows**. (Distinct from
+  `SP-073`/`SP-078`'s `KEEP (for now)` **Action** — those two are `PENDING` in the Status
+  column since their eventual deletion in B08 hasn't happened yet.)
 - `DONE`: SP-011, SP-012, SP-014–SP-024 (13 rows, B03's `packages/shared` split) + SP-013,
   SP-031–SP-034, SP-038 (6 rows, B04's seed extraction incl. the `groupData` fixture) +
   SP-079–SP-090 (12 rows, B03-created files) + SP-091–SP-094 (4 rows, B04-created files) +
   SP-029, SP-030, SP-035–SP-037, SP-039 (6 rows, B05's identity rename) + SP-095–SP-099
-  (5 rows, B05-created profile module + gateway route rules) — **46 rows**.
+  (5 rows, B05-created profile module + gateway route rules) + SP-100–SP-105 (6 rows,
+  B06-created core service + community module) — **52 rows**.
 - `PENDING` (actionable, batch assigned): **39 rows** — includes `SP-041`, `SP-067`, `SP-074`,
   `SP-076`, `SP-077`, which carry an adoption/partial-completion note but are not `DONE`
   because their full MOVE/domain-split is a separate, later batch (`SP-074`/`SP-076`'s B04
-  fallback removal and B05 profile-portion extraction are both done; their remaining
-  community/learning/dashboard content is still B06–B08).
+  fallback removal, B05 profile-portion extraction, and B06 community-portion extraction are
+  all done; their remaining learning/dashboard content is still B07/B08). Also includes
+  `SP-073`/`SP-075`/`SP-078`, corrected in B06 from `DELETE`/B06 to reflect that
+  `services/user` stays alive (real, running, serving 3 external paths) until B08 — see the
+  B06-completed note above.
 - `BLOCKED`: 0 in the manifest. One infra blocker was tracked in
   `service-decomposition-plan.md` (the missing `Dockerfile.service`) and was resolved in B02.
-- Row-count check: 14 KEEP + 46 DONE + 39 PENDING = 99. ✓ (machine-counted via
+- Row-count check: 14 KEEP + 52 DONE + 39 PENDING = 105. ✓ (machine-counted via
   `grep -cE "^\| SP-[0-9]+"` and per-status `grep`, not hand-tallied.)
 
 ## Files this migration will create (IDs assigned on creation)
@@ -290,7 +361,8 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
   runners are moves, tracked by `SP-013`, `SP-031`–`SP-034`).
 - ✅ `services/identity/**` (rename target of `services/auth`; new `modules/profile/**`) —
   **created in B05**, tracked as `SP-029`, `SP-030`, `SP-035`–`SP-039`, `SP-095`–`SP-097`.
-- `services/core/**` with `src/modules/{community,learning,feed,dashboard}/**` (B06–B08)
+- ✅ `services/core/**` with `src/modules/community/**` — **created in B06**, tracked as
+  `SP-100`–`SP-105`. `src/modules/{learning,feed,dashboard}/**` still pending (B07–B08).
 - `services/messaging/**` (rename target of `services/chat`; new `modules/calls/**`) (B09)
 - ✅ `services/gateway/src/routeRules.ts` + `routeRules.test.ts` — **created in B05**, tracked
   as `SP-098`–`SP-099`; a scoped precursor to the full `services/gateway/src/routes/route-manifest.ts`
