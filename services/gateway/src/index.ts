@@ -50,8 +50,7 @@ const serviceBaseUrls: Record<Upstream, string> = {
   media: process.env.MEDIA_SERVICE_URL || "http://127.0.0.1:4104",
   notifications:
     process.env.NOTIFICATIONS_SERVICE_URL || "http://127.0.0.1:4105",
-  resources: process.env.RESOURCES_SERVICE_URL || "http://127.0.0.1:4106",
-  // The consolidated service B06 introduced (community module first).
+  // The consolidated service B06 introduced (community, then learning + resources in B07).
   core: process.env.CORE_SERVICE_URL || "http://127.0.0.1:4107",
 };
 const logger = createLogger("gateway");

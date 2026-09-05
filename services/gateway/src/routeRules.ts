@@ -11,9 +11,9 @@
  * own `app.use(prefix, ...)` mounts behave today. That is why the specific `/api/user/...`
  * paths are listed before the general `/api/user` rule: B05 moved 3 profile paths to
  * `identity`; B06 moved the community domain (groups, connections, invitations) to `core`,
- * which is now the general `/api/user` catch-all, leaving only 3 learning/dashboard paths
- * (`events`, `projects`, `dashboard`) on `user` until B07/B08 finish moving those too and
- * `user` is retired.
+ * which is now the general `/api/user` catch-all; B07 moved the learning reads
+ * (`events`, `projects`) to `core` too and folded `services/resources` into it, leaving only
+ * `dashboard` on `user` until B08 finishes moving that too and `user` is retired.
  */
 
 /** Keys of `serviceBaseUrls` in index.ts. Add a new upstream there before adding a rule for it. */
@@ -23,7 +23,6 @@ export type Upstream =
   | "core"
   | "media"
   | "notifications"
-  | "resources"
   | "chat";
 
 export type RouteRule = {
@@ -45,19 +44,18 @@ export const routeRules: RouteRule[] = [
   { prefix: "/api/auth", upstream: "identity" },
   { prefix: "/api/db", upstream: "identity" },
 
-  // Learning reads + dashboard aggregation B06 left on user, pending B07/B08. Must precede
+  // Dashboard aggregation is the one domain still on user, pending B08. Must precede
   // the general /api/user rule below.
-  { prefix: "/api/user/events", upstream: "user" },
-  { prefix: "/api/user/projects", upstream: "user" },
   { prefix: "/api/user/dashboard", upstream: "user" },
 
-  // Everything else on /api/user: groups, connections, invitations — the community
-  // domain B06 moved to core.
+  // Everything else on /api/user: groups/connections/invitations (community, B06) and
+  // events/projects (learning reads, B07) — both live in core now.
   { prefix: "/api/user", upstream: "core" },
 
   { prefix: "/api/media", upstream: "media" },
   { prefix: "/api/notifications", upstream: "notifications" },
-  { prefix: "/api/resources", upstream: "resources" },
+  // Folded into core's learning module in B07; external path unchanged.
+  { prefix: "/api/resources", upstream: "core" },
 
   {
     prefix: "/api/messages",

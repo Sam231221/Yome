@@ -85,18 +85,11 @@ describe("gateway routeRules", () => {
     }
   });
 
-  test("the 3 remaining learning/dashboard paths still resolve to user", () => {
-    for (const path of [
-      "/api/user/events",
-      "/api/user/projects",
-      "/api/user/projects/some-project-slug",
-      "/api/user/dashboard/1",
-    ]) {
-      expect(resolveRoute(path)?.upstream).toBe("user");
-    }
+  test("the one remaining dashboard path still resolves to user", () => {
+    expect(resolveRoute("/api/user/dashboard/1")?.upstream).toBe("user");
   });
 
-  test("the community domain (everything else on /api/user) resolves to core", () => {
+  test("everything else on /api/user (community + learning reads) resolves to core", () => {
     for (const path of [
       "/api/user/get-all-groups",
       "/api/user/groups/discover",
@@ -109,9 +102,17 @@ describe("gateway routeRules", () => {
       "/api/user/get-connected-users/1",
       "/api/user/get-unfollowed-mentors/1",
       "/api/user/get-unassociated-groups/1",
+      "/api/user/events",
+      "/api/user/projects",
+      "/api/user/projects/some-project-slug",
     ]) {
       expect(resolveRoute(path)?.upstream).toBe("core");
     }
+  });
+
+  test("/api/resources resolves to core, folded in during B07", () => {
+    expect(resolveRoute("/api/resources")?.upstream).toBe("core");
+    expect(resolveRoute("/api/resources/some-resource-slug")?.upstream).toBe("core");
   });
 
   test("/api/messages is rewritten to /api/chat on the chat upstream", () => {

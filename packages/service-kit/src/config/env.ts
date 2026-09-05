@@ -34,10 +34,7 @@ export const servicePorts = {
   get notifications() {
     return toPort(process.env.NOTIFICATIONS_SERVICE_PORT, 4105);
   },
-  get resources() {
-    return toPort(process.env.RESOURCES_SERVICE_PORT, 4106);
-  },
-  /** The consolidated service introduced in B06 (community + learning + feed + dashboard). */
+  /** The consolidated service introduced in B06 (community, then learning + resources in B07). */
   get core() {
     return toPort(process.env.CORE_SERVICE_PORT, 4107);
   },

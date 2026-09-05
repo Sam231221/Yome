@@ -7,12 +7,12 @@ import {
   getResources,
   markResourceHelpful,
   saveResource,
-} from "../controllers/resource.controller.js";
+} from "./resources.controller.js";
 import {
   createResourceSchema,
   listResourcesSchema,
   resourceIdParamsSchema,
-} from "./resource.validation.js";
+} from "./resources.validation.js";
 
 const router = Router();
 

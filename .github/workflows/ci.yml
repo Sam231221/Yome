@@ -64,7 +64,6 @@ jobs:
           - "@services/chat"
           - "@services/media"
           - "@services/notifications"
-          - "@services/resources"
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2

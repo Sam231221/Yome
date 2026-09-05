@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { toneSchema } from "@repo/contracts";
 
 const slugOrUuidSchema = z
   .string()
@@ -16,8 +17,6 @@ const optionalUrlSchema = z
   .max(2048)
   .optional()
   .or(z.literal("").transform(() => undefined));
-
-export const resourceToneSchema = z.enum(["violet", "blue", "teal", "amber", "neutral"]);
 
 export const listResourcesSchema = {
   query: z.object({
@@ -46,7 +45,7 @@ export const createResourceSchema = {
       topic: textSchema.max(80),
       level: textSchema.max(80),
       type: textSchema.max(40),
-      tone: resourceToneSchema.default("blue"),
+      tone: toneSchema.default("blue"),
       description: longTextSchema,
       fileUrl: optionalUrlSchema,
       externalUrl: optionalUrlSchema,

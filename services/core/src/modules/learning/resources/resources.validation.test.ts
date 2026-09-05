@@ -4,7 +4,7 @@ import {
   createResourceSchema,
   listResourcesSchema,
   resourceIdParamsSchema,
-} from "./resource.validation.js";
+} from "./resources.validation.js";
 
 test("listResourcesSchema accepts supported filters and pagination", () => {
   const result = listResourcesSchema.query.parse({

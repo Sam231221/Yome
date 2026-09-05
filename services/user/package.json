@@ -11,7 +11,6 @@
     "test": "echo \"No tests configured for @services/user\""
   },
   "dependencies": {
-    "@repo/contracts": "workspace:*",
     "@repo/database": "workspace:*",
     "@repo/shared": "workspace:*",
     "cors": "^2.8.5",

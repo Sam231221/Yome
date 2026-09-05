@@ -24,8 +24,8 @@ Yome includes:
 
 - `services/gateway`: API gateway and auth-aware routing
 - `services/identity`: authentication/credential flows and profile operations (avatar upload, get/update/list users) — renamed from `services/auth` in B05, which absorbed the profile endpoints
-- `services/user`: dashboard aggregation and learning reads (events, projects) — groups and connections moved to `services/core` in B06; the rest moves out in B07/B08, after which this service is retired
-- `services/core`: community domain (groups, connections, invitations) since B06; learning and feed/dashboard modules join it in B07/B08
+- `services/user`: dashboard aggregation only — groups/connections moved to `services/core` in B06, learning reads (events, projects) in B07; this service is retired once dashboard moves out too in B08
+- `services/core`: community (B06: groups, connections, invitations) and learning (B07: events, projects, and everything from the now-deleted `services/resources`) modules; feed/dashboard joins in B08
 - `services/chat`: direct/group messaging, Socket.IO, conversation resolution
 - `services/media`: image/audio upload endpoints for chat media
 - `services/notifications`: stub notification endpoint returning `202 Accepted`

@@ -25,8 +25,8 @@ const services = [
       process.env.NOTIFICATIONS_SERVICE_URL || "http://localhost:4105/health",
   },
   {
-    name: "resources",
-    url: process.env.RESOURCES_SERVICE_URL || "http://localhost:4106/health",
+    name: "core",
+    url: process.env.CORE_SERVICE_URL || "http://localhost:4107/health",
   },
 ];
 
