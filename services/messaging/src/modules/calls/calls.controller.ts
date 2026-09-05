@@ -14,13 +14,15 @@ type StreamSeedUser = {
   image?: string | null;
 };
 
-const STREAM_API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY;
-const STREAM_API_SECRET = process.env.STREAM_SECRET_KEY;
-
+/** Read lazily, not as a module-level constant: this file is imported (via calls.routes.ts)
+ * before index.ts's own `dotenv.config()` call runs, so a top-level `process.env.X` read
+ * here would capture `undefined` on every cold start. */
 const getStreamServerClient = () => {
-  if (!STREAM_API_KEY) throw new Error("Stream API key secret is missing");
-  if (!STREAM_API_SECRET) throw new Error("Stream API secret is missing");
-  return new StreamClient(STREAM_API_KEY, STREAM_API_SECRET);
+  const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY;
+  const apiSecret = process.env.STREAM_SECRET_KEY;
+  if (!apiKey) throw new Error("Stream API key secret is missing");
+  if (!apiSecret) throw new Error("Stream API secret is missing");
+  return new StreamClient(apiKey, apiSecret);
 };
 
 async function isConnectedDirectPeer(
