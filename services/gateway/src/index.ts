@@ -7,7 +7,7 @@ import https from "node:https";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
-import { createLogger, servicePorts } from "@repo/shared";
+import { createLogger, servicePorts } from "@repo/service-kit";
 import { routeRules, type Upstream } from "./routeRules.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

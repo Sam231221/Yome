@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { validateRequest } from "@repo/shared";
+import { validateRequest } from "@repo/service-kit";
 import {
   createResource,
   deleteResourceSave,

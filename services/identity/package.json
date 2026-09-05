@@ -13,7 +13,9 @@
   "dependencies": {
     "@repo/database": "workspace:*",
     "@repo/seed": "workspace:*",
-    "@repo/shared": "workspace:*",
+    "@repo/contracts": "workspace:*",
+    "@repo/service-kit": "workspace:*",
+    "@repo/storage": "workspace:*",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

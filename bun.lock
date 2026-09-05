@@ -106,8 +106,9 @@
       "name": "@repo/seed",
       "version": "0.1.0",
       "dependencies": {
+        "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
-        "@repo/shared": "workspace:*",
+        "@repo/service-kit": "workspace:*",
         "bcryptjs": "^3.0.3",
       },
       "devDependencies": {
@@ -143,20 +144,6 @@
         "express",
       ],
     },
-    "packages/shared": {
-      "name": "@repo/shared",
-      "version": "0.1.0",
-      "dependencies": {
-        "@repo/contracts": "workspace:*",
-        "@repo/service-kit": "workspace:*",
-        "@repo/storage": "workspace:*",
-      },
-      "devDependencies": {
-        "@repo/typescript-config": "workspace:*",
-        "@types/node": "^22.0.0",
-        "typescript": "^5.9.2",
-      },
-    },
     "packages/storage": {
       "name": "@repo/storage",
       "version": "0.1.0",
@@ -179,7 +166,7 @@
       "dependencies": {
         "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
-        "@repo/shared": "workspace:*",
+        "@repo/service-kit": "workspace:*",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
         "express": "^5.1.0",
@@ -197,7 +184,7 @@
     "services/gateway": {
       "name": "@services/gateway",
       "dependencies": {
-        "@repo/shared": "workspace:*",
+        "@repo/service-kit": "workspace:*",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
         "express": "^5.1.0",
@@ -218,9 +205,11 @@
     "services/identity": {
       "name": "@services/identity",
       "dependencies": {
+        "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
         "@repo/seed": "workspace:*",
-        "@repo/shared": "workspace:*",
+        "@repo/service-kit": "workspace:*",
+        "@repo/storage": "workspace:*",
         "bcryptjs": "^3.0.3",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
@@ -241,7 +230,9 @@
     "services/media": {
       "name": "@services/media",
       "dependencies": {
-        "@repo/shared": "workspace:*",
+        "@repo/contracts": "workspace:*",
+        "@repo/service-kit": "workspace:*",
+        "@repo/storage": "workspace:*",
         "axios": "^1.13.4",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
@@ -261,8 +252,9 @@
     "services/messaging": {
       "name": "@services/messaging",
       "dependencies": {
+        "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
-        "@repo/shared": "workspace:*",
+        "@repo/service-kit": "workspace:*",
         "@stream-io/node-sdk": "^0.7.40",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
@@ -284,7 +276,7 @@
     "services/notifications": {
       "name": "@services/notifications",
       "dependencies": {
-        "@repo/shared": "workspace:*",
+        "@repo/service-kit": "workspace:*",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
         "express": "^5.1.0",
@@ -619,8 +611,6 @@
     "@repo/seed": ["@repo/seed@workspace:packages/seed"],
 
     "@repo/service-kit": ["@repo/service-kit@workspace:packages/service-kit"],
-
-    "@repo/shared": ["@repo/shared@workspace:packages/shared"],
 
     "@repo/storage": ["@repo/storage@workspace:packages/storage"],
 
@@ -1754,10 +1744,6 @@
 
     "@repo/service-kit/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
-    "@repo/shared/@types/node": ["@types/node@22.19.11", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-BH7YwL6rA93ReqeQS1c4bsPpcfOmJasG+Fkr6Y59q83f9M1WcBRHR2vM+P9eOisYRcN3ujQoiZY8uk5W+1WL8w=="],
-
-    "@repo/shared/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
-
     "@repo/storage/@types/node": ["@types/node@22.19.11", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-BH7YwL6rA93ReqeQS1c4bsPpcfOmJasG+Fkr6Y59q83f9M1WcBRHR2vM+P9eOisYRcN3ujQoiZY8uk5W+1WL8w=="],
 
     "@repo/storage/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
@@ -1875,8 +1861,6 @@
     "@repo/seed/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 
     "@repo/service-kit/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
-
-    "@repo/shared/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 
     "@repo/storage/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 

@@ -8,7 +8,7 @@ import {
   servicePorts,
   errorHandler,
   internalTokenGuard,
-} from "@repo/shared";
+} from "@repo/service-kit";
 
 import credentialsRoutes from "./modules/credentials/credentials.routes.js";
 import profileRoutes from "./modules/profile/profile.routes.js";

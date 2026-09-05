@@ -10,7 +10,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "check-types:all": "bun run --cwd services/identity check-types && bun run --cwd services/core check-types && bun run --cwd services/messaging check-types && bun run --cwd services/media check-types && bun run --cwd services/notifications check-types && bun run --cwd services/gateway check-types && bun run --cwd packages/contracts check-types && bun run --cwd packages/service-kit check-types && bun run --cwd packages/storage check-types && bun run --cwd packages/shared check-types",
+    "check-types:all": "bun run --cwd services/identity check-types && bun run --cwd services/core check-types && bun run --cwd services/messaging check-types && bun run --cwd services/media check-types && bun run --cwd services/notifications check-types && bun run --cwd services/gateway check-types && bun run --cwd packages/contracts check-types && bun run --cwd packages/service-kit check-types && bun run --cwd packages/storage check-types",
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
     "smoke": "node tests/contracts.smoke.mjs",

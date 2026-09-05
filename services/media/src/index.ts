@@ -8,8 +8,10 @@ import {
   errorHandler,
   internalTokenGuard,
   servicePorts,
+} from "@repo/service-kit";
+import {
   validateObjectStorageEnv,
-} from "@repo/shared";
+} from "@repo/storage";
 import mediaRoutes from "./routes/media.routes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

@@ -1,11 +1,15 @@
 import { Router } from "express";
 import multer from "multer";
 import {
-  ALLOWED_IMAGE_MIME_TYPES,
   createHttpError,
-  isAllowedMimeType,
+} from "@repo/contracts";
+import {
   validateRequest,
-} from "@repo/shared";
+} from "@repo/service-kit";
+import {
+  ALLOWED_IMAGE_MIME_TYPES,
+  isAllowedMimeType,
+} from "@repo/storage";
 import { getAllUsers, getUserById, updateUser } from "./profile.controller.js";
 import { getUserByIdSchema, updateUserSchema } from "./profile.validation.js";
 

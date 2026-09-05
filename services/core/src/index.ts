@@ -3,7 +3,12 @@ import cors from "cors";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import dotenv from "dotenv";
-import { createLogger, errorHandler, internalTokenGuard, servicePorts } from "@repo/shared";
+import {
+  createLogger,
+  errorHandler,
+  internalTokenGuard,
+  servicePorts,
+} from "@repo/service-kit";
 
 import communityRoutes from "./modules/community/community.routes.js";
 import learningRoutes from "./modules/learning/learning.routes.js";

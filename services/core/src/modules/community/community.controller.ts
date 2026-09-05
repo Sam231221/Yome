@@ -1,6 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
-import { formatCount, getAuthenticatedUserId, isUuid, slugify } from "@repo/shared";
+import {
+  formatCount,
+  getAuthenticatedUserId,
+  isUuid,
+  slugify,
+} from "@repo/contracts";
 
 function getGroupWhere(id: string) {
   return isUuid(id) ? { id } : { slug: id };

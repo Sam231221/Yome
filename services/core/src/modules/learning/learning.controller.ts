@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
-import { getAuthenticatedUserId } from "@repo/shared";
+import { getAuthenticatedUserId } from "@repo/contracts";
 
 // Moved from services/user/src/controllers/user.controller.ts in B07. getUserName,
 // getInitials, formatDashboardEventMeta, and the Dashboard*Record types are duplicated

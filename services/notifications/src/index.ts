@@ -8,7 +8,7 @@ import {
   servicePorts,
   errorHandler,
   internalTokenGuard,
-} from "@repo/shared";
+} from "@repo/service-kit";
 import notificationRoutes from "./routes/notifications.routes.js";
 
 // Stub notifications service. Real delivery can be wired later.

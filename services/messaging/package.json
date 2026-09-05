@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@repo/database": "workspace:*",
-    "@repo/shared": "workspace:*",
+    "@repo/contracts": "workspace:*",
+    "@repo/service-kit": "workspace:*",
     "@stream-io/node-sdk": "^0.7.40",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

@@ -1,11 +1,13 @@
 import { Router } from "express";
 import multer from "multer";
 import {
+  createHttpError,
+} from "@repo/contracts";
+import {
   ALLOWED_AUDIO_MIME_TYPES,
   ALLOWED_IMAGE_MIME_TYPES,
-  createHttpError,
   isAllowedMimeType,
-} from "@repo/shared";
+} from "@repo/storage";
 import { uploadAudio, uploadImage } from "../controllers/media.controller.js";
 
 const storage = multer.memoryStorage();

@@ -11,7 +11,9 @@
     "test": "echo \"No tests configured for @services/media\""
   },
   "dependencies": {
-    "@repo/shared": "workspace:*",
+    "@repo/contracts": "workspace:*",
+    "@repo/service-kit": "workspace:*",
+    "@repo/storage": "workspace:*",
     "axios": "^1.13.4",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

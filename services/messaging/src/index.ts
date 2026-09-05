@@ -11,7 +11,7 @@ import {
   servicePorts,
   errorHandler,
   internalTokenGuard,
-} from "@repo/shared";
+} from "@repo/service-kit";
 
 import messagesRoutes from "./modules/messages/messages.routes.js";
 import callsRoutes from "./modules/calls/calls.routes.js";

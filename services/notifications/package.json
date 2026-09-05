@@ -11,7 +11,7 @@
     "test": "echo \"No tests configured for @services/notifications\""
   },
   "dependencies": {
-    "@repo/shared": "workspace:*",
+    "@repo/service-kit": "workspace:*",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0"

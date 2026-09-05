@@ -1,5 +1,5 @@
 import getPrismaInstance from "@repo/database";
-import { compactNumber } from "@repo/shared";
+import { compactNumber } from "@repo/contracts";
 
 /**
  * Read helpers for the two dashboard widgets whose tables `SCHEMA_OWNERSHIP.md` assigns to

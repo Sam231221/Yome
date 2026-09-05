@@ -96,13 +96,13 @@ Yome/
     │   ├── config/env.ts
     │   ├── middleware/internalTokenGuard.ts
     │   └── middleware/validateRequest.ts
-    ├── storage/src/s3.ts
-    └── shared/src/index.ts   # re-export shim over contracts/service-kit/storage
+    └── storage/src/s3.ts
 ```
 
 > `packages/shared` was split in the [services/packages refactor](services_packages_refactoring/)
-> (B03) into `@repo/contracts`, `@repo/service-kit`, and `@repo/storage`; `@repo/shared`
-> remains a compatibility shim until that refactor's B10.
+> (B03) into `@repo/contracts`, `@repo/service-kit`, and `@repo/storage`; the `@repo/shared`
+> compatibility shim itself was deleted in that refactor's B10 — every import now points at
+> the specific package.
 
 ## 3. Flow A: User Opens `http://localhost:3000`
 
@@ -244,7 +244,7 @@ Inside `services/gateway/src/index.ts`, the gateway:
 
 ### Why this matters
 
-Downstream services are protected by `packages/service-kit/src/middleware/internalTokenGuard.ts` (re-exported through `@repo/shared`), which means they expect the gateway to be the trusted entry point.
+Downstream services are protected by `packages/service-kit/src/middleware/internalTokenGuard.ts`, which means they expect the gateway to be the trusted entry point.
 
 ## 7. Flow E: Chat Page Workflow
 

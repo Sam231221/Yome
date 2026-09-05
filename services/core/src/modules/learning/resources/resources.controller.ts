@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import crypto from "node:crypto";
 import getPrismaInstance from "@repo/database";
-import { getAuthenticatedUserId, isUuid, slugify } from "@repo/shared";
+import { getAuthenticatedUserId, isUuid, slugify } from "@repo/contracts";
 
 type PrismaClient = ReturnType<typeof getPrismaInstance>;
 type TransactionClient = Pick<

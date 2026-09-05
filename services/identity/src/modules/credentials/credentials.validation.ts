@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { nameSchema, usernameSchema } from "@repo/shared";
+import { nameSchema, usernameSchema } from "@repo/contracts";
 const emailSchema = z.string().trim().toLowerCase().email();
 const strongPasswordSchema = z
   .string()

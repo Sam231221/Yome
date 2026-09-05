@@ -35,7 +35,6 @@ Yome includes:
 - `packages/contracts`: service names, error envelope, and small cross-service helpers (zero framework dependencies)
 - `packages/service-kit`: Express middleware, logger, and service ports/env config
 - `packages/storage`: S3 upload helpers
-- `packages/shared`: compatibility re-export shim over the three packages above — being retired, see [docs/services_packages_refactoring](docs/services_packages_refactoring/)
 - `packages/typescript-config`: shared TS configuration
 - `packages/eslint-config`: shared lint configuration
 

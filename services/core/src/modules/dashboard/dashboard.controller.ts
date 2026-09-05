@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
-import { getAuthenticatedUserId } from "@repo/shared";
+import { getAuthenticatedUserId } from "@repo/contracts";
 import {
   getInitials,
   getUserName,

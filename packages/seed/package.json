@@ -20,7 +20,8 @@
   },
   "dependencies": {
     "@repo/database": "workspace:*",
-    "@repo/shared": "workspace:*",
+    "@repo/contracts": "workspace:*",
+    "@repo/service-kit": "workspace:*",
     "bcryptjs": "^3.0.3"
   },
   "devDependencies": {

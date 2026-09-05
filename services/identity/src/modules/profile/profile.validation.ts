@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { nameSchema, positiveInt, usernameSchema } from "@repo/shared";
+import { nameSchema, positiveInt, usernameSchema } from "@repo/contracts";
 
 export const getUserByIdSchema = {
   body: z.object({

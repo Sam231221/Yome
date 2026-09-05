@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
 import { StreamClient } from "@stream-io/node-sdk";
-import { getAuthenticatedUserId } from "@repo/shared";
+import { getAuthenticatedUserId } from "@repo/contracts";
 import { getOrCreateDirectConversation } from "../messages/conversations.js";
 import { isMatchingDirectConversation } from "../messages/direct-messages.js";
 import { parseRequiredUserId } from "../messages/messages.controller.js";

@@ -1,12 +1,16 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
 import {
+  getAuthenticatedUserId,
+} from "@repo/contracts";
+import {
+  createLogger,
+} from "@repo/service-kit";
+import {
   ALLOWED_IMAGE_MIME_TYPES,
   assertAllowedMimeType,
-  createLogger,
-  getAuthenticatedUserId,
   uploadBufferToS3,
-} from "@repo/shared";
+} from "@repo/storage";
 
 const logger = createLogger("identity-profile");
 
