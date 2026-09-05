@@ -55,7 +55,9 @@
 
     "ENABLE_DEV_SEED_ROUTES",
     "DEV_SEED_ROUTE_TOKEN",
-    "ENABLE_DEV_USER_SYNC"
+    "ENABLE_DEV_USER_SYNC",
+
+    "REDIS_URL"
   ],
   "tasks": {
     "build": {

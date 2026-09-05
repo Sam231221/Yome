@@ -8,8 +8,8 @@
 # remote (e.g. Supabase), point DATABASE_URL / DIRECT_URL at:
 #   postgresql://yome:yome@localhost:5432/yome
 #
-# Redis is included now so B11 (presence, socket fan-out, rate limiting, cache)
-# has somewhere to connect. Nothing reads REDIS_URL until then.
+# Redis backs services/messaging's presence + Socket.IO fan-out and services/gateway's rate
+# limiter (@repo/cache, added in B11). Point REDIS_URL at this instance for local dev.
 
 services:
   postgres:
