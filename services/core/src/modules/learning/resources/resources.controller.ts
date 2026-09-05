@@ -2,6 +2,12 @@ import type { NextFunction, Request, Response } from "express";
 import crypto from "node:crypto";
 import getPrismaInstance from "@repo/database";
 import { getAuthenticatedUserId, isUuid, slugify } from "@repo/contracts";
+import { cacheAside, hashQuery } from "@repo/cache";
+
+/** B12: cache-aside TTL for the resource list, per data-architecture-plan.md's Redis key
+ * table (`yome:cache:resources:<queryHash>`, 300s) — a fixed constant like group-discover's,
+ * not an env var (only CACHE_TTL_DASHBOARD_SECONDS is in the plan's env var table). */
+const RESOURCE_LIST_CACHE_TTL_SECONDS = 300;
 
 type PrismaClient = ReturnType<typeof getPrismaInstance>;
 type TransactionClient = Pick<
@@ -50,8 +56,11 @@ type ResourceRecord = {
   helpfulCount: number;
   ratingAverage: number | null;
   ratingCount: number;
-  createdAt: Date;
-  updatedAt: Date;
+  // B12: Date | string, not just Date -- a resource coming back from the cache-aside list
+  // (services/core/src/modules/learning/resources/resources.controller.ts's getResources)
+  // has been through a JSON round trip, which turns Date into a plain ISO string.
+  createdAt: Date | string;
+  updatedAt: Date | string;
   author: {
     id: number;
     firstname: string;
@@ -94,8 +103,8 @@ function mapResource(resource: ResourceRecord, viewerId: number | null) {
     helpfulCount: resource.helpfulCount,
     ratingAverage: resource.ratingAverage,
     ratingCount: resource.ratingCount,
-    createdAt: resource.createdAt.toISOString(),
-    updatedAt: resource.updatedAt.toISOString(),
+    createdAt: new Date(resource.createdAt).toISOString(),
+    updatedAt: new Date(resource.updatedAt).toISOString(),
     isSaved: viewerId
       ? (resource.saves ?? []).some((save) => save.userId === viewerId)
       : false,
@@ -176,35 +185,71 @@ export async function getResources(
           ? [{ saveCount: "desc" as const }, { createdAt: "desc" as const }]
           : [{ helpfulCount: "desc" as const }, { ratingAverage: "desc" as const }, { createdAt: "desc" as const }];
 
-    const resources = (await prisma.resource.findMany({
-      where,
-      take: limit + 1,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      orderBy,
-      include: {
-        author: {
-          select: {
-            id: true,
-            firstname: true,
-            lastname: true,
-            name: true,
-            username: true,
-            profilePicture: true,
+    // B12: cached without viewerId in the key or the payload — the query below never
+    // includes viewer-scoped saves/helpfulVotes, so the cached list is safe to share across
+    // every viewer. Per-viewer isSaved/isHelpful are resolved fresh below, after the cache
+    // read, exactly the mixing-shared-and-per-viewer-fields risk
+    // api-and-dataflow-plan.md calls out for this endpoint by name.
+    const cacheKey = `yome:cache:resources:${hashQuery({ where, orderBy, limit, cursor })}`;
+    const resources = await cacheAside(
+      cacheKey,
+      RESOURCE_LIST_CACHE_TTL_SECONDS,
+      async () =>
+        (await prisma.resource.findMany({
+          where,
+          take: limit + 1,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+          orderBy,
+          include: {
+            author: {
+              select: {
+                id: true,
+                firstname: true,
+                lastname: true,
+                name: true,
+                username: true,
+                profilePicture: true,
+              },
+            },
           },
-        },
-        saves: viewerId ? { where: { userId: viewerId }, select: { userId: true } } : false,
-        helpfulVotes: viewerId
-          ? { where: { userId: viewerId }, select: { userId: true } }
-          : false,
-      },
-    })) as ResourceRecord[];
+        })) as ResourceRecord[]
+    );
 
     const page = resources.slice(0, limit);
     const nextCursor = resources.length > limit ? page[page.length - 1]?.id ?? null : null;
 
+    let savedIds = new Set<string>();
+    let helpfulIds = new Set<string>();
+    if (viewerId) {
+      const pageIds = page.map((resource) => resource.id);
+      const [saves, helpfulVotes] = await Promise.all([
+        prisma.resourceSave.findMany({
+          where: { userId: viewerId, resourceId: { in: pageIds } },
+          select: { resourceId: true },
+        }),
+        prisma.resourceHelpfulVote.findMany({
+          where: { userId: viewerId, resourceId: { in: pageIds } },
+          select: { resourceId: true },
+        }),
+      ]);
+      savedIds = new Set(saves.map((save: { resourceId: string }) => save.resourceId));
+      helpfulIds = new Set(
+        helpfulVotes.map((vote: { resourceId: string }) => vote.resourceId)
+      );
+    }
+
     res.status(200).json({
       ok: true,
-      resources: page.map((resource) => mapResource(resource, viewerId)),
+      resources: page.map((resource) =>
+        mapResource(
+          {
+            ...resource,
+            saves: savedIds.has(resource.id) ? [{ userId: viewerId! }] : [],
+            helpfulVotes: helpfulIds.has(resource.id) ? [{ userId: viewerId! }] : [],
+          },
+          viewerId
+        )
+      ),
       pageInfo: { nextCursor, hasMore: resources.length > limit },
     });
   } catch (error) {

@@ -177,6 +177,7 @@
     "services/core": {
       "name": "@services/core",
       "dependencies": {
+        "@repo/cache": "workspace:*",
         "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
         "@repo/service-kit": "workspace:*",

@@ -6,8 +6,13 @@ const logger = createLogger("cache");
 
 /** Refreshed by a heartbeat while a socket stays connected (see the messaging service's
  * `attachSocketHandlers`) — not tied to the socket's actual lifetime, so a crashed process
- * self-heals: the key simply expires instead of leaving a phantom online user forever. */
-const PRESENCE_TTL_SECONDS = 60;
+ * self-heals: the key simply expires instead of leaving a phantom online user forever.
+ * Read lazily (function, not a module-level constant) for the same reason `getRedisClient()`
+ * is lazy: this file is imported before `index.ts`'s own `dotenv.config()` call runs. */
+function presenceTtlSeconds(): number {
+  const configured = Number(process.env.REDIS_PRESENCE_TTL_SECONDS);
+  return Number.isFinite(configured) && configured > 0 ? configured : 60;
+}
 
 const presenceKey = (userId: string) => `yome:presence:user:${userId}`;
 const ONLINE_INDEX_KEY = "yome:presence:online";
@@ -35,8 +40,8 @@ export async function addOnlineUserSocket(
 ): Promise<void> {
   try {
     await redis.sadd(presenceKey(userId), socketId);
-    await redis.expire(presenceKey(userId), PRESENCE_TTL_SECONDS);
-    await redis.set(socketOwnerKey(socketId), userId, "EX", PRESENCE_TTL_SECONDS);
+    await redis.expire(presenceKey(userId), presenceTtlSeconds());
+    await redis.set(socketOwnerKey(socketId), userId, "EX", presenceTtlSeconds());
     await redis.sadd(ONLINE_INDEX_KEY, userId);
   } catch (error) {
     logger.error("Failed to record online presence", error as Error, { userId, socketId });
@@ -74,15 +79,15 @@ export async function removeSocketFromOnlineUsers(
 }
 
 /** Called on a heartbeat interval while a socket stays connected, to keep its presence key
- * from expiring. See `PRESENCE_TTL_SECONDS`. */
+ * from expiring. See `presenceTtlSeconds()`. */
 export async function refreshPresence(
   userId: string,
   socketId: string,
   redis: Redis = getRedisClient()
 ): Promise<void> {
   try {
-    await redis.expire(presenceKey(userId), PRESENCE_TTL_SECONDS);
-    await redis.expire(socketOwnerKey(socketId), PRESENCE_TTL_SECONDS);
+    await redis.expire(presenceKey(userId), presenceTtlSeconds());
+    await redis.expire(socketOwnerKey(socketId), presenceTtlSeconds());
   } catch (error) {
     logger.error("Failed to refresh presence heartbeat", error as Error, { userId, socketId });
   }

@@ -57,7 +57,9 @@
     "DEV_SEED_ROUTE_TOKEN",
     "ENABLE_DEV_USER_SYNC",
 
-    "REDIS_URL"
+    "REDIS_URL",
+    "REDIS_PRESENCE_TTL_SECONDS",
+    "CACHE_TTL_DASHBOARD_SECONDS"
   ],
   "tasks": {
     "build": {

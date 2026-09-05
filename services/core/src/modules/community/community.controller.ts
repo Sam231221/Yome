@@ -6,6 +6,13 @@ import {
   isUuid,
   slugify,
 } from "@repo/contracts";
+import { cacheAside, hashQuery } from "@repo/cache";
+
+/** B12: cache-aside TTL for the group-discover list, per data-architecture-plan.md's Redis
+ * key table (`yome:cache:groups:discover:<queryHash>`, 300s) — a fixed constant, not an env
+ * var. Only `CACHE_TTL_DASHBOARD_SECONDS` is in the plan's own "Environment Variables Added"
+ * table; group-discover and resource-list are specified with a literal TTL, not a knob. */
+const GROUP_DISCOVER_CACHE_TTL_SECONDS = 300;
 
 function getGroupWhere(id: string) {
   return isUuid(id) ? { id } : { slug: id };
@@ -371,36 +378,46 @@ export async function discoverGroups(
       joined.forEach((group) => joinedGroupIds.add(group.id));
     }
 
-    const groups = (await prisma.group.findMany({
-      where: {
-        ...(subject && subject !== "All" ? { subject } : {}),
-        ...(query
-          ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { about: { contains: query, mode: "insensitive" } },
-                { subject: { contains: query, mode: "insensitive" } },
-                { category: { contains: query, mode: "insensitive" } },
-                { tags: { some: { label: { contains: query, mode: "insensitive" } } } },
-              ],
-            }
-          : {}),
-      },
-      orderBy:
-        sort === "members"
-          ? [{ members: { _count: "desc" } }, { admins: { _count: "desc" } }]
-          : sort === "active"
-            ? [{ activeThisWeek: "desc" }, { name: "asc" }]
-            : sort === "recent"
-              ? [{ created_at: "desc" }]
-              : sort === "name"
-                ? [{ name: "asc" }]
-                : [{ featured: "desc" }, { activeThisWeek: "desc" }, { name: "asc" }],
-      include: {
-        tags: { orderBy: { label: "asc" } },
-        _count: { select: { members: true, admins: true, resources: true } },
-      },
-    })) as GroupCardRecord[];
+    // B12: cached without viewerId in the key or the payload — isJoined is resolved fresh
+    // from joinedGroupIds (above) on every request, cached or not, per
+    // api-and-dataflow-plan.md's explicit warning that mapGroupCard mixes shared and
+    // per-viewer fields: never bake a per-viewer flag into a shared cache entry.
+    const cacheKey = `yome:cache:groups:discover:${hashQuery({ query, subject, sort })}`;
+    const groups = await cacheAside(
+      cacheKey,
+      GROUP_DISCOVER_CACHE_TTL_SECONDS,
+      async () =>
+        (await prisma.group.findMany({
+          where: {
+            ...(subject && subject !== "All" ? { subject } : {}),
+            ...(query
+              ? {
+                  OR: [
+                    { name: { contains: query, mode: "insensitive" } },
+                    { about: { contains: query, mode: "insensitive" } },
+                    { subject: { contains: query, mode: "insensitive" } },
+                    { category: { contains: query, mode: "insensitive" } },
+                    { tags: { some: { label: { contains: query, mode: "insensitive" } } } },
+                  ],
+                }
+              : {}),
+          },
+          orderBy:
+            sort === "members"
+              ? [{ members: { _count: "desc" } }, { admins: { _count: "desc" } }]
+              : sort === "active"
+                ? [{ activeThisWeek: "desc" }, { name: "asc" }]
+                : sort === "recent"
+                  ? [{ created_at: "desc" }]
+                  : sort === "name"
+                    ? [{ name: "asc" }]
+                    : [{ featured: "desc" }, { activeThisWeek: "desc" }, { name: "asc" }],
+          include: {
+            tags: { orderBy: { label: "asc" } },
+            _count: { select: { members: true, admins: true, resources: true } },
+          },
+        })) as GroupCardRecord[]
+    );
 
     res.status(200).json({
       ok: true,

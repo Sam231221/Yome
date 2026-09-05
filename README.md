@@ -115,6 +115,12 @@ Database:
 - `DATABASE_URL`
 - `DIRECT_URL`
 
+Redis / cache (B11 presence + rate limiting, B12 cache-aside reads):
+
+- `REDIS_URL`
+- `REDIS_PRESENCE_TTL_SECONDS` (optional, defaults to 60)
+- `CACHE_TTL_DASHBOARD_SECONDS` (optional, defaults to 60)
+
 Frontend:
 
 - `NEXT_PUBLIC_BACKEND_API`
