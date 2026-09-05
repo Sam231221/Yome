@@ -14,7 +14,8 @@ export const VERIFY_CREDENTIALS_ROUTE = `${AUTH_ROUTE}/verify-credentials`;
 export const UPSERT_OAUTH_USER_ROUTE = `${AUTH_ROUTE}/oauth-user`;
 export const CHANGE_PASSWORD_ROUTE = `${AUTH_ROUTE}/change-password`;
 
-// User service (profiles, groups, follow)
+// /api/user/* routes — the gateway splits these across identity/core/user by path;
+// see services/gateway/src/routeRules.ts for current ownership.
 export const GET_USER_BY_ID_ROUTE = `${USER_ROUTE}/get-user-by-id`;
 export const UPDATE_USER = `${USER_ROUTE}/update-user`;
 export const GET_ALL_USERS = `${USER_ROUTE}/get-all-users`;

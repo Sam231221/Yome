@@ -56,12 +56,14 @@ flowchart LR
     E --> H[Chat Service<br/>localhost:4103]
     E --> I[Media Service<br/>localhost:4104]
     E --> J[Notifications Service<br/>localhost:4105]
+    E --> N[Core Service<br/>localhost:4107]
 
     F --> K[(Postgres via Prisma)]
     G --> K
     H --> K
     I --> K
     J --> K
+    N --> K
 ```
 
 ## 3. Frontend Entry Flow: Visiting `localhost:3000`

@@ -384,6 +384,70 @@ not ~11 copies. `services/user` is not deleted — deliberately, per the correct
 understanding above — and continues to build, typecheck, and serve its 3 remaining paths
 cleanly, including a same-batch fix for the B05-leftover dead storage-env check.
 
+## B06 Completeness Audit (2026-09-05, same day)
+
+Requested explicitly. Same method as the B03 and B05 audits, extended with one new
+technique this time: a scripted per-function `diff` between the pre-B06 controller (`git show`
+of the parent commit) and the new files, rather than eyeballing the move. Manifest structure
+(0 duplicate IDs, 0 duplicate current-file entries, no ID-sequence gaps across all 105 rows)
+and existence checks on every B06 `DONE` row passed clean. Found and fixed 3 small gaps —
+none behavioral, all doc/style — plus produced strong positive evidence the extraction itself
+introduced zero logic changes.
+
+1. **Extraction correctness, verified mechanically, not just re-read**: wrote a small Python
+   script to extract each of the 16 moved functions' full body (by brace-matching) from both
+   `git show 9932e13:services/user/src/controllers/user.controller.ts` (the parent commit,
+   pre-B06) and the new `community.controller.ts`, then `diff`'d each pair individually.
+   Result: all 16 diffs show *only* the intended change — the `authenticatedUserId === null`
+   / `!== loggedInUserId` pair replaced with one `assertSelf(...)` call, exactly where those
+   two checks originally sat relative to each function's own NaN-parsing step. `getGroupDetail`
+   and `getGroupInvitations`'s sibling `joinGroupById` (which delegates, no logic of its own)
+   diffed to **zero** lines changed, as expected. `joinUnjoinedGroups`'s outlier ordering
+   (NaN-check before the `try`/401, unlike every other function) is preserved exactly.
+   Separately diffed the full route-path lists (old `user.routes.ts` vs. new
+   `community.routes.ts` + `user.routes.ts` combined) and confirmed the exact same 19 path
+   literals appear on both sides, and that every path→handler→validation-schema triple in
+   `community.routes.ts` matches its pre-B06 wiring one-for-one. Confirmed
+   `positiveInt`/`slugOrUuidSchema`/`toneSchema` (adopted from `@repo/contracts`) are
+   byte-identical to the local definitions they replaced in `user.validation.ts`.
+2. **Duplicate import statement** (real, minor gap): `community.controller.ts` had two
+   separate `import { ... } from "@repo/shared"` statements (`slugify` split out from the
+   rest) instead of one merged import. Not a functional bug — TypeScript/ESM tolerate it —
+   but untidy and would trip a `no-duplicate-imports` lint rule in a stricter config. Merged
+   into one statement; `check-types` confirmed unaffected. Checked every other B06-touched
+   file for the same pattern — none found.
+3. **`apps/web` sweep**: grepped for `CORE_SERVICE`/hardcoded port `4107` — none found, as
+   expected (frontend only ever calls through the gateway). Found one stale comment in
+   `apps/web/utils/ApiRoutes.ts` ("`// User service (profiles, groups, follow)`" labelling the
+   `/api/user/*` route block) — now inaccurate on two counts, since profiles left in B05 and
+   groups/follow left in B06. Reworded to describe the block without naming specific backend
+   services, so it won't go stale again the next time this split changes (B07/B08 will move
+   more of it). Ran `apps/web`'s own test suite (12/12) and standalone `tsc --noEmit` (clean)
+   after the edit.
+4. **Docs-only, "core" missing from architecture diagrams/lists** (same category as the B05
+   audit's "auth service" prose miss, just for the newly-added service this time):
+   `docs/PROJECT_ARCHITECTURE_AND_WORKFLOWS.md`'s high-level architecture flowchart didn't
+   include a Core Service node; `docs/LOCALHOST_3000_REQUEST_WORKFLOW.md`'s architecture
+   diagram, its `/api/user` routing edge label (still described the B05-era "user is the
+   default, 3 paths carved to identity" shape, now inverted — core is the default, 3 paths
+   carved to user), its port list, and its short-summary bullets all lacked `core`. Added it
+   to each. Left the two docs' known **pre-existing** gaps alone (`services/resources` missing
+   from the same diagrams, `services/media` shown writing to Postgres despite
+   `SCHEMA_OWNERSHIP.md` saying it shouldn't) — neither is caused by or in scope for B06.
+5. **Docker re-verification, independent of B06's own claims**: rebuilt and booted both
+   `services/core` (confirms B06's own claim) and, separately, `services/user` (not rechecked
+   during B06 itself) with **zero** `AWS_*` env vars set — booted clean, positively confirming
+   the `validateObjectStorageEnv()` removal fix actually works and isn't just theoretically
+   dead code. Both test images removed after.
+6. Full validation re-run clean, fully cached (confirming zero drift since the B06 commit)
+   before any audit fixes, and re-run clean again after: `build` 14/14, `check-types` 13/13,
+   `check-types:all` (12 sequential), `test` 14/14, `lint` 0 errors, `apps/web` `tsc --noEmit`
+   and its own test suite (12/12).
+
+No functional/runtime behavior changed by this audit — the import merge has no code-generation
+effect, everything else was comments/docs. B06 stands as complete, and this audit found no
+evidence of any regression in the 16-function extraction itself.
+
 ## B05 Execution
 
 - Rollback target: parent commit `a9e0a45`.
