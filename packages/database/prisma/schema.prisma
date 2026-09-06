@@ -377,3 +377,25 @@ model ResourceHelpfulVote {
   @@unique([resourceId, userId])
   @@index([userId])
 }
+
+/// owner: infrastructure (written by every module's transactions via @repo/events'
+/// withOutbox helper, read only by the outbox relay — B13, see event-architecture-plan.md)
+model OutboxEvent {
+  id            String    @id @default(uuid())
+  type          String
+  version       Int       @default(1)
+  subject       String
+  producer      String
+  correlationId String?
+  causationId   String?
+  actorUserId   Int?
+  payload       Json
+  occurredAt    DateTime  @default(now())
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  lastError     String?
+
+  @@index([publishedAt, occurredAt])
+  @@index([type])
+  @@index([subject])
+}
