@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
 import { StreamClient } from "@stream-io/node-sdk";
 import { getAuthenticatedUserId } from "@repo/contracts";
+import { withOutbox } from "@repo/events";
 import { getOrCreateDirectConversation } from "../messages/conversations.js";
 import { isMatchingDirectConversation } from "../messages/direct-messages.js";
 import { parseRequiredUserId } from "../messages/messages.controller.js";
@@ -136,7 +137,24 @@ export async function prepareDirectCallConversation(
       return;
     }
 
-    const conversation = await getOrCreateDirectConversation(prisma, callerId, peerId);
+    const { conversation } = await withOutbox(
+      prisma,
+      (tx) => getOrCreateDirectConversation(tx, callerId, peerId),
+      ({ conversation: resolvedConversation, created }) =>
+        created
+          ? {
+              type: "messaging.conversation.created",
+              subject: `conversation:${resolvedConversation.id}`,
+              producer: "messaging",
+              actorUserId: callerId,
+              payload: {
+                conversationId: resolvedConversation.id,
+                participantAId: resolvedConversation.participantAId,
+                participantBId: resolvedConversation.participantBId,
+              },
+            }
+          : null
+    );
     res.status(200).json({ ok: true, conversation });
   } catch (error) {
     next(error);

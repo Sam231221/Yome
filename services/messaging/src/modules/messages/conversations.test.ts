@@ -48,7 +48,8 @@ test("getOrCreateDirectConversation returns an existing conversation when found"
 
   const result = await getOrCreateDirectConversation(prisma, 3, 7);
 
-  assert.equal(result, existingConversation);
+  assert.equal(result.conversation, existingConversation);
+  assert.equal(result.created, false);
 });
 
 test("getOrCreateDirectConversation creates a normalized conversation when missing", async () => {
@@ -64,12 +65,13 @@ test("getOrCreateDirectConversation creates a normalized conversation when missi
 
   const result = await getOrCreateDirectConversation(prisma, 11, 4);
 
-  assert.deepEqual(result, {
+  assert.deepEqual(result.conversation, {
     data: {
       participantA: { connect: { id: 4 } },
       participantB: { connect: { id: 11 } },
     },
   });
+  assert.equal(result.created, true);
 });
 
 test("getOrCreateDirectConversation falls back to lookup on a create race", async () => {
@@ -86,5 +88,6 @@ test("getOrCreateDirectConversation falls back to lookup on a create race", asyn
 
   const result = await getOrCreateDirectConversation(prisma, 5, 10);
 
-  assert.equal(result, recoveredConversation);
+  assert.equal(result.conversation, recoveredConversation);
+  assert.equal(result.created, false, "a recovered race loser did not itself create anything");
 });

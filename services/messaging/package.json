@@ -15,6 +15,7 @@
     "@repo/cache": "workspace:*",
     "@repo/database": "workspace:*",
     "@repo/contracts": "workspace:*",
+    "@repo/events": "workspace:*",
     "@repo/service-kit": "workspace:*",
     "@socket.io/redis-adapter": "^8.3.0",
     "@stream-io/node-sdk": "^0.7.40",

@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
 import { getAuthenticatedUserId } from "@repo/contracts";
 import { getOnlineUserIds, isUserOnline } from "@repo/cache";
+import { withOutbox, type OutboxEventInput } from "@repo/events";
 import {
   getDirectConversation,
   getOrCreateDirectConversation,
@@ -55,37 +56,75 @@ async function createDirectMessage(params: {
     throw new Error("Forbidden");
   }
 
-  const resolvedConversation = conversationId
-    ? await prisma.conversation.findUnique({
-        where: { id: conversationId },
-      })
-    : null;
-
-  if (
-    resolvedConversation &&
-    !isMatchingDirectConversation(resolvedConversation, fromId, toId)
-  ) {
-    throw new Error("Conversation mismatch");
-  }
-
-  const conversation =
-    resolvedConversation ??
-    (await getOrCreateDirectConversation(prisma, fromId, toId));
-
   const isRecipientOnline = await isUserOnline(toId);
 
-  return prisma.messages.create({
-    data: {
-      message,
-      type,
-      msgType: "user",
-      sender: { connect: { id: fromId } },
-      receiver: { connect: { id: toId } },
-      conversation: { connect: { id: conversation.id } },
-      messageStatus: isRecipientOnline ? "delivered" : "sent",
+  const { newMessage } = await withOutbox(
+    prisma,
+    async (tx) => {
+      const resolvedConversation = conversationId
+        ? await tx.conversation.findUnique({ where: { id: conversationId } })
+        : null;
+
+      if (
+        resolvedConversation &&
+        !isMatchingDirectConversation(resolvedConversation, fromId, toId)
+      ) {
+        throw new Error("Conversation mismatch");
+      }
+
+      const { conversation, created: conversationCreated } = resolvedConversation
+        ? { conversation: resolvedConversation, created: false }
+        : await getOrCreateDirectConversation(tx, fromId, toId);
+
+      const createdMessage = await tx.messages.create({
+        data: {
+          message,
+          type,
+          msgType: "user",
+          sender: { connect: { id: fromId } },
+          receiver: { connect: { id: toId } },
+          conversation: { connect: { id: conversation.id } },
+          messageStatus: isRecipientOnline ? "delivered" : "sent",
+        },
+        include: { sender: true, receiver: true, conversation: true },
+      });
+
+      return { newMessage: createdMessage, conversation, conversationCreated };
     },
-    include: { sender: true, receiver: true, conversation: true },
-  });
+    ({ newMessage: createdMessage, conversation, conversationCreated }) => {
+      const events: OutboxEventInput[] = [];
+      if (conversationCreated) {
+        events.push({
+          type: "messaging.conversation.created",
+          subject: `conversation:${conversation.id}`,
+          producer: "messaging",
+          actorUserId: fromId,
+          payload: {
+            conversationId: conversation.id,
+            participantAId: conversation.participantAId,
+            participantBId: conversation.participantBId,
+          },
+        });
+      }
+      events.push({
+        type: "messaging.message.sent",
+        subject: `conversation:${conversation.id}`,
+        producer: "messaging",
+        actorUserId: fromId,
+        payload: {
+          messageId: createdMessage.id,
+          conversationId: conversation.id,
+          senderId: fromId,
+          receiverId: toId,
+          type,
+          createdAt: createdMessage.createdAt.toISOString(),
+        },
+      });
+      return events;
+    }
+  );
+
+  return newMessage;
 }
 
 export async function getOrCreateConversation(
@@ -117,7 +156,24 @@ export async function getOrCreateConversation(
     }
 
     const prisma = getPrismaInstance();
-    const conversation = await getOrCreateDirectConversation(prisma, fromId, toId);
+    const { conversation } = await withOutbox(
+      prisma,
+      (tx) => getOrCreateDirectConversation(tx, fromId, toId),
+      ({ conversation: resolvedConversation, created }) =>
+        created
+          ? {
+              type: "messaging.conversation.created",
+              subject: `conversation:${resolvedConversation.id}`,
+              producer: "messaging",
+              actorUserId: fromId,
+              payload: {
+                conversationId: resolvedConversation.id,
+                participantAId: resolvedConversation.participantAId,
+                participantBId: resolvedConversation.participantBId,
+              },
+            }
+          : null
+    );
 
     res.status(200).json({ ok: true, conversation });
   } catch (error) {
@@ -184,10 +240,26 @@ export async function getMessages(
         .map((message: { id: number }) => message.id);
 
       if (unreadIds.length > 0) {
-        await prisma.messages.updateMany({
-          where: { id: { in: unreadIds } },
-          data: { messageStatus: "read" },
-        });
+        const readAt = new Date();
+        await withOutbox(
+          prisma,
+          (tx) =>
+            tx.messages.updateMany({
+              where: { id: { in: unreadIds } },
+              data: { messageStatus: "read" },
+            }),
+          () =>
+            // One event per message read, per messaging.message.read's payload contract
+            // (a single messageId, not a batch) -- this is a bulk operation under the hood,
+            // but the catalogue models "read" as a per-message fact.
+            unreadIds.map((messageId: number) => ({
+              type: "messaging.message.read",
+              subject: `conversation:${conversation.id}`,
+              producer: "messaging",
+              actorUserId: fromId,
+              payload: { messageId, readerId: fromId, readAt: readAt.toISOString() },
+            }))
+        );
 
         messages.forEach((message: (typeof messages)[number]) => {
           if (unreadIds.includes(message.id)) {
@@ -392,17 +464,34 @@ export async function addMessage(
         return;
       }
 
-      const newMessage = await prisma.messages.create({
-        data: {
-          message,
-          type: "text",
-          group: { connect: { id: groupId } },
-          msgType: "group",
-          sender: { connect: { id: fromId } },
-          messageStatus: "sent",
-        },
-        include: { sender: true, group: true },
-      });
+      const newMessage = await withOutbox(
+        prisma,
+        async (tx) =>
+          tx.messages.create({
+            data: {
+              message,
+              type: "text",
+              group: { connect: { id: groupId } },
+              msgType: "group",
+              sender: { connect: { id: fromId } },
+              messageStatus: "sent",
+            },
+            include: { sender: true, group: true },
+          }),
+        (createdMessage) => ({
+          type: "messaging.message.sent",
+          subject: `group:${groupId}`,
+          producer: "messaging",
+          actorUserId: fromId,
+          payload: {
+            messageId: createdMessage.id,
+            groupId,
+            senderId: fromId,
+            type: "text",
+            createdAt: createdMessage.createdAt.toISOString(),
+          },
+        })
+      );
       res.status(201).send({ message: newMessage });
       return;
     }
@@ -488,17 +577,35 @@ export async function addMediaMessage(
         return;
       }
 
-      const newMessage = await prisma.messages.create({
-        data: {
-          message: url,
-          type: normalizeMessageType(type, "image"),
-          msgType: "group",
-          group: { connect: { id: groupId } },
-          sender: { connect: { id: fromId } },
-          messageStatus: "sent",
-        },
-        include: { sender: true, group: true },
-      });
+      const mediaType = normalizeMessageType(type, "image");
+      const newMessage = await withOutbox(
+        prisma,
+        async (tx) =>
+          tx.messages.create({
+            data: {
+              message: url,
+              type: mediaType,
+              msgType: "group",
+              group: { connect: { id: groupId } },
+              sender: { connect: { id: fromId } },
+              messageStatus: "sent",
+            },
+            include: { sender: true, group: true },
+          }),
+        (createdMessage) => ({
+          type: "messaging.message.sent",
+          subject: `group:${groupId}`,
+          producer: "messaging",
+          actorUserId: fromId,
+          payload: {
+            messageId: createdMessage.id,
+            groupId,
+            senderId: fromId,
+            type: mediaType,
+            createdAt: createdMessage.createdAt.toISOString(),
+          },
+        })
+      );
       res.status(201).json({ ok: true, message: newMessage });
       return;
     }
