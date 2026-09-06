@@ -246,9 +246,9 @@ tracked in `migration-log.md` under "Trigger Measurements".
 
 | ID | Current File | Domain | Classification | Action | Proposed Destination / Change | Batch | Owner After | Risk | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| SP-001 | `packages/database/SCHEMA_OWNERSHIP.md` | database | DOC | REFACTOR | **B10: full rewrite to a systematic one-row-per-model table (all 18 models, matching `schema.prisma` exactly).** Fixed a real gap: `Conversation` had never been listed at all, despite `messaging` owning it since B09 (and `chat` before that). B06-B08's incremental narrative-notes history is summarized in the new table's per-row notes rather than kept verbatim | B06 (partial), B07 (partial), B08 (partial), B10 (full rewrite) | database | Low | DONE |
+| SP-001 | `packages/database/SCHEMA_OWNERSHIP.md` | database | DOC | REFACTOR | **B10: full rewrite to a systematic one-row-per-model table (all 18 models, matching `schema.prisma` exactly).** Fixed a real gap: `Conversation` had never been listed at all, despite `messaging` owning it since B09 (and `chat` before that). B06-B08's incremental narrative-notes history is summarized in the new table's per-row notes rather than kept verbatim. **B14: added `OutboxEvent` (infra; the B13 outbox table this file had never listed) and `Notification` (owner `notifications`) rows; noted `User.notificationCount` as a second cross-module write exception on `User`; rewrote the `notifications` boundary bullet (real consumer, Postgres `jsonb` store per T-07)** | B06 (partial), B07 (partial), B08 (partial), B10 (full rewrite), B14 | database | Low | DONE |
 | SP-002 | `packages/database/package.json` | database | PKG_MANIFEST | KEEP | Same | B10 | database | Low | KEEP |
-| SP-003 | `packages/database/prisma/schema.prisma` | database | PRISMA_SCHEMA | REFACTOR | Single schema retained (splitting it is P5, not this batch); added a `/// owner: <module>` doc comment above all 18 models, cross-referenced from `SCHEMA_OWNERSHIP.md`'s opening paragraph so the two can be diffed against each other instead of drifting independently. `prisma validate` and `prisma generate` both verified clean | B10 | database | Medium | DONE |
+| SP-003 | `packages/database/prisma/schema.prisma` | database | PRISMA_SCHEMA | REFACTOR | Single schema retained (splitting it is P5, not this batch); added a `/// owner: <module>` doc comment above all models, cross-referenced from `SCHEMA_OWNERSHIP.md`'s opening paragraph so the two can be diffed against each other instead of drifting independently. `prisma validate` and `prisma generate` both verified clean. **B13: `OutboxEvent` model + `20260905212323_add_outbox_event` migration.** **B14: `Notification` model (`userId` FK, `type`, `eventId`, `title`, `body`, `payload` Json, `readAt`, `createdAt`; `@@unique([eventId, userId])` as the replay backstop; indexes on `[userId, createdAt]` and `[userId, readAt]`) + `User.notifications` back-relation + `20260906120000_add_notification` migration. `SCHEMA_OWNERSHIP.md` (SP-001) updated with both new models — it had never listed `OutboxEvent`** | B10, B13, B14 | database | Medium | DONE |
 | SP-004 | `packages/database/src/client.d.ts` | database | DB_CLIENT | KEEP | Same | — | database | Low | KEEP |
 | SP-005 | `packages/database/src/client.js` | database | DB_CLIENT | KEEP | Same | — | database | Low | KEEP |
 | SP-006 | `packages/eslint-config/README.md` | tooling | DOC | REFACTOR | Documents the new `service` profile (SP-009) and every existing profile, which the README never described at all before B10 | B10 | eslint-config | Low | DONE |
@@ -307,9 +307,9 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-059 | `services/media/src/index.ts` | media | SERVICE_ENTRY | REFACTOR | No change needed — it never had DB env validation to drop, only `validateObjectStorageEnv()`, which is kept | B09 | media | Low | DONE |
 | SP-060 | `services/media/src/routes/media.routes.ts` | media | ROUTE | KEEP | Same | B09 | media | Low | KEEP |
 | SP-061 | `services/media/tsconfig.json` | media | TS_CONFIG | KEEP | Same | — | media | Low | KEEP |
-| SP-062 | `services/notifications/package.json` | notifications | PKG_MANIFEST | REFACTOR | `"lint": "eslint ."` replaces the echo stub | B10 | notifications | Low | DONE |
-| SP-063 | `services/notifications/src/index.ts` | notifications | SERVICE_ENTRY | KEEP | **B10 review resolved: keep as its own process.** Not actually an open question by the time B10 ran — `service-decomposition-plan.md`'s locked design decisions already settled this (`services/notifications` is the designated first event consumer in B14, which is what justifies keeping it as its own deployable unit rather than folding into `core`) | B10 | notifications | Low | KEEP |
-| SP-064 | `services/notifications/src/routes/notifications.routes.ts` | notifications | ROUTE | REFACTOR | Extracted the inline `/send` handler to a new `controllers/notifications.controller.ts`, matching every other service's routes-import-from-controllers convention. Live-verified byte-identical behavior (same 202/400 responses) | B10 | notifications | Low | DONE |
+| SP-062 | `services/notifications/package.json` | notifications | PKG_MANIFEST | REFACTOR | `"lint": "eslint ."` replaces the echo stub. **B14: added `@repo/database`, `@repo/contracts`, `@repo/events`, `@repo/cache`, and `zod` deps; `"test"` is now `bun test ./src` (real suite) not an echo stub** | B10, B14 | notifications | Low | DONE |
+| SP-063 | `services/notifications/src/index.ts` | notifications | SERVICE_ENTRY | REFACTOR | **B10 review resolved: keep as its own process** (`service-decomposition-plan.md`'s locked design decisions already settled this — `services/notifications` is the designated first event consumer, which justifies its own deployable). **B14: that consumer is now wired — `startNotificationConsumer()` runs in-process here (the mirror of `core`'s in-process `startRelay`), with graceful shutdown draining the consumer loop before the HTTP server on `SIGTERM`/`SIGINT`** | B10, B14 | notifications | Low | DONE |
+| SP-064 | `services/notifications/src/routes/notifications.routes.ts` | notifications | ROUTE | REFACTOR | Extracted the inline `/send` handler to a new `controllers/notifications.controller.ts` (B10). **B14: added `GET /` (list, `?unread`/`?limit`/`?cursor`, `validateRequest`-guarded), `POST /read-all`, and `POST /:id/read` (uuid-param-guarded); `POST /send` stub unchanged. `notifications.controller.ts` gained `getNotifications`/`readNotification`/`readAllNotifications` (auth via gateway `x-user-id`, delegating to `store/notificationStore.ts` — SP-149); new `notifications.validation.ts` (SP-151) holds the zod schemas** | B10, B14 | notifications | Low | DONE |
 | SP-065 | `services/notifications/tsconfig.json` | notifications | TS_CONFIG | KEEP | Same | — | notifications | Low | KEEP |
 | SP-066 | `services/resources/package.json` | learning | PKG_MANIFEST | DELETE | Deleted — folded into `services/core`'s existing manifest (already had every dependency `resources` needed: `@repo/database`, `@repo/shared`, `@repo/contracts`, `zod`, `cors`, `dotenv`, `express`). No `core` package.json change needed | B07 | core | Medium | DONE |
 | SP-067 | `services/core/src/modules/learning/resources/resources.controller.ts` | learning | CONTROLLER | MOVE | Moved from `services/resources/src/controllers/resource.controller.ts`, unchanged. **B03: imports `getAuthenticatedUserId`, `isUuid`, `slugify` from `@repo/shared`; local duplicates deleted (predates this move).** **B12: `getResources` wrapped in `cacheAside` (see SP-132) — the query no longer includes viewer-scoped `saves`/`helpfulVotes`; a small separate per-viewer query resolves `isSaved`/`isHelpful` after the cache read. Found and fixed a real bug here: `ResourceRecord.createdAt`/`updatedAt` were typed `Date`, but a cache hit returns ISO strings after the JSON round trip — widened to `Date \| string` and switched to `new Date(x).toISOString()`.** **B13: `createResource` wrapped in `withOutbox` -> `learning.resource.created`; `saveResource`/`deleteResourceSave`/`markResourceHelpful` (already `prisma.$transaction`, now `withOutbox`) -> `learning.resource.saved`/`.unsaved`/`.marked_helpful`, each publishing nothing when the write was a no-op (already saved / not saved / already marked helpful). Removed the now-dead local `TransactionClient`/`PrismaClient` type aliases these three used to need** | B07, B12, B13 | core | Medium | DONE |
@@ -387,8 +387,15 @@ tracked in `migration-log.md` under "Trigger Measurements".
 | SP-141 | `packages/events/src/relay.ts` | events | PKG_MODULE | CREATE | New in B13: `relayOnce`/`startRelay` — `SELECT ... FOR UPDATE SKIP LOCKED` + `XADD` + mark-published, all in one Postgres transaction so concurrent relay replicas never double-publish (the transaction holding the row lock is the only one that sees the row; every other replica's `SKIP LOCKED` passes over it). Per-row failure isolation with a 10-attempt cap (the plan's "cap by attempts" hot-loop mitigation) — a capped-out row stays unpublished in Postgres for manual inspection, not pushed to a Redis DLQ (nothing was ever published to lose) | B13 | events | High | DONE |
 | SP-142 | `packages/events/src/idempotency.ts` | events | PKG_MODULE | CREATE | New in B13: `markConsumedIfNew` — the mandatory `SET NX` idempotency check (`yome:consumed:<group>:<eventId>`, 24h TTL) every future consumer must call before any side effect. Degrades to "treat as new" on a Redis error, matching `@repo/cache`'s fail-open philosophy | B13 | events | Medium | DONE |
 | SP-143 | `packages/events/src/idempotency.test.ts` | events | TEST | CREATE | New in B13: 4 tests against a fake Redis client — first-seen returns true, a repeat returns false, two different consumer groups are independent, and a Redis error degrades to "new" | B13 | events | Low | DONE |
-| SP-144 | `packages/events/src/consumer.ts` | events | PKG_MODULE | CREATE | New in B13: `ensureConsumerGroup`/`consumeOnce` — a generic `XREADGROUP` consume loop with ack-after-side-effects-commit semantics (rule 2: never `XACK` before the handler's side effect completes). Shipped unused in this batch — B13's own scope is "publish... to Redis Streams," not "consume" — ready for B14 to wire `notifications` to it | B13 | events | High | DONE |
-| SP-145 | `packages/events/src/consumer.test.ts` | events | TEST | CREATE | New in B13: 6 tests against a fake Redis client — `BUSYGROUP` swallowed on group creation, a new entry is handled and acknowledged, a duplicate is acknowledged without re-running the handler, a failing handler leaves its entry unacknowledged (for `XCLAIM` recovery), and an empty `BLOCK` window returns 0. Live-verified separately against a real disposable Postgres + Redis (see migration-log.md) | B13 | events | Medium | DONE |
+| SP-144 | `packages/events/src/consumer.ts` | events | PKG_MODULE | CREATE | New in B13: `ensureConsumerGroup`/`consumeOnce` — a generic `XREADGROUP` consume loop with ack-after-side-effects-commit semantics (rule 2: never `XACK` before the handler's side effect completes). **B14 wired the first real consumer (`notifications`) to it and grew it accordingly: `consumeOnce` now takes one stream key or an array (one `XREADGROUP` spans every `yome:events:*` stream); `reclaimStale` (rule 4's `XPENDING`/`XCLAIM` recovery, via `XAUTOCLAIM`, Redis 6.2+) re-runs entries a crashed consumer left pending; `startConsumer` is the long-running loop — ensure-groups then reclaim+consume until `stop()`, with a `ready` promise (groups exist at `$`, so a caller can wait before publishing on a brand-new stream) and an idle delay that also guarantees an event-loop yield. Per-entry logic factored into a shared `processEntry`** | B13, B14 | events | High | DONE |
+| SP-145 | `packages/events/src/consumer.test.ts` | events | TEST | CREATE | New in B13: 6 tests against a fake Redis client. **B14: +5 — multi-stream `consumeOnce` in one `XREADGROUP`, `reclaimStale` re-running a stale entry, `reclaimStale` skipping an already-consumed one (idempotent), and `startConsumer` creating the group on every stream then stopping cleanly** (14/14 across the file's group). Live-verified separately against real disposable infra (see migration-log.md) | B13, B14 | events | Medium | DONE |
+| SP-146 | `services/notifications/src/consumer/index.ts` | notifications | PKG_MODULE | CREATE | New in B14: `startNotificationConsumer()` wires `@repo/events`' `startConsumer` to all five `yome:events:*` streams as consumer group `notifications`; `handleEvent` is the per-entry handler — `messaging.message.read` clears a pending notification, everything else runs `deriveNotifications` (SP-147) then `persistNotifications` (SP-149). `buildContext()` supplies the Prisma-backed cross-domain lookups (group name, user display name, resource author) and the `@repo/cache` presence check | B14 | notifications | High | DONE |
+| SP-147 | `services/notifications/src/consumer/derive.ts` | notifications | PKG_MODULE | CREATE | New in B14: `deriveNotifications(envelope, ctx)` — pure mapping of a domain event to zero-or-more `NotificationSpec`s, validating each payload against its `@repo/contracts` zod schema (skip, don't throw, on failure). Notifies on `identity.user.registered` (welcome), `identity.user.password_changed` (security), `community.group.member_joined` (the joiner), `community.connection.followed` (the followee), `learning.resource.saved`/`.marked_helpful` (the author, not on a self-action), and `messaging.message.sent` (a direct recipient, only when offline per `@repo/cache`). Fan-out cases needing a membership query (group-admin notifications, group messages, `resource.created` to group members) deliberately not emitted yet — the plan's B14 risk note wants rate-limiting/aggregation first | B14 | notifications | High | DONE |
+| SP-148 | `services/notifications/src/consumer/derive.test.ts` | notifications | TEST | CREATE | New in B14: 8 tests with a fake context — welcome on register, followee notified on follow, nothing when the group is gone, author notified on save but not a self-save, offline-only for direct messages, nothing for a group message, nothing for non-notifying/uncatalogued types, and a schema-invalid payload skipped rather than thrown | B14 | notifications | Low | DONE |
+| SP-149 | `services/notifications/src/store/notificationStore.ts` | notifications | PKG_MODULE | CREATE | New in B14: the DB surface — `persistNotifications(eventId, specs)` (one row per spec, `(eventId, userId)`-keyed so a redelivery is a no-op; the count of rows actually created returned), `clearMessageNotification`, `listNotifications` (newest-first, `unreadOnly`/`limit`/`cursor`, returns `unreadCount` + `nextCursor`), `markNotificationRead` (distinguishes not-found/not-owned from already-read), `markAllNotificationsRead`. Every mutation calls `syncUnreadCount` in the same transaction, keeping `User.notificationCount` == live unread count (closes `api-and-dataflow-plan.md` issue #10's hardcoded-`3`) | B14 | notifications | High | DONE |
+| SP-150 | `services/notifications/src/store/notificationStore.test.ts` | notifications | TEST | CREATE | New in B14: 3 tests against an in-memory Prisma stand-in enforcing the `(eventId, userId)` uniqueness — one row per spec + `notificationCount` set, **replaying the same event creates no duplicate** (the batch's required idempotency proof), and an empty spec list is a no-op | B14 | notifications | Medium | DONE |
+| SP-151 | `services/notifications/src/notifications.validation.ts` | notifications | PKG_MODULE | CREATE | New in B14: zod schemas for `validateRequest` — `listNotificationsSchema` (`unread` enum→boolean, `limit` 1–50, `cursor` uuid) and `notificationIdParamsSchema` (`id` uuid) | B14 | notifications | Low | DONE |
+| SP-152 | `apps/web/lib/notifications/notificationsApi.ts` | apps/web | PKG_MODULE | CREATE | New in B14: the client for the new endpoints — `getNotifications`, `markNotificationRead`, `markAllNotificationsRead` (all `withCredentials`, so the gateway supplies `x-user-id`), plus response normalization. Consumed by the rewritten `features/learning/pages/notifications.tsx` (previously a static 3-item mock; now fetches real data, unread badge, click-to-read, mark-all-read). `NOTIFICATIONS_LIST_ROUTE`/`NOTIFICATIONS_READ_ALL_ROUTE` added to `utils/ApiRoutes.ts`; `/api/notifications` already routed to the `notifications` upstream since B10, so no gateway change | B14 | apps/web | Medium | DONE |
 | SP-098 | `services/gateway/src/routes/route-manifest.ts` | edge | PKG_MODULE | CREATE | New in B05: ordered upstream route-rule table + `resolveRoute()`/`pathMatchesPrefix()`, extracted so `index.ts`'s 8 hand-written `app.use()` calls become one loop, and so routing is unit-testable without booting Express. **B10: renamed from `routeRules.ts` to `routes/route-manifest.ts` and extended with per-rule `timeoutMs`** — the full gateway modularization SP-055 describes, not a precursor to it anymore | B05, B10 | gateway | Medium | DONE |
 | SP-099 | `services/gateway/src/routes/route-manifest.test.ts` | edge | TEST | CREATE | New in B05: parses `apps/web/utils/ApiRoutes.ts` and asserts every one of its 42 externally-visible `/api/*` paths resolves through the route manifest to exactly one upstream, including the 3 profile paths now resolving to `identity`. **B10: renamed alongside its source file; 2 new tests added covering `timeoutMs`** | B05, B10 | gateway | Low | DONE |
 
@@ -459,23 +466,33 @@ have been a duplicate-file-entry bug; caught and corrected before commit.
   learning's `studyroom.*` (2 events), all of feed's events, and all of media's — none of
   these have a write endpoint anywhere in the app today (documented, not silently skipped;
   see migration-log.md's B13 section).
+- **B14** (notifications as first consumer): SP-146–SP-152 **created** (`services/notifications/src/consumer/**`
+  + `store/**` + `notifications.validation.ts` — 6 files — and `apps/web/lib/notifications/notificationsApi.ts`).
+  SP-063 **flipped `KEEP`→`DONE`** (the consumer it was kept for is now wired). SP-003, SP-001,
+  SP-062, SP-064, SP-144, SP-145 **updated in place** (`Notification` model + migration and the
+  `OutboxEvent`/`Notification` `SCHEMA_OWNERSHIP.md` rows B13 had skipped; notifications deps +
+  real test script; list/mark-read routes + controller handlers; `@repo/events`' consumer
+  runtime grown with multi-stream `consumeOnce` / `reclaimStale` / `startConsumer`). Store
+  decision (trigger T-07): **Postgres `jsonb`**, not MongoDB — keeps P3 on one store, keeps
+  `User.notificationCount` consistent in-transaction, no new infra. `apps/web`'s static
+  `notifications.tsx` mock replaced with a real data view.
 
 ## Status accounting
 
 Counts below are machine-verified (`grep`-extracted from the actual table, not hand-tallied
 — a hand-tally error during the B03 completeness audit is exactly why this rule exists now).
 
-- Rows: 145 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`, plus 4 B04-created
+- Rows: 152 (the original 78, plus 12 B03-created rows `SP-079`–`SP-090`, plus 4 B04-created
   rows `SP-091`–`SP-094`, plus 5 B05-created rows `SP-095`–`SP-099`, plus 6 B06-created rows
   `SP-100`–`SP-105`, plus 4 B07-created rows `SP-106`–`SP-109`, plus 5 B08-created rows
   `SP-110`–`SP-114`, plus 4 B09-created rows `SP-115`–`SP-118`, plus 5 B10-created rows
   `SP-119`–`SP-123` (backfilled — see the B10 summary line), plus 8 B11-created rows
   `SP-124`–`SP-131`, plus 2 B12-created rows `SP-132`–`SP-133`, plus 12 B13-created rows
-  `SP-134`–`SP-145`). Duplicate IDs: 0. Duplicate current-file entries: 0.
+  `SP-134`–`SP-145`, plus 7 B14-created rows `SP-146`–`SP-152`). Duplicate IDs: 0. Duplicate
+  current-file entries: 0.
 - `KEEP` (no change intended): SP-002, SP-004, SP-005, SP-007, SP-008, SP-010, SP-025,
-  SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065, SP-063 — **15 rows**. `SP-063`
-  joined this list in B10 (was `PENDING` pending a review that turned out to already be
-  answered — see the B10 summary line above).
+  SP-026, SP-027, SP-028, SP-056, SP-060, SP-061, SP-065 — **14 rows**. `SP-063` left this
+  list in B14 (`KEEP`→`DONE`): the event consumer it was being kept for is now wired.
 - `DONE`: SP-011, SP-012, SP-014–SP-024 (13 rows, B03's `packages/shared` split) +
   SP-013, SP-031–SP-034, SP-038 (6 rows, B04's seed extraction incl. the `groupData` fixture) +
   SP-079–SP-090 (12 rows, B03-created files) + SP-091–SP-094 (4 rows, B04-created files) +
@@ -492,7 +509,10 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
   controller extraction) + SP-119–SP-123 (5 rows, backfilled B10-created gateway middleware
   files) + SP-124–SP-131 (8 rows, B11-created `packages/cache`) + SP-132–SP-133 (2 rows,
   B12-created `cacheAside.ts` + test) + SP-134–SP-145 (12 rows, B13-created
-  `packages/contracts/src/events.ts` + test and `packages/events/**`) — **130 rows**. The
+  `packages/contracts/src/events.ts` + test and `packages/events/**`) + SP-063 (flipped
+  `KEEP`→`DONE` in B14 — its consumer is wired) + SP-146–SP-152 (7 rows, B14-created
+  `services/notifications` consumer + store + validation and `apps/web`'s notifications API
+  client) — **138 rows**. The
   two former
   compound rows (`SP-011`/`SP-015`, previously `DONE (B03; shim removal B10)`) are now plain
   `DONE`: the B10 half (deleting `packages/shared` itself) is finished, so the caveat no
@@ -501,7 +521,7 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
   `KEEP`.
 - `BLOCKED`: 0 in the manifest. One infra blocker was tracked in
   `service-decomposition-plan.md` (the missing `Dockerfile.service`) and was resolved in B02.
-- Row-count check: 15 KEEP + 130 DONE + 0 PENDING = 145. ✓ (machine-counted via
+- Row-count check: 14 KEEP + 138 DONE + 0 PENDING = 152. ✓ (machine-counted via
   `grep -cE "^\| SP-[0-9]+"` and per-status `grep` anchored to the status column specifically —
   a naive substring grep against the whole row over-counts, since some rows' ACTION column is
   also literally "KEEP" or "PENDING"-shaped text, not just their STATUS column; not
@@ -549,17 +569,24 @@ Counts below are machine-verified (`grep`-extracted from the actual table, not h
   triggers (T-01/T-02) that had already fired.
 - ✅ `docker-compose.yml` — **created in B02** (Postgres + Redis; Redis unused until B11)
 - ✅ `packages/events/**` — `withOutbox`, the outbox relay, a generic `XREADGROUP` consumer
-  runtime, and the idempotency helper — **created in B13**, tracked as `SP-136`–`SP-145`. No
-  DLQ stream: B13 ships no consumers to fail, so there's nothing to move to
-  `yome:events:dlq` yet (see the consumer-side DLQ rule in event-architecture-plan.md, which
-  applies once B14 wires a real consumer).
+  runtime, and the idempotency helper — **created in B13**, tracked as `SP-136`–`SP-145`.
+  **B14 grew the consumer runtime** (`SP-144`/`SP-145` notes): multi-stream `consumeOnce`,
+  `reclaimStale` (`XAUTOCLAIM` recovery), `startConsumer` (the long-running loop). Still no
+  DLQ stream — `notifications`' handlers skip a bad payload rather than fail, and a genuinely
+  stuck entry stays pending for `reclaimStale`/manual inspection, matching B13's "nothing was
+  published to lose" reasoning; a real `yome:events:dlq` is deferred to when a consumer needs
+  poison-pill quarantine.
 - ✅ `OutboxEvent` model + migration in `packages/database` — **created in B13** (SP-003's
   updated note).
 - ✅ Event zod schemas — **created in B13** as `packages/contracts/src/events.ts` (SP-134),
   not a `src/events/` subdirectory as originally sketched here — one file covers all 23
   catalogued event types cleanly, no subdirectory needed yet.
-- `services/notifications/src/modules/**` — consumer group, notification store, delivery
-  adapters (B14)
+- ✅ `services/notifications/src/{consumer,store}/**` + `notifications.validation.ts` —
+  consumer group + Postgres `jsonb` notification store (trigger T-07 decision) + list/mark-read
+  endpoints — **created in B14**, tracked as `SP-146`–`SP-152`. Landed as `consumer/` +
+  `store/` (flat), not `modules/**` as sketched here — the service has one concern, so a
+  module layer would be ceremony. Delivery adapters beyond in-app (email/push) are **not** in
+  B14 — the plan lists them as open questions #3/#4 (aggregation policy, channel credentials).
 - `services/core/src/modules/dashboard/read-model/**` (B15)
 - `services/core/src/modules/{learning,community}/search/**` (B16)
 - `services/messaging/src/projections/**` — follow-edge and user-profile projections

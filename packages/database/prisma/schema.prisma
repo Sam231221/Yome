@@ -60,6 +60,7 @@ model User {
   followers                 User[]                  @relation("Followers")
   following                 User[]                  @relation("Followers")
   messagesSeen              Messages[]              @relation(name: "MessageSeenBy")
+  notifications             Notification[]
 
   @@index([email])
 }
@@ -376,6 +377,32 @@ model ResourceHelpfulVote {
 
   @@unique([resourceId, userId])
   @@index([userId])
+}
+
+/// owner: notifications — every row is created by the `notifications` event consumer from a
+/// domain event on a Redis Stream (B14, see event-architecture-plan.md). No other module
+/// writes this table; the read/mark-read HTTP endpoints belong to `services/notifications`.
+model Notification {
+  id        String    @id @default(uuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  /// The domain event type that produced this row ("messaging.message.sent", "identity.user.registered", ...).
+  type      String
+  /// The originating event's envelope id. One event yields at most one notification per
+  /// recipient (enforced by @@unique below), so a redelivery past the 24h Redis idempotency
+  /// window still cannot create a duplicate.
+  eventId   String
+  title     String
+  body      String    @default("")
+  /// Event-specific context (ids, slugs, display names) for rendering and deep links.
+  /// Schemaless on purpose — the shape differs per `type` (T-07 in data-architecture-plan.md).
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([eventId, userId])
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
 }
 
 /// owner: infrastructure (written by every module's transactions via @repo/events'

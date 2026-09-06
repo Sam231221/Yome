@@ -10,8 +10,7 @@ import {
   internalTokenGuard,
 } from "@repo/service-kit";
 import notificationRoutes from "./routes/notifications.routes.js";
-
-// Stub notifications service. Real delivery can be wired later.
+import { startNotificationConsumer } from "./consumer/index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, "../../../.env") });
@@ -33,6 +32,25 @@ app.use("/api/notifications", notificationRoutes);
 
 app.use(errorHandler);
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   logger.info("Notifications service listening", { port });
 });
+
+// B14: the notification event consumer runs in-process here — the mirror of the outbox relay
+// running in-process inside `services/core` (B13). It reads every producing domain's stream
+// (`yome:events:*`) as consumer group `notifications` and turns domain facts into
+// notification rows. `services/notifications` is its own deployable precisely so this
+// long-running consumer can later move to its own process without touching anything else.
+const consumer = startNotificationConsumer();
+
+function shutdown(signal: string) {
+  logger.info("Shutting down", { signal });
+  void consumer.stop().finally(() => {
+    server.close(() => process.exit(0));
+  });
+  // Force-exit if connections don't drain in time.
+  setTimeout(() => process.exit(1), 5000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

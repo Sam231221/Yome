@@ -312,10 +312,15 @@
     "services/notifications": {
       "name": "@services/notifications",
       "dependencies": {
+        "@repo/cache": "workspace:*",
+        "@repo/contracts": "workspace:*",
+        "@repo/database": "workspace:*",
+        "@repo/events": "workspace:*",
         "@repo/service-kit": "workspace:*",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
         "express": "^5.1.0",
+        "zod": "^4.1.5",
       },
       "devDependencies": {
         "@repo/typescript-config": "workspace:*",
