@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import getPrismaInstance from "@repo/database";
 import { getAuthenticatedUserId } from "@repo/contracts";
+import { withOutbox } from "@repo/events";
 import bcryptjs from "bcryptjs";
 import crypto from "node:crypto";
 
@@ -109,23 +110,44 @@ export async function registerUser(
     }
     const salt = await bcryptjs.genSalt(10);
     const hashedPassword = await bcryptjs.hash(password, salt);
-    const userProfile = await prisma.userProfile.create({
-      data: {
-        bio: "",
-        address: "",
+
+    const user = await withOutbox(
+      prisma,
+      async (tx) => {
+        const userProfile = await tx.userProfile.create({
+          data: {
+            bio: "",
+            address: "",
+          },
+        });
+        return tx.user.create({
+          data: {
+            email,
+            firstname: firstname ?? "",
+            lastname: lastname ?? "",
+            name: (firstname ?? "") + " " + (lastname ?? ""),
+            username,
+            password: hashedPassword,
+            userProfileId: userProfile.id,
+          },
+        });
       },
-    });
-    const user = await prisma.user.create({
-      data: {
-        email,
-        firstname: firstname ?? "",
-        lastname: lastname ?? "",
-        name: (firstname ?? "") + " " + (lastname ?? ""),
-        username,
-        password: hashedPassword,
-        userProfileId: userProfile.id,
-      },
-    });
+      (createdUser) => ({
+        type: "identity.user.registered",
+        subject: `user:${createdUser.id}`,
+        producer: "identity",
+        actorUserId: createdUser.id,
+        payload: {
+          userId: createdUser.id,
+          email: createdUser.email,
+          username: createdUser.username,
+          firstname: createdUser.firstname,
+          lastname: createdUser.lastname,
+          createdAt: createdUser.created_at.toISOString(),
+        },
+      })
+    );
+
     res.status(201).json({
       ok: true,
       user: stripPassword(user),
@@ -185,26 +207,46 @@ export async function upsertOAuthUser(
       suffix += 1;
     }
 
-    const userProfile = await prisma.userProfile.create({
-      data: {
-        bio: `Bio for ${firstname}`,
-        address: `Address for ${firstname}`,
-      },
-    });
     const password = await bcryptjs.hash(crypto.randomUUID(), 10);
-    const user = await prisma.user.create({
-      data: {
-        email,
-        firstname,
-        lastname,
-        name: `${firstname} ${lastname}`,
-        username,
-        password,
-        profilePicture: image ?? "",
-        userProfileId: userProfile.id,
+
+    const user = await withOutbox(
+      prisma,
+      async (tx) => {
+        const userProfile = await tx.userProfile.create({
+          data: {
+            bio: `Bio for ${firstname}`,
+            address: `Address for ${firstname}`,
+          },
+        });
+        return tx.user.create({
+          data: {
+            email,
+            firstname,
+            lastname,
+            name: `${firstname} ${lastname}`,
+            username,
+            password,
+            profilePicture: image ?? "",
+            userProfileId: userProfile.id,
+          },
+          include: { userProfile: true },
+        });
       },
-      include: { userProfile: true },
-    });
+      (createdUser) => ({
+        type: "identity.user.registered",
+        subject: `user:${createdUser.id}`,
+        producer: "identity",
+        actorUserId: createdUser.id,
+        payload: {
+          userId: createdUser.id,
+          email: createdUser.email,
+          username: createdUser.username,
+          firstname: createdUser.firstname,
+          lastname: createdUser.lastname,
+          createdAt: createdUser.created_at.toISOString(),
+        },
+      })
+    );
 
     res.status(201).json({ ok: true, user: stripPassword(user) });
   } catch (error) {
@@ -277,10 +319,24 @@ export async function changePassword(
     }
 
     const hashedPassword = await bcryptjs.hash(newPassword, 10);
-    await prisma.user.update({
-      where: { id: authenticatedUserId },
-      data: { password: hashedPassword },
-    });
+    await withOutbox(
+      prisma,
+      async (tx) =>
+        tx.user.update({
+          where: { id: authenticatedUserId },
+          data: { password: hashedPassword },
+        }),
+      (updatedUser) => ({
+        type: "identity.user.password_changed",
+        subject: `user:${updatedUser.id}`,
+        producer: "identity",
+        actorUserId: updatedUser.id,
+        payload: {
+          userId: updatedUser.id,
+          changedAt: updatedUser.updated_at.toISOString(),
+        },
+      })
+    );
 
     res.status(200).json({ ok: true, msg: "Password updated successfully" });
   } catch (error) {

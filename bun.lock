@@ -196,6 +196,7 @@
         "@repo/cache": "workspace:*",
         "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
+        "@repo/events": "workspace:*",
         "@repo/service-kit": "workspace:*",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
@@ -238,6 +239,7 @@
       "dependencies": {
         "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
+        "@repo/events": "workspace:*",
         "@repo/seed": "workspace:*",
         "@repo/service-kit": "workspace:*",
         "@repo/storage": "workspace:*",

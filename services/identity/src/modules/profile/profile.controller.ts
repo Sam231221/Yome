@@ -11,6 +11,7 @@ import {
   assertAllowedMimeType,
   uploadBufferToS3,
 } from "@repo/storage";
+import { withOutbox } from "@repo/events";
 
 const logger = createLogger("identity-profile");
 
@@ -139,14 +140,45 @@ export async function updateUser(
     };
     if (imageUrl) userUpdateData.profilePicture = imageUrl;
 
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: userUpdateData as Parameters<typeof prisma.user.update>[0]["data"],
-    });
-    const userProfile = await prisma.userProfile.update({
-      where: { id: existingUser.userProfile.id },
-      data: { bio: bio ?? "", address: address ?? "" },
-    });
+    const newBio = bio ?? "";
+    const newAddress = address ?? "";
+
+    const { user, userProfile } = await withOutbox(
+      prisma,
+      async (tx) => {
+        const updatedUser = await tx.user.update({
+          where: { id: userId },
+          data: userUpdateData as Parameters<typeof prisma.user.update>[0]["data"],
+        });
+        const updatedProfile = await tx.userProfile.update({
+          where: { id: existingUser.userProfile!.id },
+          data: { bio: newBio, address: newAddress },
+        });
+        return { user: updatedUser, userProfile: updatedProfile };
+      },
+      ({ user: updatedUser }) => {
+        // Only fields that actually changed, per identity.user.profile_updated's contract
+        // ("changed: { name?, username?, bio?, address?, profilePicture? }") -- additive,
+        // not a full snapshot, so consumers only react to what moved.
+        const changed: Record<string, string> = {};
+        if (updatedUser.name !== existingUser.name) changed.name = updatedUser.name ?? "";
+        if (updatedUser.username !== existingUser.username) changed.username = updatedUser.username;
+        if (newBio !== (existingUser.userProfile!.bio ?? "")) changed.bio = newBio;
+        if (newAddress !== (existingUser.userProfile!.address ?? "")) changed.address = newAddress;
+        if (imageUrl) changed.profilePicture = imageUrl;
+
+        if (Object.keys(changed).length === 0) return null;
+
+        return {
+          type: "identity.user.profile_updated",
+          subject: `user:${updatedUser.id}`,
+          producer: "identity",
+          actorUserId: updatedUser.id,
+          payload: { userId: updatedUser.id, changed },
+        };
+      }
+    );
+
     res.status(200).send({
       ok: true,
       user: { ...user, userProfile },

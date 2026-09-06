@@ -3,17 +3,12 @@ import crypto from "node:crypto";
 import getPrismaInstance from "@repo/database";
 import { getAuthenticatedUserId, isUuid, slugify } from "@repo/contracts";
 import { cacheAside, hashQuery } from "@repo/cache";
+import { withOutbox } from "@repo/events";
 
 /** B12: cache-aside TTL for the resource list, per data-architecture-plan.md's Redis key
  * table (`yome:cache:resources:<queryHash>`, 300s) — a fixed constant like group-discover's,
  * not an env var (only CACHE_TTL_DASHBOARD_SECONDS is in the plan's env var table). */
 const RESOURCE_LIST_CACHE_TTL_SECONDS = 300;
-
-type PrismaClient = ReturnType<typeof getPrismaInstance>;
-type TransactionClient = Pick<
-  PrismaClient,
-  "resource" | "resourceSave" | "resourceHelpfulVote"
->;
 
 type ResourceQuery = {
   search?: string;
@@ -329,37 +324,56 @@ export async function createResource(
       suffix += 1;
     }
 
-    const resource = (await prisma.resource.create({
-      data: {
-        slug,
-        title: body.title,
-        subject: body.subject,
-        topic: body.topic,
-        level: body.level,
-        type: body.type,
-        tone: body.tone,
-        description: body.description,
-        fileUrl: body.fileUrl,
-        externalUrl: body.externalUrl,
-        ratingAverage: body.ratingAverage,
-        ratingCount: body.ratingCount ?? 0,
-        author: { connect: { id: authorId } },
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            firstname: true,
-            lastname: true,
-            name: true,
-            username: true,
-            profilePicture: true,
+    const resource = await withOutbox(
+      prisma,
+      async (tx) =>
+        (await tx.resource.create({
+          data: {
+            slug,
+            title: body.title,
+            subject: body.subject,
+            topic: body.topic,
+            level: body.level,
+            type: body.type,
+            tone: body.tone,
+            description: body.description,
+            fileUrl: body.fileUrl,
+            externalUrl: body.externalUrl,
+            ratingAverage: body.ratingAverage,
+            ratingCount: body.ratingCount ?? 0,
+            author: { connect: { id: authorId } },
           },
+          include: {
+            author: {
+              select: {
+                id: true,
+                firstname: true,
+                lastname: true,
+                name: true,
+                username: true,
+                profilePicture: true,
+              },
+            },
+            saves: { where: { userId: authorId }, select: { userId: true } },
+            helpfulVotes: { where: { userId: authorId }, select: { userId: true } },
+          },
+        })) as ResourceRecord,
+      (createdResource) => ({
+        type: "learning.resource.created",
+        subject: `resource:${createdResource.id}`,
+        producer: "core",
+        actorUserId: authorId,
+        payload: {
+          resourceId: createdResource.id,
+          slug: createdResource.slug,
+          authorId,
+          subject: createdResource.subject,
+          topic: createdResource.topic,
+          level: createdResource.level,
+          type: createdResource.type,
         },
-        saves: { where: { userId: authorId }, select: { userId: true } },
-        helpfulVotes: { where: { userId: authorId }, select: { userId: true } },
-      },
-    })) as ResourceRecord;
+      })
+    );
 
     res.status(201).json({ ok: true, resource: mapResource(resource, authorId) });
   } catch (error) {
@@ -386,18 +400,31 @@ export async function saveResource(
       return;
     }
 
-    await prisma.$transaction(async (tx: TransactionClient) => {
-      const existing = await tx.resourceSave.findUnique({
-        where: { resourceId_userId: { resourceId: resource.id, userId } },
-      });
-      if (!existing) {
+    await withOutbox(
+      prisma,
+      async (tx) => {
+        const existing = await tx.resourceSave.findUnique({
+          where: { resourceId_userId: { resourceId: resource.id, userId } },
+        });
+        if (existing) return { created: false };
         await tx.resourceSave.create({ data: { resourceId: resource.id, userId } });
         await tx.resource.update({
           where: { id: resource.id },
           data: { saveCount: { increment: 1 } },
         });
-      }
-    });
+        return { created: true };
+      },
+      ({ created }) =>
+        created
+          ? {
+              type: "learning.resource.saved",
+              subject: `resource:${resource.id}`,
+              producer: "core",
+              actorUserId: userId,
+              payload: { resourceId: resource.id, userId },
+            }
+          : null // already saved -- a no-op, nothing to publish
+    );
 
     const updated = await findResourceByIdOrSlug(resource.id, userId);
     res.status(200).json({
@@ -428,18 +455,31 @@ export async function deleteResourceSave(
       return;
     }
 
-    await prisma.$transaction(async (tx: TransactionClient) => {
-      const existing = await tx.resourceSave.findUnique({
-        where: { resourceId_userId: { resourceId: resource.id, userId } },
-      });
-      if (existing) {
+    await withOutbox(
+      prisma,
+      async (tx) => {
+        const existing = await tx.resourceSave.findUnique({
+          where: { resourceId_userId: { resourceId: resource.id, userId } },
+        });
+        if (!existing) return { deleted: false };
         await tx.resourceSave.delete({ where: { id: existing.id } });
         await tx.resource.update({
           where: { id: resource.id },
           data: { saveCount: { decrement: 1 } },
         });
-      }
-    });
+        return { deleted: true };
+      },
+      ({ deleted }) =>
+        deleted
+          ? {
+              type: "learning.resource.unsaved",
+              subject: `resource:${resource.id}`,
+              producer: "core",
+              actorUserId: userId,
+              payload: { resourceId: resource.id, userId },
+            }
+          : null // wasn't saved to begin with -- a no-op
+    );
 
     const updated = await findResourceByIdOrSlug(resource.id, userId);
     res.status(200).json({
@@ -470,11 +510,13 @@ export async function markResourceHelpful(
       return;
     }
 
-    await prisma.$transaction(async (tx: TransactionClient) => {
-      const existing = await tx.resourceHelpfulVote.findUnique({
-        where: { resourceId_userId: { resourceId: resource.id, userId } },
-      });
-      if (!existing) {
+    await withOutbox(
+      prisma,
+      async (tx) => {
+        const existing = await tx.resourceHelpfulVote.findUnique({
+          where: { resourceId_userId: { resourceId: resource.id, userId } },
+        });
+        if (existing) return { created: false };
         await tx.resourceHelpfulVote.create({
           data: { resourceId: resource.id, userId },
         });
@@ -482,8 +524,19 @@ export async function markResourceHelpful(
           where: { id: resource.id },
           data: { helpfulCount: { increment: 1 } },
         });
-      }
-    });
+        return { created: true };
+      },
+      ({ created }) =>
+        created
+          ? {
+              type: "learning.resource.marked_helpful",
+              subject: `resource:${resource.id}`,
+              producer: "core",
+              actorUserId: userId,
+              payload: { resourceId: resource.id, userId },
+            }
+          : null // already marked helpful -- a no-op
+    );
 
     const updated = await findResourceByIdOrSlug(resource.id, userId);
     res.status(200).json({

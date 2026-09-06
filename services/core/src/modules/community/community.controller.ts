@@ -7,6 +7,7 @@ import {
   slugify,
 } from "@repo/contracts";
 import { cacheAside, hashQuery } from "@repo/cache";
+import { withOutbox } from "@repo/events";
 
 /** B12: cache-aside TTL for the group-discover list, per data-architecture-plan.md's Redis
  * key table (`yome:cache:groups:discover:<queryHash>`, 300s) — a fixed constant, not an env
@@ -657,31 +658,60 @@ export async function createGroup(
       suffix += 1;
     }
 
-    const group = await prisma.group.create({
-      data: {
-        slug,
-        name: String(req.body.name),
-        about: String(req.body.about ?? ""),
-        subject: String(req.body.subject ?? "General"),
-        category: String(req.body.category ?? "Community"),
-        tone: String(req.body.tone ?? "blue"),
-        symbol: String(req.body.symbol ?? "Y"),
-        privacy: String(req.body.privacy ?? "Public group"),
-        location: String(req.body.location ?? "Global"),
-        thumbnail: String(req.body.thumbnail ?? ""),
-        admins: { connect: { id: loggedInUserId } },
-        tags: {
-          create: (req.body.tags ?? []).map((label: string, index: number) => ({
-            label,
-            tone: index === 0 ? String(req.body.tone ?? "blue") : "neutral",
-          })),
+    const group = await withOutbox(
+      prisma,
+      async (tx) =>
+        tx.group.create({
+          data: {
+            slug,
+            name: String(req.body.name),
+            about: String(req.body.about ?? ""),
+            subject: String(req.body.subject ?? "General"),
+            category: String(req.body.category ?? "Community"),
+            tone: String(req.body.tone ?? "blue"),
+            symbol: String(req.body.symbol ?? "Y"),
+            privacy: String(req.body.privacy ?? "Public group"),
+            location: String(req.body.location ?? "Global"),
+            thumbnail: String(req.body.thumbnail ?? ""),
+            admins: { connect: { id: loggedInUserId } },
+            tags: {
+              create: (req.body.tags ?? []).map((label: string, index: number) => ({
+                label,
+                tone: index === 0 ? String(req.body.tone ?? "blue") : "neutral",
+              })),
+            },
+          },
+          include: {
+            tags: { orderBy: { label: "asc" } },
+            _count: { select: { members: true, admins: true, resources: true } },
+          },
+        }),
+      (createdGroup) => [
+        {
+          type: "community.group.created",
+          subject: `group:${createdGroup.id}`,
+          producer: "core",
+          actorUserId: loggedInUserId,
+          payload: {
+            groupId: createdGroup.id,
+            slug: createdGroup.slug,
+            name: createdGroup.name,
+            subject: createdGroup.subject,
+            category: createdGroup.category,
+            creatorUserId: loggedInUserId,
+          },
         },
-      },
-      include: {
-        tags: { orderBy: { label: "asc" } },
-        _count: { select: { members: true, admins: true, resources: true } },
-      },
-    });
+        // The creator becomes the group's first admin in the same write -- a real
+        // "member joined" fact, not a separate action.
+        {
+          type: "community.group.member_joined",
+          subject: `group:${createdGroup.id}`,
+          producer: "core",
+          actorUserId: loggedInUserId,
+          payload: { groupId: createdGroup.id, userId: loggedInUserId, role: "admin" },
+        },
+      ]
+    );
 
     res.status(201).json({
       ok: true,
@@ -877,10 +907,21 @@ export async function followUnfollowedUser(
       res.status(400).send("You are already following this user.");
       return;
     }
-    await prisma.user.update({
-      where: { id: requesterId },
-      data: { following: { connect: { id: mentorIdAsNumber } } },
-    });
+    await withOutbox(
+      prisma,
+      async (tx) =>
+        tx.user.update({
+          where: { id: requesterId },
+          data: { following: { connect: { id: mentorIdAsNumber } } },
+        }),
+      () => ({
+        type: "community.connection.followed",
+        subject: `user:${requesterId}`,
+        producer: "core",
+        actorUserId: requesterId,
+        payload: { followerId: requesterId, followeeId: mentorIdAsNumber },
+      })
+    );
     res.status(200).send({ status: 200, msg: "Successfully followed the user." });
   } catch (error) {
     next(error);
@@ -936,10 +977,21 @@ export async function joinUnjoinedGroups(
         .json({ msg: "You are already a member or admin of this group." });
       return;
     }
-    await prisma.group.update({
-      where: { id: groupId },
-      data: { members: { connect: { id: userId } } },
-    });
+    await withOutbox(
+      prisma,
+      async (tx) =>
+        tx.group.update({
+          where: { id: groupId },
+          data: { members: { connect: { id: userId } } },
+        }),
+      (updatedGroup) => ({
+        type: "community.group.member_joined",
+        subject: `group:${updatedGroup.id}`,
+        producer: "core",
+        actorUserId: userId,
+        payload: { groupId: updatedGroup.id, userId, role: "member" },
+      })
+    );
     res.status(200).json({ status: 200, msg: "Successfully joined the group." });
   } catch (error) {
     next(error);
