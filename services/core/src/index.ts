@@ -9,6 +9,7 @@ import {
   internalTokenGuard,
   servicePorts,
 } from "@repo/service-kit";
+import { startRelay } from "@repo/events";
 
 import communityRoutes from "./modules/community/community.routes.js";
 import learningRoutes from "./modules/learning/learning.routes.js";
@@ -42,6 +43,29 @@ app.use("/api/resources", resourcesRoutes);
 
 app.use(errorHandler);
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   logger.info("Core service listening", { port });
 });
+
+// B13: the outbox relay runs in-process here, per event-architecture-plan.md's Local
+// Development section ("the outbox relay runs in-process during development; in production
+// it can run as its own process if publish latency demands it") -- core is the one service
+// every catalogued producer (identity, community, learning, feed, messaging) already shares
+// a database with, so it's the natural home rather than adding a 7th deployable for B13.
+const relay = startRelay({
+  onError: (error) => {
+    logger.error("Outbox relay encountered an error", error as Error);
+  },
+});
+logger.info("Outbox relay started");
+
+function shutdown(signal: string) {
+  logger.info("Shutting down", { signal });
+  relay.stop();
+  server.close(() => process.exit(0));
+  // Force-exit if connections don't drain in time.
+  setTimeout(() => process.exit(1), 5000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
