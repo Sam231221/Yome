@@ -6,7 +6,8 @@
 #
 # The app still reads one root .env. To use this local Postgres instead of a
 # remote (e.g. Supabase), point DATABASE_URL / DIRECT_URL at:
-#   postgresql://yome:yome@localhost:5432/yome
+#   postgresql://yome:yome@localhost:5440/yome
+# (mapped to 5440 on the host since a native Postgres install already owns 5432)
 #
 # Redis backs services/messaging's presence + Socket.IO fan-out and services/gateway's rate
 # limiter (@repo/cache, added in B11). Point REDIS_URL at this instance for local dev.
@@ -21,7 +22,7 @@ services:
       POSTGRES_PASSWORD: yome
       POSTGRES_DB: yome
     ports:
-      - "5432:5432"
+      - "5440:5432"
     volumes:
       - yome-postgres-data:/var/lib/postgresql/data
     healthcheck:
