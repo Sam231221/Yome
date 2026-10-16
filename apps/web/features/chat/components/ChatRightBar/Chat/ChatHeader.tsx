@@ -37,6 +37,13 @@ const REUSABLE_CALL_STATES = new Set<CallingState>([
   CallingState.MIGRATING,
 ]);
 
+const ACTIVE_CALL_STATES = new Set<CallingState>([
+  CallingState.JOINED,
+  CallingState.JOINING,
+  CallingState.RECONNECTING,
+  CallingState.MIGRATING,
+]);
+
 interface ChatHeaderProps {
   chatType: string;
   detailsOpen: boolean;
@@ -134,6 +141,16 @@ export default function ChatHeader({
             }
           }
 
+          const isOnAnotherCall = calls.some(
+            (call) =>
+              !call.state.endedAt &&
+              ACTIVE_CALL_STATES.has(call.state.callingState)
+          );
+          if (isOnAnotherCall) {
+            toast.error("You're already on a call. End it before starting a new one.");
+            return;
+          }
+
           const descriptor = await createDirectCall({
             client,
             caller: userInfo,
@@ -179,6 +196,18 @@ export default function ChatHeader({
       setIsConnecting(false);
     }
   };
+
+  const isGroupChat = resolveChatKind(currentChatUser) !== "user";
+  const callUnavailableReason = isGroupChat
+    ? "Calls are only available in one-to-one chats"
+    : !isConfigured
+      ? "Calls aren't set up on this server"
+      : setupError
+        ? setupError
+        : !client
+          ? "Preparing calls…"
+          : undefined;
+  const callButtonsDisabled = Boolean(callUnavailableReason) || isPending;
 
   const handleBackToList = () => {
     dispatch({ type: reducerCases.SET_EXIT_CHAT });
@@ -245,22 +274,20 @@ export default function ChatHeader({
         ) : null}
         <button
           onClick={() => startDirectChatCall("audio")}
-          disabled={
-            resolveChatKind(currentChatUser) !== "user" || isPending
-          }
+          disabled={callButtonsDisabled}
           className="chat-header-icon"
           aria-label="Voice call"
+          title={callUnavailableReason ?? "Voice call"}
           type="button"
         >
           <MdCall />
         </button>
         <button
           onClick={() => startDirectChatCall("video")}
-          disabled={
-            resolveChatKind(currentChatUser) !== "user" || isPending
-          }
+          disabled={callButtonsDisabled}
           className="chat-header-icon"
           aria-label="Video call"
+          title={callUnavailableReason ?? "Video call"}
           type="button"
         >
           <IoVideocam />

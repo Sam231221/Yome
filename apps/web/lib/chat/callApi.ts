@@ -10,21 +10,23 @@ type DirectConversationRecord = {
   id: ConversationId;
 };
 
-type StreamSeedUser = {
-  id: UserId;
-  name?: string | null;
-  image?: string | null;
-};
-
 const getDirectCallServiceError = (error: unknown) => {
   if (!axios.isAxiosError(error)) return null;
-  if (error.response?.status === 403) {
-    return "Calls are only available for connected contacts.";
+  const serverMessage =
+    typeof error.response?.data?.error === "string" ? error.response.data.error : null;
+  switch (error.response?.status) {
+    case 403:
+      return (
+        serverMessage ??
+        "You can only call people you follow, who follow you, or who you've already messaged."
+      );
+    case 404:
+      return "This direct conversation is no longer available.";
+    case 503:
+      return "Calls aren't available right now. Please try again later.";
+    default:
+      return error.response ? null : "You appear to be offline. Check your connection.";
   }
-  if (error.response?.status === 404) {
-    return "This direct conversation is no longer available.";
-  }
-  return null;
 };
 
 /** Passed directly to `StreamVideoClient.getOrCreateInstance({ tokenProvider })` — the SDK
@@ -72,19 +74,16 @@ export const ensureDirectCallUsers = async ({
   callerId,
   peerId,
   conversationId,
-  users,
 }: {
   callerId: UserId;
   peerId: UserId;
   conversationId: ConversationId;
-  users: StreamSeedUser[];
 }): Promise<void> => {
   try {
     await axios.post(CALL_PARTICIPANTS_ROUTE, {
       callerId,
       peerId,
       conversationId,
-      users,
     });
   } catch (error) {
     throw new Error(

@@ -34,24 +34,27 @@ test("direct call schemas validate participants and conversation ownership field
   );
 });
 
-test("callParticipantsSchema requires at least one seed user", () => {
-  const parsed = callParticipantsSchema.body.parse({
+test("callParticipantsSchema no longer requires client-supplied seed users", () => {
+  const withoutUsers = callParticipantsSchema.body.parse({
     callerId: "4",
     peerId: "12",
     conversationId: "conversation-123",
-    users: [
-      { id: 4, name: "Caller" },
-      { id: "12", name: "Peer", image: null },
-    ],
   });
+  assert.equal(withoutUsers.users, undefined);
 
-  assert.equal(parsed.users.length, 2);
+  const legacy = callParticipantsSchema.body.parse({
+    callerId: "4",
+    peerId: "12",
+    conversationId: "conversation-123",
+    users: [{ id: 4, name: "Caller" }],
+  });
+  assert.equal(legacy.users?.length, 1);
+
   assert.throws(() =>
     callParticipantsSchema.body.parse({
       callerId: "4",
       peerId: "12",
-      conversationId: "conversation-123",
-      users: [],
+      conversationId: "",
     })
   );
 });

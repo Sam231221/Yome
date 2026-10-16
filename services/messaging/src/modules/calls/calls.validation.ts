@@ -22,12 +22,13 @@ const streamSeedUserSchema = z.object({
 });
 
 /** Provisions a direct call's Stream users. Replaces `ensureDirectCallUsers()` in
- * `apps/web/actions/stream.actions.ts` (B09). */
+ * `apps/web/actions/stream.actions.ts` (B09). `users` is accepted for older clients but
+ * ignored: the server builds both Stream identities from the database. */
 export const callParticipantsSchema = {
   body: z.object({
     callerId: z.coerce.number().int().positive(),
     peerId: z.coerce.number().int().positive(),
     conversationId: z.string().trim().min(1),
-    users: z.array(streamSeedUserSchema).min(1),
+    users: z.array(streamSeedUserSchema).optional(),
   }),
 };

@@ -6,40 +6,41 @@ import { withOutbox } from "@repo/events";
 import { getOrCreateDirectConversation } from "../messages/conversations.js";
 import { isMatchingDirectConversation } from "../messages/direct-messages.js";
 import { parseRequiredUserId } from "../messages/messages.controller.js";
+import {
+  CALL_NOT_ALLOWED_ERROR,
+  canCallPeer,
+  type CallAccessPrisma,
+} from "./call-access.js";
 
 type PrismaClient = ReturnType<typeof getPrismaInstance>;
 
-type StreamSeedUser = {
-  id: number | string;
-  name?: string | null;
-  image?: string | null;
-};
+const CALLS_NOT_CONFIGURED_ERROR = "Calls are not configured on this server.";
 
 /** Read lazily, not as a module-level constant: this file is imported (via calls.routes.ts)
  * before index.ts's own `dotenv.config()` call runs, so a top-level `process.env.X` read
- * here would capture `undefined` on every cold start. */
-const getStreamServerClient = () => {
-  const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY;
-  const apiSecret = process.env.STREAM_SECRET_KEY;
-  if (!apiKey) throw new Error("Stream API key secret is missing");
-  if (!apiSecret) throw new Error("Stream API secret is missing");
+ * here would capture `undefined` on every cold start. Returns null when Stream credentials
+ * are missing so callers can answer 503 instead of a generic 500. */
+const getStreamServerClient = (): StreamClient | null => {
+  const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY?.trim();
+  const apiSecret = process.env.STREAM_SECRET_KEY?.trim();
+  if (!apiKey || !apiSecret) return null;
   return new StreamClient(apiKey, apiSecret);
 };
 
-async function isConnectedDirectPeer(
-  prisma: PrismaClient,
-  callerId: number,
-  peerId: number
-): Promise<boolean> {
-  const connectedPeerCount = await prisma.user.count({
-    where: {
-      id: callerId,
-      following: { some: { id: peerId } },
-    },
-  });
+const isCallablePeer = (prisma: PrismaClient, callerId: number, peerId: number) =>
+  canCallPeer(prisma as unknown as CallAccessPrisma, callerId, peerId);
 
-  return connectedPeerCount > 0;
-}
+const getStreamDisplayName = (user: {
+  id: number;
+  name: string | null;
+  firstname: string | null;
+  lastname: string | null;
+  username: string | null;
+}) =>
+  `${user.firstname ?? ""} ${user.lastname ?? ""}`.trim() ||
+  user.name?.trim() ||
+  user.username?.trim() ||
+  `User ${user.id}`;
 
 /** Shared by `validateDirectConversation` and `createCallParticipants` (which used to make
  * an HTTP round trip to the former, back when it lived in `apps/web/actions/stream.actions.ts`
@@ -57,9 +58,8 @@ async function checkDirectConversationAccess(
     return { ok: false, status: 404, error: "Direct conversation not found" };
   }
 
-  const isConnectedPeer = await isConnectedDirectPeer(prisma, callerId, peerId);
-  if (!isConnectedPeer) {
-    return { ok: false, status: 403, error: "Direct call peer is not connected" };
+  if (!(await isCallablePeer(prisma, callerId, peerId))) {
+    return { ok: false, status: 403, error: CALL_NOT_ALLOWED_ERROR };
   }
 
   return { ok: true };
@@ -131,9 +131,8 @@ export async function prepareDirectCallConversation(
     }
 
     const prisma = getPrismaInstance();
-    const isConnectedPeer = await isConnectedDirectPeer(prisma, callerId, peerId);
-    if (!isConnectedPeer) {
-      res.status(403).json({ ok: false, error: "Direct call peer is not connected" });
+    if (!(await isCallablePeer(prisma, callerId, peerId))) {
+      res.status(403).json({ ok: false, error: CALL_NOT_ALLOWED_ERROR });
       return;
     }
 
@@ -177,6 +176,10 @@ export async function createCallToken(
     }
 
     const streamClient = getStreamServerClient();
+    if (!streamClient) {
+      res.status(503).json({ ok: false, error: CALLS_NOT_CONFIGURED_ERROR });
+      return;
+    }
 
     const expirationTime = Math.floor(Date.now() / 1000) + 3600;
     const issuedAt = Math.floor(Date.now() / 1000) - 60;
@@ -213,7 +216,6 @@ export async function createCallParticipants(
     const callerId = parseRequiredUserId(req.body?.callerId);
     const peerId = parseRequiredUserId(req.body?.peerId);
     const conversationId = String(req.body?.conversationId ?? "").trim();
-    const users = (req.body?.users ?? []) as StreamSeedUser[];
 
     if (callerId === null || peerId === null || !conversationId) {
       res.status(400).json({ ok: false, error: "Invalid direct call participants" });
@@ -235,32 +237,42 @@ export async function createCallParticipants(
       return;
     }
 
-    const uniqueUsers = Array.from(
-      new Map(
-        users
-          .filter((user) => String(user.id).trim().length > 0)
-          .map((user) => [String(user.id), user])
-      ).values()
-    );
-
-    const expectedUserIds = new Set([String(callerId), String(peerId)]);
-    const includesOnlyCallMembers = uniqueUsers.every((user) =>
-      expectedUserIds.has(String(user.id))
-    );
-    const includesAllCallMembers = Array.from(expectedUserIds).every((userId) =>
-      uniqueUsers.some((user) => String(user.id) === userId)
-    );
-    if (!includesOnlyCallMembers || !includesAllCallMembers) {
-      res.status(403).json({ ok: false, error: "Forbidden" });
+    const streamClient = getStreamServerClient();
+    if (!streamClient) {
+      res.status(503).json({ ok: false, error: CALLS_NOT_CONFIGURED_ERROR });
       return;
     }
 
-    const streamClient = getStreamServerClient();
+    // Stream identities come from our own user records, never from the request body, so a
+    // caller can't rename or re-avatar the person they're calling.
+    const members: Array<{
+      id: number;
+      name: string | null;
+      firstname: string | null;
+      lastname: string | null;
+      username: string | null;
+      profilePicture: string | null;
+    }> = await prisma.user.findMany({
+      where: { id: { in: [callerId, peerId] } },
+      select: {
+        id: true,
+        name: true,
+        firstname: true,
+        lastname: true,
+        username: true,
+        profilePicture: true,
+      },
+    });
+    if (members.length !== 2) {
+      res.status(404).json({ ok: false, error: "Call participant not found" });
+      return;
+    }
+
     await streamClient.upsertUsers(
-      uniqueUsers.map((user) => ({
-        id: String(user.id),
-        name: user.name?.trim() || `User ${user.id}`,
-        image: user.image?.trim() || undefined,
+      members.map((member) => ({
+        id: String(member.id),
+        name: getStreamDisplayName(member),
+        image: member.profilePicture?.trim() || undefined,
         role: "user",
       }))
     );
