@@ -7,7 +7,12 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { BiSearchAlt2 } from "react-icons/bi";
 import { MdCall, MdArrowBack } from "react-icons/md";
 import { IoVideocam } from "react-icons/io5";
-import { FiUser } from "react-icons/fi";
+import { FiUser, FiUserPlus } from "react-icons/fi";
+import {
+  followLearningUser,
+  getLearningErrorMessage,
+} from "@/lib/learning/learningApi";
+import { useFollowingIds } from "@/features/chat/hooks/useFollowingIds";
 import { useStateProvider } from "@/context/StateContext";
 import { reducerCases } from "@/context/constants";
 import ContextMenu from "@/components/common/ContextMenu";
@@ -50,6 +55,12 @@ export default function ChatHeader({
   const router = useRouter();
   const { client, isConfigured, isLoading, setupError } = useStreamClientStatus();
   const calls = useClientCalls(client);
+  const {
+    followingIds,
+    isLoaded: followingLoaded,
+    markFollowing,
+  } = useFollowingIds(userInfo?.id);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,
@@ -146,6 +157,29 @@ export default function ChatHeader({
     });
   };
 
+  const peerId =
+    typeof currentChatUser?.id === "number" ? currentChatUser.id : undefined;
+  const showConnect =
+    chatType !== "group" &&
+    followingLoaded &&
+    peerId !== undefined &&
+    peerId !== userInfo?.id &&
+    !followingIds.has(peerId);
+
+  const handleConnect = async () => {
+    if (!userInfo || peerId === undefined || isConnecting) return;
+    setIsConnecting(true);
+    try {
+      await followLearningUser(userInfo.id, peerId);
+      markFollowing(peerId);
+      toast.success(`You're now connected with ${currentChatUser?.name ?? "this person"}.`);
+    } catch (error) {
+      toast.error(getLearningErrorMessage(error, "Unable to connect right now."));
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
   const handleBackToList = () => {
     dispatch({ type: reducerCases.SET_EXIT_CHAT });
   };
@@ -198,6 +232,17 @@ export default function ChatHeader({
         </div>
       </div>
       <div className="chat-header-actions relative">
+        {showConnect ? (
+          <button
+            type="button"
+            className="chat-header-connect"
+            onClick={() => void handleConnect()}
+            disabled={isConnecting}
+          >
+            <FiUserPlus aria-hidden="true" />
+            <span>{isConnecting ? "Connecting…" : "Connect"}</span>
+          </button>
+        ) : null}
         <button
           onClick={() => startDirectChatCall("audio")}
           disabled={
