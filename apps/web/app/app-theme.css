@@ -6136,6 +6136,152 @@ body.yome-no-scroll {
   font-weight: 700;
 }
 
+.notification-wrapper {
+  position: relative;
+}
+
+.notification-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  width: 380px;
+  max-width: calc(100vw - 24px);
+  overflow: hidden;
+  border: 1px solid var(--yome-border);
+  border-radius: 14px;
+  background: var(--yome-surface);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.16);
+}
+
+.notification-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--yome-border);
+  color: var(--yome-text);
+}
+
+.notification-menu-header button {
+  border: 0;
+  background: transparent;
+  color: var(--yome-blue);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.notification-menu-header button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.notification-menu-body {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.notification-menu-state {
+  margin: 0;
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--yome-muted);
+  font-size: 13px;
+}
+
+.notification-menu-state.error {
+  color: #dc2626;
+}
+
+.notification-menu-item {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--yome-border);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notification-menu-item:hover {
+  background: var(--yome-surface-2);
+}
+
+.notification-menu-item.unread {
+  background: color-mix(in srgb, var(--yome-blue) 6%, transparent);
+}
+
+.notification-menu-indicator {
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.notification-menu-item.unread .notification-menu-indicator {
+  background: var(--yome-blue);
+}
+
+.notification-menu-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.notification-menu-copy strong {
+  color: var(--yome-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.notification-menu-copy small {
+  overflow: hidden;
+  color: var(--yome-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification-menu-item time {
+  color: var(--yome-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.notification-menu-footer {
+  display: block;
+  padding: 12px 16px;
+  text-align: center;
+  color: var(--yome-blue);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.notification-menu-footer:hover {
+  background: var(--yome-surface-2);
+}
+
+@media (max-width: 640px) {
+  .notification-wrapper {
+    position: static;
+  }
+
+  .notification-menu {
+    position: fixed;
+    top: 64px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+  }
+}
+
 .profile-button {
   display: flex;
   align-items: center;
@@ -9176,6 +9322,9 @@ body.yome-no-scroll {
   .yome-top-actions .yome-icon-button:first-child,
   .yome-top-actions .yome-profile-button {
     display: none;
+  }
+  .yome-top-actions .notification-wrapper .yome-icon-button {
+    display: inline-grid;
   }
   .person-row {
     grid-template-columns: 38px 1fr;

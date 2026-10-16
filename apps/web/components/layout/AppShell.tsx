@@ -8,6 +8,7 @@ import { useStateProvider } from "@/context/StateContext";
 import { yomeNavItems } from "@/features/learning/data";
 import { Avatar, Brand, ToneSymbol, YomeIcon } from "@/components/ui";
 import { MobileMenu } from "./MobileMenu";
+import { NotificationsDropdown } from "./NotificationsDropdown";
 import { getDashboardHome } from "@/lib/dashboard/dashboardApi";
 import type { DashboardHome } from "@/lib/dashboard/types";
 
@@ -20,6 +21,11 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
   const [dashboard, setDashboard] = useState<DashboardHome | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    setUnreadCount(dashboard?.profile.notificationCount ?? 0);
+  }, [dashboard?.profile.notificationCount]);
 
   useEffect(() => {
     document.body.classList.toggle("yome-no-scroll", mobileMenuOpen);
@@ -116,12 +122,10 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
               >
                 <YomeIcon name="search" size={19} />
               </button>
-              <Link className="yome-icon-button icon-button notification-button inline-grid shrink-0 place-items-center rounded-yome border border-yome-border bg-yome-surface text-yome-muted" href="/notifications" aria-label="Notifications">
-                <YomeIcon name="bell" size={20} />
-                  {dashboard?.profile.notificationCount ? (
-                    <span className="notification-dot">{dashboard.profile.notificationCount}</span>
-                  ) : null}
-              </Link>
+              <NotificationsDropdown
+                unreadCount={unreadCount}
+                onUnreadChange={setUnreadCount}
+              />
               <Link className="yome-icon-button yome-mobile-only inline-grid shrink-0 place-items-center rounded-full text-yome-navy" href="/chat" aria-label="Messages">
                 <YomeIcon name="message" size={19} />
               </Link>
@@ -145,7 +149,7 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
         initials={initials}
         image={userInfo?.profilePicture || session?.user?.image || undefined}
         shortcuts={dashboard?.sidebarGroups ?? []}
-        notificationCount={dashboard?.profile.notificationCount}
+        notificationCount={unreadCount}
       />
 
       <aside className="yome-sidebar sidebar">
