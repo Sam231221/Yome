@@ -1,5 +1,6 @@
 import React, { useState, useTransition } from "react";
-import { CallingState, useCalls } from "@stream-io/video-react-sdk";
+import { CallingState } from "@stream-io/video-react-sdk";
+import { useClientCalls } from "@/features/chat/direct-call/useClientCalls";
 import Avatar from "@/components/common/Avatar";
 import AvatarWithStatus from "@/components/common/AvatarWithStatus";
 import { BsThreeDotsVertical } from "react-icons/bs";
@@ -48,7 +49,7 @@ export default function ChatHeader({
     useStateProvider();
   const router = useRouter();
   const { client, isConfigured, isLoading, setupError } = useStreamClientStatus();
-  const calls = useCalls();
+  const calls = useClientCalls(client);
   const [isPending, startTransition] = useTransition();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,
