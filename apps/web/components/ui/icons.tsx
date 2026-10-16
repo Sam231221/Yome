@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { YomeIconName } from "@/features/learning/data";
 
 const iconPaths: Record<string, string> = {
@@ -25,6 +26,13 @@ const iconPaths: Record<string, string> = {
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/>',
+  menu: '<path d="M3 6h18M3 12h18M3 18h18"/>',
+  camera: '<path d="M4 7h3l2-3h6l2 3h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="4"/>',
+  store: '<path d="M4 9V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3M4 9h16l-1 10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 9Z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/>',
+  heart: '<path d="M12 21s-7-4.35-9.5-8.5C.8 9 2 5 6 5c2 0 3.5 1.3 4 2.5C10.5 6.3 12 5 14 5c4 0 5.2 4 3.5 7.5C19 16.65 12 21 12 21Z"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  sparkle: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
 };
 
 export function YomeIcon({
@@ -32,16 +40,19 @@ export function YomeIcon({
   size = 20,
   filled = false,
   className,
+  style,
 }: {
   name: YomeIconName | keyof typeof iconPaths;
   size?: number;
   filled?: boolean;
   className?: string;
+  style?: CSSProperties;
 }) {
   return (
     <svg
       aria-hidden="true"
       className={className}
+      style={style}
       width={size}
       height={size}
       viewBox="0 0 24 24"
