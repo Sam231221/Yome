@@ -1,0 +1,428 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+  output          = "../src/generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  AGENT
+  STAFF
+  ADMIN
+  MENTOR
+  TEACHER
+  STUDENT
+}
+
+/// owner: identity — see SCHEMA_OWNERSHIP.md (following/followers relation is written by core/community)
+model User {
+  id                        Int                     @id @default(autoincrement())
+  firstname                 String
+  lastname                  String
+  name                      String?
+  email                     String                  @unique
+  username                  String                  @unique
+  password                  String
+  profilePicture            String                  @default("")
+  identifier                String                  @default("user")
+  created_at                DateTime                @default(now())
+  updated_at                DateTime                @updatedAt
+  userProfile               UserProfile?            @relation(fields: [userProfileId], references: [id])
+  userProfileId             String?                 @unique
+  sentMessages              Messages[]              @relation("sentMessages")
+  receivedMessages          Messages[]              @relation("receivedMessages")
+  forgotPasswordToken       String?
+  forgotPasswordTokenExpiry DateTime?
+  verifyToken               String?
+  verifyTokenExpiry         DateTime?
+  groupAdmin                Group[]                 @relation("AdminOfGroup")
+  group                     Group[]                 @relation("MembersOfGroup")
+  directConversationsA      Conversation[]          @relation("ConversationParticipantA")
+  directConversationsB      Conversation[]          @relation("ConversationParticipantB")
+  role                      Role                    @default(USER)
+  learningStreakDays        Int                     @default(12)
+  notificationCount         Int                     @default(3)
+  posts                     Post[]
+  comments                  Comment[]
+  likes                     Like[]
+  studyRoomParticipants     StudyRoomParticipant[]
+  authoredResources         Resource[]              @relation("ResourceAuthor")
+  savedResources            ResourceSave[]
+  helpfulResourceVotes      ResourceHelpfulVote[]
+  groupInvitations          GroupInvitation[]
+  groupAnnouncements        GroupAnnouncement[]
+  followers                 User[]                  @relation("Followers")
+  following                 User[]                  @relation("Followers")
+  messagesSeen              Messages[]              @relation(name: "MessageSeenBy")
+  notifications             Notification[]
+
+  @@index([email])
+}
+
+/// owner: identity
+model UserProfile {
+  id         String   @id @default(uuid())
+  user       User?
+  bio        String   @default("")
+  address    String   @default("")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+/// owner: messaging
+model Messages {
+  id            Int      @id @default(autoincrement())
+  sender        User?    @relation("sentMessages", fields: [senderId], references: [id])
+  senderId      Int
+  receiver      User?    @relation("receivedMessages", fields: [receiverId], references: [id])
+  receiverId    Int?
+  conversation  Conversation? @relation(fields: [conversationId], references: [id])
+  conversationId String?
+  seenBy        User[]   @relation("MessageSeenBy")
+  type          String   @default("text")
+  message       String
+  msgType       String   @default("")
+  messageStatus String   @default("sent")
+  group         Group?   @relation(fields: [groupId], references: [id])
+  groupId       String?
+  createdAt     DateTime @default(now())
+
+  @@index([conversationId])
+}
+
+/// owner: core/community
+model Group {
+  id             String              @id @default(uuid())
+  slug           String              @unique
+  name           String              @unique
+  about          String              @default("")
+  identifier     String              @default("group")
+  subject        String              @default("General")
+  category       String              @default("Community")
+  tone           String              @default("blue")
+  symbol         String              @default("Y")
+  privacy        String              @default("Public group")
+  location       String              @default("Global")
+  featured       Boolean             @default(false)
+  activeThisWeek Int                 @default(0)
+  projectCount   Int                 @default(0)
+  mentorCount    Int                 @default(0)
+  admins         User[]              @relation("AdminOfGroup")
+  members        User[]              @relation("MembersOfGroup")
+  messages       Messages[]
+  thumbnail      String              @default("")
+  tags           GroupTag[]
+  invitations    GroupInvitation[]
+  announcements  GroupAnnouncement[]
+  events         GroupEvent[]
+  resources      Resource[]
+  posts          Post[]
+  studyRooms     StudyRoom[]
+  created_at     DateTime            @default(now())
+  updated_at     DateTime            @updatedAt
+
+  @@index([subject])
+  @@index([featured])
+}
+
+/// owner: core/community
+model GroupTag {
+  id      String @id @default(uuid())
+  label   String
+  tone    String @default("neutral")
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId String
+
+  @@unique([groupId, label])
+  @@index([groupId])
+}
+
+/// owner: core/community
+model GroupInvitation {
+  id        String   @id @default(uuid())
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@index([status])
+}
+
+/// owner: core/community
+model GroupAnnouncement {
+  id        String   @id @default(uuid())
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+  title     String
+  body      String
+  ctaLabel  String?
+  ctaHref   String?
+  pinned    Boolean  @default(false)
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId  Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([groupId])
+  @@index([pinned])
+}
+
+/// owner: core/community (write); core/learning reads it as a separate cross-group view
+model GroupEvent {
+  id        String   @id @default(uuid())
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+  title     String
+  type      String
+  startsAt  DateTime
+  location  String   @default("Group room")
+  tone      String   @default("blue")
+  dashboardVisible Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([groupId])
+  @@index([startsAt])
+  @@index([dashboardVisible])
+}
+
+/// owner: messaging
+model Conversation {
+  id             String     @id @default(uuid())
+  participantA   User       @relation("ConversationParticipantA", fields: [participantAId], references: [id])
+  participantAId Int
+  participantB   User       @relation("ConversationParticipantB", fields: [participantBId], references: [id])
+  participantBId Int
+  messages       Messages[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@unique([participantAId, participantBId])
+  @@index([participantAId])
+  @@index([participantBId])
+}
+
+/// owner: core/feed (designated, no write endpoint yet); core/learning reads kind="Project" rows
+model Post {
+  id             Int       @id @default(autoincrement())
+  slug           String?   @unique
+  title          String    @default("")
+  description    String
+  kind           String    @default("Post")
+  tone           String    @default("blue")
+  tags           String[]  @default([])
+  helpfulCount   Int       @default(0)
+  answerCount    Int       @default(0)
+  commentCount   Int       @default(0)
+  shareCount     Int       @default(0)
+  inspiredCount  Int       @default(0)
+  topAnswerAuthor String?
+  topAnswerBody  String?
+  projectTeam    String?
+  projectProgress String?
+  projectStack   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  author         User      @relation(fields: [authorId], references: [id])
+  authorId       Int
+  group          Group?    @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  groupId        String?
+  resource       Resource? @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  resourceId     String?
+  comments       Comment[]
+  likes          Like[]
+
+  @@index([authorId])
+  @@index([groupId])
+  @@index([resourceId])
+  @@index([kind])
+  @@index([createdAt])
+}
+
+/// owner: core/feed (no write endpoint yet)
+model Comment {
+  id          Int    @id @default(autoincrement())
+  description String
+  author      User   @relation(fields: [authorId], references: [id])
+  authorId    Int
+  post        Post   @relation(fields: [postId], references: [id])
+  postId      Int
+}
+
+/// owner: core/feed (no write endpoint yet)
+model Like {
+  id     Int  @id @default(autoincrement())
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+  post   Post @relation(fields: [postId], references: [id])
+  postId Int
+}
+
+/// owner: core/learning
+model Resource {
+  id            String                 @id @default(uuid())
+  slug          String                 @unique
+  title         String
+  subject       String
+  topic         String
+  level         String
+  type          String
+  tone          String
+  description   String
+  author        User                   @relation("ResourceAuthor", fields: [authorId], references: [id])
+  authorId      Int
+  group         Group?                 @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  groupId       String?
+  fileUrl       String?
+  externalUrl   String?
+  saveCount     Int                    @default(0)
+  helpfulCount  Int                    @default(0)
+  ratingAverage Float?
+  ratingCount   Int                    @default(0)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  saves         ResourceSave[]
+  helpfulVotes  ResourceHelpfulVote[]
+  posts         Post[]
+
+  @@index([subject])
+  @@index([topic])
+  @@index([level])
+  @@index([type])
+  @@index([authorId])
+  @@index([groupId])
+}
+
+/// owner: core/learning (read-only, no write path exists)
+model StudyRoom {
+  id                     String                 @id @default(uuid())
+  slug                   String                 @unique
+  title                  String
+  meta                   String                 @default("")
+  tone                   String                 @default("blue")
+  symbol                 String                 @default("Y")
+  activeParticipantCount Int                    @default(0)
+  status                 String                 @default("live")
+  group                  Group?                 @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  groupId                String?
+  participants           StudyRoomParticipant[]
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+
+  @@index([status])
+  @@index([groupId])
+  @@index([activeParticipantCount])
+}
+
+/// owner: core/learning (read-only, no write path exists)
+model StudyRoomParticipant {
+  id          String    @id @default(uuid())
+  studyRoom   StudyRoom @relation(fields: [studyRoomId], references: [id], onDelete: Cascade)
+  studyRoomId String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  joinedAt    DateTime  @default(now())
+
+  @@unique([studyRoomId, userId])
+  @@index([userId])
+}
+
+/// owner: core/learning (read-only, no write path exists)
+model Topic {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+  title           String   @unique
+  tone            String   @default("blue")
+  postCount       Int      @default(0)
+  discussionLabel String   @default("posts")
+  trendScore      Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([trendScore])
+}
+
+/// owner: core/learning
+model ResourceSave {
+  id         String   @id @default(uuid())
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  resourceId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  createdAt  DateTime @default(now())
+
+  @@unique([resourceId, userId])
+  @@index([userId])
+}
+
+/// owner: core/learning
+model ResourceHelpfulVote {
+  id         String   @id @default(uuid())
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  resourceId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  createdAt  DateTime @default(now())
+
+  @@unique([resourceId, userId])
+  @@index([userId])
+}
+
+/// owner: notifications — every row is created by the `notifications` event consumer from a
+/// domain event on a Redis Stream (B14, see event-architecture-plan.md). No other module
+/// writes this table; the read/mark-read HTTP endpoints belong to `services/notifications`.
+model Notification {
+  id        String    @id @default(uuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  /// The domain event type that produced this row ("messaging.message.sent", "identity.user.registered", ...).
+  type      String
+  /// The originating event's envelope id. One event yields at most one notification per
+  /// recipient (enforced by @@unique below), so a redelivery past the 24h Redis idempotency
+  /// window still cannot create a duplicate.
+  eventId   String
+  title     String
+  body      String    @default("")
+  /// Event-specific context (ids, slugs, display names) for rendering and deep links.
+  /// Schemaless on purpose — the shape differs per `type` (T-07 in data-architecture-plan.md).
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([eventId, userId])
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+}
+
+/// owner: infrastructure (written by every module's transactions via @repo/events'
+/// withOutbox helper, read only by the outbox relay — B13, see event-architecture-plan.md)
+model OutboxEvent {
+  id            String    @id @default(uuid())
+  type          String
+  version       Int       @default(1)
+  subject       String
+  producer      String
+  correlationId String?
+  causationId   String?
+  actorUserId   Int?
+  payload       Json
+  occurredAt    DateTime  @default(now())
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  lastError     String?
+
+  @@index([publishedAt, occurredAt])
+  @@index([type])
+  @@index([subject])
+}

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "tui",
+  "globalEnv": [
+    "NODE_ENV",
+
+    "DATABASE_URL",
+    "DIRECT_URL",
+    "DATABASE_POOL_MAX",
+
+    "GATEWAY_PORT",
+    "GATEWAY_REQUIRE_AUTH",
+    "GATEWAY_SHARED_TOKEN",
+    "GATEWAY_RATE_WINDOW_MS",
+    "GATEWAY_RATE_MAX_REQUESTS",
+    "INTERNAL_TOKEN_GUARD_ENABLED",
+
+    "IDENTITY_SERVICE_PORT",
+    "MESSAGING_SERVICE_PORT",
+    "MEDIA_SERVICE_PORT",
+    "NOTIFICATIONS_SERVICE_PORT",
+    "CORE_SERVICE_PORT",
+
+    "IDENTITY_SERVICE_URL",
+    "MESSAGING_SERVICE_URL",
+    "MEDIA_SERVICE_URL",
+    "NOTIFICATIONS_SERVICE_URL",
+    "CORE_SERVICE_URL",
+
+    "NEXTAUTH_SECRET",
+    "NEXTAUTH_URL",
+    "GOOGLE_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "GITHUB_ID",
+    "GITHUB_SECRET",
+    "FACEBOOK_CLIENT_ID",
+    "FACEBOOK_CLIENT_SECRET",
+
+    "NEXT_PUBLIC_BACKEND_API",
+    "NEXT_PUBLIC_CHAT_SOCKET_URL",
+    "FRONTEND_URL",
+    "FRONTEND_CLIENT_PORT",
+
+    "STORAGE_PROVIDER",
+    "AWS_REGION",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_S3_BUCKET",
+    "AWS_S3_PUBLIC_BASE_URL",
+    "AWS_CLOUDFRONT_URL",
+    "AWS_S3_PREFIX",
+
+    "NEXT_PUBLIC_STREAM_API_KEY",
+    "STREAM_SECRET_KEY",
+
+    "ENABLE_DEV_SEED_ROUTES",
+    "DEV_SEED_ROUTE_TOKEN",
+    "ENABLE_DEV_USER_SYNC",
+
+    "REDIS_URL",
+    "REDIS_PRESENCE_TTL_SECONDS",
+    "CACHE_TTL_DASHBOARD_SECONDS"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "build/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
+    },
+    "test": {
+      "dependsOn": ["^test"],
+      "outputs": ["coverage/**"]
+    },
+    "test:integration": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

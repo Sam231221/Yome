@@ -1,0 +1,28 @@
+name: Deploy Web
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [production]
+    paths:
+      - "apps/web/**"
+      - "packages/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bunx turbo run build --filter=@apps/web
+      - name: Deploy to Vercel
+        if: ${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_ORG_ID != '' && secrets.VERCEL_WEB_PROJECT_ID != '' }}
+        working-directory: apps/web
+        run: |
+          bunx vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
+          bunx vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}"
+          bunx vercel deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}"
