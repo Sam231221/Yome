@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { BsFillChatLeftTextFill, BsThreeDotsVertical } from "react-icons/bs";
+import { BsThreeDotsVertical } from "react-icons/bs";
 import { useStateProvider } from "@/context/StateContext";
-import { reducerCases } from "@/context/constants";
 import ContextMenu from "@/components/common/ContextMenu";
 import ProfileSkeleton from "@/components/Loading/Skeletons";
 export default function ChatListHeader({
@@ -11,7 +10,7 @@ export default function ChatListHeader({
 }: {
   isUserLoading: boolean;
 }) {
-  const [{ userInfo, socket }, dispatch] = useStateProvider();
+  const [{ userInfo, socket }] = useStateProvider();
   const router = useRouter();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,
@@ -39,10 +38,6 @@ export default function ChatListHeader({
     },
   ];
 
-  const handleAllContactsPage = () => {
-    dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
-  };
-
   return (
     <div className="messages-inbox-header">
       {isUserLoading ? (
@@ -61,14 +56,6 @@ export default function ChatListHeader({
       )}
 
       <div className="messages-header-actions relative">
-        <button
-          className="messages-icon-button"
-          title="New chat"
-          onClick={handleAllContactsPage}
-          type="button"
-        >
-          <BsFillChatLeftTextFill />
-        </button>
         <button
           className="messages-icon-button"
           title="Menu"

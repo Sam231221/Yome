@@ -112,12 +112,6 @@
   height: 18px;
 }
 
-.messages-header-actions > .messages-icon-button:first-child {
-  background: #2f68f6;
-  color: #fff;
-  border-color: #2f68f6;
-}
-
 .messages-search {
   margin: 18px 22px 16px;
   display: grid;
@@ -156,6 +150,13 @@
   flex: 1;
   overflow: auto;
   padding: 0 0 18px;
+}
+
+.conversation-list-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #8090ab;
+  font-size: 13px;
 }
 
 .messages-page > div,
