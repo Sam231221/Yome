@@ -109,6 +109,7 @@ test("buildInitialDirectConversationSummaries groups by conversation and counts 
     profilePicture: undefined,
     userProfile: { bio: "hello", address: "world" },
     totalUnreadMessages: 2,
+    hasMessages: true,
   });
 });
 

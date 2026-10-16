@@ -344,8 +344,63 @@ export async function getInitialUsersWithMessages(
       });
     }
 
+    // Followed users with no message history yet still belong in the sidebar
+    // (same "connected" relationship /get-connected-users already surfaces in New Chat)
+    // so a fresh connection doesn't vanish until someone sends the first message.
+    const conversedUserIds = new Set(
+      usersWithLatestPrivateMessages.map((user) => user.id)
+    );
+    const followedUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        following: {
+          select: {
+            id: true,
+            name: true,
+            firstname: true,
+            lastname: true,
+            username: true,
+            email: true,
+            profilePicture: true,
+            userProfile: { select: { bio: true, address: true } },
+          },
+        },
+      },
+    });
+    type FollowedUserRecord = {
+      id: number;
+      name: string | null;
+      firstname: string | null;
+      lastname: string | null;
+      username: string | null;
+      email: string | null;
+      profilePicture: string | null;
+      userProfile: { bio: string | null; address: string | null } | null;
+    };
+    const followedWithoutMessages = (
+      (followedUser?.following ?? []) as FollowedUserRecord[]
+    )
+      .filter((user) => !conversedUserIds.has(user.id))
+      .map((user) => ({
+        id: user.id,
+        name: user.name ?? "",
+        firstname: user.firstname ?? undefined,
+        lastname: user.lastname ?? undefined,
+        username: user.username ?? undefined,
+        email: user.email ?? undefined,
+        profilePicture: user.profilePicture ?? undefined,
+        userProfile: user.userProfile ?? undefined,
+        identifier: "user" as const,
+        chatType: "user" as const,
+        totalUnreadMessages: 0,
+        hasMessages: false,
+      }));
+
     res.status(200).json({
-      usersWithLatestPrivateMessages,
+      usersWithLatestPrivateMessages: [
+        ...usersWithLatestPrivateMessages,
+        ...followedWithoutMessages,
+      ],
       onlineUsers: await getOnlineUserIds(),
     });
   } catch (error) {
@@ -377,14 +432,9 @@ export async function getInitialGroupsWithMessages(
     const prisma = getPrismaInstance();
     const groupsWithLatestMessages = await prisma.group.findMany({
       where: {
-        AND: [
-          {
-            OR: [
-              { members: { some: { id: userId } } },
-              { admins: { some: { id: userId } } },
-            ],
-          },
-          { messages: { some: { groupId: { not: null } } } },
+        OR: [
+          { members: { some: { id: userId } } },
+          { admins: { some: { id: userId } } },
         ],
       },
       include: {

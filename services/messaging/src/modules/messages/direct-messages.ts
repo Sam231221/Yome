@@ -43,14 +43,14 @@ type DirectMessageRecord = {
 };
 
 export type DirectConversationSummary = {
-  conversationId: string;
-  messageId: number;
-  type: SupportedMessageType;
-  message: string;
-  messageStatus: "sent" | "delivered" | "read";
-  createdAt: Date;
-  senderId: number;
-  receiverId: number | null;
+  conversationId?: string;
+  messageId?: number;
+  type?: SupportedMessageType;
+  message?: string;
+  messageStatus?: "sent" | "delivered" | "read";
+  createdAt?: Date;
+  senderId?: number;
+  receiverId?: number | null;
   id: number;
   name: string;
   firstname?: string;
@@ -67,6 +67,7 @@ export type DirectConversationSummary = {
       }
     | null;
   totalUnreadMessages: number;
+  hasMessages: boolean;
 };
 
 export function normalizeMessageType(
@@ -142,6 +143,7 @@ export function buildInitialDirectConversationSummaries(
         profilePicture: otherParticipant?.profilePicture ?? undefined,
         userProfile: otherParticipant?.userProfile ?? undefined,
         totalUnreadMessages: !isSender && msg.messageStatus !== "read" ? 1 : 0,
+        hasMessages: true,
       });
       continue;
     }
