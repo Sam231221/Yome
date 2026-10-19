@@ -43,7 +43,9 @@ app.use("/api/resources", resourcesRoutes);
 
 app.use(errorHandler);
 
-const server = app.listen(port, () => {
+// "::" binds dual-stack, so the service is reachable over Railway's IPv6 private network as
+// well as on IPv4 (localhost in dev).
+const server = app.listen(port, "::", () => {
   logger.info("Core service listening", { port });
 });
 

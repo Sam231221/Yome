@@ -83,6 +83,8 @@ io.use((socket, next) => {
 
 attachSocketHandlers(io);
 
-httpServer.listen(port, () => {
+// "::" binds dual-stack, so the service is reachable over Railway's IPv6 private network as
+// well as on IPv4 (localhost in dev).
+httpServer.listen(port, "::", () => {
   logger.info("Messaging service listening", { port });
 });

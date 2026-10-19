@@ -84,6 +84,8 @@ for (const rule of routeManifest) {
   );
 }
 
-app.listen(port, () => {
+// "::" binds dual-stack, so the service is reachable over Railway's IPv6 private network as
+// well as on IPv4 (localhost in dev).
+app.listen(port, "::", () => {
   logger.info("Gateway service listening", { port });
 });

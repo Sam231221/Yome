@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildObjectKey } from "./s3.js";
+import { buildObjectKey, buildS3ClientOptions } from "./s3.js";
 
 test("buildObjectKey uses conversation-based folders for direct audio uploads", () => {
   const key = buildObjectKey({
@@ -61,4 +61,29 @@ test("buildObjectKey rejects direct uploads without a conversationId", () => {
       extension: "webm",
     })
   );
+});
+
+test("buildS3ClientOptions leaves endpoint and path-style unset for plain AWS S3", () => {
+  const options = buildS3ClientOptions({
+    region: "us-east-1",
+    accessKeyId: "key",
+    secretAccessKey: "secret",
+    forcePathStyle: false,
+  });
+
+  assert.equal(options.endpoint, undefined);
+  assert.equal(options.forcePathStyle, undefined);
+});
+
+test("buildS3ClientOptions passes a custom endpoint and path-style for S3-compatible providers", () => {
+  const options = buildS3ClientOptions({
+    region: "ap-south-1",
+    accessKeyId: "key",
+    secretAccessKey: "secret",
+    endpoint: "https://abc.storage.supabase.co/storage/v1/s3",
+    forcePathStyle: true,
+  });
+
+  assert.equal(options.endpoint, "https://abc.storage.supabase.co/storage/v1/s3");
+  assert.equal(options.forcePathStyle, true);
 });
