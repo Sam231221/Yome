@@ -1,14 +1,16 @@
-# Deploying Yome: Vercel + Railway + Supabase + Upstash
+# Deploying Yome: Vercel + Railway (+ Supabase Storage)
 
 This guide deploys the full stack on low-cost managed platforms:
 
 | Piece | Platform | Cost |
 |---|---|---|
 | `apps/web` (Next.js) | Vercel (Hobby) | Free, for non-commercial use |
-| 6 backend services (`services/*`) | Railway (Hobby) | $5/mo, which includes $5 of usage; expect about $5–8 |
-| PostgreSQL | Supabase | Free: 500 MB, and the project pauses after about 7 idle days |
+| 6 backend services (`services/*`) | Railway (Hobby) | $5/mo, which includes $5 of usage |
+| PostgreSQL | Railway (same project) | Billed as usage; never pauses |
+| Redis | Railway (same project) | Billed as usage |
 | Media storage (S3-compatible) | Supabase Storage | Free: 1 GB |
-| Redis | Upstash | Free: about 500K commands/month |
+
+Expect about $8–12/month of Railway usage in total, so slightly more than the $5 that's included.
 | Calls and video | GetStream | Free tier |
 
 ```
@@ -18,7 +20,7 @@ Browser ──► Vercel (Next.js, NextAuth)
    │                                      (private network: *.railway.internal)
    └────► Railway: messaging (public, Socket.IO WebSockets)
 
-All services ──► Supabase Postgres (session pooler)   Upstash Redis   Supabase Storage (S3 API)
+All services ──► Railway Postgres + Railway Redis (private network)   Supabase Storage (S3 API)
 ```
 
 Only `gateway` and `messaging` get public URLs. The other four services are reachable only over
@@ -48,34 +50,14 @@ Use it as **`GATEWAY_SHARED_TOKEN`**. It's the token between web and gateway, an
 
 ---
 
-## 1. Supabase: database
+## 1. Supabase: storage (media uploads only)
 
-1. Create a project at [supabase.com](https://supabase.com). Note its **region**. You'll pick the
-   nearest Railway and Upstash regions later.
-2. Go to **Connect → ORMs / Connection string** and copy the **Session pooler** string (port
-   `5432`, host `aws-0-<region>.pooler.supabase.com`). Use it for **both** variables:
-   ```
-   DATABASE_URL=postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
-   DIRECT_URL=<same as DATABASE_URL>
-   ```
-   - Don't use the *direct* connection (`db.<ref>.supabase.co`). It's IPv6-only, and Railway can't
-     reach it.
-   - Don't use the *transaction* pooler (port `6543`). The services are long-running and hold
-     connections, so session mode is the right fit.
-3. Run the migrations from your machine. Put the two URLs above into your local root `.env`, then run:
-   ```bash
-   bun install
-   bun run db:migrate
-   ```
-   Seed data is optional and is the same process as in local dev. Never set `ENABLE_DEV_SEED_ROUTES` in production.
-4. Leave `DATABASE_POOL_MAX=2`. Six services at 2 connections each is about 12 connections, which
-   is well inside the free pooler's limit.
+Supabase is used only for files here; the database is on Railway.
 
-## 2. Supabase: storage
-
-1. Go to **Storage → New bucket**, name it `media`, and turn **Public bucket** on.
-2. Go to **Project Settings → Storage → S3 Connection**. Enable it and **create an access key**.
-3. Note these values:
+1. Create a project at [supabase.com](https://supabase.com), in a region near your Railway region.
+2. Go to **Storage → New bucket**, name it `media`, and turn **Public bucket** on.
+3. Go to **Project Settings → Storage → S3 Connection**. Enable it and **create an access key**.
+4. Note these values:
    ```
    STORAGE_PROVIDER=s3
    AWS_REGION=<the region shown on the S3 Connection page, e.g. ap-south-1>
@@ -89,16 +71,7 @@ Use it as **`GATEWAY_SHARED_TOKEN`**. It's the token between web and gateway, an
    `AWS_S3_ENDPOINT` and `AWS_S3_FORCE_PATH_STYLE` point `@repo/storage` at Supabase instead of AWS.
    Uploaded files are served from `AWS_S3_PUBLIC_BASE_URL`.
 
-## 3. Upstash: Redis
-
-1. Create a **Redis** database at [upstash.com](https://upstash.com). Pick the region closest to
-   your Railway region and leave TLS enabled.
-2. Copy the **TCP / ioredis** connection URL. It must start with `rediss://`:
-   ```
-   REDIS_URL=rediss://default:<password>@<name>.upstash.io:6379
-   ```
-
-## 4. GetStream: calls
+## 2. GetStream: calls
 
 1. Create a free app at [getstream.io](https://getstream.io).
 2. Copy its key and secret:
@@ -109,14 +82,18 @@ Use it as **`GATEWAY_SHARED_TOKEN`**. It's the token between web and gateway, an
 
 ---
 
-## 5. Railway: backend services
+## 3. Railway: database, Redis and backend services
 
 Each service has a config-as-code file at `services/<name>/railway.json`. It tells Railway to:
 - build `Dockerfile.service`;
 - health-check `/health`;
 - redeploy only when that service, `packages/`, the Dockerfile or the lockfile changes.
 
-### 5.1 Create the project and services
+`services/core/railway.json` also has a **pre-deploy command**,
+`bun run --cwd packages/database db:migrate`. Before each new core deployment goes live, it applies
+any pending Prisma migrations to the Railway database, so you never run migrations by hand.
+
+### 3.1 Create the project, database and services
 
 1. Sign up at [railway.com](https://railway.com) with GitHub and upgrade to the **Hobby** plan.
 2. Create a project with **New Project → Deploy from GitHub repo**, and pick this repo. That
@@ -124,26 +101,30 @@ Each service has a config-as-code file at `services/<name>/railway.json`. It tel
    repo, so you end up with 6 services.
 3. Rename the services exactly: `gateway`, `identity`, `core`, `messaging`, `media`,
    `notifications`. The reference variables below depend on these names.
-4. In **Settings**, set these for **each** service:
+4. Click **+ Create → Database → Add PostgreSQL**, then **+ Create → Database → Add Redis**. Leave
+   their names as `Postgres` and `Redis`; the variables below reference them by those names.
+   Don't generate public domains for either. They're reachable only over the private network.
+5. In **Settings**, set these for **each** of the 6 app services:
    - **Source → Root Directory:** leave empty (repo root). The Dockerfile needs the whole monorepo.
    - **Source → Branch:** `production`.
    - **Config-as-code → Railway config file:** `/services/<name>/railway.json`.
-   - **Deploy → Region:** the same region for all six, near Supabase and Upstash.
+   - **Deploy → Region:** the same region for all six, and the same as Postgres and Redis.
 
-### 5.2 Shared variables (Project → Settings → Shared Variables)
+### 3.2 Shared variables (Project → Settings → Shared Variables)
 
 Add these once. Then on each service, open **Variables → Shared Variable** and share them all into it.
 
 ```
 NODE_ENV=production
 
-# Database
-DATABASE_URL=<session pooler URL from step 1>
-DIRECT_URL=<same>
+# Database (Railway Postgres, private network)
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+DIRECT_URL=${{Postgres.DATABASE_URL}}
 DATABASE_POOL_MAX=2
 
-# Redis
-REDIS_URL=<rediss:// URL from step 3>
+# Redis (Railway Redis, private network). Keep the ?family=0: ioredis looks up IPv4 only by
+# default, and *.railway.internal hostnames can be IPv6-only, which fails with ENOTFOUND.
+REDIS_URL=${{Redis.REDIS_URL}}?family=0
 
 # Auth / internal trust
 NEXTAUTH_SECRET=<from step 0>
@@ -153,10 +134,10 @@ INTERNAL_TOKEN_GUARD_ENABLED=true
 GATEWAY_RATE_WINDOW_MS=60000
 GATEWAY_RATE_MAX_REQUESTS=120
 
-# CORS origin for gateway + Socket.IO. Use a placeholder now and fix it after step 6.
+# CORS origin for gateway + Socket.IO. Use a placeholder now and fix it after step 4.
 FRONTEND_URL=https://<your-app>.vercel.app
 
-# Storage (all the values from step 2)
+# Storage (all the values from step 1)
 STORAGE_PROVIDER=s3
 AWS_REGION=...
 AWS_ACCESS_KEY_ID=...
@@ -194,7 +175,7 @@ If Railway won't resolve service references inside shared variables, add the fiv
 lines directly to **gateway** instead, and add `MESSAGING_SERVICE_URL` to **media**, which calls
 messaging directly. Those are the only services that read them.
 
-### 5.3 Per-service variable
+### 3.3 Per-service variable
 
 On **each** service, add one service variable. Railway passes it to the Dockerfile as the
 `SERVICE_DIR` build argument:
@@ -208,7 +189,7 @@ On **each** service, add one service variable. Railway passes it to the Dockerfi
 | media | `SERVICE_DIR=services/media` |
 | notifications | `SERVICE_DIR=services/notifications` |
 
-### 5.4 Public domains
+### 3.4 Public domains
 
 Go to **Settings → Networking → Generate Domain**, but **only** on these two services:
 
@@ -219,19 +200,34 @@ Go to **Settings → Networking → Generate Domain**, but **only** on these two
 
 Leave `identity`, `core`, `media` and `notifications` without a public domain.
 
-### 5.5 Deploy and check
+### 3.5 Deploy and check
 
-Deploy all six with **Deploy** or by pushing to `production`. When they're green, open these:
+Deploy **core first** and wait until it's green. Its pre-deploy step creates the database tables, and
+the other services need them. Then deploy the other five with **Deploy**. After the first time,
+pushing to `production` redeploys everything that changed, and core migrates before going live.
+When they're green, open these:
 - `https://<gateway-domain>/health` should return `{"ok":true,"service":"gateway","services":{...}}`, and the
   upstream URLs should be `*.railway.internal` addresses.
 - `https://<messaging-domain>/health` should return `{"ok":true,"service":"messaging"}`.
 
 If a service crashes on boot, check its **Deploy Logs**. The usual cause is a missing variable,
 because the services throw on startup without `GATEWAY_SHARED_TOKEN`, `NEXTAUTH_SECRET` or `REDIS_URL`.
+If **core** fails in the *pre-deploy* phase, the migration failed; its log shows the Prisma error.
+
+### 3.6 Seed data (optional)
+
+The database is private, so to seed it or inspect it from your machine:
+1. Open the **Postgres** service, go to **Variables**, and copy `DATABASE_PUBLIC_URL`.
+2. Put it in your local `.env` as `DATABASE_URL` and `DIRECT_URL`, and run your usual seed
+   command.
+3. Switch your `.env` back to the local database afterwards.
+
+Traffic over the public URL counts as Railway egress, so use it for one-off jobs only. Railway's
+Postgres **Data** tab also lets you browse tables without connecting from your machine.
 
 ---
 
-## 6. Vercel: web app
+## 4. Vercel: web app
 
 1. At [vercel.com](https://vercel.com), go to **Add New → Project** and import this repo.
 2. In **Configure Project**, set:
@@ -280,11 +276,11 @@ or every push gets deployed twice. Without them the workflow just acts as a buil
 
 ---
 
-## 7. Smoke test
+## 5. Smoke test
 
 1. Open the Vercel URL and sign up or sign in.
 2. Open a second browser (or an incognito window) as another user and send a direct message. It
-   should arrive live; that's the Socket.IO path through messaging and Upstash.
+   should arrive live; that's the Socket.IO path through messaging and Railway Redis.
 3. Upload an avatar or a chat image. It should load from `…supabase.co/storage/v1/object/public/media/…`.
 4. Start an audio or video call. Tokens are minted by messaging and the call runs through GetStream.
 
@@ -298,15 +294,19 @@ or every push gets deployed twice. Without them the workflow just acts as a buil
 | `401` from internal services | The `GATEWAY_SHARED_TOKEN` values differ between Vercel and Railway. |
 | Upload fails with `SignatureDoesNotMatch` or `NoSuchBucket` | `AWS_S3_ENDPOINT`, `AWS_REGION` or `AWS_S3_FORCE_PATH_STYLE=true` is missing or wrong. |
 | Images upload but Next.js refuses to render them | `AWS_S3_PUBLIC_BASE_URL` wasn't set on Vercel at build time. Set it and redeploy. |
-| `Can't reach database server` | The direct or IPv6 Supabase host is in use instead of the session pooler, or the project is paused. Resume it in the Supabase dashboard. |
+| `Can't reach database server` | `DATABASE_URL` isn't the `${{Postgres.DATABASE_URL}}` reference, or the service is in a different region or environment from Postgres. |
+| `relation "…" does not exist` | Migrations haven't run yet. Redeploy **core**, then the failing service. |
+| Redis `ENOTFOUND redis.railway.internal` | `?family=0` is missing from `REDIS_URL`. |
 | Spending creeps above $5 | Check Railway's **Usage** page and set a usage limit in **Account → Usage**. |
 
 ## Day-2 operations
 
 - **Deploys:** pushing to `production` redeploys only the Railway services whose watch patterns
   match, and Vercel redeploys the web app.
-- **Migrations:** run `bun run db:migrate` locally against the Supabase URLs **before** pushing code
-  that needs the new schema.
+- **Migrations:** they're automatic. A new migration under `packages/database/prisma/migrations`
+  matches core's `packages/**` watch pattern, so core redeploys and its pre-deploy step applies the
+  migration. Keep migrations backward-compatible (add first, remove later), because the other
+  services may briefly run old code against the new schema.
 - **Scaling:** raise `numReplicas` in a service's `railway.json`. Messaging fans out through the
   Redis adapter, and the outbox relay uses `SKIP LOCKED`, so replicas are safe. Watch the Postgres
   connection count, which is `DATABASE_POOL_MAX` times the total number of replicas.

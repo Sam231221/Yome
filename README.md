@@ -173,7 +173,7 @@ bun run dev:web
 
 ## Deployment
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for a step-by-step guide to deploying on Vercel (web), Railway (services), Supabase (Postgres + storage) and Upstash (Redis).
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for a step-by-step guide to deploying on Vercel (web), Railway (services, Postgres and Redis) and Supabase Storage (media).
 
 ## Validation And Tests
 
