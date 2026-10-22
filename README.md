@@ -86,67 +86,22 @@ Create a single `.env` file in the monorepo root and keep it out of git. All
 apps, services, and Prisma scripts load this root file for local development;
 service-level env files are not used for the normal local workflow.
 
-Gateway and auth:
+[`.env.example`](.env.example) is the source of truth: it lists only the variables the code
+reads, grouped by area, with optional ones commented out next to their defaults. Copy it:
 
-- `GATEWAY_SHARED_TOKEN`
-- `GATEWAY_REQUIRE_AUTH`
-- `INTERNAL_TOKEN_GUARD_ENABLED`
-- `NEXTAUTH_SECRET`
-- `JWT_KEY`
-- `GATEWAY_RATE_WINDOW_MS`
-- `GATEWAY_RATE_MAX_REQUESTS`
+```bash
+cp .env.example .env
+```
 
-Service ports and URLs:
+At minimum, fill in:
 
-- `GATEWAY_PORT`
-- `IDENTITY_SERVICE_PORT`
-- `USER_SERVICE_PORT`
-- `MESSAGING_SERVICE_PORT`
-- `MEDIA_SERVICE_PORT`
-- `NOTIFICATIONS_SERVICE_PORT`
-- `IDENTITY_SERVICE_URL`
-- `USER_SERVICE_URL`
-- `MESSAGING_SERVICE_URL`
-- `MEDIA_SERVICE_URL`
-- `NOTIFICATIONS_SERVICE_URL`
+- `GATEWAY_SHARED_TOKEN` and `NEXTAUTH_SECRET`, both shared by the web app and the services
+- the object-storage block (`AWS_*`). It's set up for Supabase Storage; for plain AWS S3, leave
+  `AWS_S3_ENDPOINT` unset
+- `NEXT_PUBLIC_STREAM_API_KEY` and `STREAM_SECRET_KEY` for calls
 
-Database:
-
-- `DATABASE_URL`
-- `DIRECT_URL`
-
-Redis / cache (B11 presence + rate limiting, B12 cache-aside reads):
-
-- `REDIS_URL`
-- `REDIS_PRESENCE_TTL_SECONDS` (optional, defaults to 60)
-- `CACHE_TTL_DASHBOARD_SECONDS` (optional, defaults to 60)
-
-Frontend:
-
-- `NEXT_PUBLIC_BACKEND_API`
-- `NEXT_PUBLIC_CHAT_SOCKET_URL`
-- `FRONTEND_URL`
-- `FRONTEND_CLIENT_PORT` is a legacy alias; prefer `FRONTEND_URL`.
-
-Object storage:
-
-- `STORAGE_PROVIDER`
-- `AWS_REGION`
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `AWS_S3_BUCKET`
-- `AWS_S3_PUBLIC_BASE_URL` or `AWS_CLOUDFRONT_URL`
-- optional `AWS_S3_PREFIX`
-
-Stream chat/video:
-
-- `NEXT_PUBLIC_STREAM_API_KEY`
-- `STREAM_SECRET_KEY`
-
-Development-only seed/reset routes:
-
-- `ENABLE_DEV_SEED_ROUTES`
-- `DEV_SEED_ROUTE_TOKEN`
+The local database and Redis URLs already point at `bun run infra:up` (docker-compose.yml).
+For deployed values, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ### Database
 

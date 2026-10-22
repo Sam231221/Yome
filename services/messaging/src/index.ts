@@ -53,10 +53,7 @@ const subClient = pubClient.duplicate();
 
 const io = new Server(httpServer, {
   cors: {
-    origin:
-      process.env.FRONTEND_URL ||
-      process.env.FRONTEND_CLIENT_PORT ||
-      "http://localhost:3000",
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
   },
   adapter: createAdapter(pubClient, subClient),

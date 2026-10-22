@@ -22,9 +22,7 @@ const port = servicePorts.gateway;
 const authEnabled = process.env.GATEWAY_REQUIRE_AUTH === "true";
 const sharedGatewayToken = process.env.GATEWAY_SHARED_TOKEN || "";
 const frontendOrigin =
-  process.env.FRONTEND_URL ||
-  process.env.FRONTEND_CLIENT_PORT ||
-  "http://localhost:3000";
+  process.env.FRONTEND_URL || "http://localhost:3000";
 const rateWindowMs = Number(process.env.GATEWAY_RATE_WINDOW_MS || 60_000);
 const rateMaxRequests = Number(process.env.GATEWAY_RATE_MAX_REQUESTS || 120);
 
