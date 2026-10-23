@@ -9,9 +9,9 @@ This guide deploys the full stack on low-cost managed platforms:
 | PostgreSQL | Railway (same project) | Billed as usage; never pauses |
 | Redis | Railway (same project) | Billed as usage |
 | Media storage (S3-compatible) | Supabase Storage | Free: 1 GB |
+| Calls and video | GetStream | Free tier |
 
 Expect about $8–12/month of Railway usage in total, so slightly more than the $5 that's included.
-| Calls and video | GetStream | Free tier |
 
 ```
 Browser ──► Vercel (Next.js, NextAuth)
@@ -98,7 +98,8 @@ any pending Prisma migrations to the Railway database, so you never run migratio
 1. Sign up at [railway.com](https://railway.com) with GitHub and upgrade to the **Hobby** plan.
 2. Create a project with **New Project → Deploy from GitHub repo**, and pick this repo. That
    creates the first service. Click **+ Create → GitHub Repo** five more times, picking the same
-   repo, so you end up with 6 services.
+   repo, so you end up with 6 services. Railway starts a build for each one straight away; those
+   first builds **fail** (no `SERVICE_DIR` yet). That's expected, so ignore them until step 3.5.
 3. Rename the services exactly: `gateway`, `identity`, `core`, `messaging`, `media`,
    `notifications`. The reference variables below depend on these names.
 4. Click **+ Create → Database → Add PostgreSQL**, then **+ Create → Database → Add Redis**. Leave
@@ -112,33 +113,20 @@ any pending Prisma migrations to the Railway database, so you never run migratio
 
 ### 3.2 Shared variables (Project → Settings → Shared Variables)
 
-Add these once. Then on each service, open **Variables → Shared Variable** and share them all into it.
+These are plain values that are the same for every service. Add them once, then on **each** of the
+6 app services open **Variables → Shared Variable** and add them all. Railway's
+`${{Service.VAR}}` references go in 3.3 as service variables, not here.
 
 ```
-NODE_ENV=production
-
-# Database (Railway Postgres, private network)
-DATABASE_URL=${{Postgres.DATABASE_URL}}
-DIRECT_URL=${{Postgres.DATABASE_URL}}
-DATABASE_POOL_MAX=2
-
-# Redis (Railway Redis, private network). Keep the ?family=0: ioredis looks up IPv4 only by
-# default, and *.railway.internal hostnames can be IPv6-only, which fails with ENOTFOUND.
-REDIS_URL=${{Redis.REDIS_URL}}?family=0
-
 # Auth / internal trust
 NEXTAUTH_SECRET=<from step 0>
 GATEWAY_SHARED_TOKEN=<from step 0>
 GATEWAY_REQUIRE_AUTH=true
-INTERNAL_TOKEN_GUARD_ENABLED=true
-GATEWAY_RATE_WINDOW_MS=60000
-GATEWAY_RATE_MAX_REQUESTS=120
 
 # CORS origin for gateway + Socket.IO. Use a placeholder now and fix it after step 4.
 FRONTEND_URL=https://<your-app>.vercel.app
 
 # Storage (all the values from step 1)
-STORAGE_PROVIDER=s3
 AWS_REGION=...
 AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
@@ -150,20 +138,29 @@ AWS_S3_PUBLIC_BASE_URL=https://<ref>.supabase.co/storage/v1/object/public/media
 # GetStream
 NEXT_PUBLIC_STREAM_API_KEY=...
 STREAM_SECRET_KEY=...
+```
 
-# Never on in production
-ENABLE_DEV_SEED_ROUTES=false
-ENABLE_DEV_USER_SYNC=false
+Leave everything else unset; the code defaults are right for production:
+- `NODE_ENV=production` is already baked into `Dockerfile.service`.
+- Rate limits default to 120 requests per 60 s, and `DATABASE_POOL_MAX` defaults to 2.
+- The seed routes stay disabled because `NODE_ENV` is `production`, even if
+  `ENABLE_DEV_SEED_ROUTES` is set by mistake.
 
-# Ports (each service reads its own one)
+### 3.3 Service variables (each service → Variables)
+
+Each service needs `SERVICE_DIR`, which Railway passes to the Dockerfile's `ARG SERVICE_DIR`, and
+`PORT`. Railway sends **health checks to `PORT`** and injects its own value when you don't set one,
+so `PORT` must equal the port the service listens on. The rest are `${{...}}` references to Postgres,
+Redis and the other services, and each service only gets the ones it reads.
+
+Paste each block into that service's **Variables → Raw Editor**:
+
+**gateway**
+```
+SERVICE_DIR=services/gateway
+PORT=4100
 GATEWAY_PORT=4100
-IDENTITY_SERVICE_PORT=4101
-MESSAGING_SERVICE_PORT=4103
-MEDIA_SERVICE_PORT=4104
-NOTIFICATIONS_SERVICE_PORT=4105
-CORE_SERVICE_PORT=4107
-
-# Internal URLs over Railway's private network (Railway resolves the ${{...}} references)
+REDIS_URL=${{Redis.REDIS_URL}}?family=0
 IDENTITY_SERVICE_URL=http://${{identity.RAILWAY_PRIVATE_DOMAIN}}:4101
 MESSAGING_SERVICE_URL=http://${{messaging.RAILWAY_PRIVATE_DOMAIN}}:4103
 MEDIA_SERVICE_URL=http://${{media.RAILWAY_PRIVATE_DOMAIN}}:4104
@@ -171,27 +168,64 @@ NOTIFICATIONS_SERVICE_URL=http://${{notifications.RAILWAY_PRIVATE_DOMAIN}}:4105
 CORE_SERVICE_URL=http://${{core.RAILWAY_PRIVATE_DOMAIN}}:4107
 ```
 
-If Railway won't resolve service references inside shared variables, add the five `*_SERVICE_URL`
-lines directly to **gateway** instead, and add `MESSAGING_SERVICE_URL` to **media**, which calls
-messaging directly. Those are the only services that read them.
+**identity**
+```
+SERVICE_DIR=services/identity
+PORT=4101
+IDENTITY_SERVICE_PORT=4101
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+DIRECT_URL=${{Postgres.DATABASE_URL}}
+```
 
-### 3.3 Per-service variable
+**core** (its pre-deploy migration uses `DIRECT_URL`)
+```
+SERVICE_DIR=services/core
+PORT=4107
+CORE_SERVICE_PORT=4107
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+DIRECT_URL=${{Postgres.DATABASE_URL}}
+REDIS_URL=${{Redis.REDIS_URL}}?family=0
+```
 
-On **each** service, add one service variable. Railway passes it to the Dockerfile as the
-`SERVICE_DIR` build argument:
+**messaging**
+```
+SERVICE_DIR=services/messaging
+PORT=4103
+MESSAGING_SERVICE_PORT=4103
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+DIRECT_URL=${{Postgres.DATABASE_URL}}
+REDIS_URL=${{Redis.REDIS_URL}}?family=0
+```
 
-| Service | Variable |
-|---|---|
-| gateway | `SERVICE_DIR=services/gateway` |
-| identity | `SERVICE_DIR=services/identity` |
-| core | `SERVICE_DIR=services/core` |
-| messaging | `SERVICE_DIR=services/messaging` |
-| media | `SERVICE_DIR=services/media` |
-| notifications | `SERVICE_DIR=services/notifications` |
+**media** (calls messaging directly to authorise uploads)
+```
+SERVICE_DIR=services/media
+PORT=4104
+MEDIA_SERVICE_PORT=4104
+MESSAGING_SERVICE_URL=http://${{messaging.RAILWAY_PRIVATE_DOMAIN}}:4103
+```
+
+**notifications**
+```
+SERVICE_DIR=services/notifications
+PORT=4105
+NOTIFICATIONS_SERVICE_PORT=4105
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+DIRECT_URL=${{Postgres.DATABASE_URL}}
+REDIS_URL=${{Redis.REDIS_URL}}?family=0
+```
+
+Notes:
+- **Postgres.** `${{Postgres.DATABASE_URL}}` is the private address, so traffic stays on Railway's network.
+- **Redis.** Keep the `?family=0`. ioredis looks up IPv4 only by default, and `*.railway.internal`
+  names can be IPv6-only, which fails with `ENOTFOUND`.
+- **Ports.** `PORT` and the service's own `*_SERVICE_PORT` must match, and the port in every
+  `*_SERVICE_URL` must match the target service's port.
 
 ### 3.4 Public domains
 
-Go to **Settings → Networking → Generate Domain**, but **only** on these two services:
+Go to **Settings → Networking → Generate Domain**, but **only** on these two services. When it
+asks for a port, use the same one as that service's `PORT`:
 
 | Service | Target port | Used as |
 |---|---|---|
@@ -202,7 +236,7 @@ Leave `identity`, `core`, `media` and `notifications` without a public domain.
 
 ### 3.5 Deploy and check
 
-Deploy **core first** and wait until it's green. Its pre-deploy step creates the database tables, and
+Deploy **core first** (open it, then go to **Deployments → Redeploy**, or press **Deploy** on the staged changes) and wait until it's green. Its pre-deploy step creates the database tables, and
 the other services need them. Then deploy the other five with **Deploy**. After the first time,
 pushing to `production` redeploys everything that changed, and core migrates before going live.
 When they're green, open these:
@@ -210,26 +244,36 @@ When they're green, open these:
   upstream URLs should be `*.railway.internal` addresses.
 - `https://<messaging-domain>/health` should return `{"ok":true,"service":"messaging"}`.
 
-If a service crashes on boot, check its **Deploy Logs**. The usual cause is a missing variable,
-because the services throw on startup without `GATEWAY_SHARED_TOKEN`, `NEXTAUTH_SECRET` or `REDIS_URL`.
+If a service crashes on boot, check its **Deploy Logs**. The usual cause is a missing variable:
+the gateway won't start without `GATEWAY_SHARED_TOKEN`, messaging won't start without
+`NEXTAUTH_SECRET` or `REDIS_URL`, and every service needs `SERVICE_DIR` at build time. If the build
+works but the deploy is stuck at **health check**, `PORT` doesn't match the service's port.
 If **core** fails in the *pre-deploy* phase, the migration failed; its log shows the Prisma error.
 
-### 3.6 Seed data (optional)
+### 3.6 Seed demo data (optional)
 
-The database is private, so to seed it or inspect it from your machine:
-1. Open the **Postgres** service, go to **Variables**, and copy `DATABASE_PUBLIC_URL`.
-2. Put it in your local `.env` as `DATABASE_URL` and `DIRECT_URL`, and run your usual seed
-   command.
-3. Switch your `.env` back to the local database afterwards.
+The seed routes refuse to run when `NODE_ENV=production`, so they're disabled on Railway. To seed
+the Railway database, run your **local** stack against it for a few minutes:
+
+1. Open the **Postgres** service, go to **Variables**, and copy `DATABASE_PUBLIC_URL`. This is a
+   public TCP proxy address.
+2. In your local `.env`, set `DATABASE_URL` and `DIRECT_URL` to it. Keep `ENABLE_DEV_SEED_ROUTES=true`
+   and `DEV_SEED_ROUTE_TOKEN` set.
+3. Start the stack (`bun run dev:services` and `bun run dev:web`). Then call the same seed routes
+   you use locally, on `http://localhost:3000/api/dev/db/…` (`seed-users`, `seed-groups`,
+   `seed-resources`, `seed-dashboard`).
+4. **Switch `.env` back** to the local database straight away. While it points at Railway, the
+   local `reset` route wipes the production data.
 
 Traffic over the public URL counts as Railway egress, so use it for one-off jobs only. Railway's
-Postgres **Data** tab also lets you browse tables without connecting from your machine.
+Postgres **Data** tab lets you browse tables without connecting from your machine.
 
 ---
 
 ## 4. Vercel: web app
 
-1. At [vercel.com](https://vercel.com), go to **Add New → Project** and import this repo.
+1. At [vercel.com](https://vercel.com), go to **Add New → Project** and import this repo. If the
+   project already exists, open **Settings** and check the same values below.
 2. In **Configure Project**, set:
    - **Root Directory:** `apps/web`. Then enable **Include files outside the root directory in
      the Build Step**.
@@ -256,9 +300,8 @@ Postgres **Data** tab also lets you browse tables without connecting from your m
    FACEBOOK_CLIENT_ID=...
    FACEBOOK_CLIENT_SECRET=...
 
-   ENABLE_DEV_SEED_ROUTES=false
-   ENABLE_DEV_USER_SYNC=false
    ```
+   Leave `ENABLE_DEV_SEED_ROUTES` and `ENABLE_DEV_USER_SYNC` unset; both default to off.
    `NEXT_PUBLIC_*` values and `AWS_S3_PUBLIC_BASE_URL` are baked in **at build time**. After
    changing them, redeploy.
 4. Click **Deploy**. Then go to **Settings → Git** and set the **Production Branch** to `production`.
@@ -290,13 +333,15 @@ or every push gets deployed twice. Without them the workflow just acts as a buil
 |---|---|
 | Browser console shows CORS errors calling the gateway | `FRONTEND_URL` on Railway doesn't exactly match the Vercel origin. Note that preview deployments use different URLs. |
 | Socket never connects, or gets `unauthorized` | `NEXT_PUBLIC_CHAT_SOCKET_URL` is wrong, or the `NEXTAUTH_SECRET` values differ between Vercel and Railway. |
-| Gateway returns 502/503 for one route | That service is down, or its `*_SERVICE_URL` or port is wrong. Check that the service's deploy logs say it's listening. |
+| Gateway returns 502/503 for one route | That service is down, or the gateway's `*_SERVICE_URL` for it is wrong. Check that the service's deploy logs say it's listening. |
 | `401` from internal services | The `GATEWAY_SHARED_TOKEN` values differ between Vercel and Railway. |
 | Upload fails with `SignatureDoesNotMatch` or `NoSuchBucket` | `AWS_S3_ENDPOINT`, `AWS_REGION` or `AWS_S3_FORCE_PATH_STYLE=true` is missing or wrong. |
 | Images upload but Next.js refuses to render them | `AWS_S3_PUBLIC_BASE_URL` wasn't set on Vercel at build time. Set it and redeploy. |
 | `Can't reach database server` | `DATABASE_URL` isn't the `${{Postgres.DATABASE_URL}}` reference, or the service is in a different region or environment from Postgres. |
 | `relation "…" does not exist` | Migrations haven't run yet. Redeploy **core**, then the failing service. |
 | Redis `ENOTFOUND redis.railway.internal` | `?family=0` is missing from `REDIS_URL`. |
+| Deploy hangs at **Healthcheck** and then fails | That service's `PORT` isn't the port it listens on (see 3.3). |
+| Build fails with `SERVICE_DIR build-arg is required` | `SERVICE_DIR` is missing from that service's variables. |
 | Spending creeps above $5 | Check Railway's **Usage** page and set a usage limit in **Account → Usage**. |
 
 ## Day-2 operations
