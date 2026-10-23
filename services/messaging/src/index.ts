@@ -53,10 +53,7 @@ const subClient = pubClient.duplicate();
 
 const io = new Server(httpServer, {
   cors: {
-    origin:
-      process.env.FRONTEND_URL ||
-      process.env.FRONTEND_CLIENT_PORT ||
-      "http://localhost:3000",
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
   },
   adapter: createAdapter(pubClient, subClient),
@@ -83,6 +80,8 @@ io.use((socket, next) => {
 
 attachSocketHandlers(io);
 
-httpServer.listen(port, () => {
+// "::" binds dual-stack, so the service is reachable over Railway's IPv6 private network as
+// well as on IPv4 (localhost in dev).
+httpServer.listen(port, "::", () => {
   logger.info("Messaging service listening", { port });
 });

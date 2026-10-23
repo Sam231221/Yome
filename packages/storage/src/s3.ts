@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  PutObjectCommand,
+  S3Client,
+  type S3ClientConfig,
+} from "@aws-sdk/client-s3";
 import { createHttpError } from "@repo/contracts";
 
 const DEFAULT_CACHE_CONTROL = "public, max-age=31536000, immutable";
@@ -63,6 +67,10 @@ type S3Config = {
   prefix: string;
   accessKeyId: string;
   secretAccessKey: string;
+  // Optional, for S3-compatible providers (Supabase Storage, Cloudflare R2, MinIO).
+  // Unset means plain AWS S3.
+  endpoint?: string;
+  forcePathStyle: boolean;
 };
 
 export type S3UploadResult = {
@@ -128,22 +136,33 @@ const getS3Config = (): S3Config => {
     prefix: trimSlashes(process.env.AWS_S3_PREFIX?.trim() || ""),
     accessKeyId: getRequiredStorageEnv("AWS_ACCESS_KEY_ID"),
     secretAccessKey: getRequiredStorageEnv("AWS_SECRET_ACCESS_KEY"),
+    endpoint: process.env.AWS_S3_ENDPOINT?.trim() || undefined,
+    forcePathStyle: process.env.AWS_S3_FORCE_PATH_STYLE?.trim() === "true",
   };
 };
+
+/** Maps storage config to S3Client options; endpoint/path-style are only set when configured. */
+export const buildS3ClientOptions = (
+  config: Pick<
+    S3Config,
+    "region" | "accessKeyId" | "secretAccessKey" | "endpoint" | "forcePathStyle"
+  >
+): S3ClientConfig => ({
+  region: config.region,
+  credentials: {
+    accessKeyId: config.accessKeyId,
+    secretAccessKey: config.secretAccessKey,
+  },
+  ...(config.endpoint ? { endpoint: config.endpoint } : {}),
+  ...(config.forcePathStyle ? { forcePathStyle: true } : {}),
+});
 
 const getS3Client = () => {
   if (cachedS3Client) {
     return cachedS3Client;
   }
 
-  const config = getS3Config();
-  cachedS3Client = new S3Client({
-    region: config.region,
-    credentials: {
-      accessKeyId: config.accessKeyId,
-      secretAccessKey: config.secretAccessKey,
-    },
-  });
+  cachedS3Client = new S3Client(buildS3ClientOptions(getS3Config()));
   return cachedS3Client;
 };
 

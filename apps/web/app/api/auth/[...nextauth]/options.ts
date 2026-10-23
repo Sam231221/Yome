@@ -36,7 +36,7 @@ export const options: AuthOptions = {
         };
       },
       clientId: process.env.GOOGLE_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_Secret ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     }),
     CredentialsProvider({
       name: "Credentials",

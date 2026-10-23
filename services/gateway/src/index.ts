@@ -22,9 +22,7 @@ const port = servicePorts.gateway;
 const authEnabled = process.env.GATEWAY_REQUIRE_AUTH === "true";
 const sharedGatewayToken = process.env.GATEWAY_SHARED_TOKEN || "";
 const frontendOrigin =
-  process.env.FRONTEND_URL ||
-  process.env.FRONTEND_CLIENT_PORT ||
-  "http://localhost:3000";
+  process.env.FRONTEND_URL || "http://localhost:3000";
 const rateWindowMs = Number(process.env.GATEWAY_RATE_WINDOW_MS || 60_000);
 const rateMaxRequests = Number(process.env.GATEWAY_RATE_MAX_REQUESTS || 120);
 
@@ -84,6 +82,8 @@ for (const rule of routeManifest) {
   );
 }
 
-app.listen(port, () => {
+// "::" binds dual-stack, so the service is reachable over Railway's IPv6 private network as
+// well as on IPv4 (localhost in dev).
+app.listen(port, "::", () => {
   logger.info("Gateway service listening", { port });
 });
