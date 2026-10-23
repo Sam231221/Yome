@@ -7,6 +7,8 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useStateProvider } from "@/context/StateContext";
 import { yomeNavItems } from "@/features/learning/data";
 import { Avatar, Brand, ToneSymbol, YomeIcon } from "@/components/ui";
+import { MobileMenu } from "./MobileMenu";
+import { NotificationsDropdown } from "./NotificationsDropdown";
 import { getDashboardHome } from "@/lib/dashboard/dashboardApi";
 import type { DashboardHome } from "@/lib/dashboard/types";
 
@@ -17,6 +19,18 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
   const [{ userInfo }] = useStateProvider();
   const [dark, setDark] = useState(false);
   const [dashboard, setDashboard] = useState<DashboardHome | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    setUnreadCount(dashboard?.profile.notificationCount ?? 0);
+  }, [dashboard?.profile.notificationCount]);
+
+  useEffect(() => {
+    document.body.classList.toggle("yome-no-scroll", mobileMenuOpen);
+    return () => document.body.classList.remove("yome-no-scroll");
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -64,32 +78,79 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
       }`}
     >
       <header className="yome-topbar topbar">
-        <Brand />
-        <label className="yome-searchbox searchbox">
-          <YomeIcon name="search" size={19} />
-          <input placeholder="Search people, groups, topics..." />
-          <kbd>⌘ K</kbd>
-        </label>
-        <div className="yome-top-actions top-actions">
-          <button className="yome-icon-button icon-button inline-grid shrink-0 place-items-center rounded-yome border border-yome-border bg-yome-surface text-yome-muted" onClick={() => setDark((value) => !value)} aria-label="Toggle theme">
-            {dark ? <YomeIcon name="sun" size={20} /> : <YomeIcon name="moon" size={20} />}
-          </button>
-          <Link className="yome-icon-button icon-button notification-button inline-grid shrink-0 place-items-center rounded-yome border border-yome-border bg-yome-surface text-yome-muted" href="/notifications" aria-label="Notifications">
-            <YomeIcon name="bell" size={20} />
-              {dashboard?.profile.notificationCount ? (
-                <span className="notification-dot">{dashboard.profile.notificationCount}</span>
-              ) : null}
-          </Link>
-          <Link className="yome-profile-button profile-button" href="/account">
-            <Avatar initials={initials} image={userInfo?.profilePicture || session?.user?.image || undefined} tone="violet" size="sm" />
-            <span>
-              <strong>{name}</strong>
-              <small>{userInfo?.role === "TEACHER" ? "Educator" : "Student"}</small>
-            </span>
-            <span className="chevron">⌄</span>
-          </Link>
-        </div>
+        {mobileSearchOpen ? (
+          <div className="yome-mobile-search">
+            <button
+              className="yome-icon-button inline-grid shrink-0 place-items-center rounded-full text-yome-navy"
+              onClick={() => setMobileSearchOpen(false)}
+              aria-label="Close search"
+            >
+              <YomeIcon name="arrow" size={19} style={{ transform: "rotate(180deg)" }} />
+            </button>
+            <input autoFocus placeholder="Search people, groups, topics..." aria-label="Search" />
+          </div>
+        ) : (
+          <>
+            <button
+              className="yome-hamburger inline-grid shrink-0 place-items-center rounded-full text-yome-navy"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open menu"
+            >
+              <YomeIcon name="menu" size={22} />
+            </button>
+            <Brand />
+            <label className="yome-searchbox searchbox">
+              <YomeIcon name="search" size={19} />
+              <input placeholder="Search people, groups, topics..." />
+              <kbd>⌘ K</kbd>
+            </label>
+            <div className="yome-top-actions top-actions">
+              <button className="yome-icon-button icon-button inline-grid shrink-0 place-items-center rounded-yome border border-yome-border bg-yome-surface text-yome-muted" onClick={() => setDark((value) => !value)} aria-label="Toggle theme">
+                {dark ? <YomeIcon name="sun" size={20} /> : <YomeIcon name="moon" size={20} />}
+              </button>
+              <button
+                className="yome-icon-button yome-mobile-only inline-grid shrink-0 place-items-center rounded-full text-yome-navy"
+                onClick={() => router.push("/dashboard")}
+                aria-label="Create post"
+              >
+                <YomeIcon name="plus" size={20} />
+              </button>
+              <button
+                className="yome-icon-button yome-mobile-only inline-grid shrink-0 place-items-center rounded-full text-yome-navy"
+                onClick={() => setMobileSearchOpen(true)}
+                aria-label="Search"
+              >
+                <YomeIcon name="search" size={19} />
+              </button>
+              <NotificationsDropdown
+                unreadCount={unreadCount}
+                onUnreadChange={setUnreadCount}
+              />
+              <Link className="yome-icon-button yome-mobile-only inline-grid shrink-0 place-items-center rounded-full text-yome-navy" href="/chat" aria-label="Messages">
+                <YomeIcon name="message" size={19} />
+              </Link>
+              <Link className="yome-profile-button profile-button" href="/account">
+                <Avatar initials={initials} image={userInfo?.profilePicture || session?.user?.image || undefined} tone="violet" size="sm" />
+                <span>
+                  <strong>{name}</strong>
+                  <small>{userInfo?.role === "TEACHER" ? "Educator" : "Student"}</small>
+                </span>
+                <span className="chevron">⌄</span>
+              </Link>
+            </div>
+          </>
+        )}
       </header>
+
+      <MobileMenu
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        name={name}
+        initials={initials}
+        image={userInfo?.profilePicture || session?.user?.image || undefined}
+        shortcuts={dashboard?.sidebarGroups ?? []}
+        notificationCount={unreadCount}
+      />
 
       <aside className="yome-sidebar sidebar">
         <nav aria-label="Primary navigation">

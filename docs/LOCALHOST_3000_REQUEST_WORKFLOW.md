@@ -19,13 +19,13 @@ flowchart LR
     W --> N[NextAuth<br/>session cookies]
     W --> G[Gateway service<br/>:4100]
     W -.socket token.-> A1[Next.js route<br/>/api/auth/socket-token]
-    A1 -.JWT.-> C[Chat service socket<br/>:4103]
+    A1 -.JWT.-> C[Messaging service socket<br/>:4103]
 
-    G --> A[Auth service<br/>:4101]
-    G --> B[User service<br/>:4102]
+    G --> A[Identity service<br/>:4101]
     G --> C
     G --> D[Media service<br/>:4104]
     G --> E[Notifications service<br/>:4105]
+    G --> O[Core service<br/>:4107]
 
     A --> DB[(PostgreSQL via Prisma)]
     B --> DB
@@ -67,37 +67,44 @@ Yome/
 │       ├── middleware.ts
 │       └── utils/ApiRoutes.ts
 ├── services/
-│   ├── gateway/src/index.ts
-│   ├── auth/src/
+│   ├── gateway/src/
 │   │   ├── index.ts
-│   │   ├── routes/auth.routes.ts
-│   │   ├── routes/db.routes.ts
-│   │   └── controllers/auth.controller.ts
-│   ├── user/src/
+│   │   ├── routes/route-manifest.ts
+│   │   ├── middleware/{requestId,rateLimiter,auth,proxy}.ts
+│   │   └── types.ts
+│   ├── identity/src/
 │   │   ├── index.ts
-│   │   ├── routes/user.routes.ts
-│   │   └── controllers/user.controller.ts
-│   ├── chat/src/
+│   │   ├── modules/credentials/{credentials.routes,credentials.controller}.ts
+│   │   └── modules/profile/{profile.routes,profile.controller}.ts
+│   ├── core/src/
 │   │   ├── index.ts
-│   │   ├── routes/chat.routes.ts
-│   │   ├── controllers/message.controller.ts
-│   │   ├── socket/handlers.ts
-│   │   └── state/online-users.ts
+│   │   └── modules/{community,learning,feed,dashboard}/
+│   ├── messaging/src/
+│   │   ├── index.ts
+│   │   └── modules/{messages,calls,realtime}/
 │   ├── media/src/
 │   │   ├── index.ts
 │   │   ├── routes/media.routes.ts
 │   │   └── controllers/media.controller.ts
-│   └── notifications/src/index.ts
+│   └── notifications/src/
+│       ├── index.ts
+│       ├── routes/notifications.routes.ts
+│       └── controllers/notifications.controller.ts
 └── packages/
     ├── database/
     │   ├── prisma/schema.prisma
     │   └── src/generated/client/
-    └── shared/src/
-        ├── config/env.ts
-        ├── middleware/internalTokenGuard.ts
-        ├── middleware/validateRequest.ts
-        └── storage/s3.ts
+    ├── service-kit/src/
+    │   ├── config/env.ts
+    │   ├── middleware/internalTokenGuard.ts
+    │   └── middleware/validateRequest.ts
+    └── storage/src/s3.ts
 ```
+
+> `packages/shared` was split in the [services/packages refactor](services_packages_refactoring/)
+> (B03) into `@repo/contracts`, `@repo/service-kit`, and `@repo/storage`; the `@repo/shared`
+> compatibility shim itself was deleted in that refactor's B10 — every import now points at
+> the specific package.
 
 ## 3. Flow A: User Opens `http://localhost:3000`
 
@@ -165,7 +172,7 @@ flowchart TD
 
 ## 5. Flow C: Login And Session Creation
 
-The frontend login page delegates credential verification to NextAuth, and NextAuth delegates credential checking to the auth microservice through the gateway.
+The frontend login page delegates credential verification to NextAuth, and NextAuth delegates credential checking to the identity microservice through the gateway.
 
 ```mermaid
 sequenceDiagram
@@ -173,7 +180,7 @@ sequenceDiagram
     participant W as apps/web
     participant NA as NextAuth route
     participant G as Gateway :4100
-    participant A as Auth service :4101
+    participant A as Identity service :4101
     participant DB as PostgreSQL
 
     U->>W: Submit login form
@@ -195,22 +202,22 @@ sequenceDiagram
 - `apps/web/app/api/auth/[...nextauth]/options.ts`
 - `apps/web/utils/ApiRoutes.ts`
 - `services/gateway/src/index.ts`
-- `services/auth/src/routes/auth.routes.ts`
-- `services/auth/src/controllers/auth.controller.ts`
+- `services/identity/src/modules/credentials/credentials.routes.ts`
+- `services/identity/src/modules/credentials/credentials.controller.ts`
 - `packages/database/prisma/schema.prisma`
 
 ## 6. Flow D: How Frontend REST Calls Reach The Microservices
 
-For most REST operations, the frontend does not call the auth/user/chat/media services directly. It calls the gateway on port `4100`.
+For most REST operations, the frontend does not call the identity/core/messaging/media services directly. It calls the gateway on port `4100`.
 
 ```mermaid
 flowchart LR
     A[apps/web code] --> B[utils/ApiRoutes.ts]
     B --> C[NEXT_PUBLIC_BACKEND_API<br/>http://localhost:4100]
     C --> D[services/gateway/src/index.ts]
-    D --> E[/api/auth -> auth service]
-    D --> F[/api/user -> user service]
-    D --> G[/api/messages or /api/chat -> chat service]
+    D --> E[/api/auth -> identity service]
+    D --> F["/api/user -> core service (community, learning, dashboard)<br/>3 profile paths -> identity instead<br/>see route-manifest.ts"]
+    D --> G[/api/messages or /api/chat -> messaging service]
     D --> H[/api/media -> media service]
     D --> I[/api/notifications -> notifications service]
 ```
@@ -239,7 +246,7 @@ Inside `services/gateway/src/index.ts`, the gateway:
 
 ### Why this matters
 
-Downstream services are protected by `packages/shared/src/middleware/internalTokenGuard.ts`, which means they expect the gateway to be the trusted entry point.
+Downstream services are protected by `packages/service-kit/src/middleware/internalTokenGuard.ts`, which means they expect the gateway to be the trusted entry point.
 
 ## 7. Flow E: Chat Page Workflow
 
@@ -250,7 +257,7 @@ sequenceDiagram
     participant U as User
     participant W as apps/web /chat
     participant G as Gateway :4100
-    participant C as Chat service :4103
+    participant C as Messaging service :4103
     participant DB as PostgreSQL
 
     U->>W: Open /chat
@@ -271,11 +278,12 @@ sequenceDiagram
 - `apps/web/hooks/useChatSocket.ts`
 - `apps/web/lib/chat/chatApi.ts`
 - `apps/web/app/api/auth/socket-token/route.ts`
-- `services/chat/src/index.ts`
-- `services/chat/src/routes/chat.routes.ts`
-- `services/chat/src/controllers/message.controller.ts`
-- `services/chat/src/socket/handlers.ts`
-- `services/chat/src/state/online-users.ts`
+- `services/messaging/src/index.ts`
+- `services/messaging/src/modules/messages/messages.routes.ts`
+- `services/messaging/src/modules/calls/calls.routes.ts`
+- `services/messaging/src/modules/messages/messages.controller.ts`
+- `services/messaging/src/modules/realtime/handlers.ts`
+- `services/messaging/src/modules/realtime/online-users.ts`
 
 ### Chat split: REST vs Socket
 
@@ -305,11 +313,11 @@ That setup is defined in:
 - `apps/web/utils/ApiRoutes.ts`
 - the root `.env`
 
-So chat websocket traffic connects directly to the chat service.
+So chat websocket traffic connects directly to the messaging service.
 
 ## 8. Flow F: Media Upload In Chat
 
-When a user sends an image or audio message, Yome uses both the media service and the chat service.
+When a user sends an image or audio message, Yome uses both the media service and the messaging service.
 
 ```mermaid
 sequenceDiagram
@@ -317,7 +325,7 @@ sequenceDiagram
     participant G as Gateway :4100
     participant M as Media service :4104
     participant S3 as S3/Object storage
-    participant C as Chat service :4103
+    participant C as Messaging service :4103
     participant DB as PostgreSQL
 
     W->>G: POST /api/media/add-image-message or add-audio-message
@@ -336,20 +344,20 @@ sequenceDiagram
 - `apps/web/lib/chat/chatApi.ts`
 - `services/media/src/routes/media.routes.ts`
 - `services/media/src/controllers/media.controller.ts`
-- `packages/shared/src/storage/s3.ts`
-- `services/chat/src/controllers/message.controller.ts`
+- `packages/storage/src/s3.ts`
+- `services/messaging/src/modules/messages/messages.controller.ts`
 
 ## 9. Service Ports Used In This Workflow
 
-These defaults come from `packages/shared/src/config/env.ts` and the root `.env`.
+These defaults come from `packages/service-kit/src/config/env.ts` and the root `.env`.
 
 - `3000`: Next.js frontend in `apps/web`
 - `4100`: gateway
-- `4101`: auth service
-- `4102`: user service
-- `4103`: chat service and Socket.IO
+- `4101`: identity service
+- `4103`: messaging service and Socket.IO
 - `4104`: media service
 - `4105`: notifications service
+- `4107`: core service (community, learning, feed, and dashboard modules)
 
 ## 10. Short Summary
 
@@ -360,6 +368,6 @@ From there:
 1. public pages render directly in Next.js
 2. protected pages are checked by `apps/web/middleware.ts`
 3. most backend REST calls go to the gateway on `:4100`
-4. the gateway forwards them to auth, user, chat, media, or notifications
-5. chat realtime events connect directly to the chat service on `:4103`
-6. auth, user, and chat data finally live in PostgreSQL through Prisma in `packages/database`
+4. the gateway forwards them to identity, core, chat, media, or notifications
+5. chat realtime events connect directly to the messaging service on `:4103`
+6. identity, core, and chat data finally live in PostgreSQL through Prisma in `packages/database`

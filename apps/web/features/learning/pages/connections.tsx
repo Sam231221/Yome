@@ -119,7 +119,7 @@ export function ConnectionsContent() {
           {suggestions.map((person) => (
               <article className="connection-card card rounded-yome border border-yome-border bg-yome-surface shadow-yome" key={person.id}>
                 <div className="connection-cover"><div className="cover-grid" /></div>
-                <Avatar initials={person.initials} tone={person.tone} size="lg" />
+                <Avatar initials={person.initials} tone={person.tone} size="lg" image={person.profilePicture || "/avatars/userprofile.png"} />
                 <button className="more-button inline-grid shrink-0 place-items-center rounded-full text-yome-muted"><MoreHorizontal size={18} /></button>
                 <h3>{person.name}</h3>
                 <p>{person.role}</p>
@@ -144,7 +144,7 @@ export function ConnectionsContent() {
         <div className="connection-list card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
           {following.map((person) => (
             <article key={person.id}>
-              <Avatar initials={person.initials} tone={person.tone} />
+              <Avatar initials={person.initials} tone={person.tone} image={person.profilePicture || "/avatars/userprofile.png"} />
               <div>
                 <strong>{person.name}</strong>
                 <p>{person.role}</p>

@@ -1,34 +1,25 @@
-import express, { type Request, type Response } from "express";
+import express from "express";
+import { validateRequest } from "@repo/service-kit";
+import {
+  getNotifications,
+  readAllNotifications,
+  readNotification,
+  sendNotification,
+} from "../controllers/notifications.controller.js";
+import {
+  listNotificationsSchema,
+  notificationIdParamsSchema,
+} from "../notifications.validation.js";
 
 const router = express.Router();
 
-interface SendBody {
-  channel?: string;
-  to?: string;
-  template?: string;
-  payload?: Record<string, unknown>;
-}
-
-/**
- * Stub: accepts send request and returns 202. Implement actual delivery
- * (email, push, in-app) in a future iteration.
- */
-router.post("/send", (req: Request, res: Response) => {
-  const { channel = "email", to, template, payload } = (req.body ?? {}) as SendBody;
-  if (!to || !template) {
-    return res.status(400).json({
-      ok: false,
-      error: "to and template are required",
-    });
-  }
-  return res.status(202).json({
-    ok: true,
-    accepted: true,
-    channel,
-    to,
-    template,
-    payload: payload ?? {},
-  });
-});
+router.get("/", validateRequest(listNotificationsSchema), getNotifications);
+router.post("/read-all", readAllNotifications);
+router.post(
+  "/:id/read",
+  validateRequest(notificationIdParamsSchema),
+  readNotification
+);
+router.post("/send", sendNotification);
 
 export default router;

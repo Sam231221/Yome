@@ -13,7 +13,6 @@ import type { AppUserInfo } from "@/lib/auth/userInfo";
 export interface State {
   userInfo: AppUserInfo | undefined;
   newUser: boolean;
-  contactsPage: boolean;
   messageSearch: boolean;
   currentChatUser: ChatListItem | undefined;
   currentChatGroup: ChatListItem | undefined;
@@ -37,10 +36,6 @@ type SetUserInfoAction = {
 type SetNewUserAction = {
   type: typeof reducerCases.SET_NEW_USER;
   newUser: boolean;
-};
-
-type ToggleAllContactsPageAction = {
-  type: typeof reducerCases.SET_ALL_CONTACTS_PAGE;
 };
 
 type ChangeCurrentChatUserAction = {
@@ -113,7 +108,6 @@ type ExitChatAction = {
 export type Action =
   | SetUserInfoAction
   | SetNewUserAction
-  | ToggleAllContactsPageAction
   | ChangeCurrentChatUserAction
   | ChangeCurrentGroupAction
   | SetSocketAction
@@ -174,7 +168,6 @@ const buildContactSnapshotFromMessage = (
 export const initialState: State = {
   userInfo: undefined,
   newUser: false,
-  contactsPage: false,
   messageSearch: false,
   currentChatUser: undefined,
   currentChatGroup: undefined,
@@ -200,24 +193,12 @@ const reducer = (state: State, action: Action): State => {
         ...state,
         newUser: action.newUser,
       };
-    case reducerCases.SET_ALL_CONTACTS_PAGE:
-      return {
-        ...state,
-        contactsPage: !state.contactsPage,
-      };
     case reducerCases.SET_MESSAGES_SEARCH:
       return {
         ...state,
         messageSearch: !state.messageSearch,
       };
     case reducerCases.CHANGE_CURRENT_GROUP: {
-      if (state.contactsPage) {
-        return {
-          ...state,
-          currentChatGroup: action.group,
-          messages: [],
-        };
-      }
       return {
         ...state,
         currentChatGroup: action.group,
@@ -230,13 +211,6 @@ const reducer = (state: State, action: Action): State => {
         action.user,
         resolveChatKind(action.user)
       );
-      if (state.contactsPage) {
-        return {
-          ...state,
-          currentChatUser: currentUser,
-          messages: [],
-        };
-      }
       if (resolveChatKind(currentUser) === "user") {
         if (typeof currentUser.id !== "number") {
           return state;
@@ -262,11 +236,19 @@ const reducer = (state: State, action: Action): State => {
       }
 
       if (resolveChatKind(currentUser) === "group") {
+        const clonedGroupContacts = [...state.groupContacts];
+        const index = clonedGroupContacts.findIndex(
+          (group) => group.id === currentUser.id
+        );
+        if (index !== -1) {
+          clonedGroupContacts[index].totalUnreadMessages = 0;
+        }
         return {
           ...state,
           currentChatUser: currentUser,
           messageSearch: false,
           messages: [],
+          groupContacts: clonedGroupContacts,
         };
       }
       return state;

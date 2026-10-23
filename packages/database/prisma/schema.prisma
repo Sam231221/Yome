@@ -20,6 +20,7 @@ enum Role {
   STUDENT
 }
 
+/// owner: identity — see SCHEMA_OWNERSHIP.md (following/followers relation is written by core/community)
 model User {
   id                        Int                     @id @default(autoincrement())
   firstname                 String
@@ -59,10 +60,12 @@ model User {
   followers                 User[]                  @relation("Followers")
   following                 User[]                  @relation("Followers")
   messagesSeen              Messages[]              @relation(name: "MessageSeenBy")
+  notifications             Notification[]
 
   @@index([email])
 }
 
+/// owner: identity
 model UserProfile {
   id         String   @id @default(uuid())
   user       User?
@@ -72,6 +75,7 @@ model UserProfile {
   updated_at DateTime @updatedAt
 }
 
+/// owner: messaging
 model Messages {
   id            Int      @id @default(autoincrement())
   sender        User?    @relation("sentMessages", fields: [senderId], references: [id])
@@ -92,6 +96,7 @@ model Messages {
   @@index([conversationId])
 }
 
+/// owner: core/community
 model Group {
   id             String              @id @default(uuid())
   slug           String              @unique
@@ -126,6 +131,7 @@ model Group {
   @@index([featured])
 }
 
+/// owner: core/community
 model GroupTag {
   id      String @id @default(uuid())
   label   String
@@ -137,6 +143,7 @@ model GroupTag {
   @@index([groupId])
 }
 
+/// owner: core/community
 model GroupInvitation {
   id        String   @id @default(uuid())
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -152,6 +159,7 @@ model GroupInvitation {
   @@index([status])
 }
 
+/// owner: core/community
 model GroupAnnouncement {
   id        String   @id @default(uuid())
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -170,6 +178,7 @@ model GroupAnnouncement {
   @@index([pinned])
 }
 
+/// owner: core/community (write); core/learning reads it as a separate cross-group view
 model GroupEvent {
   id        String   @id @default(uuid())
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -188,6 +197,7 @@ model GroupEvent {
   @@index([dashboardVisible])
 }
 
+/// owner: messaging
 model Conversation {
   id             String     @id @default(uuid())
   participantA   User       @relation("ConversationParticipantA", fields: [participantAId], references: [id])
@@ -203,6 +213,7 @@ model Conversation {
   @@index([participantBId])
 }
 
+/// owner: core/feed (designated, no write endpoint yet); core/learning reads kind="Project" rows
 model Post {
   id             Int       @id @default(autoincrement())
   slug           String?   @unique
@@ -239,6 +250,7 @@ model Post {
   @@index([createdAt])
 }
 
+/// owner: core/feed (no write endpoint yet)
 model Comment {
   id          Int    @id @default(autoincrement())
   description String
@@ -248,6 +260,7 @@ model Comment {
   postId      Int
 }
 
+/// owner: core/feed (no write endpoint yet)
 model Like {
   id     Int  @id @default(autoincrement())
   user   User @relation(fields: [userId], references: [id])
@@ -256,6 +269,7 @@ model Like {
   postId Int
 }
 
+/// owner: core/learning
 model Resource {
   id            String                 @id @default(uuid())
   slug          String                 @unique
@@ -290,6 +304,7 @@ model Resource {
   @@index([groupId])
 }
 
+/// owner: core/learning (read-only, no write path exists)
 model StudyRoom {
   id                     String                 @id @default(uuid())
   slug                   String                 @unique
@@ -310,6 +325,7 @@ model StudyRoom {
   @@index([activeParticipantCount])
 }
 
+/// owner: core/learning (read-only, no write path exists)
 model StudyRoomParticipant {
   id          String    @id @default(uuid())
   studyRoom   StudyRoom @relation(fields: [studyRoomId], references: [id], onDelete: Cascade)
@@ -322,6 +338,7 @@ model StudyRoomParticipant {
   @@index([userId])
 }
 
+/// owner: core/learning (read-only, no write path exists)
 model Topic {
   id              String   @id @default(uuid())
   slug            String   @unique
@@ -336,6 +353,7 @@ model Topic {
   @@index([trendScore])
 }
 
+/// owner: core/learning
 model ResourceSave {
   id         String   @id @default(uuid())
   resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
@@ -348,6 +366,7 @@ model ResourceSave {
   @@index([userId])
 }
 
+/// owner: core/learning
 model ResourceHelpfulVote {
   id         String   @id @default(uuid())
   resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
@@ -358,4 +377,52 @@ model ResourceHelpfulVote {
 
   @@unique([resourceId, userId])
   @@index([userId])
+}
+
+/// owner: notifications — every row is created by the `notifications` event consumer from a
+/// domain event on a Redis Stream (B14, see event-architecture-plan.md). No other module
+/// writes this table; the read/mark-read HTTP endpoints belong to `services/notifications`.
+model Notification {
+  id        String    @id @default(uuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  /// The domain event type that produced this row ("messaging.message.sent", "identity.user.registered", ...).
+  type      String
+  /// The originating event's envelope id. One event yields at most one notification per
+  /// recipient (enforced by @@unique below), so a redelivery past the 24h Redis idempotency
+  /// window still cannot create a duplicate.
+  eventId   String
+  title     String
+  body      String    @default("")
+  /// Event-specific context (ids, slugs, display names) for rendering and deep links.
+  /// Schemaless on purpose — the shape differs per `type` (T-07 in data-architecture-plan.md).
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([eventId, userId])
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+}
+
+/// owner: infrastructure (written by every module's transactions via @repo/events'
+/// withOutbox helper, read only by the outbox relay — B13, see event-architecture-plan.md)
+model OutboxEvent {
+  id            String    @id @default(uuid())
+  type          String
+  version       Int       @default(1)
+  subject       String
+  producer      String
+  correlationId String?
+  causationId   String?
+  actorUserId   Int?
+  payload       Json
+  occurredAt    DateTime  @default(now())
+  publishedAt   DateTime?
+  attempts      Int       @default(0)
+  lastError     String?
+
+  @@index([publishedAt, occurredAt])
+  @@index([type])
+  @@index([subject])
 }

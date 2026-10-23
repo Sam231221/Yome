@@ -7,6 +7,8 @@ const AUTH_ROUTE = `${HOST}/api/auth`;
 const USER_ROUTE = `${HOST}/api/user`;
 const MESSAGES_ROUTE = `${HOST}/api/messages`;
 const RESOURCES_ROUTE = `${HOST}/api/resources`;
+const CHAT_ROUTE = `${HOST}/api/chat`;
+const NOTIFICATIONS_ROUTE = `${HOST}/api/notifications`;
 
 export const REGISTER_USER = `${AUTH_ROUTE}/register-user`;
 export const GET_USER_ROUTE = `${AUTH_ROUTE}/get-user`;
@@ -14,7 +16,8 @@ export const VERIFY_CREDENTIALS_ROUTE = `${AUTH_ROUTE}/verify-credentials`;
 export const UPSERT_OAUTH_USER_ROUTE = `${AUTH_ROUTE}/oauth-user`;
 export const CHANGE_PASSWORD_ROUTE = `${AUTH_ROUTE}/change-password`;
 
-// User service (profiles, groups, follow)
+// /api/user/* routes — the gateway splits these across identity/core/user by path;
+// see services/gateway/src/routes/route-manifest.ts for current ownership.
 export const GET_USER_BY_ID_ROUTE = `${USER_ROUTE}/get-user-by-id`;
 export const UPDATE_USER = `${USER_ROUTE}/update-user`;
 export const GET_ALL_USERS = `${USER_ROUTE}/get-all-users`;
@@ -52,3 +55,14 @@ export const ADD_MEDIA_MESSAGE_ROUTE = `${MESSAGES_ROUTE}/add-media-message`;
 
 // Learning resources
 export const RESOURCES_API_ROUTE = RESOURCES_ROUTE;
+
+// Notifications — event-driven records from services/notifications (B14). The `:id/read` and
+// `read-all` write paths are built by the client from NOTIFICATIONS_LIST_ROUTE.
+export const NOTIFICATIONS_LIST_ROUTE = NOTIFICATIONS_ROUTE;
+export const NOTIFICATIONS_READ_ALL_ROUTE = `${NOTIFICATIONS_ROUTE}/read-all`;
+
+// Direct calls (Stream token minting + participant provisioning) — moved from
+// apps/web/actions/stream.actions.ts into services/messaging/src/modules/calls in B09.
+export const PREPARE_DIRECT_CALL_CONVERSATION_ROUTE = `${CHAT_ROUTE}/prepare-direct-call-conversation`;
+export const CALL_TOKEN_ROUTE = `${CHAT_ROUTE}/call-token`;
+export const CALL_PARTICIPANTS_ROUTE = `${CHAT_ROUTE}/call-participants`;

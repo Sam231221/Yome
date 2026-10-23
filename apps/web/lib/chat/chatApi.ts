@@ -4,7 +4,6 @@ import {
   ADD_IMAGE_MESSAGE_ROUTE,
   ADD_MEDIA_MESSAGE_ROUTE,
   ADD_MESSAGE_ROUTE,
-  GET_ALL_CONNECTED_GROUPS,
   GET_ALL_CONNECTED_USERS,
   GET_INITIAL_GROUP_MESSAGES,
   GET_INITIAL_USERS_MESSAGES,
@@ -182,18 +181,6 @@ export const getInitialGroupMeta = async (loggedInUserId: UserId) => {
   );
 
   return (data?.groupsWithLatestGroupMessages ?? []).map(normalizeGroupContact);
-};
-
-export const getAllChatContacts = async (loggedInUserId: UserId) => {
-  const [usersResponse, groupsResponse] = await Promise.all([
-    axios.get(`${GET_ALL_CONNECTED_USERS}/${loggedInUserId}`),
-    axios.get(`${GET_ALL_CONNECTED_GROUPS}/${loggedInUserId}`),
-  ]);
-
-  return {
-    followedUsers: usersResponse.data?.followedUsers ?? [],
-    groups: groupsResponse.data?.groups ?? [],
-  };
 };
 
 export const getUserConversation = async ({

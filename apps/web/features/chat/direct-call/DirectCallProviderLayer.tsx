@@ -14,12 +14,22 @@ function IncomingCallLayer({ enabled }: { enabled: boolean }) {
   return <IncomingDirectCallOverlay />;
 }
 
-export function DirectCallProviderLayer({ children }: { children: ReactNode }) {
+/**
+ * Hosts the Stream call client and the incoming-call overlay. Mounted by every signed-in
+ * layout (chat and the main app shell) so a call rings wherever the callee happens to be.
+ */
+export function DirectCallProviderLayer({
+  children,
+  requireAuth = true,
+}: {
+  children: ReactNode;
+  requireAuth?: boolean;
+}) {
   const pathname = usePathname();
   const isCallRoute = /\/chat\/[^/]+\/call\/[^/]+$/.test(pathname ?? "");
 
   return (
-    <StreamVideoProvider blocking={isCallRoute}>
+    <StreamVideoProvider blocking={isCallRoute} requireAuth={requireAuth}>
       <IncomingCallLayer enabled={!isCallRoute} />
       {children}
     </StreamVideoProvider>

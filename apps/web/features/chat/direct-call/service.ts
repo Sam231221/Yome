@@ -8,7 +8,7 @@ import type { DirectCallDescriptor, DirectCallMode } from "./types";
 import {
   ensureDirectCallUsers,
   prepareDirectCallConversation,
-} from "@/actions/stream.actions";
+} from "@/lib/chat/callApi";
 
 const DIRECT_CALL_TYPE = "default";
 
@@ -49,21 +49,6 @@ export const createDirectCall = async ({
     callerId: caller.id,
     peerId: peer.id,
     conversationId,
-    users: [
-      {
-        id: caller.id,
-        name:
-          caller.username ||
-          caller.name ||
-          `${caller.firstname ?? ""} ${caller.lastname ?? ""}`.trim(),
-        image: caller.profilePicture,
-      },
-      {
-        id: peer.id,
-        name: peer.name,
-        image: peer.profilePicture,
-      },
-    ],
   });
 
   const callId = crypto.randomUUID();

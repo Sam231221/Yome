@@ -8,8 +8,10 @@ import {
   errorHandler,
   internalTokenGuard,
   servicePorts,
+} from "@repo/service-kit";
+import {
   validateObjectStorageEnv,
-} from "@repo/shared";
+} from "@repo/storage";
 import mediaRoutes from "./routes/media.routes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -37,7 +39,9 @@ app.use("/api/media", mediaRoutes);
 
 app.use(errorHandler);
 
-app.listen(port, () => {
+// "::" binds dual-stack, so the service is reachable over Railway's IPv6 private network as
+// well as on IPv4 (localhost in dev).
+app.listen(port, "::", () => {
   logger.info("Media service listening", {
     port,
     storageProvider: process.env.STORAGE_PROVIDER?.trim() || "s3",

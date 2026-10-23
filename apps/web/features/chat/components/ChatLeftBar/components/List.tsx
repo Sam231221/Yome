@@ -14,13 +14,41 @@ import {
   logChatBootstrapError,
 } from "@/lib/chat/chatApi";
 
+export type MessagesTab = "all" | "unread" | "groups";
+
+const sortByCreatedAt = (list: ChatListItemData[]) =>
+  [...list].sort((a, b) => {
+    const dateA = new Date(a.createdAt ?? 0);
+    const dateB = new Date(b.createdAt ?? 0);
+    return dateB.getTime() - dateA.getTime();
+  });
+
+const filterByTab = (list: ChatListItemData[], tab: MessagesTab) => {
+  if (tab === "groups") {
+    return list.filter((contact) => resolveChatKind(contact) === "group");
+  }
+  if (tab === "unread") {
+    return list.filter((contact) => (contact.totalUnreadMessages ?? 0) > 0);
+  }
+  return list;
+};
+
+const getEmptyMessage = (tab: MessagesTab, searchActive: boolean) => {
+  if (searchActive) return "No matches for your search.";
+  if (tab === "unread") return "No unread messages.";
+  if (tab === "groups") return "You haven't joined any groups yet.";
+  return "No conversations yet.";
+};
+
 export default function List({
+  activeTab,
   onBootstrapStateChange,
 }: {
+  activeTab: MessagesTab;
   onBootstrapStateChange?: (loading: boolean) => void;
 }) {
   const [
-    { userInfo, userContacts, groupContacts, filteredContacts },
+    { userInfo, userContacts, groupContacts, filteredContacts, contactSearch },
     dispatch,
   ] = useStateProvider();
   const hasLoadedRef = useRef(false);
@@ -85,35 +113,27 @@ export default function List({
     };
   }, [userInfo, dispatch, onBootstrapStateChange]);
 
+  const searchActive = contactSearch !== "";
+  const visibleContacts = searchActive
+    ? filterByTab(filteredContacts, activeTab)
+    : sortByCreatedAt(filterByTab([...userContacts, ...groupContacts], activeTab));
+
   return (
     <div className="conversation-list custom-scrollbar">
-      {filteredContacts && filteredContacts.length > 0
-        ? filteredContacts.map((contact: ChatListItemData) => {
-            return (
-              <ChatListItem
-                id={String(contact.id)}
-                type={resolveChatKind(contact)}
-                data={contact}
-                key={String(contact.id)}
-              />
-            );
-          })
-        : [...userContacts, ...groupContacts]
-            .sort((a: ChatListItemData, b: ChatListItemData) => {
-              const dateA = new Date(a.createdAt ?? 0);
-              const dateB = new Date(b.createdAt ?? 0);
-              return dateB.getTime() - dateA.getTime();
-            })
-            .map((contact: ChatListItemData) => {
-              return (
-                <ChatListItem
-                  id={String(contact.id)}
-                  type={resolveChatKind(contact)}
-                  data={contact}
-                  key={String(contact.id)}
-                />
-              );
-            })}
+      {visibleContacts.length > 0 ? (
+        visibleContacts.map((contact: ChatListItemData) => (
+          <ChatListItem
+            id={String(contact.id)}
+            type={resolveChatKind(contact)}
+            data={contact}
+            key={String(contact.id)}
+          />
+        ))
+      ) : (
+        <div className="conversation-list-empty">
+          <p>{getEmptyMessage(activeTab, searchActive)}</p>
+        </div>
+      )}
     </div>
   );
 }

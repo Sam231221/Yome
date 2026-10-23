@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { StreamVideoClient, StreamVideo } from "@stream-io/video-react-sdk";
 
-import { tokenProvider } from "@/actions/stream.actions";
+import { tokenProvider } from "@/lib/chat/callApi";
 import { useStateProvider } from "@/context/StateContext";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -22,9 +22,12 @@ const hasValidStreamConfig = () =>
 const StreamVideoProvider = ({
   children,
   blocking = false,
+  requireAuth = true,
 }: {
   children: ReactNode;
   blocking?: boolean;
+  /** When false, signed-out visitors just get the children (no redirect, no call client). */
+  requireAuth?: boolean;
 }) => {
   const [videoClient, setVideoClient] = useState<StreamVideoClient>();
   const [isResolvingUser, setIsResolvingUser] = useState(false);
@@ -57,10 +60,10 @@ const StreamVideoProvider = ({
   }, [session, userInfo, dispatch]);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (requireAuth && status === "unauthenticated") {
       router.replace("/login");
     }
-  }, [router, status]);
+  }, [requireAuth, router, status]);
 
   useEffect(() => {
     if (!isConfigured) {
@@ -107,6 +110,14 @@ const StreamVideoProvider = ({
     }),
     [videoClient, isConfigured, isResolvingUser, setupError, status]
   );
+
+  if (status === "unauthenticated" && !requireAuth) {
+    return (
+      <StreamClientStatusContext.Provider value={statusValue}>
+        {children}
+      </StreamClientStatusContext.Provider>
+    );
+  }
 
   if (status === "unauthenticated") {
     return (

@@ -1,13 +1,17 @@
 import type { Request, Response, NextFunction } from "express";
-import getPrismaInstance from "@repo/database";
+import axios from "axios";
+import {
+  createHttpError,
+} from "@repo/contracts";
+import {
+  createLogger,
+} from "@repo/service-kit";
 import {
   ALLOWED_AUDIO_MIME_TYPES,
   ALLOWED_IMAGE_MIME_TYPES,
   assertAllowedMimeType,
-  createHttpError,
-  createLogger,
   uploadBufferToS3,
-} from "@repo/shared";
+} from "@repo/storage";
 
 const logger = createLogger("media");
 
@@ -28,86 +32,60 @@ const getAuthenticatedUserId = (req: Request): number | null => {
   return Number.isNaN(id) ? null : id;
 };
 
-const parseRequiredUserId = (value: unknown): number | null => {
-  const id = Number.parseInt(String(value ?? ""), 10);
-  return Number.isNaN(id) ? null : id;
-};
-
-const normalizeDirectConversationParticipants = (
-  leftUserId: number,
-  rightUserId: number
-) =>
-  leftUserId < rightUserId
-    ? { participantAId: leftUserId, participantBId: rightUserId }
-    : { participantAId: rightUserId, participantBId: leftUserId };
-
-const getChatUploadScope = async (
-  req: Request
-): Promise<ChatUploadScope> => {
-  const chatType = String(req.body?.chatType ?? "").trim();
-  const target = String(req.body?.to ?? "").trim();
-  const fromId = parseRequiredUserId(req.body?.from);
+/**
+ * Authorises a media upload with `services/messaging` (B09) instead of reading
+ * `Conversation`/`Group` directly — `media` holds no database access at all. This is the
+ * one permitted media -> messaging service-to-service call (see
+ * docs/services_packages_refactoring/api-and-dataflow-plan.md's "Service-to-Service Call
+ * Rules"): media already holds `GATEWAY_SHARED_TOKEN` to validate its own inbound
+ * `internalTokenGuard`, so relaying it onward here isn't a new secret leaking anywhere new —
+ * it's the same shared-token model every backend service in this repo already uses.
+ */
+const getChatUploadScope = async (req: Request): Promise<ChatUploadScope> => {
   const authenticatedUserId = getAuthenticatedUserId(req);
-  const conversationId = String(req.body?.conversationId ?? "").trim();
-
   if (authenticatedUserId === null) {
     throw createHttpError("Unauthorized.", 401);
   }
-  if (fromId === null || fromId !== authenticatedUserId) {
-    throw createHttpError("Forbidden.", 403);
+
+  const gatewaySharedToken = process.env.GATEWAY_SHARED_TOKEN;
+  if (!gatewaySharedToken) {
+    throw createHttpError("Gateway shared token is missing", 500);
   }
+  const messagingServiceUrl =
+    process.env.MESSAGING_SERVICE_URL || "http://127.0.0.1:4103";
 
-  if (chatType === "group") {
-    if (!target) {
-      throw createHttpError("Group id is required.", 400);
-    }
-
-    const prisma = getPrismaInstance();
-    const groupCount = await prisma.group.count({
-      where: {
-        id: target,
-        OR: [
-          { members: { some: { id: authenticatedUserId } } },
-          { admins: { some: { id: authenticatedUserId } } },
-        ],
-      },
-    });
-    if (groupCount === 0) {
-      throw createHttpError("Forbidden.", 403);
-    }
-
-    return { chatType: "group", groupId: target };
-  }
-
-  if (chatType !== "user") {
-    throw createHttpError("Invalid chat type.", 400);
-  }
-  if (!conversationId) {
-    throw createHttpError("Conversation id is required.", 400);
-  }
-
-  const toId = parseRequiredUserId(target);
-  if (toId === null) {
-    throw createHttpError("Recipient id is required.", 400);
-  }
-
-  const pair = normalizeDirectConversationParticipants(authenticatedUserId, toId);
-  const prisma = getPrismaInstance();
-  const conversation = await prisma.conversation.findFirst({
-    where: {
-      id: conversationId,
-      participantAId: pair.participantAId,
-      participantBId: pair.participantBId,
-    },
-  });
-  if (!conversation) {
-    throw createHttpError("Forbidden.", 403);
-  }
-
-  return {
-    chatType: "direct",
-    conversationId,
+  const { chatType, from, to, conversationId } = req.body as {
+    chatType?: string;
+    from?: number | string;
+    to?: number | string;
+    conversationId?: string;
   };
+
+  try {
+    const { data } = await axios.post(
+      `${messagingServiceUrl}/api/chat/authorize-upload-scope`,
+      { chatType, from, to, conversationId },
+      {
+        headers: {
+          "x-internal-token": gatewaySharedToken,
+          "x-user-id": String(authenticatedUserId),
+        },
+      }
+    );
+
+    if (data?.chatType === "group") {
+      return { chatType: "group", groupId: data.groupId };
+    }
+    return { chatType: "direct", conversationId: data.conversationId };
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      throw createHttpError(
+        error.response.data?.error || "Forbidden.",
+        error.response.status
+      );
+    }
+    throw error;
+  }
 };
 
 /**

@@ -1,0 +1,30 @@
+# Keep the Docker build context small and reproducible.
+**/node_modules
+**/dist
+**/build
+**/.next
+**/.turbo
+**/coverage
+**/generated
+**/src/generated
+
+.git
+.github
+.vscode
+.idea
+.DS_Store
+
+# Never ship real secrets into an image; env is injected at deploy time.
+.env
+.env.*
+!.env.example
+
+# Docs and local artifacts are not needed at build time.
+docs
+tests
+*.md
+!README.md
+
+services/media/uploads
+*.log
+*.tsbuildinfo

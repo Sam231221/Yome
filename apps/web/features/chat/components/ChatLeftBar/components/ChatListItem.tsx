@@ -17,7 +17,6 @@ interface ChatListItemProps {
   id: string;
   data: ChatContact;
   type: ChatKind;
-  isContactPage?: boolean;
 }
 
 const getConversationType = (chat?: ChatContact) => resolveChatKind(chat);
@@ -25,24 +24,11 @@ const getConversationType = (chat?: ChatContact) => resolveChatKind(chat);
 const buildSelectedChat = ({
   data,
   type,
-  isContactPage,
 }: {
   data: ChatContact;
   type: ChatKind;
-  isContactPage: boolean;
 }): ChatContact | null => {
   if (!data?.id) return null;
-
-  if (isContactPage) {
-    const resolvedType: ChatKind = type === "group" ? "group" : "user";
-    return {
-      ...data,
-      chatType: resolvedType,
-      identifier: data.identifier || resolvedType,
-      profilePicture:
-        type === "group" ? data.thumbnail || data.profilePicture : data.profilePicture,
-    };
-  }
 
   const resolvedType: ChatKind = type === "group" ? "group" : "user";
   return {
@@ -56,17 +42,12 @@ const buildSelectedChat = ({
   };
 };
 
-export default function ChatListItem({
-  id,
-  data,
-  type,
-  isContactPage = false,
-}: ChatListItemProps) {
+export default function ChatListItem({ id, data, type }: ChatListItemProps) {
   const [{ userInfo, socket, onlineUsers, currentChatUser }, dispatch] =
     useStateProvider();
 
   const handleContactClick = () => {
-    const selectedChat = buildSelectedChat({ data, type, isContactPage });
+    const selectedChat = buildSelectedChat({ data, type });
     if (!selectedChat) return;
 
     const isSameConversation =
@@ -74,9 +55,6 @@ export default function ChatListItem({
       getConversationType(currentChatUser) === getConversationType(selectedChat);
 
     if (isSameConversation) {
-      if (isContactPage) {
-        dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
-      }
       return;
     }
 
@@ -88,14 +66,9 @@ export default function ChatListItem({
       type: reducerCases.CHANGE_CURRENT_CHAT_USER,
       user: selectedChat,
     });
-
-    if (isContactPage) {
-      dispatch({ type: reducerCases.SET_ALL_CONTACTS_PAGE });
-    }
   };
 
   const isActiveConversation =
-    !isContactPage &&
     currentChatUser?.id === data?.id &&
     getConversationType(currentChatUser) === type;
 
@@ -136,55 +109,48 @@ export default function ChatListItem({
         </div>
         <div className="conversation-preview-row">
           <span className="conversation-preview">
-            {isContactPage ? (
-              <>
-                {type === "group" ? data?.about || "\u00A0" : data?.userProfile?.bio || "\u00A0"}
-              </>
-            ) : (
-              <span className="conversation-snippet">
-                {userInfo && data.senderId === userInfo.id && (
-                  <MessageStatus messageStatus={data.messageStatus} />
-                )}
-                {data.type === "text" && <span>{data.message}</span>}
-                {data.type === "audio" && (
-                  <>
-                    <FaMicrophone />
-                    <span>
-                      {userInfo && data.senderId === userInfo.id
-                        ? "You sent an audio clip"
-                        : "Sent an audio clip"}
-                    </span>
-                  </>
-                )}
-                {data.type === "image" && (
-                  <>
-                    <FaCamera />
-                    <span>
-                      {userInfo && data.senderId === userInfo.id
-                        ? "You sent an image"
-                        : "Sent an image"}
-                    </span>
-                  </>
-                )}
-              </span>
-            )}
+            <span className="conversation-snippet">
+              {userInfo && data.senderId === userInfo.id && (
+                <MessageStatus messageStatus={data.messageStatus} />
+              )}
+              {data.type === "text" && <span>{data.message}</span>}
+              {data.type === "audio" && (
+                <>
+                  <FaMicrophone />
+                  <span>
+                    {userInfo && data.senderId === userInfo.id
+                      ? "You sent an audio clip"
+                      : "Sent an audio clip"}
+                  </span>
+                </>
+              )}
+              {data.type === "image" && (
+                <>
+                  <FaCamera />
+                  <span>
+                    {userInfo && data.senderId === userInfo.id
+                      ? "You sent an image"
+                      : "Sent an image"}
+                  </span>
+                </>
+              )}
+              {!data.type && <span>Start a conversation</span>}
+            </span>
           </span>
         </div>
       </div>
-      {!isContactPage && (
-        <div className="conversation-side">
-          <span
-            className={`conversation-time ${
-              (data.totalUnreadMessages ?? 0) > 0 ? "unread" : ""
-            }`}
-          >
-            {calculateTime(String(data.createdAt ?? ""))}
-          </span>
-          {type === "user" && (data.totalUnreadMessages ?? 0) > 0 && (
-            <span className="conversation-badge">{data.totalUnreadMessages}</span>
-          )}
-        </div>
-      )}
+      <div className="conversation-side">
+        <span
+          className={`conversation-time ${
+            (data.totalUnreadMessages ?? 0) > 0 ? "unread" : ""
+          }`}
+        >
+          {data.createdAt ? calculateTime(String(data.createdAt)) : ""}
+        </span>
+        {(data.totalUnreadMessages ?? 0) > 0 && (
+          <span className="conversation-badge">{data.totalUnreadMessages}</span>
+        )}
+      </div>
     </button>
   );
 }
