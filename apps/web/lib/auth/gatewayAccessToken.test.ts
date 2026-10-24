@@ -9,6 +9,7 @@ const fakeToken = (expSeconds: number) =>
   `${base64url({ alg: "HS256" })}.${base64url({ sub: "7", exp: expSeconds })}.sig`;
 
 let tokenRequests = 0;
+let clearToken: () => void = () => {};
 const nextToken = fakeToken(Math.floor(Date.now() / 1000) + 300);
 
 // Captures the headers axios would send, without any network access.
@@ -26,8 +27,9 @@ before(async () => {
     tokenRequests += 1;
     return new Response(JSON.stringify({ token: nextToken }), { status: 200 });
   }) as typeof fetch;
-  const { installGatewayAuthInterceptor } = await import("./gatewayAccessToken");
-  installGatewayAuthInterceptor();
+  const mod = await import("./gatewayAccessToken");
+  mod.installGatewayAuthInterceptor();
+  clearToken = mod.clearGatewayAccessToken;
   axios.defaults.adapter = captureAdapter;
 });
 
@@ -55,5 +57,11 @@ describe("gateway auth interceptor", () => {
   test("keeps an Authorization header the caller set explicitly", async () => {
     const res = await axios.get(`${HOST}/api/x`, { headers: { Authorization: "Bearer mine" } });
     assert.equal(res.data.authorization, "Bearer mine");
+  });
+
+  test("fetches a new token after clearGatewayAccessToken (sign-out)", async () => {
+    clearToken();
+    await axios.get(`${HOST}/api/user/connections`);
+    assert.equal(tokenRequests, 2);
   });
 });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { clearGatewayAccessToken } from "@/lib/auth/gatewayAccessToken";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { useStateProvider } from "@/context/StateContext";
 import ContextMenu from "@/components/common/ContextMenu";
@@ -11,7 +11,6 @@ export default function ChatListHeader({
   isUserLoading: boolean;
 }) {
   const [{ userInfo, socket }] = useStateProvider();
-  const router = useRouter();
   const [contextMenuCordinates, setContextMenuCordinates] = useState({
     x: 0,
     y: 0,
@@ -32,8 +31,9 @@ export default function ChatListHeader({
         if (socket?.current && userInfo?.id) {
           socket.current.emit("signout", userInfo.id);
         }
-        await signOut({ redirect: false });
-        router.replace("/login");
+        clearGatewayAccessToken();
+        // Full-page redirect, as in the account page's sign-out.
+        await signOut({ callbackUrl: "/login" });
       },
     },
   ];

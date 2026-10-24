@@ -8,8 +8,8 @@ import { HOST } from "@/utils/ApiRoutes";
  * to a gateway on another site (e.g. *.vercel.app -> *.up.railway.app). Instead, every
  * request to the gateway carries a short-lived bearer token minted by /api/auth/socket-token
  * (HS256, signed with NEXTAUTH_SECRET, 5-minute expiry), which the gateway verifies.
- * On localhost the cookie still works too, so this is harmless there. NextAuth's signOut
- * does a full-page redirect, which also drops the cached token.
+ * On localhost the cookie still works too, so this is harmless there. Sign-out must call
+ * clearGatewayAccessToken() so the next user in this tab never inherits the cached token.
  */
 
 const TOKEN_ROUTE = "/api/auth/socket-token";
@@ -50,6 +50,12 @@ export async function getGatewayAccessToken(): Promise<string | null> {
     inFlight = null;
   });
   return inFlight;
+}
+
+/** Forget the cached token. Call on sign-out, before the session is cleared. */
+export function clearGatewayAccessToken(): void {
+  cached = null;
+  inFlight = null;
 }
 
 function isGatewayRequest(config: InternalAxiosRequestConfig): boolean {
