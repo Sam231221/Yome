@@ -2,10 +2,11 @@
 
 import { useCallback, type ReactNode } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { FaFacebook, FaGithub } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
+import { safeCallbackPath } from "@/lib/auth/safeRedirect";
 
 type SocialProvider = "google" | "github" | "facebook";
 
@@ -25,19 +26,22 @@ function SocialAuthButton({
   );
 }
 
+/**
+ * Navigates after a successful sign-in. Always a full page load, never `router.push`: in a
+ * production build the client router may already hold a prefetched copy of the target page
+ * from before sign-in (the auth middleware's redirect to /login), and a client-side push
+ * would replay it, so the first sign-in looked like it failed. A full load also starts the
+ * session and gateway-token state fresh.
+ */
 export function useAuthRedirect(defaultPath = "/dashboard") {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
 
   return useCallback(() => {
-    if (callbackUrl === null) {
-      router.push(defaultPath);
-      return;
-    }
-
-    window.location.href = callbackUrl;
-  }, [callbackUrl, defaultPath, router]);
+    window.location.assign(
+      safeCallbackPath(callbackUrl, window.location.origin, defaultPath)
+    );
+  }, [callbackUrl, defaultPath]);
 }
 
 export function useSocialAuth(defaultPath = "/dashboard") {

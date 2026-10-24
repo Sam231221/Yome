@@ -130,6 +130,8 @@ bun run dev:web
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for a step-by-step guide to deploying on Vercel (web), Railway (services, Postgres and Redis) and Supabase Storage (media).
 
+For the day-to-day flow (branches, pull requests, CI, releasing to production, rollbacks), see [docs/RELEASE_WORKFLOW.md](docs/RELEASE_WORKFLOW.md).
+
 ## Validation And Tests
 
 Useful verification commands:

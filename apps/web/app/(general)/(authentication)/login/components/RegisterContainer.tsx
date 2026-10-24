@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { REGISTER_USER } from "@/utils/ApiRoutes";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import {
   CONFIRM_PASSWORD_ERROR_MESSAGE,
@@ -48,7 +47,6 @@ export default function RegisterContainer({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const router = useRouter();
 
   const [values, setValues] = useState<RegisterValues>(emptyValues);
 
@@ -133,7 +131,8 @@ export default function RegisterContainer({
         setValues(emptyValues);
         toast.success(data.msg || "Account created successfully.");
         if (callback?.ok) {
-          router.push("/onboarding");
+          // Full page load, not router.push: see useAuthRedirect in features/auth/socialAuth.tsx.
+          window.location.assign("/onboarding");
           return;
         }
         setActiveTab("login");

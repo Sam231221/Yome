@@ -9,6 +9,7 @@ import {
   type FormEvent,
 } from "react";
 import { signOut, useSession } from "next-auth/react";
+import { clearGatewayAccessToken } from "@/lib/auth/gatewayAccessToken";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { reducerCases } from "@/context/constants";
@@ -358,8 +359,10 @@ export function useAccountSettingsController() {
   };
 
   const handleSignOut = async () => {
-    await signOut({ redirect: false });
-    router.push("/login");
+    clearGatewayAccessToken();
+    // Let NextAuth do a full-page redirect: a client-side push re-rendered this protected
+    // page with the session already cleared, and it crashed in production.
+    await signOut({ callbackUrl: "/login" });
   };
 
   return {
