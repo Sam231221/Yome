@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { getToken } from "next-auth/jwt";
+import jwt from "jsonwebtoken";
 import type { GatewayRequest } from "../types.js";
 
 const publicRoutePrefixes = [
@@ -71,11 +72,34 @@ function getAuthToken(req: Request): string {
 }
 
 /**
- * Decodes the caller's identity, when `GATEWAY_REQUIRE_AUTH=true`: either the shared
- * service-to-service token (bypasses session decoding entirely) or a NextAuth session
- * cookie, which is how `apps/web`'s own session format is decoded rather than assuming a
- * plain jsonwebtoken. On success for a session cookie, sets `req.gatewayUser`, which
- * `middleware/proxy.ts` forwards downstream as `x-user-id`/`x-user-email`.
+ * Verifies the short-lived token apps/web mints at /api/auth/socket-token (HS256, signed
+ * with NEXTAUTH_SECRET, 5-minute expiry). The browser sends it as a bearer token because
+ * the NextAuth session cookie belongs to the web app's origin and is never sent to a
+ * gateway on another site (e.g. *.vercel.app -> *.up.railway.app).
+ */
+function verifyWebAccessToken(
+  token: string,
+  secret: string
+): { id: string; email?: string } | null {
+  try {
+    const decoded = jwt.verify(token, secret, { algorithms: ["HS256"] });
+    if (typeof decoded !== "object" || decoded === null) return null;
+    const id = decoded.sub ?? (decoded as { id?: unknown }).id;
+    if (id === undefined || id === null || id === "") return null;
+    const email = (decoded as { email?: unknown }).email;
+    return { id: String(id), email: typeof email === "string" ? email : undefined };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Decodes the caller's identity, when `GATEWAY_REQUIRE_AUTH=true`: the shared
+ * service-to-service token (bypasses session decoding entirely), the web app's short-lived
+ * access token (see verifyWebAccessToken; used by browsers in deployed, cross-site setups),
+ * or a NextAuth session cookie (same-site setups such as localhost). On success for a user
+ * token, sets `req.gatewayUser`, which `middleware/proxy.ts` forwards downstream as
+ * `x-user-id`/`x-user-email`.
  */
 export function createAuthMiddleware(options: {
   authEnabled: boolean;
@@ -104,6 +128,11 @@ export function createAuthMiddleware(options: {
     }
 
     if (nextAuthSecret) {
+      const webUser = verifyWebAccessToken(token, nextAuthSecret);
+      if (webUser) {
+        r.gatewayUser = webUser;
+        return next();
+      }
       try {
         const decoded = await getToken({
           req: {
