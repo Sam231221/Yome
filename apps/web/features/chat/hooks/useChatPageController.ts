@@ -6,14 +6,12 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { reducerCases } from "@/context/constants";
 import { useStateProvider } from "@/context/StateContext";
-import { useChatSocket } from "@/hooks/useChatSocket";
 import {
   ensureUserInfo,
   getUserInfoErrorMessage,
   logUserInfoLoadError,
 } from "@/lib/auth/userInfo";
 import { getUserById, getUserConversation, logChatConversationError } from "@/lib/chat/chatApi";
-import { playNotificationSound } from "@/lib/chat/notificationSound";
 import { resolveChatKind, type ChatKind } from "@/types/chat";
 
 export function useChatPageController() {
@@ -114,65 +112,6 @@ export function useChatPageController() {
       setIsUserLoading(false);
     }
   }, [userInfo?.id]);
-
-  const socket = useChatSocket({
-    userId: userInfo?.id,
-    onSocketReady: (socketRef) => {
-      dispatch({ type: reducerCases.SET_SOCKET, socket: socketRef });
-      setIsUserLoading(false);
-    },
-    onPrivateMessageReceived: (data) => {
-      const senderId = Number(data?.message?.senderId ?? data?.from);
-      if (!currentChatUser || Number(currentChatUser.id) !== senderId) {
-        playNotificationSound();
-      }
-      dispatch({
-        type: reducerCases.ADD_USER_MESSAGE,
-        newMessage: {
-          ...data.message,
-        },
-      });
-    },
-    onGroupMessageReceived: (data) => {
-      dispatch({
-        type: reducerCases.ADD_GROUP_MESSAGE,
-        newMessage: {
-          ...data.message,
-          groupId:
-            typeof data.groupId === "undefined" ? null : String(data.groupId),
-        },
-      });
-    },
-    onOnlineUsers: ({ onlineUsers }) => {
-      dispatch({
-        type: reducerCases.SET_ONLINE_USERS,
-        onlineUsers,
-      });
-    },
-    onMarkReadReceived: ({ id, receiverId }) => {
-      if (typeof receiverId === "undefined") return;
-      dispatch({
-        type: reducerCases.SET_MESSAGES_READ,
-        id,
-        receiverId,
-      });
-    },
-  });
-
-  useEffect(() => {
-    if (userInfo?.id && socket.current) {
-      setIsUserLoading(false);
-    }
-  }, [userInfo?.id, socket]);
-
-  useEffect(() => {
-    if (socket.current) {
-      dispatch({
-        type: reducerCases.SET_SOCKET,
-        socket,
-      });
-    }
-  }, [dispatch, socket]);
 
   useEffect(() => {
     const getMessages = async () => {

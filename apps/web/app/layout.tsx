@@ -7,6 +7,7 @@ import { ReactNode } from "react";
 import AuthProvider from "@/context/AuthProvider";
 import ModalContextProvider from "@/context/ModalContextProvider";
 import { Toaster } from "react-hot-toast";
+import { ChatRealtimeProvider } from "@/providers/ChatRealtimeProvider";
 
 export const metadata = {
   title: "Yome",
@@ -41,7 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <StateProvider>
               <Toaster />
               <div id="photo-picker-element"></div>
-              <>{children}</>
+              <ChatRealtimeProvider>{children}</ChatRealtimeProvider>
             </StateProvider>
           </ModalContextProvider>
         </AuthProvider>
