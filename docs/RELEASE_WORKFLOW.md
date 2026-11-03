@@ -2,8 +2,8 @@
 
 This explains how a change, whether a bug fix, feature or config change, travels from your
 machine to the live site. It covers the branches, the pull requests (PRs), what CI checks, and
-what deploys automatically. The last section walks through a real bug we fixed this way, step by
-step.
+what deploys automatically. It also covers keeping your local branches tidy, and walks through a real
+bug we fixed this way, step by step.
 
 For first-time platform setup (Railway, Vercel, Supabase), see [DEPLOYMENT.md](DEPLOYMENT.md).
 
@@ -235,7 +235,145 @@ Use this rarely. The `dev` route is safer because the fix gets tested alongside 
 
 ---
 
-## 8. Worked example: "Unable to identify the current user" (PRs #8 and #9)
+## 8. Keeping your local copy in sync, and cleaning up branches
+
+### Why your local branches fall behind
+Your local `dev` and `production` are **bookmarks that only move when you pull**. `git fetch`,
+which VS Code also runs in the background, updates Git's copy of what GitHub has (`origin/dev`,
+`origin/production`), but it never moves your own branches. So GitHub can show the latest code
+while your local `dev` is many commits behind. VS Code shows this in the status bar, for example
+`dev ↓11` means 11 commits behind.
+
+Every branch you create and merge also stays on your machine until you delete it, and on GitHub
+until someone deletes it there. Without a routine, both lists keep growing.
+
+### One-time setup
+Make every fetch also forget branches that were deleted on GitHub:
+```bash
+git config --global fetch.prune true
+```
+Make `git pull` refuse to create surprise merge commits. If a branch has diverged, it stops and
+tells you instead:
+```bash
+git config --global pull.ff only
+```
+On GitHub, go to **Settings → General → Pull Requests** and tick **"Automatically delete head
+branches"**. A PR's branch is then deleted on GitHub as soon as the PR is merged.
+
+In VS Code, open **Settings** (Cmd+,) and enable `git.autofetch` and `git.pruneOnFetch`. The status
+bar's ↓/↑ counts then show when you need to pull.
+
+### The routine
+**Before starting new work:**
+```bash
+git switch dev
+git pull
+git switch -c fix/<short-description>
+```
+**After your PR into `dev` is merged on GitHub:**
+```bash
+git switch dev
+git pull
+git branch -d fix/<short-description>
+```
+**After a release PR into `production` is merged** (only if you keep a local `production`):
+```bash
+git switch production
+git pull
+```
+You rarely need to be on `production` locally. It's only for checking exactly what's live.
+Day-to-day work happens on `dev` and your work branches.
+
+### A one-off cleanup when things have piled up
+Do these in order, starting from a clean working tree (`git status` says "working tree clean";
+otherwise commit, or run `git stash`, first).
+
+1. **Update both long-lived branches:**
+   ```bash
+   git fetch origin
+   git switch production && git pull
+   git switch dev && git pull
+   ```
+2. **See which local branches are already merged into `production`:** these are safe to delete.
+   ```bash
+   git branch --merged origin/production
+   ```
+3. **Delete the merged ones locally:**
+   ```bash
+   git branch -d <branch> <branch> ...
+   ```
+   `-d` is the safe version: Git refuses if a branch has unmerged work. If it refuses, look at
+   that branch before going further. Don't switch to `-D` without checking.
+4. **Delete the same branches on GitHub:**
+   ```bash
+   git push origin --delete <branch> <branch> ...
+   ```
+5. **Worktrees.** A branch that's checked out in a worktree (an extra checkout folder, for example
+   one an editor or AI tool created) can't be deleted. List them, remove the ones you don't need,
+   and then delete their branches:
+   ```bash
+   git worktree list
+   git worktree remove <path-to-worktree>
+   ```
+   If `git worktree remove` complains about modified files, there's uncommitted work in that
+   folder. Open it and decide whether you need it first.
+6. **Branches with unmerged work.** Look at what's in a branch before deleting it:
+   ```bash
+   git log --oneline production..<branch>
+   ```
+   If you don't need those commits, delete the branch with `git branch -D <branch>`, or with
+   `git push origin --delete <branch>` if it only exists on GitHub. If you do want them, keep the
+   branch and open a PR from it into `dev`.
+7. **Check the result:**
+   ```bash
+   git branch -vv
+   ```
+   You should see `dev`, `production` and only the branches you deliberately kept, with no
+   "behind" counts.
+
+### Keep your local `.env` pointing at your local database
+If you ever point `DATABASE_URL` and `DIRECT_URL` at the production database (for example to seed
+it, see DEPLOYMENT.md §3.6), switch them back straight away. While they point there, anything you
+run locally, including test sign-ups and the dev reset route, happens to live data.
+
+---
+
+## 9. How merged work shows on your GitHub profile
+
+Deleting a branch after it's merged **doesn't lower your contribution count**. Commits aren't
+stored "in" a branch; a branch is just a label pointing at them. Merging puts the commits into
+`production`'s history, and they stay there after the label is deleted.
+
+GitHub counts a commit on your contribution graph when all of these are true:
+1. **It's in the repository's default branch.** For Yome that's **`production`**.
+2. **Its author email is linked to your GitHub account.**
+3. It's in a standalone repository, not a fork.
+
+It's counted on the date the commit was **written**, not the date it was merged.
+
+| Situation | Counted? |
+|---|---|
+| Branch merged into `production` (directly or through `dev`), then deleted | **Yes.** The commits are in `production`'s history. |
+| Work merged into `dev` but not yet released to `production` | **Not yet.** It's counted once the release PR into `production` is merged. |
+| Branch deleted **without** ever being merged | **No**, but it never was, because those commits weren't in `production`. |
+
+Two things that do affect your count:
+- **The merge method.** This repo merges PRs with **merge commits**, which keep every original
+  commit, so each one counts. With **squash merging**, a PR's commits are combined into one, so it
+  counts as a single contribution.
+- **Author emails.** Check which emails your commits use:
+  ```bash
+  git log origin/production --format='%ae' | sort | uniq -c
+  ```
+  Then add any you own under **GitHub → Settings → Emails**. Commits made under an email are
+  credited as soon as you add it, including old ones. To set the email for future commits in this
+  repo, run `git config user.email "<email linked to your account>"`.
+
+`Co-Authored-By:` lines don't reduce your credit. The commit still counts fully for its author.
+
+---
+
+## 10. Worked example: "Unable to identify the current user" (PRs #8 and #9)
 
 This is exactly how the first production bug was handled.
 
@@ -287,9 +425,14 @@ be HTTP versus HTTPS, missing env vars, or private versus public networking. Loo
 ## Quick reference
 
 ```bash
+# one-time setup
+git config --global fetch.prune true
+git config --global pull.ff only
+
 # start a fix or feature
-git fetch origin
-git switch -c fix/<desc> origin/dev
+git switch dev
+git pull
+git switch -c fix/<desc>
 
 # check locally before pushing
 bun run lint
@@ -303,9 +446,18 @@ gh pr create --base dev
 # release dev to production
 gh pr create --base production --head dev --title "Release: <summary>"
 
+# after your PR into dev is merged: update dev and delete the branch
+git switch dev
+git pull
+git branch -d fix/<desc>
+
 # after a release: bring dev in line with production
 git switch dev
 git pull
 git merge origin/production
 git push
+
+# housekeeping: which local branches are merged, and how far behind is each
+git branch --merged origin/production
+git branch -vv
 ```
