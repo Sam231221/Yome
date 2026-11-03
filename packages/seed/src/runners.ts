@@ -50,6 +50,7 @@ export async function createMultipleUsersWithProfiles(
             password: userData.password,
             role: userData.role,
             profilePicture: userData.thumbnail,
+            coverImage: userData.coverImage,
           },
         });
 
@@ -87,6 +88,7 @@ export async function createMultipleUsersWithProfiles(
             password: userData.password,
             role: userData.role,
             profilePicture: userData.thumbnail,
+            coverImage: userData.coverImage,
             userProfile: { connect: { id: newUserProfile.id } },
           },
         });
@@ -170,6 +172,7 @@ export async function createEducationGroups(
             ? data.mentorCount
             : actualAdminIds.length,
         thumbnail: thumbnail ?? "",
+        coverImage: "coverImage" in data && data.coverImage ? data.coverImage : "",
       };
 
       const tags =

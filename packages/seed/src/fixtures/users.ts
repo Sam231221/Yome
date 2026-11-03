@@ -10,6 +10,7 @@ export const usersData = [
     role: "USER" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709736551/pexels-photo-2379004_y2qddu.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-sameershahithakuri/960/280",
   },
   {
     email: "anjansth@gmail.com",
@@ -22,6 +23,7 @@ export const usersData = [
     role: "USER" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709735644/pep4_s8z0j9.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-anjansrestha/960/280",
   },
   {
     email: "rokarajan@gmail.com",
@@ -34,6 +36,7 @@ export const usersData = [
     role: "USER" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709735643/pep3_xetaak.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-rokarajan/960/280",
   },
   {
     email: "thapamilan96@gmail.com",
@@ -46,6 +49,7 @@ export const usersData = [
     role: "USER" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709735643/pep6_xsqmag.avif",
+    coverImage: "https://picsum.photos/seed/yome-user-iammilan/960/280",
   },
   {
     email: "sthsafal25@gmail.com",
@@ -58,6 +62,7 @@ export const usersData = [
     role: "USER" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709736266/white-male-student-notebook_tcm18-336857_ibglx5.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-itsmesafal/960/280",
   },
   {
     email: "bhujelbishal23@gmail.com",
@@ -70,6 +75,7 @@ export const usersData = [
     role: "MENTOR" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709736266/3244_Home-for-Summer-S24-Rotator.rev.1702415677_qpmdu4.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-bhujelbishal/960/280",
   },
   {
     email: "ronishrai@gmail.com",
@@ -82,6 +88,7 @@ export const usersData = [
     role: "MENTOR" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709736266/college-student-glasses-backpack_bliunr.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-rai24/960/280",
   },
   {
     email: "sarahbhattarai@gmail.com",
@@ -94,6 +101,7 @@ export const usersData = [
     role: "MENTOR" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709736438/young-asian-woman-student-in-uniform-using-smartphone-about-work-there-are-many-documents-on-the-table-her-face-with-smiling-in-a-working-at-to-search-information-for-a-study-report-at-university-photo_zexk5n.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-sarah307/960/280",
   },
   {
     email: "mikelshah@gmail.com",
@@ -106,6 +114,7 @@ export const usersData = [
     role: "MENTOR" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709706318/samples/smile.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-itsmemikel/960/280",
   },
   {
     email: "gyanwalitech@gmail.com",
@@ -118,6 +127,7 @@ export const usersData = [
     role: "MENTOR" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709706294/samples/people/smiling-man.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-resham465/960/280",
   },
   {
     email: "girieva@gmail.com",
@@ -130,6 +140,7 @@ export const usersData = [
     role: "MENTOR" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709735643/pep2_y373rr.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-eva688/960/280",
   },
   {
     email: "jamessth@gmail.com",
@@ -142,6 +153,7 @@ export const usersData = [
     role: "MENTOR" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709736668/What-Is-A-Sigma-Male-And-Their-Common-Personality-Trait-624x702_m8asne.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-jamessth/960/280",
   },
   {
     email: "alishachetri@gmail.com",
@@ -154,6 +166,7 @@ export const usersData = [
     role: "MENTOR" as const,
     thumbnail:
       "https://res.cloudinary.com/dvj4qsyeu/image/upload/v1709735643/pep1_uufjiy.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-alu123/960/280",
   },
   {
     email: "sarah.chen@yome.local",
@@ -164,7 +177,8 @@ export const usersData = [
     bio: "Mathematics student",
     address: "Yome",
     role: "STUDENT" as const,
-    thumbnail: "",
+    thumbnail: "https://randomuser.me/api/portraits/women/44.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-sarahchen/960/280",
   },
   {
     email: "alex.nguyen@yome.local",
@@ -175,7 +189,8 @@ export const usersData = [
     bio: "Engineering student",
     address: "Yome",
     role: "STUDENT" as const,
-    thumbnail: "",
+    thumbnail: "https://randomuser.me/api/portraits/men/32.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-alexnguyen/960/280",
   },
   {
     email: "priya.sharma@yome.local",
@@ -186,7 +201,8 @@ export const usersData = [
     bio: "AI and Robotics",
     address: "Yome",
     role: "STUDENT" as const,
-    thumbnail: "",
+    thumbnail: "https://randomuser.me/api/portraits/women/68.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-priyasharma/960/280",
   },
   {
     email: "leo.martins@yome.local",
@@ -197,6 +213,7 @@ export const usersData = [
     bio: "Physics and Astronomy",
     address: "Yome",
     role: "STUDENT" as const,
-    thumbnail: "",
+    thumbnail: "https://randomuser.me/api/portraits/men/75.jpg",
+    coverImage: "https://picsum.photos/seed/yome-user-leomartins/960/280",
   },
 ];

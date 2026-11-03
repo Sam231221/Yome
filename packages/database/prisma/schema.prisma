@@ -30,6 +30,7 @@ model User {
   username                  String                  @unique
   password                  String
   profilePicture            String                  @default("")
+  coverImage                String                  @default("")
   identifier                String                  @default("user")
   created_at                DateTime                @default(now())
   updated_at                DateTime                @updatedAt
@@ -117,6 +118,7 @@ model Group {
   members        User[]              @relation("MembersOfGroup")
   messages       Messages[]
   thumbnail      String              @default("")
+  coverImage     String              @default("")
   tags           GroupTag[]
   invitations    GroupInvitation[]
   announcements  GroupAnnouncement[]

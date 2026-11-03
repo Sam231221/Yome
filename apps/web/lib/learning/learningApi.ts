@@ -23,6 +23,7 @@ export type LearningUser = {
   initials: string;
   tone: YomeTone;
   profilePicture: string;
+  coverImage?: string;
   isFollowing: boolean;
 };
 
@@ -40,6 +41,7 @@ export type LearningGroup = {
   symbol: string;
   tone: YomeTone;
   thumbnail: string;
+  coverImage?: string;
   tags: Array<{ label: string; tone: YomeTone }>;
   featured: boolean;
   activeThisWeek: number;

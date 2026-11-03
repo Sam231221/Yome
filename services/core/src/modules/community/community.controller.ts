@@ -71,6 +71,7 @@ export function mapUserCard(
     username?: string | null;
     role?: string | null;
     profilePicture?: string | null;
+    coverImage?: string | null;
     userProfile?: { bio?: string | null; address?: string | null } | null;
     group?: Array<{ id: string; name: string; subject?: string | null }>;
     groupAdmin?: Array<{ id: string; name: string; subject?: string | null }>;
@@ -103,6 +104,7 @@ export function mapUserCard(
           ? "violet"
           : "blue",
     profilePicture: user.profilePicture || "",
+    coverImage: user.coverImage || "",
     isFollowing,
   };
 }
@@ -147,6 +149,7 @@ export function mapGroupCard(
     tone: string;
     symbol: string;
     thumbnail: string;
+    coverImage?: string | null;
     featured: boolean;
     activeThisWeek: number;
     projectCount: number;
@@ -172,6 +175,7 @@ export function mapGroupCard(
     symbol: group.symbol,
     tone: group.tone,
     thumbnail: group.thumbnail,
+    coverImage: group.coverImage || "",
     tags:
       group.tags && group.tags.length > 0
         ? group.tags.map((tag) => ({ label: tag.label, tone: tag.tone }))
