@@ -57,20 +57,50 @@ export const useChatSocket = ({
     if (!userId) return;
 
     let cancelled = false;
+
+    const fetchSocketToken = async () => {
+      const res = await fetch("/api/auth/socket-token", { credentials: "include" });
+      if (!res.ok) throw new Error(`socket-token responded ${res.status}`);
+      const data = (await res.json()) as { token?: string };
+      if (!data.token) throw new Error("socket-token response had no token");
+      return data.token;
+    };
+
     (async () => {
       try {
-        const res = await fetch("/api/auth/socket-token", { credentials: "include" });
-        if (!res.ok || cancelled) return;
-        const data = (await res.json()) as { token?: string };
-        if (!data.token || cancelled) return;
-        if (!socketRef.current) {
-          socketRef.current = io(CHAT_SOCKET_URL, { auth: { token: data.token } });
-          setActiveSocket(socketRef.current);
-          onSocketReadyRef.current?.(socketRef);
-        }
-        socketRef.current.emit("add-user", String(userId));
-      } catch {
-        // Keep socket unauthenticated-off when token fetch fails.
+        const initialToken = await fetchSocketToken();
+        if (cancelled || socketRef.current) return;
+
+        // `auth` as a function is re-run on every (re)connect attempt, so a reconnect after
+        // the 5-minute socket token expired still handshakes with a fresh one.
+        const socket = io(CHAT_SOCKET_URL, {
+          auth: (cb) => {
+            fetchSocketToken()
+              .then((token) => cb({ token }))
+              .catch(() => cb({ token: initialToken }));
+          },
+        });
+        socketRef.current = socket;
+        setActiveSocket(socket);
+        onSocketReadyRef.current?.(socketRef);
+
+        // A reconnect gets a new socket id and the server has dropped this user's presence
+        // on disconnect, so register again on every connect, not just the first.
+        socket.on("connect", () => {
+          socket.emit("add-user", String(userId));
+        });
+        socket.on("connect_error", (error) => {
+          console.warn("[chat] socket connect_error:", error.message);
+          // Socket.IO does not retry after a middleware rejection (e.g. an expired
+          // token), so retry manually.
+          if (!socket.active) {
+            setTimeout(() => {
+              if (socketRef.current === socket) socket.connect();
+            }, 2000);
+          }
+        });
+      } catch (error) {
+        console.warn("[chat] could not start realtime socket:", error);
       }
     })();
     return () => {

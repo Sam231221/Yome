@@ -24,10 +24,6 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    setUnreadCount(dashboard?.profile.notificationCount ?? 0);
-  }, [dashboard?.profile.notificationCount]);
-
-  useEffect(() => {
     document.body.classList.toggle("yome-no-scroll", mobileMenuOpen);
     return () => document.body.classList.remove("yome-no-scroll");
   }, [mobileMenuOpen]);
@@ -56,7 +52,7 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
 
   const name = dashboard?.profile.name || (userInfo?.firstname || userInfo?.lastname
       ? `${userInfo?.firstname ?? ""} ${userInfo?.lastname ?? ""}`.trim()
-      : userInfo?.name || session?.user?.name || "Maya Patel");
+      : userInfo?.name || session?.user?.name || "");
   const initials = useMemo(
     () =>
       name
@@ -132,7 +128,7 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
               <Link className="yome-profile-button profile-button" href="/account">
                 <Avatar initials={initials} image={userInfo?.profilePicture || session?.user?.image || undefined} tone="violet" size="sm" />
                 <span>
-                  <strong>{name}</strong>
+                  <strong>{name || "\u00A0"}</strong>
                   <small>{userInfo?.role === "TEACHER" ? "Educator" : "Student"}</small>
                 </span>
                 <span className="chevron">⌄</span>
@@ -187,7 +183,7 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
         <button className="user-card-mini rounded-yome border border-yome-border bg-yome-surface shadow-yome" onClick={handleProfileClick}>
           <Avatar initials={initials} image={userInfo?.profilePicture || session?.user?.image || undefined} tone="violet" size="sm" />
           <div>
-            <strong>{name}</strong>
+            <strong>{name || "\u00A0"}</strong>
             <small>@{dashboard?.profile.username || userInfo?.username || "yomeuser"}</small>
           </div>
           <YomeIcon name="more" size={18} />
