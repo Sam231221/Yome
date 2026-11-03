@@ -23,7 +23,7 @@ export const yomeNavItems: YomeNavItem[] = [
   { label: "Explore", href: "/explore", icon: "compass" },
   { label: "Groups", href: "/groups", icon: "users" },
   { label: "Connections", href: "/connections", icon: "profile" },
-  { label: "Messages", href: "/chat", icon: "message", badge: "4" },
+  { label: "Messages", href: "/chat", icon: "message" },
   { label: "Study Rooms", href: "/study-rooms", icon: "headphones" },
   { label: "Resources", href: "/resources", icon: "library" },
   { label: "Projects", href: "/projects", icon: "flask" },

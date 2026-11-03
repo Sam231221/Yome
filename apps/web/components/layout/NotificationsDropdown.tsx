@@ -43,6 +43,15 @@ export function NotificationsDropdown({
     }
   }, [onUnreadChange]);
 
+  // The dashboard payload's count is a cached, denormalized column that can lag behind
+  // reality, so fetch the live unread count once on mount.
+  useEffect(() => {
+    getNotifications({ limit: 1 })
+      .then((page) => onUnreadChange(page.unreadCount))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (open) void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
