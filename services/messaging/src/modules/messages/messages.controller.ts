@@ -298,6 +298,58 @@ export async function getMessages(
   }
 }
 
+/**
+ * Sidebar badge source: how many direct conversations have unread messages for the caller.
+ * Counted per conversation (sender), not per message, so one chatty sender is one badge.
+ * Group unread is not tracked server-side yet, so it is not included.
+ */
+export async function getUnreadSummary(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = parseRequiredUserId(req.params.userId);
+    const authenticatedUserId = getAuthenticatedUserId(req);
+
+    if (authenticatedUserId === null) {
+      res.status(401).json({ ok: false, error: "Unauthorized" });
+      return;
+    }
+    if (userId === null) {
+      res.status(400).json({ ok: false, error: "Invalid user id" });
+      return;
+    }
+    if (authenticatedUserId !== userId) {
+      res.status(403).json({ ok: false, error: "Forbidden" });
+      return;
+    }
+
+    const prisma = getPrismaInstance();
+    const unreadBySender = await prisma.messages.groupBy({
+      by: ["senderId"],
+      where: {
+        msgType: "user",
+        receiverId: userId,
+        senderId: { not: userId },
+        messageStatus: { not: "read" },
+      },
+      _count: { _all: true },
+    });
+
+    res.status(200).json({
+      ok: true,
+      unreadConversations: unreadBySender.length,
+      unreadMessages: unreadBySender.reduce(
+        (total: number, row: { _count: { _all: number } }) => total + row._count._all,
+        0
+      ),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getInitialUsersWithMessages(
   req: Request,
   res: Response,

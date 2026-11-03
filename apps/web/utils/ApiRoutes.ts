@@ -48,6 +48,7 @@ export const GET_OR_CREATE_DIRECT_CONVERSATION_ROUTE = `${MESSAGES_ROUTE}/get-or
 //One to One Message
 export const ADD_MESSAGE_ROUTE = `${MESSAGES_ROUTE}/add-message`;
 export const GET_INITIAL_GROUP_MESSAGES = `${MESSAGES_ROUTE}/get-initial-group-messages`;
+export const GET_UNREAD_SUMMARY_ROUTE = `${MESSAGES_ROUTE}/unread-summary`;
 export const GET_INITIAL_USERS_MESSAGES = `${MESSAGES_ROUTE}/get-initial-contacts`;
 export const ADD_AUDIO_MESSAGE_ROUTE = `${HOST}/api/media/add-audio-message`;
 export const ADD_IMAGE_MESSAGE_ROUTE = `${HOST}/api/media/add-image-message`;

@@ -9,6 +9,7 @@ import { yomeNavItems } from "@/features/learning/data";
 import { Avatar, Brand, ToneSymbol, YomeIcon } from "@/components/ui";
 import { MobileMenu } from "./MobileMenu";
 import { NotificationsDropdown } from "./NotificationsDropdown";
+import { getUnreadConversationCount } from "@/lib/chat/chatApi";
 import { getDashboardHome } from "@/lib/dashboard/dashboardApi";
 import type { DashboardHome } from "@/lib/dashboard/types";
 
@@ -16,12 +17,13 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
-  const [{ userInfo }] = useStateProvider();
+  const [{ userInfo, userContacts }] = useStateProvider();
   const [dark, setDark] = useState(false);
   const [dashboard, setDashboard] = useState<DashboardHome | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [serverUnreadChats, setServerUnreadChats] = useState(0);
 
   useEffect(() => {
     document.body.classList.toggle("yome-no-scroll", mobileMenuOpen);
@@ -49,6 +51,28 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [session, userInfo?.id]);
+
+  // Refetch on every route change: leaving /chat after reading a conversation lowers it.
+  const unreadUserId = userInfo?.id ?? Number((session?.user as { id?: unknown } | undefined)?.id);
+  useEffect(() => {
+    if (!Number.isFinite(unreadUserId)) return;
+    let cancelled = false;
+    getUnreadConversationCount(unreadUserId)
+      .then((count) => {
+        if (!cancelled) setServerUnreadChats(count);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [unreadUserId, pathname]);
+
+  // On /chat the loaded conversation list is fresher than the last fetch (live receives,
+  // opening a chat), so prefer it there.
+  const onChatPage = pathname.startsWith("/chat") && userContacts.length > 0;
+  const unreadChats = onChatPage
+    ? userContacts.filter((contact) => (contact.totalUnreadMessages ?? 0) > 0).length
+    : serverUnreadChats;
 
   const name = dashboard?.profile.name || (userInfo?.firstname || userInfo?.lastname
       ? `${userInfo?.firstname ?? ""} ${userInfo?.lastname ?? ""}`.trim()
@@ -156,7 +180,11 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
               <Link key={item.href} className={active ? "yome-nav-item nav-item active" : "yome-nav-item nav-item"} href={item.href}>
                 <YomeIcon name={item.icon} size={20} />
                 <span>{item.label}</span>
-                {item.badge && <em>{item.badge}</em>}
+                {item.href === "/chat" && unreadChats > 0 ? (
+                  <em>{unreadChats > 99 ? "99+" : unreadChats}</em>
+                ) : (
+                  item.badge && <em>{item.badge}</em>
+                )}
               </Link>
             );
           })}

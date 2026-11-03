@@ -3,6 +3,7 @@ import { validateRequest } from "@repo/service-kit";
 import {
   getMessages,
   getInitialUsersWithMessages,
+  getUnreadSummary,
   getInitialGroupsWithMessages,
   addMessage,
   addMediaMessage,
@@ -17,6 +18,7 @@ import {
   getMessagesSchema,
   initialGroupMessagesSchema,
   initialContactsSchema,
+  unreadSummarySchema,
 } from "./messages.validation.js";
 
 const router = Router();
@@ -44,5 +46,7 @@ router.get(
   validateRequest(initialContactsSchema),
   getInitialUsersWithMessages
 );
+
+router.get("/unread-summary/:userId", validateRequest(unreadSummarySchema), getUnreadSummary);
 
 export default router;

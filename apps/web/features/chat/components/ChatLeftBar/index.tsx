@@ -19,6 +19,9 @@ export default function ChatLeftBar({
   const [activeTab, setActiveTab] = useState<MessagesTab>("all");
   const [{ userContacts, groupContacts, userInfo }] = useStateProvider();
 
+  const unreadCount = userContacts.filter(
+    (contact) => (contact.totalUnreadMessages ?? 0) > 0
+  ).length;
   const hasContacts = userContacts.length + groupContacts.length > 0;
 
   useEffect(() => {
@@ -47,6 +50,9 @@ export default function ChatLeftBar({
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}
+            {tab.id === "unread" && unreadCount > 0 ? (
+              <span className="messages-tab-count">{unreadCount > 99 ? "99+" : unreadCount}</span>
+            ) : null}
           </button>
         ))}
       </div>

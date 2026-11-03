@@ -186,6 +186,19 @@
   color: #2f68f6;
 }
 
+.messages-tab-count {
+  display: inline-block;
+  margin-left: 6px;
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #2f68f6;
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+}
+
 .conversation-item {
   width: 100%;
   display: grid;
