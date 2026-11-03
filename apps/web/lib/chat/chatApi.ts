@@ -9,6 +9,7 @@ import {
   GET_INITIAL_USERS_MESSAGES,
   GET_MESSAGES_ROUTE,
   GET_OR_CREATE_DIRECT_CONVERSATION_ROUTE,
+  GET_UNREAD_SUMMARY_ROUTE,
   GET_USER_BY_ID_ROUTE,
 } from "@/utils/ApiRoutes";
 import type {
@@ -160,6 +161,12 @@ export const getOrCreateDirectConversation = async (
   });
 
   return (data?.conversation ?? null) as DirectConversationRecord | null;
+};
+
+export const getUnreadConversationCount = async (loggedInUserId: UserId) => {
+  const { data } = await axios.get(`${GET_UNREAD_SUMMARY_ROUTE}/${loggedInUserId}`);
+  const count = Number(data?.unreadConversations);
+  return Number.isFinite(count) ? count : 0;
 };
 
 export const getInitialUserMeta = async (loggedInUserId: UserId) => {

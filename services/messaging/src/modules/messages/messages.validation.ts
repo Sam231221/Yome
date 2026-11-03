@@ -76,6 +76,12 @@ export const initialContactsSchema = {
   }),
 };
 
+export const unreadSummarySchema = {
+  params: z.object({
+    userId: positiveIntString,
+  }),
+};
+
 export const directConversationSchema = {
   body: z.object({
     from: z.coerce.number().int().positive(),
