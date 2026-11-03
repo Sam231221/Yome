@@ -71,7 +71,10 @@ export function GroupDetailContent({ id }: { id: string }) {
     <main className="group-detail-page min-w-0 text-yome-text">
       <Link className="back-link inline-flex items-center gap-2 font-bold text-yome-blue" href="/groups">← All groups</Link>
       <section className="group-detail-hero card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
-        <div className="group-detail-cover">
+        <div
+          className={group.coverImage ? "group-detail-cover has-cover-image" : "group-detail-cover"}
+          style={group.coverImage ? { backgroundImage: `url(${JSON.stringify(group.coverImage)})` } : undefined}
+        >
           <div className="cover-grid" />
           <span className="robot-head group-robot-head"><i /><i /></span>
           <span className="robot-body group-robot-body">Y</span>

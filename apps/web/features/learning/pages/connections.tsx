@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Check, MessageCircle, MoreHorizontal, Plus, Search, UsersRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
 import { Avatar, Badge } from "@/components/ui";
 import {
@@ -118,7 +118,7 @@ export function ConnectionsContent() {
         <div className="connections-grid">
           {suggestions.map((person) => (
               <article className="connection-card card rounded-yome border border-yome-border bg-yome-surface shadow-yome" key={person.id}>
-                <div className="connection-cover"><div className="cover-grid" /></div>
+                <div className={coverClassName("connection-cover", person.id, person.coverImage)} style={coverStyle(person.coverImage)}><div className="cover-grid" /></div>
                 <Avatar initials={person.initials} tone={person.tone} size="lg" image={person.profilePicture || "/avatars/userprofile.png"} />
                 <button className="more-button inline-grid shrink-0 place-items-center rounded-full text-yome-muted"><MoreHorizontal size={18} /></button>
                 <h3>{person.name}</h3>
@@ -144,6 +144,7 @@ export function ConnectionsContent() {
         <div className="connection-list card rounded-yome border border-yome-border bg-yome-surface shadow-yome">
           {following.map((person) => (
             <article key={person.id}>
+              <span className={coverClassName("connection-row-cover", person.id, person.coverImage)} style={coverStyle(person.coverImage)} aria-hidden="true" />
               <Avatar initials={person.initials} tone={person.tone} image={person.profilePicture || "/avatars/userprofile.png"} />
               <div>
                 <strong>{person.name}</strong>
@@ -159,6 +160,17 @@ export function ConnectionsContent() {
       ) : null}
     </main>
   );
+}
+
+const FALLBACK_COVER_COUNT = 6;
+
+// Users without a seeded/uploaded cover still get a varied gradient, picked stably by id.
+function coverClassName(base: string, id: number, coverImage?: string) {
+  return coverImage ? `${base} has-cover-image` : `${base} cover-fallback-${Math.abs(id) % FALLBACK_COVER_COUNT}`;
+}
+
+function coverStyle(coverImage?: string): CSSProperties | undefined {
+  return coverImage ? { backgroundImage: `url(${JSON.stringify(coverImage)})` } : undefined;
 }
 
 function ConnectionState({ title, body }: { title: string; body?: string }) {

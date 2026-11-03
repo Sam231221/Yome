@@ -26,6 +26,16 @@ const remotePatterns = [
     hostname: "th.bing.com",
     pathname: "**",
   },
+  {
+    protocol: "https",
+    hostname: "randomuser.me",
+    pathname: "/api/portraits/**",
+  },
+  {
+    protocol: "https",
+    hostname: "images.unsplash.com",
+    pathname: "**",
+  },
 ];
 
 const mediaBaseUrl =

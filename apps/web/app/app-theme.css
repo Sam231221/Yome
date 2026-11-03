@@ -8697,6 +8697,29 @@ body.yome-no-scroll {
   background: linear-gradient(135deg, #172554, #2563eb 58%, #0d9488);
 }
 
+.connection-cover.has-cover-image,
+.connection-row-cover.has-cover-image,
+.group-detail-cover.has-cover-image {
+  background-color: #172554;
+  background-position: center;
+  background-size: cover;
+}
+
+.connection-cover.has-cover-image::after,
+.group-detail-cover.has-cover-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.05), rgba(15, 23, 42, 0.35));
+}
+
+.cover-fallback-0 { background: linear-gradient(135deg, #172554, #2563eb 58%, #0d9488); }
+.cover-fallback-1 { background: linear-gradient(135deg, #3b0764, #7c3aed 58%, #db2777); }
+.cover-fallback-2 { background: linear-gradient(135deg, #042f2e, #0d9488 58%, #84cc16); }
+.cover-fallback-3 { background: linear-gradient(135deg, #431407, #ea580c 58%, #facc15); }
+.cover-fallback-4 { background: linear-gradient(135deg, #0c4a6e, #0284c7 58%, #a78bfa); }
+.cover-fallback-5 { background: linear-gradient(135deg, #1f2937, #475569 58%, #f43f5e); }
+
 .connection-card > .avatar {
   margin-top: -32px;
   border-color: white;
@@ -8784,7 +8807,13 @@ body.yome-no-scroll {
 }
 
 .connection-list article {
-  grid-template-columns: 42px 1fr auto auto auto;
+  grid-template-columns: 72px 42px 1fr auto auto auto;
+}
+
+.connection-row-cover {
+  width: 72px;
+  height: 42px;
+  border-radius: 8px;
 }
 
 .requests-list article:last-child,
@@ -9319,6 +9348,12 @@ body.yome-no-scroll {
 }
 
 @media (max-width: 560px) {
+  .connection-list article {
+    grid-template-columns: 42px 1fr auto auto auto;
+  }
+  .connection-row-cover {
+    display: none;
+  }
   .yome-top-actions .yome-icon-button:first-child,
   .yome-top-actions .yome-profile-button {
     display: none;

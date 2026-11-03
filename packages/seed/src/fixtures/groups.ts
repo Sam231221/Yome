@@ -2,6 +2,8 @@ export const groupData = [
   {
     slug: "python-learners",
     name: "Python Learners",
+    thumbnail: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800&q=80",
+    coverImage: "https://picsum.photos/seed/yome-group-python-learners/960/280",
     about: "Daily practice, debugging help, and beginner-friendly code reviews.",
     subject: "Technology",
     category: "Programming",
@@ -38,6 +40,8 @@ export const groupData = [
   {
     slug: "physics-club",
     name: "Physics Club",
+    thumbnail: "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=800&q=80",
+    coverImage: "https://picsum.photos/seed/yome-group-physics-club/960/280",
     about: "Work through mechanics, quantum ideas, and visual explanations together.",
     subject: "Science",
     category: "Physics",
@@ -72,6 +76,8 @@ export const groupData = [
   {
     slug: "robotics-team",
     name: "Robotics Team",
+    thumbnail: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&q=80",
+    coverImage: "https://picsum.photos/seed/yome-group-robotics-team/960/280",
     about: "Arduino, sensors, CAD, and small team build logs.",
     subject: "Engineering",
     category: "Robotics",
@@ -115,6 +121,8 @@ export const groupData = [
   {
     slug: "calculus-circle",
     name: "Calculus Circle",
+    thumbnail: "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=800&q=80",
+    coverImage: "https://picsum.photos/seed/yome-group-calculus-circle/960/280",
     about: "Conceptual math support, visual proofs, and revision sessions.",
     subject: "Mathematics",
     category: "Calculus",
@@ -148,6 +156,7 @@ export const groupData = [
   },
   {
     name: "Nepali Sports Fanatics",
+    coverImage: "https://picsum.photos/seed/yome-group-nepali-sports-fanatics/960/280",
     about: "Cheering for Nepali athletes and engaging in sports discussions",
     adminUserIDs: [1],
     memberUserIDs: [1, 5, 4],
@@ -156,6 +165,7 @@ export const groupData = [
   },
   {
     name: "Nepali Book Club",
+    coverImage: "https://picsum.photos/seed/yome-group-nepali-book-club/960/280",
     about: "Delving into literature from Nepali authors and beyond",
     adminUserIDs: [3],
     memberUserIDs: [1, 3, 4, 8],
@@ -164,6 +174,7 @@ export const groupData = [
   },
   {
     name: "Nepali Poetry Circle",
+    coverImage: "https://picsum.photos/seed/yome-group-nepali-poetry-circle/960/280",
     about: "Celebrating the richness of Nepali language through poetry",
     adminUserIDs: [8],
     memberUserIDs: [8, 9, 10],
@@ -172,6 +183,7 @@ export const groupData = [
   },
   {
     name: "Kathmandu Cuisine Connoisseurs",
+    coverImage: "https://picsum.photos/seed/yome-group-kathmandu-cuisine-connoisseurs/960/280",
     about: "Discovering and sharing the flavors of Nepali cuisine",
     adminUserIDs: [10],
     memberUserIDs: [5, 9, 10],
@@ -180,6 +192,7 @@ export const groupData = [
   },
   {
     name: "Traditional Dance Troupe",
+    coverImage: "https://picsum.photos/seed/yome-group-traditional-dance-troupe/960/280",
     about: "Preserving and promoting Nepali traditional dances",
     adminUserIDs: [9],
     memberUserIDs: [5, 8, 9],
@@ -188,6 +201,7 @@ export const groupData = [
   },
   {
     name: "Nepali History Society",
+    coverImage: "https://picsum.photos/seed/yome-group-nepali-history-society/960/280",
     about: "Exploring the rich historical heritage of Nepal",
     adminUserIDs: [7],
     memberUserIDs: [7, 8, 10],
@@ -196,6 +210,7 @@ export const groupData = [
   },
   {
     name: "Math Enthusiasts",
+    coverImage: "https://picsum.photos/seed/yome-group-math-enthusiasts/960/280",
     about: "A group for math lovers and problem solvers",
     adminUserIDs: [1, 2],
     memberUserIDs: [1, 2, 4],
@@ -204,6 +219,7 @@ export const groupData = [
   },
   {
     name: "Science Explorers",
+    coverImage: "https://picsum.photos/seed/yome-group-science-explorers/960/280",
     about: "Exploring the wonders of science together",
     adminUserIDs: [2, 3],
     memberUserIDs: [2, 3],
@@ -212,6 +228,7 @@ export const groupData = [
   },
   {
     name: "Programming Wizards",
+    coverImage: "https://picsum.photos/seed/yome-group-programming-wizards/960/280",
     about: "Mastering the art of coding and algorithms",
     adminUserIDs: [6],
     memberUserIDs: [6, 7],
@@ -220,6 +237,7 @@ export const groupData = [
   },
   {
     name: "Language Learners",
+    coverImage: "https://picsum.photos/seed/yome-group-language-learners/960/280",
     about: "Exploring new languages and cultures",
     adminUserIDs: [7],
     memberUserIDs: [3, 7, 4, 6],
@@ -228,6 +246,7 @@ export const groupData = [
   },
   {
     name: "Environmental Scientists",
+    coverImage: "https://picsum.photos/seed/yome-group-environmental-scientists/960/280",
     about: "Understanding the impact of environment on society",
     adminUserIDs: [6],
     memberUserIDs: [1, 6, 7],
@@ -236,6 +255,7 @@ export const groupData = [
   },
   {
     name: "Music Enthusiasts",
+    coverImage: "https://picsum.photos/seed/yome-group-music-enthusiasts/960/280",
     about: "Sharing and discovering diverse music genres",
     adminUserIDs: [3],
     memberUserIDs: [3, 7],
