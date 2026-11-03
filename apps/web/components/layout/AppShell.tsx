@@ -24,10 +24,6 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    setUnreadCount(dashboard?.profile.notificationCount ?? 0);
-  }, [dashboard?.profile.notificationCount]);
-
-  useEffect(() => {
     document.body.classList.toggle("yome-no-scroll", mobileMenuOpen);
     return () => document.body.classList.remove("yome-no-scroll");
   }, [mobileMenuOpen]);
