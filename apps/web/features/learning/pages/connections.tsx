@@ -129,7 +129,7 @@ export function ConnectionsContent() {
                   <button className="primary-button inline-flex items-center justify-center gap-2 rounded-yome bg-yome-blue font-bold text-white" disabled={pendingIds.includes(person.id)} onClick={() => handleConnect(person)}>
                     {pendingIds.includes(person.id) ? <Check size={15} /> : <Plus size={15} />} {pendingIds.includes(person.id) ? "Connecting..." : "Connect"}
                   </button>
-                  <Link className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue" href="/chat"><MessageCircle size={15} /></Link>
+                  <Link className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue" href={`/chat?user=${person.id}`} aria-label={`Message ${person.name}`}><MessageCircle size={15} /></Link>
                 </footer>
               </article>
           ))}
@@ -150,7 +150,7 @@ export function ConnectionsContent() {
                 <p>{person.role}</p>
               </div>
               <Badge tone="neutral">Connected</Badge>
-              <Link className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue" href="/chat"><MessageCircle size={15} /> Message</Link>
+              <Link className="secondary-button inline-flex items-center justify-center gap-2 rounded-yome border border-yome-border bg-yome-surface font-bold text-yome-blue" href={`/chat?user=${person.id}`}><MessageCircle size={15} /> Message</Link>
               <button className="more-button inline-grid shrink-0 place-items-center rounded-full text-yome-muted"><MoreHorizontal size={18} /></button>
             </article>
           ))}

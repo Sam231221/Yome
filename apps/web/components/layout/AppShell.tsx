@@ -10,6 +10,8 @@ import { Avatar, Brand, ToneSymbol, YomeIcon } from "@/components/ui";
 import { MobileMenu } from "./MobileMenu";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { getUnreadConversationCount } from "@/lib/chat/chatApi";
+import { CHAT_ACTIVITY_EVENT } from "@/lib/chat/chatActivity";
+import { getNotifications } from "@/lib/notifications/notificationsApi";
 import { getDashboardHome } from "@/lib/dashboard/dashboardApi";
 import type { DashboardHome } from "@/lib/dashboard/types";
 
@@ -52,8 +54,27 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
     };
   }, [session, userInfo?.id]);
 
-  // Refetch on every route change: leaving /chat after reading a conversation lowers it.
+  // Refetch on every route change, on live chat activity from the socket, and on a slow
+  // poll as a fallback. Leaving /chat after reading a conversation lowers it.
   const unreadUserId = userInfo?.id ?? Number((session?.user as { id?: unknown } | undefined)?.id);
+  const [unreadRefreshTick, setUnreadRefreshTick] = useState(0);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onChatActivity = () => {
+      // The message row is already saved, but the notification is created asynchronously
+      // by the notifications service, so give it a moment before refetching.
+      clearTimeout(timer);
+      timer = setTimeout(() => setUnreadRefreshTick((tick) => tick + 1), 1200);
+    };
+    window.addEventListener(CHAT_ACTIVITY_EVENT, onChatActivity);
+    const poll = setInterval(() => setUnreadRefreshTick((tick) => tick + 1), 60_000);
+    return () => {
+      window.removeEventListener(CHAT_ACTIVITY_EVENT, onChatActivity);
+      clearInterval(poll);
+      clearTimeout(timer);
+    };
+  }, []);
+
   useEffect(() => {
     if (!Number.isFinite(unreadUserId)) return;
     let cancelled = false;
@@ -62,10 +83,15 @@ export function YomeAppShell({ children }: { children: ReactNode }) {
         if (!cancelled) setServerUnreadChats(count);
       })
       .catch(() => {});
+    getNotifications({ limit: 1 })
+      .then((page) => {
+        if (!cancelled) setUnreadCount(page.unreadCount);
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [unreadUserId, pathname]);
+  }, [unreadUserId, pathname, unreadRefreshTick]);
 
   // On /chat the loaded conversation list is fresher than the last fetch (live receives,
   // opening a chat), so prefer it there.
